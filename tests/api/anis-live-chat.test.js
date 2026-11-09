@@ -290,7 +290,7 @@ describe('quotation source: core literature only (Chad 11-03: "limited to core l
     const deps = { plan: async () => ({ shape: 'quote' }), search: async () => ({ passages: [], _plan: { shape: 'quote' } }),
       craft: async () => 'ok', companion: async () => ({}), phrases: async () => ({ phrase: null, via: 'fallback', exact: [], names: [], spellings: [] }),
       sourceHunt: async (q, d, o) => { opts.push(o); return null; } };
-    await anisRespond({ messages: [{ role: 'user', content: 'where is this from: immerse yourselves in the ocean of my words' }], deps });
+    await anisRespond({ messages: [{ role: 'user', content: 'where is this from: immerse yourselves in the ocean of my words' }], deps, direction: { strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } } });
     expect(opts.length).toBeGreaterThan(0);
     expect(opts[0]).toMatchObject({ coreOnly: true });
   });

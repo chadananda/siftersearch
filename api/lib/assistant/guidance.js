@@ -3,7 +3,7 @@
 // recency of guidance, not doctrinal weight (the House of Justice legislates and guides; it does not interpret the Writings).
 // Deps (injectable via ctx.deps): docs-repo listDocs. Search: respond.js executeSearch with the author filter.
 import { NO_LOG } from './decision-log.js';
-import { run as runTool } from './tools.js';
+import { combinedSearch } from './combined-search.js';
 import { render } from './activities/templates.js';
 
 export const UHJ = 'Universal House of Justice';
@@ -26,7 +26,7 @@ export function newestFirst(passages, dates) {
 
 export async function currentGuidance(ctx) {
   const { messages, query, search, profile = {}, decisions = NO_LOG, deps = {} } = ctx;
-  const r = await runTool('combined_search', { query, limit: 14, filters: { author: UHJ }, scope_config: profile.scope_config, messages, defaults: { religion: "Baha'i" } }, { search }).catch(() => null);
+  const r = await combinedSearch({ query, limit: 14, filters: { author: UHJ }, scope_config: profile.scope_config, messages, defaults: { religion: "Baha'i" } }, { search }).catch(() => null);
   const hits = (r?.passages || []).filter((p) => /house of justice/i.test(p.author || '') || /house of justice/i.test(p.book_author || ''));
   decisions.record('guidance:letters', { by: 'code', saw: { query, returned: r?.passages?.length ?? 0 }, chosen: `${hits.length} from the ${UHJ}`, reason: hits.length ? null : 'no letters of the House of Justice matched' });
   if (!hits.length) return null;

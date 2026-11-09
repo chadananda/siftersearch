@@ -145,13 +145,13 @@ describe('Anís evidence', () => {
     const { research } = await import('../../api/lib/assistant/researcher.js');
     let calls = 0;
     const create = async () => (++calls === 1
-      ? { choices: [{ message: { tool_calls: [{ id: 'a', function: { name: 'search_library', arguments: '{"query":"x"}' } }] } }] }
-      : calls === 2 ? { choices: [{ message: { tool_calls: [{ id: 'b', function: { name: 'read_around', arguments: '{"ref":"P1"}' } }] } }] }
+      ? { choices: [{ message: { tool_calls: [{ id: 'a', function: { name: 'fused_search', arguments: '{"query":"x"}' } }] } }] }
+      : calls === 2 ? { choices: [{ message: { tool_calls: [{ id: 'b', function: { name: 'context_lookup', arguments: '{"ref":"P1"}' } }] } }] }
         : { choices: [{ message: { content: 'BRIEF: ok\nKEEP: P1' } }] });
     const around = vi.fn(async () => []);
     const r = await research({ messages: [{ role: 'user', content: 'q' }], create, maxRounds: 3,
       tools: { search: async () => [{ text: 'x', document_id: 1, paragraph_index: 3 }], around, encumberedAmong: enc } });
     expect(around).not.toHaveBeenCalled();
-    expect(r?.steps?.find((s) => s.tool === 'read_around')).toBeTruthy();
+    expect(r?.steps?.find((s) => s.tool === 'context_lookup')).toBeTruthy();
   });
 });

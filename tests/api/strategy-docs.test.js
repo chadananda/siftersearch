@@ -147,12 +147,14 @@ describe('the plan (planning/anis-strategies.json) on the three pages', () => {
       expect(card.graph.nodes.length).toBeGreaterThan(0);
     }
     expect(list.find((s) => s.id === 'comparison').tests.lead).toBe(['C1', 'C2', 'C3'].reduce((n, c) => n + plan.strategies.find((x) => x.id === c).test_questions.lead, 0));
-    // lookups that live as branches of the shared reply are their own built entries, labelled so, with the nodes that run them
-    const book = list.find((s) => s.id === 'a2');
-    expect(book).toMatchObject({ status: 'built', where: 'shared-reply', inside: { strategy: 'respond', name: 'unmatched', nodes: ['work'] }, graph: null });
-    for (const id of ['a4', 'a6', 'a7', 'h1']) expect(list.find((s) => s.id === id)).toMatchObject({ status: 'built', where: 'shared-reply' });
+    // the five lookups are strategies of their own (11-09), each with its graph; the shared reply holds none and Unmatched has none of their nodes
+    for (const [id, pat] of [['book', 'A2'], ['quote_trace', 'A4'], ['term', 'A6'], ['original', 'A7'], ['about', 'H1']]) {
+      expect(list.find((s) => s.id === id)).toMatchObject({ status: 'built', where: 'own' });
+      expect(list.find((s) => s.id === id).patterns.map((x) => x.id)).toEqual([pat]);
+    }
+    expect(list.filter((s) => s.where === 'shared-reply')).toEqual([]);
     const respondNodes = new Set(list.at(-1).graph.nodes.map((n) => n.id));
-    for (const s of list.filter((x) => x.where === 'shared-reply')) for (const n of s.inside.nodes) expect(respondNodes.has(n)).toBe(true);
+    for (const n of ['work', 'read_question', 'hunt', 'hunt_wait', 'source_reply', 'term', 'original', 'original_wait', 'conversational', 'religions']) expect(respondNodes.has(n)).toBe(false);
     // planned: no graph, falls back to Unmatched
     const a1 = list.find((s) => s.id === 'a1');
     expect(a1).toMatchObject({ status: 'planned', graph: null, where: null });
@@ -171,15 +173,15 @@ describe('the plan (planning/anis-strategies.json) on the three pages', () => {
     expect(p.ladder.length).toBeGreaterThan(3);
     // an active strategy with no spec (designed and promoted since the seed) is listed after the graph-backed ones, before the shared-reply entries
     const extra = publicStrategyList({ specs, strategies: [...strategies, { id: 'x', name: 'x', graph: { nodes: [], edges: [] }, templates: [], branches: [], candidates: [], exemplars: [] }] });
-    expect(extra.findIndex((c) => c.id === 'x')).toBe(extra.findIndex((c) => c.id === 'a2') - 1);
+    expect(extra.findIndex((c) => c.id === 'x')).toBe(extra.findIndex((c) => c.status === 'planned') - 1);
     expect(extra.find((c) => c.id === 'x')).toMatchObject({ status: 'built', where: 'own', patterns: [] });
     expect(publicStrategyPlan({ specs: [] })).toBeNull();
   });
 
-  it('the rename: respond@2 is Unmatched and keeps the numbers counted under its old name (other)', () => {
+  it('the rename: respond is Unmatched (@3, the lookups lifted out) and keeps the numbers counted under its old name (other)', () => {
     const r = publicStrategies({ snapshot: strategiesSnapshot(), activities: activityCatalog(), stats }).strategies.find((s) => s.id === 'respond');
-    expect(r).toMatchObject({ name: 'unmatched', version: 2 });
-    expect(r.stats).toMatchObject({ turns: 5 });   // stats recorded on respond@1 attach to respond@2
+    expect(r).toMatchObject({ name: 'unmatched', version: 3 });
+    expect(r.stats).toMatchObject({ turns: 5 });   // stats recorded on respond@1 attach to the seed row that trims it (@3 ← @2 ← @1)
     expect(isUnmatched('other') && isUnmatched('unmatched') && !isUnmatched('prayer')).toBe(true);
   });
 
@@ -201,17 +203,17 @@ describe('the plan (planning/anis-strategies.json) on the three pages', () => {
 describe('the strategy list lives in the DB (strategy_specs)', () => {
   const names = (l) => l.map((c) => c.id);
 
-  it('a temp DB seeded once serves all 36 entries in order, Unmatched last, with nothing read from the plan file afterwards', () => {
+  it('a temp DB seeded once serves all 36 specs (37 listed with general_research) in order, Unmatched last, with nothing read from the plan file afterwards', () => {
     const db = openStrategiesDb(':memory:');
     resetStrategiesCache({ db });
     const rows = db.prepare('SELECT name, kind FROM strategy_specs ORDER BY sort').all();
     expect(rows.filter((r) => r.kind !== 'plan')).toHaveLength(36);
     const strategies = publicStrategies({ snapshot: strategiesSnapshot(), activities: activityCatalog() }).strategies;
     const list = publicStrategyList({ specs: strategySpecs(), strategies });
-    expect(list).toHaveLength(36);
+    expect(list).toHaveLength(37);
     expect(list.at(-1)).toMatchObject({ id: 'respond', name: 'unmatched' });
     expect(list.filter((c) => c.status === 'planned')).toHaveLength(24);
-    expect(list.filter((c) => c.status === 'built')).toHaveLength(12);
+    expect(list.filter((c) => c.status === 'built')).toHaveLength(13);
     expect(names(list).slice(0, 6)).toEqual(['comparison', 'understanding', 'prayer', 'guidance', 'reference', 'compilation']);
     // re-seeding does not touch the plan file or add rows
     expect(seedStrategies(db)).toBe(0);
@@ -241,7 +243,7 @@ describe('the strategy list lives in the DB (strategy_specs)', () => {
     resetStrategiesCache({ db });
     const cat = catalog({ now: Date.now() + 1e6 });
     const ids = cat.strategies.map((s) => s.id);
-    expect(ids).toEqual(['comparison', 'understanding', 'prayer', 'guidance', 'reference', 'compilation', 'respond']);
+    expect(ids).toEqual(['comparison', 'understanding', 'prayer', 'guidance', 'reference', 'compilation', 'book', 'quote_trace', 'term', 'original', 'about', 'respond', 'general_research']);
     const planned = strategySpecs().filter((x) => x.kind === 'planned').map((x) => x.name);
     expect(planned).toHaveLength(24);
     for (const n of planned) expect(ids).not.toContain(n);

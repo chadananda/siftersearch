@@ -176,3 +176,16 @@ export function overviewReads(db, { since, limit = 200 } = {}) {
     designed: Number(db.prepare("SELECT COUNT(*) AS n FROM strategy_designs WHERE cluster_key NOT LIKE 'edit:%' AND cluster_key NOT LIKE 'theory:%' AND cluster_key NOT LIKE 'miss:%' AND created_at >= ?").get(since || '').n || 0) };
   return { promotions, candidates, gaps };
 }
+
+/** Improve digest: what was kept OUT for confusing Jev since `since` (store timestamp): promotions rejected with real-call breaks / confidence
+ *  drops / guard steals, and clusters judged a setting of an existing strategy. → { rejected: [...], setting_of: [...] } */
+export function confusionDigest(db, { since }) {
+  ensureCandidatesSchema(db);
+  const num = (n) => ({ broken: n?.replay_broken ?? n?.broken ?? 0, confidence_drops: n?.replay_confidence_drops ?? n?.confidence_drops ?? 0, steals: n?.jev_guard_steals ?? 0 });
+  const rejected = db.prepare("SELECT * FROM strategy_promotions WHERE action = 'reject' AND created_at >= ? ORDER BY id DESC").all(since || '')
+    .map(({ decision_json, ...r }) => ({ ...r, decision: safeJson(decision_json) })).map((p) => ({ strategy: p.strategy_id, version: p.version, by: p.created_by, at: p.created_at, ...num(p.decision?.numbers), failed: p.decision?.failed ?? [] }))
+    .filter((p) => p.broken > 0 || p.confidence_drops > 0 || p.steals > 0);
+  const setting_of = db.prepare("SELECT label, status, created_at FROM strategy_designs WHERE status LIKE 'setting-of:%' AND created_at >= ? ORDER BY id DESC").all(since || '')
+    .map((d) => ({ setting_of: d.status.slice(11), label: d.label, at: d.created_at }));
+  return { rejected, setting_of };
+}

@@ -15,7 +15,7 @@ import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 const clip = (t, n) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? `${s.slice(0, n)}…` : s; };
 
 // the agent's tools, by canonical name (tools.js registry): its search is fused_search (no planner), never combined_search under another name
-export const AGENT_TOOL_NAMES = ['fused_search', 'originals_search', 'context_lookup', 'original_lookup', 'translation_lookup', 'rendering_lookup', 'source_trace', 'quotation_trace', 'document_search', 'work_notes_lookup', 'web_search'];
+export const AGENT_TOOL_NAMES = ['fused_search', 'originals_search', 'context_lookup', 'original_lookup', 'translation_lookup', 'rendering_lookup', 'source_trace', 'quotation_candidates', 'document_search', 'work_notes_lookup', 'web_search'];
 export const AGENT_TOOLS = llmTools(AGENT_TOOL_NAMES);
 export { canonWork };
 
@@ -29,8 +29,8 @@ TOOLS — use them before answering; call several at once when they are independ
 - document_search: whenever a book, tablet or work is named or asked for. It returns [B#] — the library's own copy. Always give it.
 - work_notes_lookup: sourced lines on a core work's importance — use beside document_search when the reader asks for or about a book.
 - fused_search: passages. Phrase the query in the words the texts would use. When the reader wants one writer's words ("where does 'Abdu'l-Bahá say…"), set author to that writer and leave the name out of the query. Try another wording before concluding anything is missing.
-- SOURCE QUESTIONS (a reader gives a quotation, or asks where words come from, who said them, whether they are authentic): call quotation_trace first, with fused_search on the distinctive phrase in parallel. EXACT quotation (or the reader asks for the original/tablet/Persian/Arabic): answer with the source linked, the original when found, and works that quote it. INEXACT ask (keywords, a paraphrase, "the X quote"): give the MAIN source quoted and linked plus 1–2 similar passages from fused_search, and NO original-language text, Phelps Inventory or tablet detail unless asked; if no published source holds the words, say so plainly — never attribute from memory. Quote the located sentence and its surrounding sentences verbatim, with no "…" inside a quotation (keep the source's own spelling, even a typo); wording variants between copies go in a separate line, never stitched into the quote.
-- context_lookup, quotation_trace (where a quotation comes from), original_lookup, translation_lookup, rendering_lookup, source_trace (a letter or scholar stating a teaching → the primary passages), web_search (last resort; label it as from the web, never as scripture).
+- SOURCE QUESTIONS (a reader gives a quotation, or asks where words come from, who said them, whether they are authentic): call quotation_candidates first, with fused_search on the distinctive phrase in parallel. EXACT quotation (or the reader asks for the original/tablet/Persian/Arabic): answer with the source linked, the original when found, and works that quote it. INEXACT ask (keywords, a paraphrase, "the X quote"): give the MAIN source quoted and linked plus 1–2 similar passages from fused_search, and NO original-language text, Phelps Inventory or tablet detail unless asked; if no published source holds the words, say so plainly — never attribute from memory. Quote the located sentence and its surrounding sentences verbatim, with no "…" inside a quotation (keep the source's own spelling, even a typo); wording variants between copies go in a separate line, never stitched into the quote.
+- context_lookup, quotation_candidates (where a quotation comes from), original_lookup, translation_lookup, rendering_lookup, source_trace (a letter or scholar stating a teaching → the primary passages), web_search (last resort; label it as from the web, never as scripture).
 
 WRITING:
 - The first sentence gives the obvious answer plainly (who/what/where), as a reader would expect from a knowledgeable friend. No preamble, no "Great question", no "Let me", no "I found", no "Based on the library".
@@ -58,7 +58,7 @@ export function renderRefs(text, { found, works }) {
 }
 
 const STATUS = { fused_search: (a) => `Searching the library: ${clip(a.query, 60)}`, combined_search: (a) => `Searching the library: ${clip(a.query, 60)}`, document_search: (a) => `Finding ${clip(a.title, 60)}`,
-  work_notes_lookup: (a) => `What the sources say about ${clip(a.title, 50)}`, context_lookup: () => 'Reading around a passage', quotation_trace: () => 'Tracing a quotation',
+  work_notes_lookup: (a) => `What the sources say about ${clip(a.title, 50)}`, context_lookup: () => 'Reading around a passage', quotation_candidates: () => 'Tracing a quotation',
   original_lookup: () => 'Finding the original', translation_lookup: () => 'Finding a translation', rendering_lookup: (a) => `Word study: ${clip(a.word, 40)}`,
   source_trace: () => 'Tracing to the primary texts', web_search: () => 'Searching the web' };
 

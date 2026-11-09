@@ -171,7 +171,7 @@ describe('anisRespond', () => {
   // self-introduction. Conversation (greetings, thanks, questions about Anis) is not a lookup.
   it('answers conversation as itself — no search, no passages, no citations', async () => {
     const d = deps({ plan: async () => ({ shape: 'converse', filters: {}, prefer: null, comparative: false }) });
-    const r = await anisRespond({ messages: [{ role: 'user', content: 'what is your name?' }], profile: { persona_name: 'Anís' }, deps: d });
+    const r = await anisRespond({ messages: [{ role: 'user', content: 'what is your name?' }], profile: { persona_name: 'Anís' }, deps: d, direction: { strategy: { strategy: { choice: 'about', confidence: 0.9 }, sides: [] } } });
     expect(d.calls.search).toHaveLength(0);
     expect(d.calls.craft[0].retrieved_quotes).toEqual([]);
     expect(d.calls.craft[0].conversational).toBe(true);
@@ -242,7 +242,7 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
 
   it('hunts instead of searching and answers from the hunt alone — no model call, exact links, the original\'s words', async () => {
     const d = deps({ sourceHunt: async (q) => { d.calls.hunt = q; return HUNT; } });
-    const r = await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
+    const r = await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } } });
     expect(d.calls.search).toHaveLength(0);
     expect(d.calls.craft).toHaveLength(0);
     expect(d.calls.hunt).toBe('The earth is but one country, and mankind its citizens.');
@@ -257,31 +257,31 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
   it('a citation without a passage that holds the wording is not claimed as quoting it', async () => {
     const d = deps({ sourceHunt: async () => ({ ...HUNT, citedBy: [{ title: 'The Kitáb-i-Aqdas', url: 'https://x/aqdas' },
       { title: 'The Kitáb-i-Aqdas', url: 'https://oceanlibrary.com/kitab-i-aqdas_bahaullah', rangeUrl: 'https://oceanlibrary.com/kitab-i-aqdas_bahaullah' }] }) });
-    const r = await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
+    const r = await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } } });
     expect(r.reply).not.toMatch(/also quoted|Aqdas/);
   });
   // Chad 11-02: "which writing says this?" got "I could not confirm the original tablet" — unasked, it only puzzles
   it('no confirmed original: said only when the seeker asked for the original', async () => {
     const d = deps({ sourceHunt: async () => ({ ...HUNT, tablet: { certain: false, candidates: [] }, citedBy: [] }) });
-    const r = await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
+    const r = await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } } });
     expect(r.reply).not.toMatch(/could not confirm/);
   });
   it('a hunt whose search was degraded does not answer — the ordinary search does (11-01: Mánikchí named for Gleanings)', async () => {
     const d = deps({ sourceHunt: async () => ({ ...HUNT, degraded: ['phrase'] }) });
-    await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
+    await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } } });
     expect(d.calls.search).toHaveLength(1);
   });
   it('a scraped page with no real title is never named as quoting it ("abdul-baha-bkw21_en")', async () => {
     const d = deps({ sourceHunt: async () => ({ ...HUNT, tablet: { certain: false }, citedBy: [
       { title: 'abdul-baha-bkw21_en', url: 'https://oceanoflights.org/abdul-baha-bkw21-en/', rangeUrl: 'https://oceanoflights.org/abdul-baha-bkw21-en/#:~:text=the%20fruit' },
       { title: 'A Traveler’s Narrative', url: 'https://x/tn', rangeUrl: 'https://x/tn?paraId=para_176' }] }) });
-    const r = await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
+    const r = await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } } });
     expect(r.reply).toMatch(/Traveler’s Narrative/);
     expect(r.reply).not.toMatch(/bkw21/);
   });
   it('nothing found → the ordinary search', async () => {
     const d = deps({ sourceHunt: async () => ({ origin: null }) });
-    await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
+    await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } } });
     expect(d.calls.search).toHaveLength(1);
   });
 });

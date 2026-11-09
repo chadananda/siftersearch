@@ -145,7 +145,7 @@ describe('the reply path feeds the loop and gains nothing', () => {
   it('a recheck hit records exactly one gap row (as before); the ledger picks it up from there', async () => {
     const db = fresh(), gold = names()[0], Q = 'How did the Nineteen Day Feast develop over the decades?';
     const direction = { channel: channelFor('site-chat', { trusted: true }), decisions: decisionLog(), turnId: 'c1:3', strategy: { strategy: { choice: 'other', confidence: 0.3 }, sides: [] } };
-    await resolveUnmatched({ direction, messages: [], question: Q, run: async () => ({ passages: [] }) }, { db, recheck: async () => ({ strategy: gold, confidence: 0.9 }) });
+    await resolveUnmatched({ direction, messages: [], question: Q, run: async () => ({ passages: [] }) }, { db, gate: async () => 'research', recheck: async () => ({ strategy: gold, confidence: 0.9 }) });
     expect(db.prepare('SELECT COUNT(*) AS n FROM strategy_gaps').get().n).toBe(1);
     expect(syncMisses(db, GATE)).toBe(1);
     expect(db.prepare('SELECT turn_id, gold, jev_choice FROM jev_misses').get()).toEqual({ turn_id: 'c1:3', gold, jev_choice: 'other' });

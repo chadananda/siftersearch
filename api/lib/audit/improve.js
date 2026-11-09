@@ -304,14 +304,14 @@ export function turnFromPath({ question, reply, path = {}, traces = [] }) {
   const cited = evidence.filter((e) => e.url && urls.has(e.url)).map((e) => ({ doc_id: e.doc_id, title: e.title }));
   // the model's own search queries (before any subject anchor rebuilt one) and Jev's resolved subject: forensics' query-drift
   const model_queries = steps.filter((s) => MODEL_SEARCH.has(s.tool)).map((s) => s.rebuilt_from ?? s.args?.query).filter(Boolean);
-  return { route: routeOf(p.recipe || p.plan?.shape), strategy: p.strategy?.choice ?? null, question, reply, searches, writer_passages: evidence, cited,
+  return { route: routeOf(p.recipe || p.plan?.shape), strategy: p.strategy?.choice ?? null, nodes: (Array.isArray(p.steps) ? p.steps : []).map((x) => ({ node: x.node, edge: x.edge, ms: x.ms })), question, reply, searches, writer_passages: evidence, cited,
     subject: p.triage?.query ?? null, model_queries };
 }
 
 /** Forensic + judge item for a reply; one per search (each trace gets its own verdict). */
 export function itemsForTurn(turn, { messageId, sessionId, turnId = null } = {}) {
   const f = forensicPass(turn);
-  const reply = { key: `reply:${messageId}`, kind: 'reply', ref_id: String(messageId), session_id: sessionId ?? null, turn_id: turnId, route: f.route, strategy: turn.strategy ?? null,
+  const reply = { key: `reply:${messageId}`, kind: 'reply', ref_id: String(messageId), session_id: sessionId ?? null, turn_id: turnId, route: f.route, strategy: turn.strategy ?? null, nodes: turn.nodes ?? null,
     question: turn.question, reply: turn.reply, searches: turn.searches, writer_passages: turn.writer_passages, defects: f.defects };
   const searches = f.searches.filter((s) => s.trace_id).map((s) => {
     const src = turn.searches.find((x) => x.trace_id === s.trace_id) || {};
@@ -388,7 +388,7 @@ export function improveReport(data, { days = 7, cap = null, filters = {} } = {})
  *  assessment since `since` (judged, weak %, mean severity of weak verdicts — the judge gives no numeric score —, top defect
  *  classes, spend), CODE recommendations that are new or gained evidence since then (with 2 example turns + trace links),
  *  and DATA changes proposed or applied since then. data = improve-repo improveDigestData(). Pure. */
-export function improveDigest(data, { since, cap = null, jevMisses = null } = {}) {
+export function improveDigest(data, { since, cap = null, jevMisses = null, confusion = null, tools = null } = {}) {
   const d = data || { judged: [], spend_usd: 0, improvements: [], evidence: new Map() };
   const S = new Date(Date.parse(since)).toISOString().slice(0, 19).replace('T', ' ');   // the store's timestamp format
   const j = (s) => { if (s && typeof s === 'object') return s; try { return JSON.parse(s); } catch { return null; } };
@@ -413,13 +413,13 @@ export function improveDigest(data, { since, cap = null, jevMisses = null } = {}
     .map((r) => ({ id: r.id, state: r.status === 'done' ? 'applied' : r.status === 'rejected' ? 'rejected' : 'proposed', status: r.status,
       target: r.target, stage: r.stage, change: r.change, evidence_n: r.evidence_n, severity: r.severity, status_note: r.status_note ?? null }));
   return {
-    since, generated_at: new Date().toISOString(), available: !!data,
+    since, generated_at: new Date().toISOString(), available: !!data, ...(tools ? { tools } : {}),
     assessment: { judged: verdicts.length, weak: weak.length, weak_pct: verdicts.length ? +(100 * weak.length / verdicts.length).toFixed(1) : null,
       mean_severity: sev.length ? +(sev.reduce((a, b) => a + b, 0) / sev.length).toFixed(2) : null, score_note: 'judge has no numeric score; mean_severity is over weak verdicts (1-3)',
       by_stage: Object.fromEntries(count(weak.map((v) => v.stage || '?'))),
       top_classes: count(weak.flatMap((v) => v.classes || [])).slice(0, 8).map(([cls, n]) => ({ class: cls, n })),
       spend_usd: +(d.spend_usd || 0).toFixed(4), cap_usd: cap?.cap_usd ?? null, spent_today_usd: cap?.spent_usd ?? null },
-    code, data: dataChanges, jev_misses: jevMisses,
+    code, data: dataChanges, jev_misses: jevMisses, confusion,   // confusion: candidates kept out for confusing Jev (broken / confidence drops / steals / setting-of)
     // proposed tool improvements: every waiting CODE proposal with scenarios + its behaviour run state; one already passing may be stale
     proposals: (d.proposals || []).map((r) => ({ ...r, target: targetOf(r) })).filter((r) => targetClass(r.target) === 'code').map((r) => {
       const scenarios = scenariosOf(r), run = runStateOf(r.id, scenarios, d.runs || new Map());

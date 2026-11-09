@@ -21,6 +21,8 @@ const ts = (s) => (s ? Date.parse(String(s).replace(' ', 'T') + (String(s).endsW
  * snapshot = strategiesSnapshot(); activities = activityCatalog(); stats = strategyStats(); branches = id → branchStats(id).
  * → { strategies:[…active, with graph, templates, stats, branches, candidates], summary }
  */
+// a seed row that only renames / trims its parent keeps the nearest ancestor's numbers (respond@3 ← @2 ← @1)
+const ancestorStat = (rows, row, statAt) => { for (let v = row.parent_version, n = 0; v != null && n < 10; n++) { const x = statAt(v); if (x) return x; v = rows.find((r) => r.version === v)?.parent_version ?? null; } return null; };
 export function publicStrategies({ snapshot, activities = [], stats = [], branches = () => [], promotions = null, now = Date.now() }) {
   // promotions = strategy_promotions ledger rows (newest first): each candidate shows its latest replay verdict — numbers and
   // failed rules only (decision.numbers never holds a question).
@@ -57,7 +59,7 @@ export function publicStrategies({ snapshot, activities = [], stats = [], branch
       graph: { entry: g.entry, nodes, edges: (g.edges || []).map((e) => ({ from: e.from, on: e.on, to: e.to })) },
       templates,
       // a seed row that only renames its parent (respond@2 = respond@1 'other') keeps the parent's numbers until it has its own
-      stats: stat(statOf(id, active.version) || (active.created_by === 'seed' && active.parent_version != null ? statOf(id, active.parent_version) : null)),
+      stats: stat(statOf(id, active.version) || (active.created_by === 'seed' ? ancestorStat(rows, active, (v) => statOf(id, v)) : null)),
       branches: (branches(id) || []).slice(0, 12).map(branchOut),
       candidates: rows.filter((r) => r.version > active.version || CANDIDATE.has(r.status)).filter((r) => r !== active)
         .map((r) => ({ version: r.version, status: r.status, parent_version: r.parent_version ?? null, created_at: r.created_at ?? null,

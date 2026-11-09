@@ -33,7 +33,8 @@ import { research as runResearch, libraryTools, RESEARCH_HOW, isExactQuote, asks
 import { looksLikePositionQuestion, positionResearch, POSITION_HOW } from './position.js';
 import { runStrategy } from './strategies.js';   // W3: executes the strategy Jev chose (comparison / understanding / prayer / guidance / reference)
 import { strategyOf } from './strategy-choice.js';
-import { isUnmatched, resolveUnmatched, withStrategyPin } from './unmatched.js';   // Jev found no strategy: reuse / recheck / design one on the fly
+import { isUnmatched, resolveUnmatched, withStrategyPin, plannerOn } from './unmatched.js';
+import { matchRoute } from './strategy-planner.js';   // Jev found no strategy: reuse / recheck / design one on the fly
 import { narrate } from './narrate.js';   // humanized status lines on live channels
 import { gatherByGraph, strategyGraphOn } from './activities/graph.js';   // the strategy graph (Phase 1: the same steps as data)
 import { PASSAGE_CHARS } from './prompt.js';
@@ -559,14 +560,14 @@ export async function agentRespond({ messages, onEvent, d, t0, subject = null })
   onEvent({ type: 'stage', stage: 'search' });
   const A = await agentAnswer({ messages, onEvent, subject,
     create: d.agentCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-agent', params)),
-    tools: d.agentTools || agentTools({ search: d.search, fastSearch: d.fastSearch }) });   // search_library = the fast direct path; d.search only serves trace_source
+    tools: d.agentTools || agentTools({ search: d.search, fastSearch: d.fastSearch }) });   // fused_search = the fast direct path; d.search only serves trace_source
   if (!A.reply) return null;
   onEvent({ type: 'sources', sources: A.citations, plan: { shape: 'agent' }, ms: Date.now() - t0 });
   onEvent({ type: 'stage', stage: 'craft' });
   onEvent({ type: 'text', content: A.reply });
   return { reply: A.reply, quotes_removed: A.quotes_removed, quotes_recredited: A.quotes_recredited, quotes_linked: A.quotes_linked,
     citations: A.citations, retrieved: A.retrieved, evidence: evidenceOf(A.retrieved),
-    plan: { shape: 'agent', steps: A.steps, usage: A.usage }, search_query: A.steps.find((s) => s.tool === 'search_library')?.args?.query ?? null,
+    plan: { shape: 'agent', steps: A.steps, usage: A.usage }, search_query: A.steps.find((s) => s.tool === 'fused_search')?.args?.query ?? null,
     select: null, format: { id: 'agent', by: 'agent' }, profile: null,
     timings: { search_ms: A.timings.first_tool_ms ?? 0, first_token_ms: Date.now() - t0, total_ms: Date.now() - t0 } };
 }
@@ -646,7 +647,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
   const runStrat = (choice) => withStrategyPin(direction, () => {
     narrate(onEvent, direction.channel, `strategy.${strategyOf(choice)}.start`);
     return timed('strategy', () => runStrategy(choice, { messages, question, plan, query: searchQueryFor(messages), distil: distilQuery, search: d.search,
-      profile, decisions: direction.decisions, deps: d, channel: direction.channel || null,
+      profile, scope: direction.scope || null, state: direction.state || null, onEvent, decisions: direction.decisions, deps: d, channel: direction.channel || null,
       // a live chat's strategy gets the same in-book step as its researcher (coordinator 11-03: goth questions route to understanding)
       // and the source Jev named (plan.drawFrom → researcher namedSource), resolved beside the strategy's own search
       // (a comparison's per-side books, named by Jev in the strategy call, use the same source tools)
@@ -657,7 +658,10 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
   // and the direction then names it, so every gate below treats the turn as strategy-chosen; any failure leaves the researcher
   const unmatchedFn = researchWant && isUnmatched(direction.strategy) ? (d.unmatched || (deps ? null : resolveUnmatched)) : null;
   const pre = unmatchedFn ? await unmatchedFn({ direction, messages, question, onEvent, run: runStrat }).catch((err) => { console.warn('anis unmatched failed', err?.message); return null; }) : null;
-  const researchOn = researchWant && !strategyOf(direction.strategy);
+  // route record (Chad 11-09): one pure entry, every turn logged with its kind/source; a matched turn costs no gate call and no Opus call
+  try { const mr = unmatchedFn ? null : matchRoute({ strategy: direction.strategy }); if (mr) direction.decisions?.record?.('route', { by: 'code', saw: question, chosen: mr.name, reason: `route: ${mr.kind} ${mr.source}` }); } catch { /* a log never fails a turn */ }
+  // planner on: a query is answered ONLY by a strategy (matched, planned now, or the stored general_research tree) and a non-query is conversational: the free research agent is no fallback
+  const researchOn = researchWant && !strategyOf(direction.strategy) && !(unmatchedFn && plannerOn());
   const R = researchOn ? await (d.research || runResearch)({ messages, ...(live || {}), narrate: (key, slots) => narrate(onEvent, direction.channel, key, slots), drawFrom: plan?.drawFrom?.name || null, subject: jevSubject(direction, plan),
     create: d.researchCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-researcher', params)),
     tools: d.researchTools || libraryTools({ search: d.search }) }).catch((err) => { console.warn('anis research failed', err?.message); return null; }) : null;
@@ -723,7 +727,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
   const position = !strat && !researched && !sourced && !original && !study && !conversational && (d.looksLikePosition || looksLikePositionQuestion)(question)
     ? await positionResearch({ question, create: d.create || (await import('../role-client.js')).roleCreate, search: d.search,
       authorityOf: d.authorityOf || (async (p) => { try { return (await import('../authority.js')).getAuthority(p || {}); } catch { return 0; } }),
-      defaults: profile.default_tradition ? { religion: profile.default_tradition } : {}, scope_config: profile.scope_config }).catch((err) => { console.warn('anis position research failed', err?.message); return null; })
+      defaults: (direction.scope ? direction.scope.religion : profile.default_tradition) ? { religion: direction.scope ? direction.scope.religion : profile.default_tradition } : {}, scope_config: profile.scope_config }).catch((err) => { console.warn('anis position research failed', err?.message); return null; })
     : null;
   // A LANGUAGE question (assistant/language.js): answered from knowledge of the language and the passage already under
   // discussion — a search would only bring unrelated quotations to pad it with (10-19, Lal's 'fí baytihi')
@@ -744,7 +748,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
       searchQ = (p?.via === 'named-object' || p?.via === 'haiku') && p.phrase ? p.phrase : direction.query || searchQueryFor(messages);   // direction.query: a short turn resolved from history + card (turn.js, 11-03)
       const hints = hintsOf(p);
       return timed('search', () => d.search({ query: searchQ, mode: 'passages', limit: 8, scope_config: profile.scope_config,
-        plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {}, ...(hints ? { hints } : {}) } }));
+        plan: { messages, defaults: (direction.scope ? direction.scope.religion : profile.default_tradition) ? { religion: direction.scope ? direction.scope.religion : profile.default_tradition } : {}, ...(hints ? { hints } : {}) } }));
     });
   if (phrased && res?._plan && !res._plan.quote) res._plan = { ...res._plan, phrases: phrased };
   // OWN SOURCE (own-source.js; Chad's standing rule): the passages are final here — a Central Figure's or Shoghi Effendi's

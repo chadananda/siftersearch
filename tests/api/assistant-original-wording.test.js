@@ -32,7 +32,7 @@ describe("Lal's question end to end", () => {
   it('answers from the canonical paragraph and its Persian original — no ordinary search, no secondary works', async () => {
     const calls = { search: 0, craft: null };
     await anisRespond({
-      messages: [{ role: 'user', content: LAL }],
+      messages: [{ role: 'user', content: LAL }], direction: { strategy: { strategy: { choice: 'original', confidence: 0.9 }, sides: [] } },
       llm: { provider: 'test', model: 'test' },
       deps: {
         plan: async () => ({ shape: 'fact' }),
@@ -73,7 +73,7 @@ describe('any quoted passage → its original (Chad 10-19: "fix Anis")', () => {
     const calls = { search: 0, craft: null, looked: [] };
     const AR = 'ومن يقرأ آيات الله من بيته وحدة لينشر نفحاتها ملائكة النّاشرات';
     await anisRespond({
-      messages: [{ role: 'user', content: `What is the original word used for "chamber"?\n\n${LAL_CHAMBER}` }],
+      messages: [{ role: 'user', content: `What is the original word used for "chamber"?\n\n${LAL_CHAMBER}` }], direction: { strategy: { strategy: { choice: 'original', confidence: 0.9 }, sides: [] } },
       llm: { provider: 'test', model: 'test' },
       deps: {
         plan: async () => ({ shape: 'fact' }),
@@ -113,7 +113,7 @@ describe('the original\'s own linked translation wins (10-19)', () => {
   it('Gleanings ¶606 is taken from the original\'s links even when the phrase search found only compilations', async () => {
     const calls = { craft: null };
     await anisRespond({
-      messages: [{ role: 'user', content: LAL_CHAMBER }], llm: { provider: 'test', model: 'test' },
+      messages: [{ role: 'user', content: LAL_CHAMBER }], direction: { strategy: { strategy: { choice: 'original', confidence: 0.9 }, sides: [] } }, llm: { provider: 'test', model: 'test' },
       deps: { plan: async () => ({ shape: 'fact' }), search: async () => ({ passages: [] }), authorityOf: async () => 5,
         findOriginals: async () => ({ matches: [{ overlap: 1, passage: { id: 9, documentId: 919386, text: 'x', document: { title: 'Divine Virtues: A Compilation', author: 'Various' } } }],
           originals: [{ id: 2, documentId: 924842, language: 'ar', text: 'من بيته وحدة', document: { title: 'Muntakhabát-i-Áthár:136', author: 'Bahá’u’lláh' }, foundThrough: { id: 9 } }] }),

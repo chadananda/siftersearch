@@ -5,6 +5,7 @@
 // Jev) as a new step + strategy version, replay-promoted with Jev's own routing kept (keepChoice). A gate with no graph home, or
 // a needs-code theory → a CODE improvement with acceptance scenarios. A loss is logged. No human gate. Every LLM call is an
 // improve-* caller (assertSpendCap in ai.js / systemone.rerun). Deps injectable; config/strategy-improve.json `theory`.
+import { MIN_CONFIDENCE } from '../scope-extract.js';
 import { VARIANTS } from './variants.js';
 import { runExperiment } from './experiment.js';
 import { parseScenarios, SCENARIO_CHECKS } from '../audit/improve.js';
@@ -101,7 +102,7 @@ export async function ensureSynthetic(db, gate, { example, call, cfg = THEORY_CF
 /** Run one data theory on historic + synthetic rows (deps.rerun = systemone.rerun, billed improve-jev-try:<gate>). */
 export const testTheory = ({ gate, theory, historic = [], synthetic = [], cfg = THEORY_CFG }, deps) => runExperiment({ task: gate,
   variant: { id: theory.variant, params: theory.params }, rows: [...historic.map((r) => ({ ...r, src: 'historic' })), ...synthetic.map((r) => ({ ...r, src: 'synthetic' }))],
-  maxUsd: cfg.max_usd ?? 1 }, deps);
+  maxUsd: cfg.max_usd ?? 1, minConfidence: cfg.max_confidence_drops != null ? MIN_CONFIDENCE : null }, deps);
 
 /** The decision over an experiment. Win = accuracy up by ≥ margin, broken ≤ max_broken, variant tokens ≤ token_ratio × baseline.
  *  → { win, failed, numbers: { before, after, n_historic, n_synthetic, broken, fixed, token_ratio, usd } }. Pure. */
@@ -113,10 +114,11 @@ export function decideTheory(res, cfg = THEORY_CFG) {
   if (!res?.labelled) failed.push('no labelled row was measured');
   else if (!(after - before >= cfg.margin - 1e-9)) failed.push(`accuracy ${pct(before)} → ${pct(after)}: not up by ${pct(cfg.margin)}`);
   if ((res?.broken || 0) > cfg.max_broken) failed.push(`broke ${res.broken} (max ${cfg.max_broken})`);
+  if (cfg.max_confidence_drops != null && (res?.confidence_drops || 0) > cfg.max_confidence_drops) failed.push(`${res.confidence_drops} right call(s) fall below the Jev confidence floor (max ${cfg.max_confidence_drops})`);
   if (ratio != null && ratio > cfg.token_ratio) failed.push(`tokens ×${ratio} (max ×${cfg.token_ratio})`);
   if (res?.truncated) failed.push(`stopped: ${res.truncated}`);
   return { win: failed.length === 0, failed, numbers: { before, after, n_historic: res?.by_src?.historic?.n ?? 0, n_synthetic: res?.by_src?.synthetic?.n ?? 0,
-    broken: res?.broken ?? 0, fixed: res?.fixed ?? 0, token_ratio: ratio, usd: res?.usd ?? 0 } };
+    broken: res?.broken ?? 0, confidence_drops: res?.confidence_drops ?? 0, fixed: res?.fixed ?? 0, token_ratio: ratio, usd: res?.usd ?? 0 } };
 }
 /** "Jev on <gate>: 71% → 88% on 140 historic + 40 synthetic, broke 1" */
 export const theoryLabel = (gate, n) => `Jev on ${gate}: ${pct(n.before)} → ${pct(n.after)} on ${n.n_historic} historic + ${n.n_synthetic} synthetic, broke ${n.broken}`;
@@ -128,7 +130,8 @@ export function theoryHome(gate, cat) {
   const acts = new Set(activitiesForGate(gate));
   if (!acts.size) return null;
   const stepOf = (k) => cat.steps?.byKey?.get?.(k);
-  for (const row of cat.strategies || []) {
+  // the general (Unmatched) graph first: the lookup graphs share the same decision steps, but a theory is tested on the whole stream
+  for (const row of [...(cat.strategies || [])].sort((x, y) => (y.id === 'respond') - (x.id === 'respond'))) {
     const nodes = Object.entries(row.graph?.nodes || {}).filter(([, n]) => acts.has(stepOf(`${n.step}@${n.step_version}`)?.activity));
     if (nodes.length) return { row, step: stepOf(`${nodes[0][1].step}@${nodes[0][1].step_version}`), nodes: nodes.map(([id]) => id) };
   }
@@ -155,10 +158,12 @@ const codeSuggestion = ({ gate, change, effect, scenarios = [], verdict }) => ({
  *   rerun(task, state, questions), history?, applySuggestions(inserts) → ids, saveCandidate, logDesign, promote({id, version, cfg}) → {promoted, decision, usd} }
  * → 'idle' | 'capped' | { gate, item_key, theories: [{ kind, verdict, label?, ... }], usd }
  */
-export async function theoryStage(db, { deps, cat, cfg = THEORY_CFG, now = Date.now() }) {
+export async function theoryStage(db, { deps, cat, cfg: baseCfg = THEORY_CFG, now = Date.now() }) {
   const today = `${new Date(now).toISOString().slice(0, 10)} 00:00:00`;
   const v = (await deps.weak()).find((x) => x.gate && !theorizedFor(db, x.item_key));
   if (!v) return 'idle';
+  const { gates: _g, ...rest } = baseCfg, g = baseCfg.gates?.[v.gate] || {};
+  const cfg = { ...rest, ...g, promote: { ...rest.promote, ...(g.promote || {}) } };   // per-gate rules (strategy gate: broken 0, no guard override)
   if (new Set(listTheories(db, { since: today }).map((t) => t.evidence_key)).size >= (cfg.per_day ?? 6)) return 'capped';
   const historic = (await deps.sample(v.gate, { n: cfg.historic_n ?? 140 })) || [];
   const example = historic[0] || (await deps.sample(v.gate, { n: 1, gold: 'any' }))?.[0] || null;

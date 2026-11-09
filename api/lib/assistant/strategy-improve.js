@@ -6,11 +6,13 @@
 // (suggestions done) or rejected (suggestions rejected, first failed rule) — no human step. Deps: strategy-candidates-repo, strategy-gaps, strategy-design, strategy-promote, strategy-try.
 import { catalog } from '../repos/strategies-repo.js';
 import { recordGap, openGaps, logDesign, saveCandidate, listCandidates, pinFor, promote, logPromotion, listPromotions,
-  ensureCandidatesSchema, heldQuestions, countDesigns, decisionFor } from '../repos/strategy-candidates-repo.js';
+  ensureCandidatesSchema, heldQuestions, countDesigns, decisionFor, rollback } from '../repos/strategy-candidates-repo.js';
 import { untestedDataSuggestions, testingSuggestions, markTesting, settleSuggestions, diagnosesFor, strategyQuestions } from '../repos/improve-repo.js';
 import { groupDataSuggestions, uneditable, designEdit } from './strategy-edit.js';
 import { gapOf, clusterGaps, IMPROVE_CFG } from './strategy-gaps.js';
 import { designCandidate } from './strategy-design.js';
+import { planCandidate, planTests, runNodeTests, LOOPS } from './strategy-planner.js';
+import { listProbations, savePlan, setTests, planFor, logPlanner, startProbation, activeProbation, finishProbation } from '../repos/strategy-planner-repo.js';
 import { runPromotion, liveWriteQuestions, liveJudge } from './strategy-promote.js';
 import { classSet, freezeClassSet } from '../repos/jev-theories-repo.js';
 
@@ -20,19 +22,30 @@ export function captureGap(db, turn) {
   return g ? (recordGap(db, g), 1) : 0;
 }
 
-/** One design unit: the first ready cluster → a saved candidate (or a logged drop). → 'idle' | { design_id, ... } */
-export async function designStage(db, { call, cat = catalog(), acts, stats = null } = {}) {
+/** One design unit: the first ready cluster → a saved candidate (or a logged drop / setting-of:<strategy>). → 'idle' | { design_id, ... } */
+export async function designStage(db, { call, cat = catalog(), acts, stats = null, planner = true } = {}) {
   ensureCandidatesSchema(db);
   const ready = clusterGaps(openGaps(db)).find((c) => c.ready);
   if (!ready) return 'idle';
   const pending = listCandidates(db);
-  const d = await designCandidate(ready, { cat, ...(acts ? { acts } : {}), ...(call ? { call } : {}), stats, pending });
   const turnIds = ready.gaps.map((g) => g.turn_id);
+  // EXTEND loop (planner v2, Chad 11-09): abstract -> compare -> plan (elements) -> node tests; v1 designCandidate only when planner:false
+  const d = planner ? await planCandidate(ready.gaps.map((g) => g.question), { context: { cluster: ready.label }, cat, ...(acts ? { acts } : {}), ...(call ? { call } : {}), pending, mode: 'full', db })
+    : await designCandidate(ready, { cat, ...(acts ? { acts } : {}), ...(call ? { call } : {}), stats, pending });
+  if (d.settingOf) {   // a setting of an existing strategy, not a new task: no candidate, logged (the gaps close on this evidence)
+    const id = logDesign(db, { cluster_key: ready.key, label: `${ready.label}: ${d.why || ''}`.slice(0, 300), status: `setting-of:${d.settingOf}`, attempts: d.attempts, usd: d.usd, turn_ids: turnIds });
+    if (planner) logPlanner(db, { kind: d.verdict || 'setting_of', loop: LOOPS.EXTEND, strategy_id: d.settingOf, usd: d.usd, note: d.why });
+    return { design_id: id, status: `setting-of:${d.settingOf}`, usd: d.usd };
+  }
   if (!d.ok) {
     const id = logDesign(db, { cluster_key: ready.key, label: ready.label, status: 'dropped', attempts: d.attempts, usd: d.usd, errors: d.errors, turn_ids: turnIds });
     return { design_id: id, status: 'dropped', errors: d.errors, usd: d.usd };
   }
   const saved = saveCandidate(db, d.normalized);
+  if (planner && d.plan) {
+    savePlan(db, saved.id, saved.version, { typeKey: d.plan.typeKey, plan: d.plan, tests: d.tests, wishes: d.plan.wishes, source: 'design' });
+    logPlanner(db, { kind: 'plan', loop: LOOPS.EXTEND, type_key: d.plan.typeKey, strategy_id: saved.id, version: saved.version, usd: d.usd });
+  }
   const id = logDesign(db, { cluster_key: ready.key, label: ready.label, status: d.dedupe ? 'version' : 'new', strategy_id: saved.id, version: saved.version,
     attempts: d.attempts, usd: d.usd, errors: null, turn_ids: turnIds });
   return { design_id: id, status: d.dedupe ? 'version' : 'new', ...saved, dedupe: d.dedupe, usd: d.usd };
@@ -45,6 +58,12 @@ export async function localPromotionDeps() {
   return {
     writeQuestions: liveWriteQuestions(), judge: liveJudge(),
     tryTurn: ({ question, pin }) => tryStrategy({ question, pin }),
+    replay: async ({ pin, n }) => {
+      const [{ runExperiment }, calls, sys, { MIN_CONFIDENCE }] = await Promise.all([import('../jev-tuning/experiment.js'), import('../repos/jev-calls-repo.js'), import('../systemone.js'), import('../scope-extract.js')]);
+      return runExperiment({ task: 'anis-strategy', baseline: 'stored', maxUsd: IMPROVE_CFG.theory.max_usd, minConfidence: MIN_CONFIDENCE,
+        variant: { id: 'add-option', params: { question: 'strategy', option: pin.row.name, text: pin.row.description } }, rows: calls.sampleBank('anis-strategy', { n }) },
+        { rerun: (task, state, questions) => sys.rerun(task, state, questions) });
+    },
     jevPick: async ({ question, pin }) => (await chooseStrategy([{ role: 'user', content: question }], { options: optionsWith(pin.row) }))?.strategy?.choice ?? null,
   };
 }
@@ -56,23 +75,40 @@ export async function promoteCandidate(db, { id, version, dry = false, deps = nu
   const found = pinFor(db, id, version);
   if (!found) throw new Error(`no strategy ${id}@${version}`);
   const pin = keepChoice ? { ...found, keepChoice: true } : found;
+  // planner trees: node tests (made now if the plan has none), the plan's own class questions as the frozen class set
+  const stored = planFor(db, id, pin.version);
+  let tests = stored?.tests || null, planUsd = 0;
+  if (stored?.plan && !tests && (deps?.call || !deps)) { try { const r = await planTests(stored.plan, deps?.call ? { call: deps.call } : {}); tests = r.tests; planUsd = r.usd || 0; if (tests) setTests(db, id, pin.version, tests); } catch { /* no tests: the other rules still decide */ } }
+  if (tests?.class?.length && !classSet(db, id)?.length) freezeClassSet(db, id, tests.class);
+  const useDeps = deps || await localPromotionDeps();
+  if (tests?.nodes?.length && !useDeps.nodeTests) useDeps.nodeTests = ({ pin: p }) => runNodeTests(tests, p, {});
   // the class set is FROZEN per strategy: written by Opus once, then every later version is measured on the same questions
-  const run = await runPromotion({ pin, held: heldQuestions(db, id, pin.version), cat, deps: deps || await localPromotionDeps(), capUsd, onProgress,
+  const run = await runPromotion({ pin, held: heldQuestions(db, id, pin.version), cat, deps: useDeps, capUsd, onProgress,
     cfg: { ...IMPROVE_CFG.promote, ...(cfg || {}) }, frozen: classSet(db, id), historic, onFreeze: (qs) => freezeClassSet(db, id, qs) });
   const decision = { ...run.decision, rows: run.rows.map((r) => ({ set: r.set, of: r.of ?? null, jev_pick: r.jev_pick ?? r.cand?.jev_pick ?? null,
     cand: r.cand ? { score: r.cand.score, ms: r.cand.ms, usd: r.cand.usd } : null, cur: r.cur ? { score: r.cur.score, ms: r.cur.ms, usd: r.cur.usd } : null })) };
   // the ledger keeps the numbers per row, never the question text (that stays in strategy_gaps)
   let promoted = false;
-  if (run.decision.promote && !dry && pin.row.status !== 'active') { promote(db, id, pin.version, { decision, usd: run.usd, by }); promoted = true; }
+  if (run.decision.promote && !dry && pin.row.status !== 'active') { promote(db, id, pin.version, { decision, usd: run.usd, by }); promoted = true;
+    if (stored) startProbation(db, id, pin.version, { need: IMPROVE_CFG.planner.probation.runs, baseline: run.decision.numbers?.mean_candidate ?? null });   // monitored closely in its first N runs
+    logPlanner(db, { kind: 'promote', loop: run.decision.cost_saving ? LOOPS.IMPROVE : LOOPS.EXTEND, strategy_id: id, version: pin.version, usd: run.usd, note: run.decision.cost_saving ? 'cut cost/time at equal quality' : null }); }
+  else if (!run.decision.promote && !dry && pin.row.status === 'active' && activeProbation(db, id)?.provisional) {   // a provisional (run-time planned) tree failed its tests: out of Jev's cards, node named
+    try { rollback(db, id, { by: 'node-tests' }); } catch { /* already gone */ }
+    const why = run.decision.failed?.[0] || 'promotion rejected';
+    finishProbation(db, id, pin.version, { phase: 'rolled_back', note: why }); logPlanner(db, { kind: 'rollback', loop: LOOPS.EXTEND, strategy_id: id, version: pin.version, note: why });
+    logPromotion(db, { strategy_id: id, version: pin.version, action: 'reject', decision, usd: run.usd, by });
+  }
   else logPromotion(db, { strategy_id: id, version: pin.version, action: dry ? 'dry' : run.decision.promote ? 'already-active' : 'reject', decision, usd: run.usd, by });
-  return { id, version: pin.version, promoted, decision: run.decision, usd: run.usd, rows: run.rows.length };
+  return { id, version: pin.version, promoted, decision: run.decision, usd: run.usd + planUsd, rows: run.rows.length };
 }
 
 /** The worker's promotion unit: the oldest candidate with no ledger row yet. → 'idle' | result */
 export async function promotionStage(db, { deps } = {}) {
   ensureCandidatesSchema(db);
   const tried = new Set(listPromotions(db, { limit: 5000 }).map((p) => `${p.strategy_id}@${p.version}`));
-  const next = listCandidates(db).reverse().find((c) => !tried.has(`${c.id}@${c.version}`));
+  // a candidate first; else a provisional (run-time planned, already on Jev's cards) tree whose node tests / replay have not run yet (EXTEND loop)
+  const next = listCandidates(db).reverse().find((c) => !tried.has(`${c.id}@${c.version}`))
+    || listProbations(db, { phase: 'probation' }).find((p) => p.provisional && !tried.has(`${p.id}@${p.version}`));
   if (!next) return 'idle';
   return promoteCandidate(db, { id: next.id, version: next.version, deps });
 }

@@ -2,7 +2,7 @@
 // Deps: search.js multiIndexSearch, hit-links.js withLinks (injectable for tests)
 import { withDeadline, TOOL_DEADLINE_MS } from './deadline.js';
 export function agentSearch(d = {}) {
-  return (query, tradition, limit = 8, filters = {}) => withDeadline(() => run(query, tradition, limit, filters), d.deadlineMs ?? TOOL_DEADLINE_MS(), [], 'agent-search');
+  return (query, tradition, limit = 8, filters = {}) => withDeadline(() => run(query, tradition, limit, filters), d.deadlineMs ?? TOOL_DEADLINE_MS(), 'agent-search');
   async function run(query, tradition, limit, extra) {
     const t0 = Date.now();
     const multi = d.multiIndexSearch || (await import('../search.js')).multiIndexSearch;

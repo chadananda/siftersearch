@@ -164,7 +164,7 @@ describe('respond: phrases wired beside the routed stages', () => {
       sourceHunt: async () => { order.push('hunt-start'); await new Promise((ok) => setTimeout(ok, 30)); order.push('hunt-end'); return null; },
       phrases: async () => { order.push('phrases'); return { phrase: 'ocean of my words', via: 'haiku', exact: ['ocean of my words'], names: [], spellings: [] }; } });
     const tl = [];
-    await withAIContext({ timeline: tl }, () => anisRespond({ messages: [{ role: 'user', content: 'where is this from: immerse yourselves in the ocean of my words' }], deps: d }));
+    await withAIContext({ timeline: tl }, () => anisRespond({ messages: [{ role: 'user', content: 'where is this from: immerse yourselves in the ocean of my words' }], deps: d, direction: { strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } } }));
     expect(order.indexOf('phrases')).toBeLessThan(order.indexOf('hunt-end'));
     expect(timelineOf(tl, 0).find((x) => x.name === 'phrases')).toMatchObject({ via: 'haiku' });
   });

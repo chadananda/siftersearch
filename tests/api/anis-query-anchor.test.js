@@ -25,7 +25,7 @@ describe('query-anchor', () => {
   it('one search on the subject is enough; other tools and Arabic-script queries are never judged', () => {
     const calls = [{ name: 'fused_search', args: { query: 'Tahirih poetry' } }, { name: 'combined_search', args: { query: 'Nayriz siege' } }];
     expect(anchorSearches(calls, B).rebuilt).toBeNull();
-    expect(anchorSearches([{ name: 'find_work', args: { title: 'Dawn-Breakers' } }], B).rebuilt).toBeNull();
+    expect(anchorSearches([{ name: 'document_search', args: { title: 'Dawn-Breakers' } }], B).rebuilt).toBeNull();
     expect(anchorSearches([{ name: 'fused_search', args: { query: 'وحید نیریز' } }], B).rebuilt).toBeNull();
   });
   it('a query on neither subject (another language, a paraphrase) is never rewritten', () => {
@@ -85,7 +85,7 @@ describe('researcher: the first search names the current subject', () => {
   it('"And what did he write?" with B resolved by Jev: the researcher’s query uses B’s name', async () => {
     const queries = [];
     const replies = [
-      { tool_calls: [call('a', 'search_library', { query: 'Táhirih poems and verses' })] },
+      { tool_calls: [call('a', 'fused_search', { query: 'Táhirih poems and verses' })] },
       { content: 'BRIEF:\nReaching for: Vahid’s writings\n- a treatise: P1\nKEEP: P1' },
     ];
     const r = await research({ messages: [...HISTORY, { role: 'user', content: 'And what did he write?' }], create: async () => ({ choices: [{ message: replies.shift() }] }),

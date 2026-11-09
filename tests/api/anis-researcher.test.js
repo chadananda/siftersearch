@@ -12,14 +12,14 @@ describe('researcher', () => {
   it('runs the tools the model asks for, numbers what it finds, and keeps only what the brief keeps', async () => {
     const seen = [];
     const replies = [
-      { tool_calls: [call('a', 'search_library', { query: 'privacy of his chamber verses revealed by God' })] },
-      { tool_calls: [call('b', 'find_original', { english: 'Whoso reciteth, in the privacy of his chamber' })] },
+      { tool_calls: [call('a', 'combined_search', { query: 'privacy of his chamber verses revealed by God' })] },
+      { tool_calls: [call('b', 'original_lookup', { english: 'Whoso reciteth, in the privacy of his chamber' })] },
       { content: 'BRIEF:\nReaching for: the Arabic behind "chamber"\n- "chamber" renders min baytihi waḥdahu, "from his house, alone": P1, P2\n- other words: ghurfa, ḥujra, khalwa [own]\nThread to pull: where ḥujra appears\nKEEP: P1, P2' },
     ];
     const create = async (params) => { seen.push(params); return { choices: [{ message: replies.shift() }] }; };
     const tools = { search: async () => [GLEANINGS], original: async () => [ARABIC, GLEANINGS] };
     const r = await research({ messages: [{ role: 'user', content: 'Would fi baytihi be used for chamber?' }], create, tools });
-    expect(r.steps.map((s) => s.tool)).toEqual(['search_library', 'find_original']);
+    expect(r.steps.map((s) => s.tool)).toEqual(['combined_search', 'original_lookup']);
     expect(r.passages.map((p) => p.id)).toEqual([606, 9001]);   // the repeated Gleanings passage keeps its P1
     expect(r.brief).toMatch(/ghurfa, ḥujra, khalwa \[own\]/);
     expect(seen[0].tools.map((t) => t.function.name)).toContain('rendering_lookup');
@@ -27,7 +27,7 @@ describe('researcher', () => {
   });
   it('the last round offers no tools, so it always ends with a brief', async () => {
     let n = 0;
-    const create = async (params) => ({ choices: [{ message: params.tools ? { tool_calls: [call(`c${n++}`, 'search_library', { query: 'x' })] } : { content: 'BRIEF:\nReaching for: x\n- y [own]\nKEEP:' } }] });
+    const create = async (params) => ({ choices: [{ message: params.tools ? { tool_calls: [call(`c${n++}`, 'combined_search', { query: 'x' })] } : { content: 'BRIEF:\nReaching for: x\n- y [own]\nKEEP:' } }] });
     const r = await research({ messages: [{ role: 'user', content: 'q' }], create, tools: { search: async () => [GLEANINGS] }, maxRounds: 3 });
     expect(r.steps).toHaveLength(2);
     expect(r.brief).toMatch(/Reaching for: x/);
@@ -53,14 +53,14 @@ describe('brief markers', () => {
   });
 });
 
-describe('trace_source (Chad 10-19: a signpost points at something specific)', () => {
+describe('source_trace (Chad 10-19: a signpost points at something specific)', () => {
   it('a House letter in the evidence is traced to the primary passage, which is what gets kept', async () => {
     const { research } = await import('../../api/lib/assistant/researcher.js');
     const UHJ = { id: 50, text: 'The Writings state that the soul of man is a sign of God…', title: 'Letter of the Universal House of Justice', author: 'Universal House of Justice' };
     const GLEANINGS = { id: 51, text: 'Verily I say, the human soul is, in its essence, one of the signs of God…', title: 'Gleanings', author: 'Bahá’u’lláh' };
     const replies = [
-      { tool_calls: [call('a', 'search_library', { query: 'soul sign of God' })] },
-      { tool_calls: [call('b', 'trace_source', { ref: 'P1' })] },
+      { tool_calls: [call('a', 'combined_search', { query: 'soul sign of God' })] },
+      { tool_calls: [call('b', 'source_trace', { ref: 'P1' })] },
       { content: 'BRIEF:\nReaching for: the soul\n- the soul is a sign of God: P2\nKEEP: P2' },
     ];
     const r = await research({ messages: [{ role: 'user', content: 'What is the soul?' }], create: async () => ({ choices: [{ message: replies.shift() }] }),

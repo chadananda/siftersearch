@@ -2,7 +2,7 @@
 // validated, authenticated route; old names are input-only aliases. Runs against the SERVED OpenAPI document.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import Ajv from 'ajv';
-import { REGISTRY, ALIASES, publicNames } from '../../api/lib/assistant/tools.js';
+import { REGISTRY, publicNames } from '../../api/lib/assistant/tools.js';
 
 const KEY = 'test-anis-tools-key';
 
@@ -45,9 +45,9 @@ describe('Anís tools API', () => {
     expect(ajv.validate(apiSchema(e.output), e.example.output), JSON.stringify(ajv.errors)).toBe(true);
   });
 
-  it('swagger lists GET /api/v1/tools and no alias routes', () => {
+  it('swagger lists GET /api/v1/tools and no alias or PROCESS routes', () => {
     expect(spec.paths['/api/v1/tools']?.get).toBeDefined();
-    for (const a of Object.keys(ALIASES)) expect(spec.paths[`/api/v1/tools/${a}`]).toBeUndefined();
+    for (const a of ['search_library', 'about_work', 'combined_search', 'web_search', 'quotation_trace']) expect(spec.paths[`/api/v1/tools/${a}`]).toBeUndefined();
   });
 
   it('the legacy POST /api/v1/tools/search is still served', () => {
@@ -77,12 +77,9 @@ describe('Anís tools API', () => {
     expect(b.error.message).toMatch(/title/);
   });
 
-  it('an alias resolves to the same tool (about_work → work_notes_lookup)', async () => {
-    const call = (n) => server.inject({ method: 'POST', url: `/api/v1/tools/${n}`, headers: { 'x-api-key': KEY }, payload: { title: 'Kitáb-i-Íqán' } });
-    const [a, c] = await Promise.all([call('about_work'), call('work_notes_lookup')]);
-    expect(c.statusCode).toBe(200);
-    expect(a.statusCode).toBe(200);
-    expect(JSON.parse(a.payload)).toEqual(JSON.parse(c.payload));
+  it('a retired alias is a 404 (no alias routes)', async () => {
+    const r = await server.inject({ method: 'POST', url: '/api/v1/tools/about_work', headers: { 'x-api-key': KEY }, payload: { title: 'x' } });
+    expect(r.statusCode).toBe(404);
   });
 
   it('an unknown tool → 404', async () => {

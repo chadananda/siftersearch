@@ -1,3 +1,4 @@
+process.env.ANIS_UNMATCHED_PLANNER = '0';   // these tests hold the emergency-rollback path; the planner path is in strategy-planner.test.js
 // Unmatched runtime (unmatched.js: recheck / design a strategy for a turn Jev could not match) and the spoken progress lines
 // (narrate.js: live channels only). Fake recheck + fake Opus; a real in-memory strategies store.
 import { describe, it, expect, afterEach, vi } from 'vitest';
@@ -14,7 +15,7 @@ afterEach(() => resetStrategiesCache());
 const fresh = () => { const db = ensureCandidatesSchema(openStrategiesDb(':memory:')); resetStrategiesCache({ db }); return db; };
 
 const GOOD = {
-  name: 'timeline', description: 'The reader wants the HISTORY of a practice or institution told in order, era by era, from the passages.',
+  difference: 'It tells a development in order, era by era.', name: 'timeline', description: 'The reader wants the HISTORY of a practice or institution told in order, era by era, from the passages.',
   exemplars: ['How did the Nineteen Day Feast develop over time?', 'Trace how the Huqúqu’lláh was introduced, step by step.'],
   templates: [{ id: 'timeline.how', text: 'Tell it as a TIMELINE, oldest first. {{base}}' }],
   steps: [{ id: 'timeline.order', activity: 'strategy.understanding', params: { how: 'timeline.how' } }],

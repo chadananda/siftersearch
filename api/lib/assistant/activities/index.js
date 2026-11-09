@@ -4,6 +4,7 @@
 import { RESPOND_ACTIVITIES } from './respond-steps.js';
 import { run as runTool } from '../tools.js';
 import { template, fill } from './templates.js';
+import { ELEMENTS } from './elements.js';
 
 // a W3 strategy executor (tools.js REGISTRY kind 'strategy'): s.choice = Jev's choice, s.ctx = the turn's ctx; out → s.out.
 // scope 'strategy' = a designed strategy (Phase 3) may use it. params.how (a template id) = a PARAM VARIANT: that template, filled
@@ -21,6 +22,7 @@ const executor = (name) => ({
 let registry = null;
 export const activities = () => registry ||= ({
   ...RESPOND_ACTIVITIES,
+  ...ELEMENTS,
   'strategy.comparison': executor('comparison'),
   'strategy.understanding': executor('understanding'),
   'strategy.prayer': executor('prayer'),

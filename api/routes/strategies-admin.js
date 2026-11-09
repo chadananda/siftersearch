@@ -50,8 +50,9 @@ export default async function strategiesAdminRoutes(fastify, { deps = {} } = {})
 
   fastify.get('/anis/candidates', { preHandler: requireInternal }, async (request) => {
     const r = await repo(), d = await db();
-    return { candidates: r.listCandidates(d, { status: request.query?.status || 'all' }).filter((c) => c.created_by !== 'seed' || request.query?.status),
-      promotions: r.listPromotions(d) };
+    const pl = await import('../lib/repos/strategy-planner-repo.js');   // probation status + per-node stats ride on the strategy row (planner)
+    return { candidates: r.listCandidates(d, { status: request.query?.status || 'all' }).filter((c) => c.created_by !== 'seed' || request.query?.status)
+      .map((c) => ({ ...c, probation: pl.probationFor(d, c.id, c.version) })), promotions: r.listPromotions(d) };
   });
 
   fastify.post('/anis/try', { preHandler: requireInternal }, async (request, reply) => {

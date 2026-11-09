@@ -6,12 +6,14 @@
 import { strategyOf } from './strategy-choice.js';
 import { NO_LOG } from './decision-log.js';
 import { run as runTool } from './tools.js';
+import { combinedSearch } from './combined-search.js';
 import { booksFound, namedSource } from './researcher.js';
 import { drawFromCriteria } from '../search-plan.js';
 import { render, template } from './activities/templates.js';
 import { sourceTier, TIER_ORDER } from './source-tier.js';
 import { supports } from './channels.js';
 import { strategyGraphOn, runStrategyGraph } from './activities/graph.js';
+import { LOOKUP_STRATEGIES } from './strategy-seed.js';
 
 export const COVER = { covered: 3, thin: 1 };   // passages per side: ≥3 covered, 1–2 thin (widen once), 0 missing
 const DOCTRINAL = new Set(['writings', 'guardian', 'compilation']);   // source-tier.js tiers a compilation draws on by default
@@ -68,7 +70,7 @@ export function subjectQuery(query, messages) {
 }
 
 async function searchSide({ search, query, messages, profile, religion, limit = PER_SIDE }) {
-  const r = await runTool('combined_search', { query, limit, scope_config: profile?.scope_config, ...(religion ? { filters: { tradition: religion } } : {}),
+  const r = await combinedSearch({ query, limit, scope_config: profile?.scope_config, ...(religion ? { filters: { tradition: religion } } : {}),
     messages, defaults: religion ? { religion } : {} }, { search });
   return r?.passages || [];
 }
@@ -132,7 +134,7 @@ export async function understanding(choice, ctx) {
   const { messages, query, distil, search, plan, profile = {}, decisions = NO_LOG, searchIn, inBooks = 0, drawFrom = null, sourceTools = null } = ctx;
   // the book / author Jev named as the source (plan.drawFrom), resolved beside the search (researcher namedSource)
   const sourceP = drawFrom && sourceTools ? namedSource(drawFrom, query, sourceTools).catch(() => null) : null;
-  const religion = plan?.filters?.religion || profile.default_tradition || null;
+  const religion = plan?.filters?.religion || (ctx.scope ? ctx.scope.religion : profile.default_tradition) || null;   // scope layers (units.js) when turn.js resolved them, else the host default
   decisions.record('understanding:scope', { by: plan?.source?.religion === 'jev' ? 'jev' : 'code', saw: { plan: plan?.filters?.religion ?? null, reader: profile.default_tradition ?? null },
     options: ['one tradition', 'whole library'], chosen: religion || 'whole library', reason: religion ? 'tradition from the plan / reader' : 'no tradition known' });
   let hits = await searchSide({ search, query, messages, profile, religion, limit: 10 });
@@ -174,7 +176,7 @@ export async function understanding(choice, ctx) {
 export async function compilation(choice, ctx) {
   const { messages, query, distil, search, plan, profile = {}, decisions = NO_LOG, drawFrom = null, sourceTools = null, channel = null } = ctx;
   const sourceP = drawFrom && sourceTools ? namedSource(drawFrom, query, sourceTools).catch(() => null) : null;
-  const religion = plan?.filters?.religion || profile.default_tradition || null;
+  const religion = plan?.filters?.religion || (ctx.scope ? ctx.scope.religion : profile.default_tradition) || null;   // scope layers (units.js) when turn.js resolved them, else the host default
   decisions.record('compilation:scope', { by: plan?.source?.religion === 'jev' ? 'jev' : 'code', saw: { plan: plan?.filters?.religion ?? null, reader: profile.default_tradition ?? null },
     options: ['one tradition', 'whole library'], chosen: religion || 'whole library', reason: religion ? 'tradition from the plan / reader' : 'no tradition known' });
   // the theme as asked and its distilled subject, searched wide in parallel
@@ -217,6 +219,9 @@ export async function runStrategy(choice, ctx) {
   const name = strategyOf(choice);
   if (!name) return null;
   const log = ctx.decisions || NO_LOG;
+  // a lookup strategy (book, quote_trace, term, original, about) runs over the whole turn (graph.js gatherByGraph), not as an executor here:
+  // an Unmatched recheck that lands on one has nothing to execute, so the researcher answers and the gap is already recorded
+  if (LOOKUP_STRATEGIES.has(name)) { log.record(`${name}:fallthrough`, { by: 'code', chosen: 'ordinary path', reason: 'a lookup strategy runs as the turn gather, not as an executor' }); return null; }
   // the executors are registry strategies (tools.js): comparison, understanding, prayer, guidance, reference, compilation — run by the
   // strategy's graph (activities/graph.js; ANIS_STRATEGY_GRAPH=0 → the registry tool directly, the Phase-1 rollback)
   const viaGraph = strategyGraphOn() ? await runStrategyGraph(name, choice, { ...ctx, decisions: log }) : undefined;

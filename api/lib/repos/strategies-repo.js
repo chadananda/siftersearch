@@ -6,7 +6,7 @@
 import Database from 'better-sqlite3';
 import { mkdirSync } from 'fs';
 import { dirname } from 'path';
-import { TEMPLATES, STEPS, STRATEGIES } from '../assistant/strategy-seed.js';
+import { TEMPLATES, STEPS, STRATEGIES, TREE_STRATEGIES } from '../assistant/strategy-seed.js';
 import { seedSpecs, SPEC_VERSION } from '../assistant/strategy-specs-seed.js';
 
 export const STRATEGIES_DB = () => process.env.STRATEGIES_DB || (process.env.VITEST ? ':memory:' : '/tank/sifter/anis/strategies.db');
@@ -50,7 +50,9 @@ export const bumpRev = (db) => db.prepare(`INSERT INTO meta (key, value) VALUES 
 export const revOf = (db) => Number(db.prepare("SELECT value FROM meta WHERE key = 'rev'").get()?.value ?? 0);
 
 /** Insert every seed row whose (id, version) is absent; returns how many were added (any → rev bumps). */
-export function seedStrategies(db, seed = { TEMPLATES, STEPS, STRATEGIES }) {
+// the six tree candidates (created_by seed-trees) are not seeded under vitest unless ANIS_SEED_TREES=1: suites that count candidates / next versions start clean
+const seedRows = () => (process.env.VITEST && process.env.ANIS_SEED_TREES !== '1' ? STRATEGIES : [...STRATEGIES, ...TREE_STRATEGIES]);
+export function seedStrategies(db, seed = { TEMPLATES, STEPS, STRATEGIES: seedRows() }) {
   const specVersion = seed.SPEC_VERSION ?? SPEC_VERSION;
   // the plan file is read only when this version has no specs yet (or a test passes its own)
   const specs = seed.SPECS ?? (db.prepare('SELECT 1 FROM strategy_specs WHERE version = ? LIMIT 1').get(specVersion) ? [] : seedSpecs());
@@ -76,6 +78,9 @@ export function seedStrategies(db, seed = { TEMPLATES, STEPS, STRATEGIES }) {
 
 // the docs list: latest version of each spec, in sort order (the 'plan' row is split off by the reader)
 const specList = (rows) => {
+  // every seed version re-inserts the WHOLE list, so a name absent from the newest version was dropped (the a2…h1 shared-reply entries at v2)
+  const top = rows.reduce((m, r) => Math.max(m, r.version), 0);
+  rows = rows.filter((r) => r.version === top);
   const latest = new Map();
   for (const r of rows) if (!latest.has(r.name) || latest.get(r.name).version < r.version) latest.set(r.name, r);
   return [...latest.values()].sort((a, b) => a.sort - b.sort).map(({ spec_json, spec, ...r }) => ({ ...r, spec: spec ?? safeJson(spec_json, {}) }));

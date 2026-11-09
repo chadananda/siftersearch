@@ -144,7 +144,7 @@ describe('Anís answers a word question from CTAI', () => {
     const r = await anisRespond({
       onEvent: (e) => { if (e.type === 'text') streamed.push(e.content); },
       messages: [{ role: 'user', content: 'I would like to understand the meaning of the word Irfan' }],
-      direction: { channel: channelFor('email', { trusted: true }) },
+      direction: { channel: channelFor('email', { trusted: true }), strategy: { strategy: { choice: 'term', confidence: 0.9 }, sides: [] } },
       llm: { provider: 'test', model: 'test' },
       deps: {
         plan: async () => ({ shape: 'define' }),

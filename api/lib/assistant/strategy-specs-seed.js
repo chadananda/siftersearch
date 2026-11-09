@@ -6,21 +6,23 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const SPEC_VERSION = 1;
+export const SPEC_VERSION = 2;   // v2 (11-09): the five lookups (A2 A4 A6 A7 H1) are strategies of their own, no longer branches of the shared reply
 export const PLAN_FILE = 'planning/anis-strategies.json';
 const PATH = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', PLAN_FILE);
 
 // Plan tool id → the registry tool that now implements it (the plan predates the canonical _search/_lookup names).
 export const PLAN_TO_REGISTRY = {
   find_work: 'document_search', about_work: 'work_notes_lookup', bm25: 'literal_search', phrase_semantic: 'phrase_search',
-  hype: 'hype_search', library_search: 'combined_search', read_around: 'context_lookup', source_of: 'quotation_trace',
+  hype: 'hype_search', library_search: 'fused_search', read_around: 'context_lookup', source_of: 'quotation_candidates',
   trace_source: 'source_trace', find_original: 'original_lookup', find_translation: 'translation_lookup',
-  word_study: 'rendering_lookup', people_search: 'biography_search', web: 'web_search',
+  word_study: 'rendering_lookup', people_search: 'biography_search',
 };
 // Seeded strategy id → the plan patterns (A1–H2) its graph serves.
-export const SERVES = { comparison: ['C1', 'C2', 'C3'], understanding: ['B1', 'B2', 'B3'], prayer: ['D2'], guidance: ['D4'], reference: ['A5'], compilation: ['F1'] };
-// Patterns the general reply (the Unmatched graph, id 'respond') already serves through its own branches: pattern id → the graph nodes that do it.
-export const IN_REPLY = { A2: ['work'], A4: ['read_question', 'hunt', 'hunt_wait', 'source_reply'], A6: ['term'], A7: ['original', 'original_wait'], H1: ['conversational', 'religions'] };
+export const SERVES = { comparison: ['C1', 'C2', 'C3'], understanding: ['B1', 'B2', 'B3'], prayer: ['D2'], guidance: ['D4'], reference: ['A5'], compilation: ['F1'],
+  book: ['A2'], quote_trace: ['A4'], term: ['A6'], original: ['A7'], about: ['H1'] };
+// Patterns the general reply (the Unmatched graph, id 'respond') serves through its own branches: pattern id → the graph nodes that do it.
+// None since 11-09: Unmatched holds no pre-built lookups (they are SERVES strategies above). Kept so a branch can be shared again.
+export const IN_REPLY = {};
 export const GENERAL = 'respond';   // the Unmatched row's strategy id
 const TOOLS_PAGE = '/docs/anis-tools', STRAT_PAGE = '/docs/response-strategies';
 const toolHref = (id) => `${TOOLS_PAGE}#${PLAN_TO_REGISTRY[id] || id}`;

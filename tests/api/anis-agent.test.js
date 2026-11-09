@@ -16,9 +16,9 @@ const scripted = (finalText) => {
   let n = 0;
   return async () => (n++ === 0
     ? { choices: [{ message: { content: '', tool_calls: [
-      { id: 'a', function: { name: 'find_work', arguments: '{"title":"Iqan"}' } },
-      { id: 'b', function: { name: 'search_library', arguments: '{"query":"Kitáb-i-Íqán priceless treasures"}' } },
-      { id: 'c', function: { name: 'about_work', arguments: '{"title":"Book of Certitude"}' } }] } }] }
+      { id: 'a', function: { name: 'document_search', arguments: '{"title":"Iqan"}' } },
+      { id: 'b', function: { name: 'fused_search', arguments: '{"query":"Kitáb-i-Íqán priceless treasures"}' } },
+      { id: 'c', function: { name: 'work_notes_lookup', arguments: '{"title":"Book of Certitude"}' } }] } }] }
     : { choices: [{ message: { content: finalText } }] });
 };
 
@@ -29,7 +29,7 @@ describe('agent: refs become links; nothing else does', () => {
     expect(r.reply).toMatch(/^Here is \[\*The Kitáb-i-Íqán\*\]\(https:\/\/siftersearch\.com\/library\//);
     expect(r.reply).toContain('(https://oceanlibrary.com/gpb#p1)');
     expect(r.reply).toContain('(https://oceanlibrary.com/tab#p9)');
-    expect(r.steps.map((s) => s.tool).sort()).toEqual(['about_work', 'find_work', 'search_library']);
+    expect(r.steps.map((s) => s.tool).sort()).toEqual(['document_search', 'fused_search', 'work_notes_lookup']);
     expect(r.citations.length).toBe(3);
   });
   it('a ref the tools never gave is dropped, and an invented quotation goes with its sentence', async () => {
@@ -84,16 +84,16 @@ describe('source questions', async () => {
   const hunt = (over = {}) => async () => ({ quoteAuthor: "Bahá'u'lláh", origin: { text: `${Q}.`, title: 'Gleanings from the Writings of Bahá’u’lláh', author: "Bahá'u'lláh", url: 'https://oceanlibrary.com/gleanings', rangeUrl: 'https://oceanlibrary.com/gleanings?paraId=p117', documentId: 3 },
     tablet: { certain: false, candidates: [] }, citedBy: [], ...over });
   const scriptedSource = (text) => { let n = 0; return async () => (n++ === 0 ? { choices: [{ message: { content: '', tool_calls: [
-    { id: 'a', function: { name: 'source_of', arguments: JSON.stringify({ quotation: Q }) } },
-    { id: 'b', function: { name: 'search_library', arguments: JSON.stringify({ query: 'earth is but one country mankind its citizens' }) } }] } }] } : { choices: [{ message: { content: text } }] }); };
+    { id: 'a', function: { name: 'quotation_candidates', arguments: JSON.stringify({ quotation: Q }) } },
+    { id: 'b', function: { name: 'fused_search', arguments: JSON.stringify({ query: 'earth is but one country mankind its citizens' }) } }] } }] } : { choices: [{ message: { content: text } }] }); };
   const T = { ...tools, search: async () => [], sourceOf: async () => [
     { id: 1, text: `${Q}.`, title: 'Gleanings from the Writings of Bahá’u’lláh', author: "Bahá'u'lláh", source_url: 'https://oceanlibrary.com/gleanings?paraId=p117', document_id: 3 },
     { id: 2, text: 'Maqsúd original', title: 'Lawḥ-i-Maqṣúd (original)', author: "Bahá'u'lláh", source_url: 'https://oceanoflights.org/maqsud#p4', document_id: 4, language: 'ar' },
     { id: 3, text: 'Citing work', title: 'The Promise of World Peace', author: 'Universal House of Justice', source_url: 'https://oceanlibrary.com/promise#p2', document_id: 5 }] };
-  it('"Where is this quote from" calls source_of and the reply links the origin', async () => {
+  it('"Where is this quote from" calls quotation_candidates and the reply links the origin', async () => {
     const r = await agentAnswer({ messages: [{ role: 'user', content: `Where is this quote from: "${Q}"` }], tools: T,
       create: scriptedSource(`Bahá’u’lláh wrote "${Q}" in [[P1]]; the original is in [[P2]], and it is quoted in [[P3]].`) });
-    expect(r.steps.map((s) => s.tool)).toContain('source_of');
+    expect(r.steps.map((s) => s.tool)).toContain('quotation_candidates');
     expect(r.reply).toContain('(https://oceanlibrary.com/gleanings?paraId=p117)');
     expect(r.reply).toContain('https://oceanoflights.org/maqsud#p4');
   });
@@ -120,7 +120,7 @@ describe('source questions', async () => {
   });
   it('no result: the runner returns guidance, and a source the tools never gave is dropped', async () => {
     const { run } = toolRunner({ ...T, sourceOf: async () => [] });
-    expect(await run.quotation_trace({ quotation: 'God helps those who help themselves' })).toMatch(/^no published source found for that wording — combined_search/);
+    expect(await run.quotation_candidates({ quotation: 'God helps those who help themselves' })).toMatch(/^no published source found for that wording — combined_search/);
     const r = await agentAnswer({ messages: [{ role: 'user', content: 'Where is this from: "God helps those who help themselves"' }], tools: { ...T, sourceOf: async () => [] },
       create: scriptedSource('That is Bahá’u’lláh in Gleanings [[P4]].') });
     expect(r.reply).not.toContain('P4');

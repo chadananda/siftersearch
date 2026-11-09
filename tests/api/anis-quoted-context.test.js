@@ -31,7 +31,8 @@ describe('what Jev is told: a quotation followed by a question about it is resea
   });
   it('the understanding strategy takes a quoted passage to explain; other keeps only a quote to locate', () => {
     expect(STRATEGIES.understanding).toMatch(/passage the person quotes and asks to have explained/);
-    expect(STRATEGIES.unmatched).toMatch(/quote to locate or trace with no further question about it/);
+    expect(STRATEGIES.quote_trace).toMatch(/quotation, or a few words of one, and wants to know where it comes from/);
+    expect(STRATEGIES.unmatched).toBe('none of these');
   });
 });
 
@@ -74,18 +75,17 @@ describe('respond: under a strategy Jev chose, the hunt is evidence; the named w
     craft: async (x) => { calls.quotes = x?.retrieved_quotes; return 'ok'; }, companion: async () => ({}), phrases: async () => null, upgradeLinks: async (x) => x,
     plan: async () => ({ shape: 'fact', drawFrom: { name: 'the Dawn-Breakers', confidence: 0.9 } }),
     sourceHunt: async (q, _d, opts) => { calls.hunt++; calls.opts = opts; return { origin, citedBy: [] }; } });
-  it('strategy chosen + source_lookup kind: the hunt runs but does not answer alone; the ordinary pipeline answers with it as evidence', async () => {
+  it('a non-lookup strategy Jev chose no longer hunts (the hunt is quote_trace\'s, not Unmatched\'s); the ordinary pipeline answers', async () => {
     const calls = { search: 0, hunt: 0 };
     const r = await anisRespond({ messages: [{ role: 'user', content: Q }], deps: deps(calls),
-      direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'understanding' } } } });
-    expect(calls.hunt).toBe(1);
+      direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'understanding', confidence: 0.9 }, sides: [] } } });
+    expect(calls.hunt).toBe(0);
     expect(r.format?.id).not.toBe('source');
     expect(r.plan?.shape).not.toBe('source');
-    expect(calls.quotes?.[0]?.source_title).toBe('The Dawn-Breakers');   // the hunt's origin leads the evidence
   });
   it('the book the reader named reaches the hunt as a preference that accepts it, and not the provisional translation', async () => {
     const calls = { search: 0, hunt: 0 };
-    await anisRespond({ messages: [{ role: 'user', content: Q }], deps: deps(calls), direction: { kind: 'source_lookup' } });
+    await anisRespond({ messages: [{ role: 'user', content: Q }], deps: deps(calls), direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } } });
     expect(typeof calls.opts?.prefer).toBe('function');
     expect(calls.opts.prefer(DAWN)).toBe(true);
     expect(calls.opts.prefer(PROVISIONAL)).toBe(false);

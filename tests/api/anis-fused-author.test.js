@@ -19,11 +19,11 @@ describe('fused_search author', () => {
     ['the Bab', 'The Báb'],
     ['Shoghi Effendi', 'Shoghi Effendi'],
   ])('resolves %s to the library writer %s', async (name, writer) => {
-    const [, , , filters] = await run({ query: 'the meaning of detachment', author: name });
+    const [, , , filters] = await run({ query: 'the meaning of detachment', filters: { author: name } });
     expect(filters).toEqual({ author: writer });
   });
   it('an unknown writer passes through as written; tradition stays its own argument', async () => {
-    const [q, tradition, limit, filters] = await run({ query: 'the reed flute', tradition: 'Islam', author: ' Rumi ' });
+    const [q, tradition, limit, filters] = await run({ query: 'the reed flute', filters: { tradition: 'Islam', author: ' Rumi ' } });
     expect([q, tradition, limit, filters]).toEqual(['the reed flute', 'Islam', 8, { author: 'Rumi' }]);
   });
   it('no author → no author filter', async () => {
@@ -32,8 +32,8 @@ describe('fused_search author', () => {
   it('the agent sees author on fused_search, and its description no longer promises a name in the query narrows', () => {
     const fused = tools.llmTools(AGENT_TOOL_NAMES).find((t) => (t.function?.name ?? t.name) === 'fused_search');
     const fn = fused.function ?? fused;
-    expect(Object.keys((fn.parameters ?? fn.input_schema).properties)).toEqual(expect.arrayContaining(['query', 'author']));
+    expect(Object.keys((fn.parameters ?? fn.input_schema).properties)).toEqual(expect.arrayContaining(['query', 'filters']));
     expect(fn.description).not.toMatch(/name an author or work in the query to narrow/);
-    expect(fn.description).toMatch(/set author/);
+    expect(fn.description).toMatch(/author/);
   });
 });

@@ -19,6 +19,7 @@ import { chooseStrategy, strategyOf } from './strategy-choice.js';
 import { timeoutDecision, jevTimeoutsOf } from './jev-call.js';   // W3: Jev chooses the strategy from context
 import { restate, understoodText, tarpitPhrase } from './understanding.js';   // W3: the "what I understood" line
 import { decisionLog } from './decision-log.js';
+import { emptyState, applyPatch, resolveScope, conversationLayer, readerLayer, siteLayer, treePatch } from './units.js';   // conversation_state + scope layers
 import { openJevTurn, linkJevTurn, jevTurnCalls } from '../systemone.js';   // every Jev call of the turn carries its <thread>:<round> ref
 import { withAIContext, currentAIContext, setAIContext } from '../ai-context.js';
 import { timed, timelineOf } from './timeline.js';
@@ -34,7 +35,8 @@ const liveLimits = makeLimits();
 export async function defaultDeps() {   // exported for the strategy dry run (strategy-try.js), which swaps the thread/mail deps out
   const { anisRespond } = await import('./respond.js');
   return { respond: anisRespond, triage: triageMessage, outputCheck: outputBreaksPersona, open: openExchange, close: closeExchange,
-    fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup, limits: liveLimits, spendCap: assertSpendCap, card: loadReaderCard, resolve: resolveQuery, reports: makeReports() };
+    fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup, limits: liveLimits, spendCap: assertSpendCap, card: loadReaderCard, resolve: resolveQuery, reports: makeReports(),
+    state: await import('../repos/conversation-state-repo.js').then((m) => ({ load: m.getConversationState, append: m.appendStatePatch })) };
 }
 
 /**
@@ -120,14 +122,25 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   openJevTurn();   // calls made from here (triage, strategy, …) are remembered and stamped with the turn once its thread exists
   setAIContext({ graphRuns: [] });   // every strategy-graph run of the turn (graph.js) → step_runs/turn_runs at finish (strategy-stats-repo)
   const jevTimeouts = []; const onJev = (info) => { jevTimeouts.push(info); };
-  const [ex, tri, strat] = await Promise.all([timed('open-log', () => d.open(logArgs)).catch(() => null), timed('triage', () => d.triage(messages, { card: card?.text ?? null, channel: channel.id, onJev })).catch(() => null),
-    strategyOn ? timed('strategy', () => strategyFn(messages, { profile, onJev }), (r) => (r ? { choice: r.strategy?.choice, sides: r.sides } : null)).catch(() => null) : null]);
+  // the conversation_state loads once the thread exists (d.state; none = empty), then Jev chooses the strategy AND patches the state in that one call
+  const openP = timed('open-log', () => d.open(logArgs)).catch(() => null);
+  let stateBefore = emptyState();
+  const stratP = strategyOn ? openP.then(async (ex0) => {
+    if (d.state && ex0?.conversationId) stateBefore = await d.state.load(ex0.conversationId).catch(() => emptyState());
+    return timed('strategy', () => strategyFn(messages, { profile, onJev, conversationState: stateBefore, turn: ex0?.round ?? null }), (r) => (r ? { choice: r.strategy?.choice, sides: r.sides } : null)).catch(() => null);
+  }) : null;
+  const [ex, tri, strat] = await Promise.all([openP, timed('triage', () => d.triage(messages, { card: card?.text ?? null, channel: channel.id, onJev })).catch(() => null), stratP]);
   if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
   const route = routeTriage(tri);
   // every search this turn makes is traced with its thread + turn (search_trace.thread_id / turn_id = "<thread>:<round>")
   if (ex?.conversationId) setAIContext({ trace: { ...(currentAIContext().trace || {}), thread: ex.conversationId, turn: `${ex.conversationId}:${ex.round}`,
     route: [route.action, route.kind].filter(Boolean).join(':') || null } });
   if (ex?.conversationId) linkJevTurn(`${ex.conversationId}:${ex.round}`);
+  // SCOPE through the layers (turn > conversation > reader > site > default): this turn's Jev patch, the stored state, the reader card, the host profile
+  const jevPatch = strat?.patch?.jev || {}, turnOnly = strat?.patch?.turnOnly || null, turnNo = ex?.round ?? null;
+  const scopeR = resolveScope({ turn: { ...(jevPatch.scope || {}), ...(jevPatch.reader || {}), ...(turnOnly?.scope || {}) }, conversation: conversationLayer(stateBefore), reader: readerLayer(card?.data), site: siteLayer(profile) });
+  const scope = { religion: scopeR.religion, units: scopeR.units, source: scopeR.units.scope_source };
+  let codePatch = null;
   const decisions = decisionLog(strat?.decisions || []);   // every strategy decision of the turn (inputs, options, probabilities, branch) → path.decisions
   for (const info of jevTimeouts) decisions.record('jev:timeout', timeoutDecision(info));
   // Jev's OUTCOME field — the turn read with the history and the card — decides what a short or odd message is; its words
@@ -161,6 +174,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const path = { gate: route.action, kind: route.kind, triage: triageSummary, channel: channel.id, stop: route.stop,
       strategy: strat ? { choice: strat.strategy?.choice ?? null, sides: strat.sides ?? [], ...(strat.sources && Object.keys(strat.sources).length ? { sources: strat.sources } : {}), ms: strat.ms ?? null } : null, understood: understood?.phrase ?? null, decisions: decisions.list(), ...extra };
     path.meta = turnMeta({ status, path, meter, ms: Date.now() - t0 });
+    // what changed in the conversation_state this turn, and who changed it (the trace / admin view)
+    if (ex?.conversationId) path.state = { version: stateBefore.version, scope: scopeR.units.religions_specified, scope_source: scope.source, jev: jevPatch, ...(turnOnly ? { turn_only: turnOnly } : {}), code: codePatch };
     const jt = jevTimeoutsOf(path.decisions); if (jt) path.meta.jev_timeouts = jt;
     // where the time went (route.timeline in the thread view): stage spans since turn start + each model call's completion
     try { const jc = jevTurnCalls(); if (jc.length) path.jev_calls = jc; } catch { /* the gate link is bookkeeping */ }   // [{gate, id}] → calls.db rows of this turn's Jev decisions
@@ -168,6 +183,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     if (runs?.length && ex?.conversationId) import('../repos/strategy-stats-repo.js').then((m) => m.logTurnRuns({ turnId: `${ex.conversationId}:${ex.round}`, runs, usd: path.meta?.usd ?? null })).catch((err) => console.warn(`[strategy-stats] logTurnRuns failed: ${err?.message}`));
     path.timeline = timelineOf(timeline, t0); path.llm = meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null }));
     if (ex) await d.close({ ...ex, reply, status, path, channel: channel.id }).catch(() => {});
+    if (ex?.conversationId && d.state) for (const [by, patch] of [['jev', jevPatch], ['code', codePatch]]) if (patch) await d.state.append({ conversationId: ex.conversationId, turn: turnNo, by, patch }).catch((err) => console.warn(`[conversation-state] ${by} patch not stored: ${err?.message}`));
     // the Observatory terminal: that a turn happened, how it was routed — never its text or who asked
     import('../repos/activity-repo.js').then(({ logActivity }) => logActivity('anis', `${channel.id} · ${status}${route.kind ? ` · ${route.kind}` : ''}${extra.recipe ? ` · ${extra.recipe}` : ''}${extra.retrieved != null ? ` · ${extra.retrieved} paragraphs` : ''} · ${((Date.now() - t0) / 1000).toFixed(1)} s`)).catch(() => {});
     return path;
@@ -210,8 +226,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     // a deep report queued: a live channel says so beside the normal answer (narrate.js; never email)
     jobP?.then((j) => { if (j?.researchId && streaming) narrate(onEvent, channel, 'deep_report.queued'); }).catch(() => {});
     // research / llm / variants: a caller's override (the /draft battery compares the researcher, writers and templates before they go live)
-    const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { turnId: ex?.conversationId != null ? `${ex.conversationId}:${ex.round}` : null, stance: triageSummary?.stance ?? null,
-      kind: route.kind, guarded: route.action === 'guarded', channel, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, outcome: tri?.outcome ?? null, depth: triageSummary?.depth ?? null, query: resolved?.query ?? null, card: card?.text ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), ...(lkIntent ? { lookupIntent: lkIntent } : {}), strategy: strat, decisions, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
+    const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { scope, turnId: ex?.conversationId != null ? `${ex.conversationId}:${ex.round}` : null, stance: triageSummary?.stance ?? null,
+      kind: route.kind, guarded: route.action === 'guarded', channel, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, outcome: tri?.outcome ?? null, depth: triageSummary?.depth ?? null, query: resolved?.query ?? null, card: card?.text ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), ...(lkIntent ? { lookupIntent: lkIntent } : {}), strategy: strat, decisions, state: stateBefore, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
     streaming = false;
     // the form pass on EVERY reply path (agent, craft, sourcehunt, strategies): a closing search offer dropped, brackets in link
     // text made parens (writer residuals 11-05: titles like "Book of Common Prayer [King's Chapel]" broke their links)
@@ -239,6 +255,11 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       }
     }
     const lint = lintReply(reply);
+    // tree end: code appends what the turn gave (every quoted/listed item), the thread entry, and what stayed open
+    try {
+      const cites = (r.citations || []).map((c) => ({ document_id: c.document_id, paragraph_index: c.paragraph_index ?? null, text: c.text || undefined, id: c.id })).filter((c) => c.document_id != null || c.id != null);
+      codePatch = treePatch({ turn: turnNo ?? 0, strategy: strategyOf(strat) ?? r.plan?.shape ?? null, units: { current_user_question: resolved?.query || text, found_passages: cites }, ended: cites.length ? null : 'absence', state: stateBefore, channel: channel.id });
+    } catch { codePatch = null; }
     const path = await finish(reply, 'answered', { engine: 'anis', ...(deepReport ? { deep_report: deepReport } : {}), evidence: r.evidence ?? null, recipe: r.plan?.shape ?? null,
       ...(r.steps ? { steps: r.steps } : {}),   // the strategy graph's trace [{node, step@v, ms, edge}], beside path.jev_calls
       // how the strategy was chosen (jev | jev:cached | backstop + why) and what the search was fed, for the thread view

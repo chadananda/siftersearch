@@ -11,6 +11,7 @@ import { jevProbabilities } from './decision-log.js';
 import { drawFromCriteria } from '../search-plan.js';
 import { catalog } from '../repos/strategies-repo.js';
 import { UNMATCHED, isUnmatched } from './strategy-seed.js';
+import { emptyState, stateText, patchQuestions, patchFromAnswers } from './units.js';   // conversation_state: Jev's patch rides in this same call
 
 // Jev's STRATEGY options = the active strategy rows (strategies-repo; seed: strategy-seed.js): option key = row name, criterion =
 // row description, in seeded order with 'unmatched' (the respond graph) last. Built once per catalog rev.
@@ -53,9 +54,10 @@ export const stateOf = (messages = [], { profile = {} } = {}) => {
  *   strategy.choice ∈ STRATEGIES; low confidence → 'unmatched' (fail open: the ordinary pipeline). sides: traditions, in order, for a comparison.
  */
 export async function chooseStrategy(messages, { profile = {}, apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = jevFetch('anis-strategy'), timeoutMs = JEV_LIMITS.strategy.timeoutMs,
-  budgetMs = Math.max(timeoutMs, JEV_LIMITS.strategy.budgetMs), onJev = null, min = MIN_CONFIDENCE, options = null } = {}) {
+  budgetMs = Math.max(timeoutMs, JEV_LIMITS.strategy.budgetMs), onJev = null, min = MIN_CONFIDENCE, options = null, conversationState = null, turn = null } = {}) {
   const opts = options || strategyOptions();   // options: an OPTION-TEXT VARIANT (promotion's check: the active set + one candidate)
-  const state = stateOf(messages, { profile });
+  const st = conversationState || emptyState();
+  const state = [stateOf(messages, { profile }), stateText(st, turn)].filter(Boolean).join('\n');
   const spans = Object.keys(drawFromCriteria(messages) || {}).filter((k) => k !== 'none').slice(0, MAX_BOOK_SPANS);
   if (!apiKey || !state.trim()) return null;
   const t0 = Date.now();
@@ -66,6 +68,7 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
         strategy: { type: 'choice', instructions: 'What does the LATEST user message, read in the context of the thread, ask the assistant to do?', criteria: opts },
         ...Object.fromEntries(SIDE_KEYS.map((k, i) => [k, { type: 'choice', instructions: `If the latest message compares or asks about several traditions, which is the ${ORD[i]} tradition it names or means? Otherwise "none".`, criteria: SIDES }])),
         ...Object.fromEntries(spans.map((n, i) => [`book_${i + 1}`, { type: 'choice', instructions: bookAsk(n), criteria: SIDES }])),
+        ...patchQuestions(st, TRADITIONS, turn),
       } }),
       signal,
     });
@@ -78,7 +81,12 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
     const ms = Date.now() - t0;
     const raw = choice(a.strategy) || { choice: null, confidence: 0, distribution: null };
     const confident = raw.choice && opts[raw.choice] && (raw.confidence ?? 0) >= min;
-    const strategy = confident ? raw : { ...raw, choice: UNMATCHED, was: raw.choice ?? null, reason: raw.choice ? 'low-confidence' : 'no-answer' };
+    let strategy = confident ? raw : { ...raw, choice: UNMATCHED, was: raw.choice ?? null, reason: raw.choice ? 'low-confidence' : 'no-answer' };
+    // the state patch (ONE call, no extra Jev round trip): schema-validated, below-confidence answers = unchanged
+    const jevPatch = patchFromAnswers(a, { min, st });
+    // "what about in Islam?": Jev says the message continues the previous request with a changed detail → the previous turn's strategy
+    const lastStrategy = st.thread?.at(-1)?.strategy;
+    if (jevPatch.continues && lastStrategy && opts[lastStrategy] && lastStrategy !== strategy.choice) strategy = { ...strategy, was: strategy.choice ?? null, choice: lastStrategy, reason: 'continues-previous' };
     const sideAnswers = SIDE_KEYS.map((k) => choice(a[k])).filter(Boolean);
     const sides = [...new Set(sideAnswers.filter((s) => s.choice && s.choice !== 'none' && SIDES[s.choice] && (s.confidence ?? 0) >= min).map((s) => s.choice))];
     // each side's book: the span Jev called that side's book, most confident first
@@ -91,7 +99,9 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
       ...(strategy.choice === 'comparison' ? [{ point: 'sides', by: 'jev', saw: state, options: Object.keys(SIDES), probabilities: Object.fromEntries(sideAnswers.map((s, i) => [SIDE_KEYS[i], jevProbabilities(s)])), chosen: sides, reason: sides.length < 2 ? 'fewer than two sides — executor widens' : null, ms },
         ...(spans.length ? [{ point: 'side-books', by: 'jev', saw: spans, options: Object.keys(SIDES), probabilities: Object.fromEntries(spans.map((n, i) => [n, jevProbabilities(choice(a[`book_${i + 1}`]) || {})])), chosen: sources, reason: null, ms }] : [])] : []),
     ];
-    return { strategy, sides, sources, ms, decisions };
+    const patch = { jev: jevPatch.patch, turnOnly: jevPatch.turnOnly, continues: jevPatch.continues, offer: jevPatch.offer };
+    if (Object.keys(patch.jev).length || patch.turnOnly || patch.continues || patch.offer) decisions.push({ point: 'state-patch', by: 'jev', saw: state, options: ['unchanged', 'patch'], chosen: 'patch', reason: JSON.stringify({ ...patch.jev, ...(patch.turnOnly ? { turn_only: patch.turnOnly } : {}), ...(patch.continues ? { continues: lastStrategy } : {}), ...(patch.offer ? { offer: patch.offer } : {}) }).slice(0, 400), ms });
+    return { strategy, sides, sources, ms, decisions, patch };
   }
 }
 

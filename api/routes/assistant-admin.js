@@ -108,7 +108,13 @@ export default async function anisAdminRoutes(fastify) {
     // Jev misses (jev-tuning/miss-fix.js): this period's miss rate vs the one before, fixes tried/promoted; a store without the table reads as none
     const jevMisses = await (async () => { try { const [{ missDigest }, { candidatesDb }, { countCalls }] = await Promise.all([import('../lib/jev-tuning/miss-fix.js'),
       import('../lib/repos/strategy-candidates-repo.js'), import('../lib/repos/jev-calls-repo.js')]); return missDigest(candidatesDb(), { since, countCalls }); } catch { return null; } })();
-    return improveDigest(improveDigestData({ since }), { since, cap, jevMisses });
+    // candidates kept out for confusing Jev (real-call breaks, confidence drops, guard steals, setting-of)
+    const confusion = await (async () => { try { const { candidatesDb, confusionDigest } = await import('../lib/repos/strategy-candidates-repo.js');
+      return confusionDigest(candidatesDb(), { since: new Date(Date.parse(since)).toISOString().slice(0, 19).replace('T', ' ') }); } catch { return null; } })();
+    // TOOLS loop (planner): wished-for elements across planned trees, as Gherkin code recommendations; probations; planner defects (a second plan for one type)
+    const tools = await (async () => { try { const [{ candidatesDb }, P, R] = await Promise.all([import('../lib/repos/strategy-candidates-repo.js'), import('../lib/assistant/strategy-planner.js'), import('../lib/repos/strategy-planner-repo.js')]);
+      const db = candidatesDb(), wishlist = P.toolWishlist(db); const t = { wishlist, gherkin: P.wishlistGherkin(wishlist), repeat_plans: R.repeatPlans(db), probations: R.listProbations(db, { phase: 'probation' }), catalog: P.checkCatalog(db) }; return t.wishlist.length || t.repeat_plans.length || t.probations.length || t.catalog.queued.length ? t : null; } catch { return null; } })();
+    return improveDigest(improveDigestData({ since }), { since, cap, jevMisses, confusion, tools });
   });
 
   // The progress page (Chad 11-04, AnisImprove.svelte): headline (7-day score/weak rate, 30 days, a deterministic status sentence),

@@ -26,7 +26,7 @@ const sure = { decisions: [{ point: 'strategy', reason: 'confident', chosen: 'pr
 
 // a valid design: a param variant of strategy.understanding + its new template, one node
 const GOOD = {
-  name: 'timeline', description: 'The reader wants the HISTORY of a practice or institution told in order, era by era, from the passages.',
+  difference: 'It tells a development in order, era by era; understanding explains a single idea.', name: 'timeline', description: 'The reader wants the HISTORY of a practice or institution told in order, era by era, from the passages.',
   exemplars: ['How did the Nineteen Day Feast develop over time?', 'Trace how the Huqúqu’lláh was introduced, step by step.'],
   templates: [{ id: 'timeline.how', text: 'Tell it as a TIMELINE, oldest first. {{base}}' }],
   steps: [{ id: 'timeline.order', activity: 'strategy.understanding', params: { how: 'timeline.how' } }],
@@ -105,12 +105,12 @@ describe('design validation (fake Opus)', () => {
     const near = { ...GOOD, name: 'understanding_deep', description: und.description };
     const qs = ['How did the Nineteen Day Feast develop over time?', 'How did the Feast develop over the decades since 1844?', 'How did the Nineteen Day Feast develop through its history?'];
     qs.forEach((q, i) => captureGap(db, { turnId: `t${i}`, threadId: `th${i % 2}`, question: q, path: unsure() }));
-    const r = await designStage(db, { call: async () => reply(near) });
+    const r = await designStage(db, { planner: false, call: async () => reply(near) });
     expect(r).toMatchObject({ status: 'version', id: 'understanding', version: 2 });
     expect(strategyRow(db, 'understanding', 2)).toMatchObject({ status: 'candidate', parent_version: 1, name: 'understanding' });
     expect(openGaps(db)).toHaveLength(0);                                   // the cluster's gaps are closed by the design
     expect(listDesigns(db)[0]).toMatchObject({ status: 'version', strategy_id: 'understanding', version: 2 });
-    expect(await designStage(db, { call: async () => { throw new Error('not called'); } })).toBe('idle');
+    expect(await designStage(db, { planner: false, call: async () => { throw new Error('not called'); } })).toBe('idle');
   });
 });
 

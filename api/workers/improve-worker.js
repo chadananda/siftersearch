@@ -216,6 +216,10 @@ export async function work(db, { call = callOpus, replay = replayCurrent, edit =
       saveJudge(db, w.item_key, { judge, usd: r.usd, usage: r.usage });
       // the judge named the right option of a Jev gate → that gate's gold label (labelByRef only labels an option the gate offered)
       if (judge.gate && judge.right && w.item.turn_id) { try { (await import('../lib/repos/jev-calls-repo.js')).labelByRef(judge.gate, w.item.turn_id, judge.right, 'opus-judge'); } catch { /* a label is a bonus, never a failure */ } }
+      // probation (planner): every run of a strategy in its first N runs is judged; per-node stats, regression -> auto-rollback naming the node
+      if (w.item.kind === 'reply' && w.item.strategy) { try { const [{ observeProbation }, { candidatesDb }, { applySuggestions }] = await Promise.all([import('../lib/assistant/strategy-planner.js'), import('../lib/repos/strategy-candidates-repo.js'), import('../lib/repos/improve-repo.js')]);
+        const ms = (w.item.nodes || []).reduce((n, x) => n + (x.ms || 0), 0);
+        observeProbation(candidatesDb(), { name: w.item.strategy, score: judge.score, ms, usd: 0, nodes: w.item.nodes || [] }, { suggest: (x) => applySuggestions(db, { inserts: [x] }) }); } catch (err) { console.warn('[improve] probation:', err?.message || err); } }
       if (judge.stage === 'STRATEGY' && w.item.kind === 'reply') await strategyGap({ turnId: w.item.turn_id, threadId: w.item.session_id, question: w.item.question, judge });
     } else {
       const judge = w.judge || {}, open = openImprovements(db);

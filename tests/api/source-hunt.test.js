@@ -77,7 +77,7 @@ describe('sourceHunt', () => {
     expect(r.tablet.meta.links.oceanoflights).toContain('oceanoflights.org');
   });
 
-  describe('coreOnly (Anís quotation_trace, Chad 11-03: core literature, not secondary commentary)', () => {
+  describe('coreOnly (Anís quotation_candidates, Chad 11-03: core literature, not secondary commentary)', () => {
     const B = "Baha'i";
     const rowsWith = (keep) => async (ids) => ids.filter((i) => keep.includes(i)).map((i) => ROWS[i]).filter(Boolean)
       .map((r) => ({ ...r, religion: B, collection: r.id === 1 ? 'Bahá’u’lláh' : "Baha'i Books", url: `u/${r.id}` }));

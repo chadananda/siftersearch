@@ -23,7 +23,7 @@ describe('canonicalTradition — the model names the tradition, code resolves th
 describe('the passage searches filter on the stored religion value', () => {
   it('fused_search: a religion-name tradition reaches the engine as the stored value', async () => {
     const fastSearch = vi.fn(async () => []);
-    await tools.run('fused_search', { query: 'the self is its own refuge', tradition: 'Hinduism' }, { fastSearch });
+    await tools.run('fused_search', { query: 'the self is its own refuge', filters: { tradition: 'Hinduism' } }, { fastSearch });
     expect(fastSearch.mock.calls[0][1]).toBe('Hindu');
   });
   it('the shared filters: filters.tradition is resolved for every passage search', () => {

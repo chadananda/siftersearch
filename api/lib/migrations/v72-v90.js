@@ -2125,6 +2125,15 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_strace_parent ON search_trace(parent_trace) WHERE parent_trace IS NOT NULL');
     logger.info('Migration 197 complete: search_trace ranked hits + Anís turn context');
   },
+  198: async () => {
+    // CONVERSATION STATE (strategy-trees §2b): one append-only patch row per change, by 'jev' (beside the strategy choice) or 'code' (tree end);
+    // the state is the fold of a conversation's patches in version order. Bounded reads: one conversation id. Old conversations have no rows (= empty state).
+    await query(`CREATE TABLE IF NOT EXISTS anis_state_patches (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, conversation_id TEXT NOT NULL, turn INTEGER NOT NULL, version INTEGER NOT NULL,
+      by TEXT NOT NULL, patch_json TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+    await query('CREATE UNIQUE INDEX IF NOT EXISTS idx_anis_state_conv ON anis_state_patches(conversation_id, version)');
+    logger.info('Migration 198 complete: anis_state_patches (conversation_state)');
+  },
 };
 
 export const graphMigrations = {

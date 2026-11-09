@@ -286,6 +286,8 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   // battery 10-05: book 88%→82%, e.g. the Íqán's 'addressing Salmán' paragraph lost to two Gems passages that do not contain it);
   // the decision ADDS what holds the same sentence in another translation (never a passage making the same point)
   const holdsRow = (r) => holds(q.match, r.text, overlap(q.match, r.text)) || !!decided?.has(r.id);
+  // no decision available (a tool call, decide:null): the rows the wording did not hold go back in `unsure` for a tree-level judge (quotation_candidates → judge.holds)
+  const unsure0 = d.decide ? [] : ranked0.slice(0, HOLDS_MAX).filter((r) => !holdsRow(r) && r.doc_role !== 'metadata').map((r) => ({ id: r.id, documentId: r.doc_id, title: r.pubTitle || r.title, author: paragraphAuthor({ authors: r.authors, author: r.book_author }) || r.book_author, text: r.text, url: r.url || r.source_url || null }));
   const matches = ranked0.filter(holdsRow).map((r) => ({ ...r, overlap: overlap(q.match, r.text), holds: true }));
   say('verbatim', { count: matches.length, rejected: rows.length - matches.length, by: decided ? 'decision' : 'wording',
     documents: [...new Map(matches.map((r) => [r.doc_id, docBrief(r)])).values()] });
@@ -334,7 +336,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
     }
     say('targeted', { searched: more.length, pool: pool.length });
   }
-  if (!pool.length) return { quote: q.text, origin: null, citedBy: [], tablet: await tabletGuess(d, q, null, quoteAuthor), ms: Date.now() - t0, ...(degraded.size ? { degraded: [...degraded] } : {}) };
+  if (!pool.length) return { quote: q.text, origin: null, citedBy: [], unsure: unsure0, tablet: await tabletGuess(d, q, null, quoteAuthor), ms: Date.now() - t0, ...(degraded.size ? { degraded: [...degraded] } : {}) };
 
   // how many paragraphs the link graph records as quoting each leading candidate — the original is quoted, the compilation
   // that reprints it rarely is (the tiebreak when publication years are missing)
@@ -346,7 +348,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   const origin = named || (coreOnly ? ranked.find(isCoreOrigin) : ranked[0]);
   if (!origin) {
     say('origin', { origin: null, candidates: ranked.length, coreOnly: true });
-    return { quote: q.text, quoteAuthor, origin: null, citedBy: [], tablet: null, coreOnly: 'no core-literature holder', ms: Date.now() - t0,
+    return { quote: q.text, quoteAuthor, origin: null, citedBy: [], unsure: unsure0, tablet: null, coreOnly: 'no core-literature holder', ms: Date.now() - t0,
       considered: ranked.slice(0, 6).map((c) => ({ id: c.id, title: c.title, writer: c.writer, site: c.source_site || 'library', collection: c.collection || null })),
       ...(degraded.size ? { degraded: [...degraded] } : {}) };
   }
@@ -401,7 +403,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
     quote: q.text,
     quoteAuthor,
     origin: originOut,
-    citedBy, citedByLinkCount: full.quotedBy?.count || 0,
+    citedBy, citedByLinkCount: full.quotedBy?.count || 0, unsure: unsure0,
     // why this source: the next best candidates with the facts the ranking used
     considered: ranked.slice(0, 6).map((c) => ({ id: c.id, title: c.title, writer: c.writer, bookAuthor: c.book_author,
       ownWork: c.ownWork, site: c.source_site || 'library', collection: c.collection || null, year: c.year || null, quotedCount: c.quotedCount ?? null, overlap: +c.overlap.toFixed(2) })),
