@@ -118,3 +118,14 @@ describe('rank keeps the scope', () => {
     expect(s.units.found_passages.map((x) => x.id)).toEqual([2]);
   });
 });
+
+describe('quoted_words: the reader\'s own quotation marks fill the unit (single quotes too)', () => {
+  it('entryUnits resolves the quoted span when the tree needs it', async () => {
+    const { quotedSpan } = await import('../../api/lib/assistant/respond.js');
+    const q = "'The earth is but one country, and mankind its citizens.' In what context did Bahá'u'lláh write this?";
+    expect(quotedSpan(q)).toBe('The earth is but one country, and mankind its citizens.');
+    expect(quotedSpan("What did Bahá'u'lláh mean by unity?")).toBe(null);
+    const u = entryUnits({ needs: ['quoted_words'] }, {}, { query: q, question: q, messages: [], channel: { id: 'site-chat' } });
+    expect(u.quoted_words).toBe('The earth is but one country, and mankind its citizens.');
+  });
+});

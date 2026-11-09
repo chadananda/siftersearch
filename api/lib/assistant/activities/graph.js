@@ -11,7 +11,7 @@ import { STRATEGIES as BASE_STRATEGIES, TREE_STRATEGIES, STEPS as SEED_STEPS, EN
 const SEED_STRATEGIES = [...BASE_STRATEGIES, ...TREE_STRATEGIES];
 import { strategyOf } from '../strategy-choice.js';
 import { activities as registry } from './index.js';
-import { GATHERED } from '../respond.js';
+import { GATHERED, quotedSpan } from '../respond.js';
 import { buildUnits, emptyState, UNITS } from '../units.js';
 import { parseScriptureRef } from '../scripture-ref.js';
 
@@ -166,6 +166,7 @@ export function entryUnits(g, choice, ctx = {}) {
   u.given = ctx.state?.given || [];
   if (g.needs?.includes('scripture_reference')) u.scripture_reference = parseScriptureRef(u.current_user_question);
   if (g.needs?.includes('compare_sides') && !u.compare_sides && Array.isArray(u.religions_specified) && u.religions_specified.length > 1) u.compare_sides = u.religions_specified;
+  if (g.needs?.includes('quoted_words') && !String(u.quoted_words ?? '').trim()) u.quoted_words = quotedSpan(u.current_user_question) ?? u.quoted_words;   // the reader's own quotation marks
   if (choice?.sources && Object.keys(choice.sources).length) u.named_sources = Object.values(choice.sources);
   return u;
 }

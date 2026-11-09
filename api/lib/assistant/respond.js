@@ -167,6 +167,14 @@ export const evidenceOf = (retrieved) => (retrieved || []).slice(0, 10).map((q) 
 
 const lastUser = (messages) => [...(messages || [])].reverse().find((m) => m.role === 'user')?.content || '';
 
+/** Text the reader put inside quotation marks (double, guillemets or single, ≥ 4 words), longest first; null when none.
+ *  A single quote opens only after a space/start and closes before punctuation/space, so the apostrophes in Bahá'u'lláh never cut it. */
+export function quotedSpan(text) {
+  const t = String(text || '');
+  const spans = [...t.matchAll(/[“"«]([^”"»]{20,})[”"»]/g), ...t.matchAll(/(?:^|[\s(—])[‘']([^\n]{20,}?)[’'](?=[\s.,;:?!)—]|$)/g)].map((m) => m[1].trim()).filter((q) => q.split(/\s+/).length >= 4);
+  return spans.length ? spans.sort((a, b) => b.length - a.length)[0] : null;
+}
+
 /** The quotation in a source question: the longest quoted span (≥ 4 words), else the message without a leading request
  *  ("Where is this from:") — what a library's copy appends (reference line, link) is stripped by SourceHunt itself. */
 export function quotationIn(text) {
