@@ -243,9 +243,14 @@ E['read.around'] = { kind: 'transform', cls: 'code', edges: ['done'], scope: 'st
 E['read.source'] = { kind: 'transform', cls: 'code', edges: ['traced', 'kept'], scope: 'strategy', params: ['k', 'stage'], reads: ['found_passages'], writes: ['found_passages'],
   async run(s, p = {}) {   // a quotation found in a secondary book → its primary source (source_trace), flagged traced; the secondary copy stays after it
     const u = U(s), top = u.found_passages.slice(0, p.k ?? 3), primary = [];
-    await Promise.all(top.map((x) => call(s, 'source_trace', { paragraph_id: x.id, text: x.text }).then((o) => { if (o?.passages?.length) { x.traced = true; primary.push(...o.passages.map((y) => ({ ...y, traced: true, traced_from: x.id }))); } }, () => {})));
+    // a primary source shares the tradition of the passage it was traced from (a sutra has no Bahá'í source) and sits inside the turn's scope
+    const sameTrad = (y, x) => !x.religion || !y.religion || canonicalTradition(y.religion) === canonicalTradition(x.religion);
+    let dropped = 0;
+    await Promise.all(top.map((x) => call(s, 'source_trace', { paragraph_id: x.id, text: x.text }).then((o) => {
+      const raw = (o?.passages || []).filter((y) => sameTrad(y, x)), ok = scoped(raw, u, false).items; dropped += (o?.passages?.length || 0) - ok.length;
+      if (ok.length) { x.traced = true; primary.push(...ok.map((y) => ({ ...y, traced: true, traced_from: x.id }))); } }, () => {})));
     if (primary.length) u.found_passages = [...primary.filter((y, i) => primary.findIndex((z) => key(z) === key(y)) === i), ...u.found_passages.filter((x) => !primary.some((y) => key(y) === key(x)))];
-    s.note = { read: { found_passages: top }, params: p, count: primary.length, scope_excluded: 0 };
+    s.note = { read: { found_passages: top }, params: p, count: primary.length, scope_excluded: dropped };
     return primary.length ? 'traced' : 'kept';
   } };
 

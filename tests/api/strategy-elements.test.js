@@ -151,6 +151,15 @@ describe('read.*', () => {
     expect((await go('read.source', mk({ source_trace: async () => ({}) }, { found_passages: [P(1)] }))).edge).toBe('kept');
     expect((await go('read.source', mk({ source_trace: boom }, { found_passages: [P(1)] }))).edge).toBe('kept');
   });
+  it('read.source never makes another tradition the primary source (a sutra traced to a Bahá\'í text), nor one outside the turn scope', async () => {
+    const sutra = P(1, { religion: 'Buddhist' });
+    const tr = await go('read.source', mk({ source_trace: async () => ({ passages: [P(50), P(51, { religion: 'Buddhist' })] }) }, { found_passages: [sutra], religions_specified: ['Buddhist'] }));
+    expect(tr.edge).toBe('traced'); expect(tr.u.found_passages.map((x) => x.id)).toEqual([51, 1]);
+    const none = await go('read.source', mk({ source_trace: async () => ({ passages: [P(50)] }) }, { found_passages: [sutra] }));
+    expect(none.edge).toBe('kept'); expect(none.u.found_passages.map((x) => x.id)).toEqual([1]);
+    const out = await go('read.source', mk({ source_trace: async () => ({ passages: [P(50)] }) }, { found_passages: [P(2)], religions_specified: ['Buddhist'] }));
+    expect(out.edge).toBe('kept');
+  });
 });
 
 describe('decisions', () => {
