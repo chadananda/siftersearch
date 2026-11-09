@@ -50,7 +50,7 @@ export async function prewarmCache(queries) {
   for (const query of queries) {
     try {
       if (!getCachedSearch(query)) {
-        await keywordSearch(query, { limit: 10 });
+        await keywordSearch(query, { limit: 10, noTrace: true });   // a warm-up is not a reader's search: no trace row, so it never counts against the latency budget (11-08: ~260 warm-ups per deploy raised a false CRITICAL)
         warmed++;
       }
     } catch (err) {
