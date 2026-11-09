@@ -101,12 +101,12 @@ const authorsOf = async (s, who) => { try { const a = ((await call(s, 'author_lo
 // inside: the books the gather already found, searched inside with the whole question (one call, documentId = any of them) —
 // the deep passage a book holds is often not its best-scoring paragraph library-wide (dry run 6: the Sutra Collection's anatta discourse)
 const booksOf = (u, n = 3) => [...new Set((u.found_passages || []).map((x) => Number(x.document_id)).filter(Number.isFinite))].slice(0, n);
-const searchInput = async (s, p, u, trad) => { if (p.inside) return { query: text(s, u, p.query, '{{current_user_question}}'), limit: kOf(p, u) ?? 6, filters: { documentId: booksOf(u, p.books ?? 3) } };
+const searchInput = async (s, p, u, trad) => { if (p.inside) return { query: text(s, u, p.query, '{{follows_topic}}', '{{current_user_question}}'), limit: kOf(p, u) ?? 6, filters: { documentId: booksOf(u, p.books ?? 3) } };
   const who = !p.wide && p.by_person ? personOf(u) : null, filters = p.wide ? {} : { ...(trad ? { tradition: trad } : {}), ...(p.in_named ? namedWork(u) : {}), ...(who ? { author: await authorsOf(s, who) } : {}), ...(p.author ? { author: p.author } : {}), ...(p.language ? { language: p.language } : {}), ...(p.work ? { work: p.work } : {}) };
   // the topic (question minus the named spans) only where a hard filter carries those names; every other pass keeps the whole question
   // (dry run 5, 11-09: "Sufi writers like understand fana" — stripping "Rumi" from unfiltered passes lost him). quoted: the reader's quoted words, literal+phrase
   const named = (p.in_named && namedWork(u)) || who, layers = p.quoted ? ['literal', 'phrase'] : p.layers;
-  return { query: text(s, u, p.query, p.quoted ? '{{quoted_words}}' : named ? '{{topic}}' : '{{current_user_question}}'), limit: kOf(p, u) ?? 8, ...(Object.keys(filters).length ? { filters } : {}), ...(Array.isArray(layers) && layers.length ? { layers } : {}), ...(Array.isArray(p.tiers) && p.tiers.length ? { tiers: p.tiers } : {}), ...(p.spell ? { spell: true } : {}) }; };
+  return { query: text(s, u, p.query, ...(p.quoted ? ['{{quoted_words}}'] : [...(named ? ['{{follows_topic}}', '{{topic}}'] : ['{{follows_topic}}', '{{current_user_question}}'])])), limit: kOf(p, u) ?? 8, ...(Object.keys(filters).length ? { filters } : {}), ...(Array.isArray(layers) && layers.length ? { layers } : {}), ...(Array.isArray(p.tiers) && p.tiers.length ? { tiers: p.tiers } : {}), ...(p.spell ? { spell: true } : {}) }; };
 // a pass ran with hard filters (so a thin result has something to widen from)
 const hardFiltered = (u) => !!(namedWork(u) || personOf(u) || tradsOf(u));
 const passages = (o) => o?.passages;
@@ -147,10 +147,15 @@ const E = {
     async run(s, p = {}) {
       try { const f = await (s.tools?.facts ? s.tools.facts({}, s.ctx) : import('../../library/library-stats.js').then((x) => x.readLibraryStats())); if (!f) return finish(s, p, 'error', { error: 'no stats' }); merge(U(s), 'found_records', [{ kind: 'library_facts', ...f }]); return finish(s, p, 'one', { count: 1 }); } catch (err) { return finish(s, p, 'error', { error: err?.message }); }
     } },
-  'fetch.anchor': { kind: 'tool', cls: 'code', edges: ['one', 'thin', 'none', 'error'], scope: 'strategy', params: ['stage'], reads: ['referent', 'reader_position', 'previous_evidence', 'quoted_words'], writes: ['found_passages', ...OUT],
+  'fetch.anchor': { kind: 'tool', cls: 'code', edges: ['one', 'thin', 'none', 'error'], scope: 'strategy', params: ['stage'], reads: ['referent', 'reader_position', 'previous_evidence', 'quoted_words', 'last_passages'], writes: ['found_passages', ...OUT],
     async run(s, p = {}) {   // the passage a question is about: the pointed-at item, the reader's place, the last evidence; quoted words alone are thin
       const u = U(s), pos = u.reader_position, hit = (u.referent && typeof u.referent === 'object' && u.referent.text ? u.referent : null) ?? u.previous_evidence?.passages?.[0];
       try {
+        // the message points back at the last reply (Jev: refers_back): its cited passages, loaded whole, are the anchor
+        if (!hit && u.refers_back && u.last_passages?.length) {
+          const got = (await Promise.all(u.last_passages.slice(0, 3).map((x) => call(s, 'context_lookup', { document_id: x.document_id, paragraph_index: x.paragraph_index, before: 0, after: 0 }).then((c) => c?.passages?.[0] ?? null, () => null)))).filter(Boolean);
+          if (got.length) { merge(u, 'found_passages', got.map((x) => ({ ...x, anchor: true }))); return finish(s, p, 'one', { count: got.length, read: { last_passages: u.last_passages } }); }
+        }
         if (hit) { merge(u, 'found_passages', [{ ...hit, anchor: true }]); return finish(s, p, 'one', { count: 1, read: { referent: u.referent } }); }
         if (pos?.doc) {
           const c = await call(s, 'context_lookup', { document_id: pos.doc, paragraph_index: pos.paragraph ?? 0, before: 0, after: 0 });
@@ -222,7 +227,9 @@ E['search.fanout'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', 'a
 E['search.compare'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', 'all_none', 'error'], scope: 'strategy', params: ['by', 'k', 'tiers', 'stage'], reads: SCOPE, writes: ['found_passages', ...OUT],
   async run(s, p = {}) {   // compare_search: ONE call for every side (the same query held to each side's filters); items tagged with their side. No judge inside — the tree decides once after.
     const u = U(s), values = u[p.by ?? 'compare_sides'] ?? [];
-    let r; try { r = await call(s, 'compare_search', { query: text(s, u, p.query, '{{topic}}'), sides: values.map((v) => ({ label: flat(v), filters: { tradition: canonicalTradition(flat(v)) } })), k: kOf(p, u) ?? 3, ...(p.tiers ? { tiers: p.tiers } : {}) }); } catch (e) { return finish(s, p, 'error', { error: e?.message }); }
+    let r; try { r = await call(s, 'compare_search', { query: text(s, u, p.query, '{{follows_topic}}', '{{topic}}'),
+      sides: values.map((v) => { const work = u.side_sources?.[flat(v)] ?? u.side_sources?.[canonicalTradition(flat(v))]; return { label: flat(v), filters: { tradition: canonicalTradition(flat(v)), ...(work ? { work } : {}) } }; }),   // a side's book Jev named (the Gita) is that side's work filter
+      k: kOf(p, u) ?? 3, ...(p.tiers ? { tiers: p.tiers } : {}) }); } catch (e) { return finish(s, p, 'error', { error: e?.message }); }
     const sides = r?.sides ?? []; let n = 0;
     for (const sd of sides) { merge(u, 'found_passages', sd.passages.map((x) => ({ ...x, side: sd.label }))); n += sd.passages.length; }
     const empty = (sd) => !sd.passages.length;

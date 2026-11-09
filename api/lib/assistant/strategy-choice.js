@@ -33,6 +33,7 @@ export const STRATEGIES = new Proxy({}, {
   getOwnPropertyDescriptor: (_, k) => (k in strategyOptions() ? { value: strategyOptions()[k], enumerable: true, configurable: true, writable: false } : undefined),
 });
 const SIDES = { ...Object.fromEntries(Object.entries(TRADITIONS).filter(([k]) => k !== 'none')), none: 'no such tradition in the question' };
+const REFERS = { own: 'the message states its own subject, whole', previous: 'its subject is the previous turn\'s question or the passages the previous reply gave' };
 const SIDE_KEYS = ['side_a', 'side_b', 'side_c'];
 const ORD = ['FIRST', 'SECOND', 'THIRD'];
 // the BOOKS a comparison names ("the Book of Mormon", "the Gospels", "the Torah"): each name span of the thread
@@ -84,7 +85,8 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
     const res = await fetchImpl(ENDPOINT, {
       method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: modelFor('assistant-triage').model, state, questions: {
-        strategy: { type: 'choice', instructions: 'What does the LATEST user message, read in the context of the thread, ask the assistant to do?', criteria: opts },
+        strategy: { type: 'choice', instructions: 'What does the LATEST user message, read in the context of the thread, ask the assistant to do? A message whose meaning depends on the previous reply (what it said or linked: "the second one", "what are the actual words?", "who wrote that?", "what do you make of it?") is judged by what it asks of that reply, never by its surface words; when no strategy is for what it asks, choose unmatched. "Compare" is a comparison only when traditions or scriptures are to be set side by side.', criteria: opts },
+        ...(messages.some((m) => m.role === 'assistant') ? { refers_back: { type: 'choice', instructions: 'Does the LATEST user message take its subject from the previous turn or reply ("that", "it", "the second one", "the actual words", "how does that compare with …", "who wrote it") rather than state its own subject?', criteria: REFERS } } : {}),
         ...Object.fromEntries(SIDE_KEYS.map((k, i) => [k, { type: 'choice', instructions: `If the latest message compares or asks about several traditions, which is the ${ORD[i]} tradition it names or means? Otherwise "none".`, criteria: SIDES }])),
         ...Object.fromEntries(spans.map((n, i) => [`book_${i + 1}`, { type: 'choice', instructions: bookAsk(n), criteria: SIDES }])),
         ...Object.fromEntries(spans.map((n, i) => [`kind_${i + 1}`, { type: 'choice', instructions: kindAsk(n), criteria: KINDS }])),
@@ -128,7 +130,10 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
     if (Object.keys(units).length) decisions.push({ point: 'named-units', by: 'jev', saw: spans, options: Object.keys(KINDS), chosen: units, reason: null, ms });
     const patch = { jev: jevPatch.patch, turnOnly, continues: jevPatch.continues, offer: jevPatch.offer };
     if (Object.keys(patch.jev).length || patch.turnOnly || patch.continues || patch.offer) decisions.push({ point: 'state-patch', by: 'jev', saw: state, options: ['unchanged', 'patch'], chosen: 'patch', reason: JSON.stringify({ ...patch.jev, ...(patch.turnOnly ? { turn_only: patch.turnOnly } : {}), ...(patch.continues ? { continues: lastStrategy } : {}), ...(patch.offer ? { offer: patch.offer } : {}) }).slice(0, 400), ms });
-    return { strategy, sides, sources, units, ms, decisions, patch };
+    // the message takes its subject from the last turn (Jev's answer): the tree searches the last turn's topic and anchors on its passages (units.js last_topic / last_passages)
+    const rb = choice(a.refers_back), refersBack = rb?.choice === 'previous' && (rb.confidence ?? 0) >= min;
+    if (rb?.choice) decisions.push({ point: 'refers-back', by: 'jev', saw: state, options: Object.keys(REFERS), probabilities: jevProbabilities(rb), chosen: refersBack ? 'previous' : 'own', reason: refersBack ? 'subject from the last turn' : null, ms });
+    return { strategy, sides, sources, units, ms, decisions, patch, ...(refersBack ? { refersBack: true } : {}) };
   }
 }
 

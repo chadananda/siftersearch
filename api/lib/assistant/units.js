@@ -13,6 +13,7 @@ const ROWS = [
   ['named_sources', 'ids', 'jev+code', [], null], ['search_originals', 'bool', 'jev', true, 'conversation'], ['scope_excluded', 'count', 'elements', 0, null],
   ['reads_scripts', 'scripts', 'jev', [], 'conversation'],
   ['topic', 'text', 'jev', null, 'conversation'], ['question_frame', 'enum', 'jev', 'what', null], ['quoted_words', 'text', 'jev+code', null, null], ['quoted_clean', 'text', 'jev', null, null],
+  ['last_topic', 'text', 'code', null, null], ['last_passages', 'items', 'code', [], null], ['refers_back', 'bool', 'code', false, null], ['follows_topic', 'text', 'code', null, null], ['side_sources', 'map', 'code', {}, null],
   ['incipit', 'text', 'jev', null, null], ['named_person', 'id', 'jev+code', null, 'conversation'], ['named_work', 'id', 'jev+code', null, 'conversation'], ['translation_wanted', 'id', 'jev+code', 'authorized', null],
   ['parallel_direction', 'enum', 'jev', 'to_original', null], ['target_lang', 'lang', 'jev', null, null], ['scripture_reference', 'ref', 'code', null, null], ['term', 'word', 'jev', null, 'conversation'],
   ['fact_asked', 'enum', 'jev', null, null], ['occasion', 'text', 'jev', null, null], ['compare_sides', 'list', 'jev', null, null], ['audience', 'enum', 'jev', null, 'conversation'],
@@ -125,6 +126,16 @@ const pairs = (messages = []) => {
   for (let i = 0; i < m.length; i++) if (m[i].role === 'user') out.push({ user: String(m[i].content || '').slice(0, 400), reply: m[i + 1]?.role === 'assistant' ? String(m[i + 1].content || '').slice(0, 600) : '' });
   return out.slice(-6);
 };
+/** The passages the LAST turn cited, from the state's given refs ("doc:paragraph") → [{ref, document_id, paragraph_index}]. Pure. */
+export function lastPassages(state = emptyState()) {
+  const g = (state.given || []).filter((x) => x.kind === 'passage');
+  if (!g.length) return [];
+  const t = Math.max(...g.map((x) => x.turn));
+  return g.filter((x) => x.turn === t).map((x) => { const [d, p] = String(x.ref).split(':'); return d !== '' && p != null && p !== '' && Number.isFinite(Number(d)) && Number.isFinite(Number(p)) ? { ref: x.ref, document_id: Number(d), paragraph_index: Number(p) } : null; }).filter(Boolean);
+}
+/** The subject of the last turn: the state's thread entry, else the previous user message. Pure. */
+export const lastTopic = (state = emptyState(), messages = []) => state.thread?.at(-1)?.topic ?? messages.filter((m) => m.role === 'user').slice(0, -1).at(-1)?.content?.slice(0, 300) ?? null;
+
 /**
  * The units object a tree runs on (s.units). Code-filled units always; scope through the layers; request units (Jev's, `request`) only when the
  * strategy declares them in `needs` (null needs = none). previous_* come from the last turns. Pure.
@@ -139,6 +150,7 @@ export function buildUnits({ question = '', messages = [], state = emptyState(),
   for (const n of ['audience', 'reader_state', 'topic', 'named_person', 'named_work', 'term']) { const r = resolveUnit(n, layers); if (r.layer !== 'default' || UNITS[n].default != null) u[n] = r.value; }
   const given = state.given || [];
   u.referent = given.length ? [given[given.length - 1]] : null;
+  u.last_topic = lastTopic(state, messages); u.last_passages = lastPassages(state);
   for (const n of needs || []) if (isRequestUnit(n) && request[n] != null) u[n] = request[n];
   return u;
 }

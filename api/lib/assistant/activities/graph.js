@@ -167,6 +167,8 @@ export function entryUnits(g, choice, ctx = {}) {
   if (g.needs?.includes('scripture_reference')) u.scripture_reference = parseScriptureRef(u.current_user_question);
   if (g.needs?.includes('compare_sides') && !u.compare_sides && Array.isArray(u.religions_specified) && u.religions_specified.length > 1) u.compare_sides = u.religions_specified;
   if (g.needs?.includes('quoted_words') && !String(u.quoted_words ?? '').trim()) u.quoted_words = quotedSpan(u.current_user_question) ?? u.quoted_words;   // the reader's own quotation marks
-  if (choice?.sources && Object.keys(choice.sources).length) u.named_sources = Object.values(choice.sources);
+  if (choice?.sources && Object.keys(choice.sources).length) { u.named_sources = Object.values(choice.sources); u.side_sources = choice.sources; }   // side_sources: tradition → the book Jev named for that side
+  // Jev says the message takes its subject from the last turn: searches use that topic, never the follow-up's own words (follows_topic), and the anchor loads the last turn's passages
+  if (choice?.refersBack) { u.refers_back = true; if (u.last_topic) u.follows_topic = String(u.last_topic).slice(0, 300); }
   return u;
 }

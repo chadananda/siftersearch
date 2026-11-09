@@ -10,9 +10,9 @@ import { turnFacts, jevState } from './request-features.js';   // the turn's STR
 
 // Jev decides lookups (Chad 11-03: code never reads intent from wording). Quoted words are a strong prior for a phrase search, not a rule.
 export const LOOKUP_KINDS = {
-  none: 'Anything else: a question, topic, explanation or discussion.',
+  none: 'Anything else: a question, topic, explanation or discussion; also a follow-up that points back at what the assistant just said or linked ("the second one", "what are the actual words?", "how does that compare with …").',
   book: 'Wants a particular work itself (open it, link it, "do you have X"). The target is a title or alias.',
-  quote: 'Wants the exact words found in the library: a quoted phrase or a remembered line to locate.',
+  quote: 'Wants the exact words found in the library: a quoted phrase or a remembered line to locate. NOT a request about a passage the assistant just gave or linked ("what are the actual words?", "the second one", "who wrote that"): those point at the previous reply, which is none.',
   reference: 'Wants one numbered place in a work: "Gleanings 27", "Hidden Words Arabic 5", a section, verse or chapter number.',
 };
 export const LOOKUP_Q = 'Is the latest user message a request to FETCH something exact from the library rather than to discuss it? Strong prior: words in quotation marks usually mean "find this exact text" (quote), unless the quotes are scare quotes, a mention of a term, a term the person wants explained, or a passage quoted as the context of a question about its meaning or story, which is none. A bare work title is book; a work plus a number is reference.';
@@ -23,7 +23,7 @@ export const KINDS = {
   thanks: 'thanks, appreciation or a pleasantry that asks for nothing further',
   feedback: 'a comment on the assistant\'s previous answer or on the site (praise, complaint, a report of an error) that asks for nothing new',
   off_topic: 'a request unrelated to religion, spirituality, texts, history or ideas (e.g. write code, homework in maths, shopping, weather)',
-  unclear: 'too vague or garbled to know what is being asked',
+  unclear: 'too vague or garbled to know what is being asked, even with the conversation. Never when the message points at something the previous reply said or linked ("the second one", "that passage", "the actual words": see THE PREVIOUS REPLY LINKED) — that is a follow-up, research',
   personal: 'the person shares something personal or painful (grief, illness, doubt, a family matter) more than asking for information',
 };
 export const STANCES = {
@@ -34,7 +34,7 @@ export const STANCES = {
 // into a search or a question or not"). Strong prior: words in quotation marks are wording to find.
 export const OUTCOMES = {
   search: 'the library should be searched or a question answered: the turn asks for something — on its own, or read with the conversation ("more", "why?", "and the Báb?", "in Persian", "yes" to an offer the assistant made; a word or two that continues the previous subject is a search for it). A bare name, title, term or year, even as a first message, is a search for it. Quoted words (in quotation marks) are nearly always wording to locate in the library (or a term to explain)',
-  ask_back: 'even with the conversation and what is known of the reader it cannot be told what the person wants: a bare "yes", "it", "do it", "translate", "in Persian" with no subject anywhere in the thread, or "the other one" when the thread named no other — a short question back is the only honest reply',
+  ask_back: 'even with the conversation and what is known of the reader it cannot be told what the person wants: a bare "yes", "it", "do it", "translate", "in Persian" with no subject anywhere in the thread, or "the other one" when the thread named no other — a short question back is the only honest reply. Never when the previous reply linked or cited items the message can point at ("the second one" = the second item it linked; "the actual words" = the words of the passage it gave)',
   none: 'nothing to look up: thanks, an acknowledgement ("ok", "got it", "noted", "yes" agreeing with what was said), a goodbye, small talk, or a comment on the reply that asks for nothing new — even when the comment puts a word in scare quotes ("so he was \'brilliant\' indeed" locates nothing)',
 };
 export const REACTIONS = {

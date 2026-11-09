@@ -45,6 +45,14 @@ export function turnFacts(messages) {
 }
 export const requestFeatures = turnFacts;   // name kept for callers written against the 11-03 version
 
+/** The items the previous assistant reply linked (markdown links = its cited passages/works), in order: what "the second one" points at. Structure only. */
+export function linkedInPrevious(messages, max = 8) {
+  const prev = [...(messages || [])].slice(0, -1).reverse().find((m) => m.role === 'assistant');
+  const seen = new Set(), out = [];
+  for (const m of String(prev?.content || '').matchAll(/\[([^\]]{2,160})\]\((https?:[^)\s]+)\)/g)) { const t = m[1].replace(/[*_]/g, '').trim(); if (!seen.has(t)) { seen.add(t); out.push(t); } }
+  return out.slice(0, max);
+}
+
 /** One line Jev reads before the conversation: the message's position and shape, in words. */
 export function describeTurn(f) {
   const parts = [f.first ? 'the FIRST message of the conversation (no history — it cannot be a follow-up)' : `user message #${f.turn} of a thread (the history below is what it may continue)`];
@@ -63,5 +71,7 @@ export function describeTurn(f) {
 export function jevState({ messages, card = null, turns = 4, chars = 800, clean = (s) => String(s || '') } = {}) {
   const f = turnFacts(messages);
   const history = (messages || []).slice(-turns).map((m) => `${m.role}: ${clean(m.content).slice(0, chars)}`).join('\n');
-  return `READER: ${card || 'unknown — nothing is known about this person yet'}\n${describeTurn(f)}\nCONVERSATION:\n${history}`;
+  const items = linkedInPrevious(messages);
+  const linked = items.length ? `\nTHE PREVIOUS REPLY LINKED (in order — "the second one", "that passage", "the first" may point at these): ${items.map((t, i) => `${i + 1}. ${t}`).join(' | ')}` : '';
+  return `READER: ${card || 'unknown — nothing is known about this person yet'}\n${describeTurn(f)}${linked}\nCONVERSATION:\n${history}`;
 }
