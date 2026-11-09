@@ -160,6 +160,11 @@ a per-run cost/time budget checked at validation, and IMPROVE promotes cheaper/f
 high-quality — cheapest probe first, escalate only on thin, parallel tool calls, verification nodes, conflict branches, early
 exits, shapes per outcome. Size is not cost: the budget is the expected and worst cost/latency per run PATH; MAX_NODES is only
 a high sanity cap in config. This supersedes "keep each tree as small as the class allows".
+**Third loop, TOOLS (Chad 11-09):** the element catalog grows periodically so strategies get better and simpler. The
+planner records wished-for elements (NEW:, inputs/outputs, estimated per-path saving) while still planning with today's
+catalog; a wishlist aggregates them into the improve digest as Gherkin code tasks; a catalog version change re-plans the
+strategies that could use the new element, promoted only if simpler/cheaper/faster at equal or better quality.
+Loops: IMPROVE (existing trees) · EXTEND (new types) · TOOLS (catalog growth → re-plan).
 
 When no strategy fits a question (Jev chooses Unmatched), Anís does not improvise. It PLANS FIRST, with the §1 method, for
 this one question:
