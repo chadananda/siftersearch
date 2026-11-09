@@ -152,6 +152,10 @@ free-agent research path: the planner's safety net is itself a stored `general_r
 defect). One pure entry `route(turn) → conversational | strategy {name, version, source: matched|planned|fallback}`, logged
 every turn, so test tools can be built around it. Two loops: **IMPROVE** = efficiency + quality of existing trees (node-level
 edits); **EXTEND** = new strategy types (planned candidate → node tests → promotion → probation).
+**Plan expensive, run cheap (Chad 11-09):** deep thinking (Opus) is spent once per challenge TYPE, to plan; the tree it
+plans runs on Jev + tools + light LLM, with synthesis only when needed. A matched turn makes zero Opus calls; a planned
+candidate joins the cards at once (probation) so the next similar question matches instead of replanning; every tree carries
+a per-run cost/time budget checked at validation, and IMPROVE promotes cheaper/faster trees at equal quality.
 
 When no strategy fits a question (Jev chooses Unmatched), Anís does not improvise. It PLANS FIRST, with the §1 method, for
 this one question:
