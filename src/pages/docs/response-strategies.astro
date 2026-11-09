@@ -1,13 +1,13 @@
 ---
 // /docs/response-strategies — layer 2 of 3 (Tools → Response Strategies → Activities), from GET /api/v1/anis/strategies
 // (edge-cached). Short mechanism + the three loops, the cost ladder, ONE accordion of every strategy in the strategy database
-// (#strategy-<id>; live first, planned, Unmatched last; each draws its NEWEST tree with a status badge; a hash of an id, a name or a
+// (#strategy-<id>; strategies with a tree, Unmatched last; each draws its NEWEST tree with a status badge; a hash of an id, a name or a
 // class opens its item), the code building steps (#step-<name>), composition, decisions. Nothing is listed here by id or name.
 // Every number carries data-live and refreshes through liveRefresh (src/lib/anis-docs.js); SSR reserves its space.
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import StrategyCanvas from '../../components/anis/StrategyCanvas.svelte';
 import { strategiesFlat, show } from '../../lib/anis-docs.js';
-import { titleOf, taglineOf, groupOf, GROUPS, orderedSteps, outcomeOf, targetsOf, treeBadge, MODES, MODE_NOTES } from '../../lib/strategy-docs.js';
+import { titleOf, taglineOf, strategyOrder, untreed, orderedSteps, outcomeOf, targetsOf, treeBadge, MODES, MODE_NOTES } from '../../lib/strategy-docs.js';
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const soft = (path, ms) => fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(ms) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
@@ -15,7 +15,8 @@ const data = await soft('/api/v1/anis/strategies', 8000);
 if (data) Astro.response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
 const m = strategiesFlat(data);
 const strategies = data?.strategies || [];
-const sorted = [...strategies].sort((x, y) => GROUPS.findIndex((g) => g.key === groupOf(x)) - GROUPS.findIndex((g) => g.key === groupOf(y)));
+const sorted = strategyOrder(strategies);
+const open = untreed(strategies);
 const badge = (s) => (s.general ? 'unmatched' : s.where === 'shared-reply' ? 'in unmatched' : s.status);
 const generalId = strategies.find((x) => x.general)?.id;
 const cap = (t) => (t ? t[0].toUpperCase() + t.slice(1) : t);
@@ -105,26 +106,24 @@ const stepGroups = [...new Set(steps.map((a) => a.name.split('.')[0]))];
     <h2>The strategies</h2>
     <p>
       Every strategy in the database, each drawn at its newest version. The badge gives that version's status (active, candidate, probation or retired),
-      and the live version beside it when it differs. Open an entry to see what Jev reads, its questions, decision tree, numbers and version history.
-      A <strong>planned</strong> entry is a kind of request readers keep making, with its test questions and the answer we want, but no tree yet.
+      and the active version beside it when it differs. Open an entry to see what Jev reads, its questions, decision tree, numbers and version history.
+      A question no strategy fits goes to Unmatched, which plans a new tree for it.
     </p>
     {!data && <p class="note">The strategy list could not be loaded just now. It will appear on the next visit.</p>}
     <p class="numbers">
-      <span><strong>{strategies.filter((x) => x.status === 'built').length}</strong> built</span>
-      <span><strong>{strategies.filter((x) => x.status === 'planned').length}</strong> planned</span>
+      <span><strong>{sorted.filter((x) => !x.general).length}</strong> strategies</span>
+      <span><strong>{sorted.filter((x) => x.newest && x.newest.version !== x.version).length}</strong> with a candidate tree</span>
     </p>
     <div id="strategies" class="cards">
       {sorted.map((s, idx) => {
         const un = !!s.general;
         const tb = treeBadge(s);
-        const g = groupOf(s);
         const tag = taglineOf(s);
         const unmatched = strategies.find((x) => x.general);
         const tree = s.newest ? orderedSteps(s.newest.graph) : [];
         const lead = s.patterns.find((p) => p.ideal_answer);
         return (
           <>
-            {(idx === 0 || groupOf(sorted[idx - 1]) !== g) && <h3 class="group">{GROUPS.find((x) => x.key === g).label}</h3>}
             <details class="card" id={`strategy-${s.id}`} data-name={String(s.name).toLowerCase()}>
               <summary>
                 {s.patterns.map((p) => <span id={`class-${p.id}`} class="anchor"></span>)}
@@ -145,11 +144,6 @@ const stepGroups = [...new Set(steps.map((a) => a.name.split('.')[0]))];
                       <p class="lead"><strong>{s.name}</strong> is not a separate option for Jev yet. He sends these messages to Unmatched, whose option reads:</p>
                       <p><code>unmatched</code> <span class="optext">{unmatched?.description}</span></p>
                     </>
-                  ) : s.status === 'planned' ? (
-                    <>
-                      <p class="lead">Not one of Jev's options yet. The answer drafted for it:</p>
-                      <p class="optext">{lead?.ideal_answer || s.description}</p>
-                    </>
                   ) : (
                     <p><code>{s.name}</code> <span class="optext">{s.description}</span></p>
                   )}
@@ -166,6 +160,12 @@ const stepGroups = [...new Set(steps.map((a) => a.name.split('.')[0]))];
                     to the planner, which designs a tree for it from the <a href="#building-steps">building steps</a>, runs it, and saves it as a candidate on
                     probation; see <a href="#intro">how strategies improve</a>.
                   </p>
+                )}
+                {un && open.length > 0 && (
+                  <>
+                    <p>Kinds of question already seen that have no tree yet; the first one that arrives gets its tree planned:</p>
+                    <ul class="quotes">{open.map((o) => <li id={`strategy-${o.id}`}>{titleOf(o)}{o.patterns?.[0]?.sounds_like?.[0] && <>: “{o.patterns[0].sounds_like[0]}”</>}</li>)}</ul>
+                  </>
                 )}
                 {s.exemplars.length > 0 && <ul class="quotes">{s.exemplars.map((e) => <li>{e}</li>)}</ul>}
                 {s.patterns.map((c) => (
@@ -208,7 +208,7 @@ const stepGroups = [...new Set(steps.map((a) => a.name.split('.')[0]))];
                 <div class="modes">
                   {[MODES.audio, MODES.chat, MODES.email].map((md) => (
                     <div class="mode">
-                      <p class="modehead"><strong>{md.name}</strong> <span class={`chip ${md.live ? 'st-built' : 'st-planned'}`}>{md.live ? 'Live' : 'Not yet'}</span></p>
+                      <p class="modehead"><strong>{md.name}</strong> <span class={`chip ${md.live ? 'st-built' : 'st-planned'}`}>{md.live ? 'Handled' : 'Not yet'}</span></p>
                       <ul>{md.lines.map((l) => <li>{l}</li>)}</ul>
                     </div>
                   ))}
@@ -400,7 +400,7 @@ const stepGroups = [...new Set(steps.map((a) => a.name.split('.')[0]))];
     </section>
   )}
 
-  {plan && <p class="note source">Every entry, built or planned, is read from the strategy database{plan.source.updated && ` (plan updated ${plan.source.updated})`}. Building steps: the code.</p>}
+  {plan && <p class="note source">Every entry is read from the strategy database{plan.source.updated && ` (plan updated ${plan.source.updated})`}. Building steps: the code.</p>}
 
   <script>
     import { bindLive, strategiesFlat } from '../../lib/anis-docs.js';

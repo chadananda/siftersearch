@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { CHANNELS, DEPTH_FRAME, supports } from '../../api/lib/assistant/channels.js';
-import { MODES, MODE_NOTES, titleOf, taglineOf, groupOf, treeBadge, orderedSteps, humanStep, outcomeOf, targetsOf } from '../../src/lib/strategy-docs.js';
+import { MODES, MODE_NOTES, titleOf, taglineOf, strategyOrder, untreed, treeBadge, orderedSteps, humanStep, outcomeOf, targetsOf } from '../../src/lib/strategy-docs.js';
 
 describe('mode copy matches channels.js', () => {
   it('chat word counts and frames', () => {
@@ -36,20 +36,19 @@ describe('titles, groups, steps', () => {
     expect(titleOf({ name: 'quote_trace' })).toBe('Quote trace');
     expect(titleOf({ name: 'Find a book' })).toBe('Find a book');
     expect(taglineOf({ name: 'prayer', status: 'built', description: 'wants a PRAYER to say — for an occasion' })).toEqual({ text: 'wants a PRAYER to say', quote: false });
-    expect(taglineOf({ name: 'A fact', status: 'planned', description: 'The fact first', patterns: [{ sounds_like: ['When was the Báb born?'] }] })).toEqual({ text: '“When was the Báb born?”', quote: true });
+    expect(taglineOf({ name: 'A fact', description: '', patterns: [{ sounds_like: ['When was the Báb born?'] }] })).toEqual({ text: '“When was the Báb born?”', quote: true });
     expect(taglineOf({ name: 'x', status: 'built', description: 'a'.repeat(300) }).text.length).toBeLessThanOrEqual(140);
   });
-  it('tree badge: newest status, live version beside it when they differ', () => {
-    expect(treeBadge({ version: 1, newest: { version: 6, status: 'candidate' } })).toEqual({ status: 'candidate', text: 'candidate v6 · live v1' });
+  it('tree badge: newest status, active version beside it when they differ', () => {
+    expect(treeBadge({ version: 1, newest: { version: 6, status: 'candidate' } })).toEqual({ status: 'candidate', text: 'candidate v6 · active v1' });
     expect(treeBadge({ version: 3, newest: { version: 3, status: 'active' } }).text).toBe('active v3');
-    expect(treeBadge({ version: null, newest: { version: 2, status: 'retired' } }).text).toBe('retired v2 · not live');
+    expect(treeBadge({ version: null, newest: { version: 2, status: 'retired' } }).text).toBe('retired v2 · none active');
     expect(treeBadge({ newest: null })).toBe(null);
   });
-  it('groups', () => {
-    expect(groupOf({ name: 'prayer', status: 'built', where: 'own' })).toBe('live');
-    expect(groupOf({ name: 'x', status: 'built', where: 'shared-reply' })).toBe('shared');
-    expect(groupOf({ name: 'x', status: 'planned' })).toBe('planned');
-    expect(groupOf({ name: 'respond', status: 'built', where: 'own', general: true })).toBe('unmatched');
+  it('a strategy IS a tree: no live/planned groups; rows with no tree are question kinds under Unmatched', () => {
+    const rows = [{ id: 'u', general: true }, { id: 'p', newest: { version: 2 } }, { id: 'a1' }];
+    expect(strategyOrder(rows).map((s) => s.id)).toEqual(['p', 'u']);
+    expect(untreed(rows).map((s) => s.id)).toEqual(['a1']);
   });
   it('step list: flow order, readable labels, exits', () => {
     expect(humanStep('respond.read_question')).toBe('Read question');

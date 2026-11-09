@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-09T19:11:25.337Z",
+  "generated": "2026-11-09T19:19:37.221Z",
   "entries": [
     {
       "hash": "450c9f410",
@@ -1757,27 +1757,6 @@
       "type": "Fixed",
       "description": "Dead 'running' jobs are reaped, not listed forever (10-23: killed 'bidi-test3' Anís draft showed running 8 h in /ops/services)",
       "scope": "jobs"
-    },
-    {
-      "hash": "a4b3358c8",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Remaster R&D loop (Chad 10-23: make audible audio more audible) — 5 defect clips, classic + GPU candidate ladder with wet/dry and band-split blends, intelligibility screening (word-aligned ASR, gated-syllable energy, SQUIM, voice match) and veto, blind A/B pages; Ioas r1 + anti-tube r2 pages up, waiting for Chad's picks",
-      "scope": "media"
-    },
-    {
-      "hash": "744fb87eb",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Identities settled from the evidence (Chad 10-23) — 22 talk decisions with reasons in data (talk_identities): Mrs. Banání = Samíhih Banání ×3, ‘Alá’í, Featherstone ×2, Muhájir, Faizí ×4, Furútan ×2, Sears, Haney, Phelps ×4, B. Afshin ×3; 3 genuinely split cases left for Chad with the facts; media-talk-identities applies them",
-      "scope": "media"
-    },
-    {
-      "hash": "ab0b52fbb",
-      "date": "2026-10-23",
-      "type": "Test",
-      "description": "Docs-order ratchet spares primary-key order; media index asserts the drawing-leads portrait",
-      "scope": null
     }
   ],
   "grouped": {
@@ -3566,27 +3545,6 @@
         "type": "Fixed",
         "description": "Dead 'running' jobs are reaped, not listed forever (10-23: killed 'bidi-test3' Anís draft showed running 8 h in /ops/services)",
         "scope": "jobs"
-      },
-      {
-        "hash": "a4b3358c8",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Remaster R&D loop (Chad 10-23: make audible audio more audible) — 5 defect clips, classic + GPU candidate ladder with wet/dry and band-split blends, intelligibility screening (word-aligned ASR, gated-syllable energy, SQUIM, voice match) and veto, blind A/B pages; Ioas r1 + anti-tube r2 pages up, waiting for Chad's picks",
-        "scope": "media"
-      },
-      {
-        "hash": "744fb87eb",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Identities settled from the evidence (Chad 10-23) — 22 talk decisions with reasons in data (talk_identities): Mrs. Banání = Samíhih Banání ×3, ‘Alá’í, Featherstone ×2, Muhájir, Faizí ×4, Furútan ×2, Sears, Haney, Phelps ×4, B. Afshin ×3; 3 genuinely split cases left for Chad with the facts; media-talk-identities applies them",
-        "scope": "media"
-      },
-      {
-        "hash": "ab0b52fbb",
-        "date": "2026-10-23",
-        "type": "Test",
-        "description": "Docs-order ratchet spares primary-key order; media index asserts the drawing-leads portrait",
-        "scope": null
       }
     ]
   }
