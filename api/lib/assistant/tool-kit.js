@@ -2,6 +2,7 @@
 // dependency lookup. Pure except dep(). A tool takes typed JSON and returns typed JSON; none calls an LLM.
 import { canonicalTradition } from './tradition-name.js';
 import { sourceTier } from './source-tier.js';
+import { placeOf } from '../refs/place.js';
 import { titleTranslator } from '../authorship/translators.js';
 
 export const AUTHORITY_KINDS = ['scripture', 'guardian', 'interpretation', 'guidance', 'law', 'prayer', 'history', 'scholarship', 'compilation', 'reported', 'other'];
@@ -35,6 +36,7 @@ export const PASSAGE = { $id: 'AnisPassage', type: 'object', additionalPropertie
   tier: nul('string'), side: nul('string'),
   translation: { ...nul('string'), description: 'What kind of translation this is (authorized / published / provisional)' },
   role: { ...nul('string'), description: 'quotation_candidates: source | original | possible_original | cited_by | candidate (unjudged near match; judge.holds turns it into source, holder or near)' },
+  place: { ...nul('string'), description: 'Where in the work the citation points, from locator/subdocument/paragraph_index (refs/place.js): "CXVII", "Tablet of Ahmad, ¶4"' }, subdocument: nul('string'),
   locator: { ...nul('string'), description: 'Where in the work to cite it: traditional number (Gleanings CXVII, Hidden Words Arabic 5, Íqán ¶12) or the section heading' } } };
 export const WORK = { $id: 'AnisWork', type: 'object', additionalProperties: true, required: ['id', 'title'], properties: {
   id: { type: 'integer' }, title: { type: 'string' }, author: nul('string'), religion: nul('string'), collection: nul('string'),
@@ -82,13 +84,14 @@ export const toPassage = (p) => {
     source_url: p.source_url || p.readerUrl || p.url || null, document_id: p.document_id ?? p.documentId ?? p.doc_id, paragraph_index: p.paragraph_index ?? p.paragraphIndex,
     religion: rel, collection: p.collection || p.document?.collection || null, language: p.language || p.source_lang || 'en',
     translation: p.translation || (/\(provisional translation\)/i.test(title) ? translationLabel('Stephen Phelps', 'provisional-phelps') : null) };
-  const kind = authorityKind({ ...p, ...base });
+  const kind = authorityKind({ ...p, ...base }), place = placeOf({ locator: p.locator, subdocument: p.subdocument, paragraph_index: base.paragraph_index });
   const year = Number(p.year ?? p.document?.year) || null, translator = p.translator ?? p.translated_by ?? titleTranslator(title) ?? null;
   const o = p.original && typeof p.original === 'object' ? p.original : null;
   return { ...base, authority: kind, year, translator, edition: p.edition ?? null,
     ...(o ? { original: { text: o.text ?? null, language: o.language ?? null, translit: o.translit ?? o.transliteration ?? null } } : {}),
     ...(p.score != null ? { score: p.score } : {}), ...(p.link?.site || p.link_site ? { link_site: p.link_site || p.link.site } : {}), ...(p.role ? { role: p.role } : {}),
-    ...(p.locator ? { locator: p.locator } : {}), ...(p.found_by ? { found_by: p.found_by } : {}), ...(p.tier ? { tier: p.tier } : {}), ...(p.side ? { side: p.side } : {}) };   // where in the work to cite it: 'CXVII', 'Arabic 5', a section heading (#156)
+    ...(p.locator ? { locator: p.locator } : {}), ...(p.subdocument ? { subdocument: p.subdocument } : {}),
+    ...(place ? { place } : {}), ...(p.found_by ? { found_by: p.found_by } : {}), ...(p.tier ? { tier: p.tier } : {}), ...(p.side ? { side: p.side } : {}) };   // where in the work to cite it: 'CXVII', 'Arabic 5', a section heading (#156)
 };
 
 const RANK = ['scripture', 'guardian', 'interpretation', 'guidance', 'compilation', 'law', 'prayer', 'history', 'reported', 'scholarship', 'other'];

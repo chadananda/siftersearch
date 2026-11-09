@@ -167,6 +167,6 @@ export function citeHeldLast(text, held = []) {
     .map((q) => foldVerbatim(q.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_]/g, ''))).filter((q) => q.split(/\s+/).length >= 5);
   const cite = held.filter((p) => p.citation_url && !src.includes(p.citation_url) && quoted.some((q) => foldVerbatim(p.text || '').includes(q)));
   const seen = new Set();
-  const links = cite.filter((p) => !seen.has(titleOf(p)) && seen.add(titleOf(p))).map((p) => `[*${titleOf(p)}*](${p.citation_url})`);
+  const links = cite.filter((p) => !seen.has(titleOf(p)) && seen.add(titleOf(p))).map((p) => `[*${titleOf(p)}*${p.place ? `, ${p.place}` : ''}](${p.citation_url})`);
   return links.length ? `${src.trimEnd()}\n\nAlso in ${links.join(', ')}.` : src;
 }

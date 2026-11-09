@@ -3,6 +3,7 @@
 // Pure. Used by the live reply guard (respond.js) and the model race (scripts/wip/anis-model-race.mjs).
 
 import { quoteSpans, containsQuote, foldText } from '../quote-text.js';
+import { citeLabel } from '../refs/place.js';
 import { foldVerbatim } from '../search/verbatim.js';
 
 export { quoteSpans };
@@ -268,7 +269,7 @@ export function completeIntroducedQuotes(text, passages) {
     if (!missing) { out.push(p); continue; }
     const q = namedPassage(p, passages);
     if (q) {
-      const link = q.citation_url && !p.includes(q.citation_url) ? ` ([${q.source_title || 'source'}](${q.citation_url}))` : '';
+      const link = q.citation_url && !p.includes(q.citation_url) ? ` ([${citeLabel(q.source_title || 'source', q.place)}](${q.citation_url}))` : '';
       out.push(p.trimEnd(), `> ${passageExcerpt(q.text)}${link}`);
       completed++;
       continue;
@@ -296,7 +297,7 @@ export function linkQuotes(text, passages) {
     const hits = pool.filter((p) => containsQuote(p.text, words));
     return hits.length && !hits.some((p) => near.includes(p.citation_url)) ? hits[0] : null;
   };
-  const link = (p) => `[${p.source_title || 'source'}](${p.citation_url})`;
+  const link = (p) => `[${citeLabel(p.source_title || 'source', p.place)}](${p.citation_url})`;
   // blockquotes: consecutive "> " lines; the line after the block may carry the attribution
   const lines = src.split('\n');
   const out = [];

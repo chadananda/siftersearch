@@ -18,6 +18,7 @@ import { isSpendCap } from '../spend-caps.js';
 import { calculateCost } from '../model-registry.js';
 import { preferOwnWork, literalOwnSearch, linkHits } from './own-source.js';
 import { toPassage } from './tools.js';
+import { citeLabel } from '../refs/place.js';
 import { dropUnverified, createSentenceGate, completeIntroducedQuotes, linkQuotes, markQuotes, fixQuoteSpeakers, saidEarlier, earlierLinkFor, exactLink, bookOnlyBlockquotes, restoreElisions } from './quotes.js';
 import { referenceHow, ensureWholeReference } from './lookup.js';
 import { guardRows } from '../rights/guard.js';
@@ -74,7 +75,8 @@ export function linkMarkers(text, quotes) {
   return String(text || '').replace(/\s?(?:【(\d+)】|\[(\d+)\](?!\())/g, (m, a, b) => {
     const q = quotes[Number(a || b) - 1];
     if (!q) return m;
-    return q.citation_url ? ` ([${q.source_title || 'source'}](${q.citation_url}))` : ` (*${q.source_title || 'source'}*)`;
+    const label = citeLabel(q.source_title || 'source', q.place);
+    return q.citation_url ? ` ([${label}](${q.citation_url}))` : ` (*${label}*)`;
   });
 }
 
@@ -799,7 +801,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     doc_id: p.document_id, paragraph_index: p.paragraph_index, religion: p.religion || null,
     collection: p.collection || null, source_lang: p.language || null, via: 'planned', standing: p.standing || null, theme: p.theme || null,
     ...(p.translation ? { translation: p.translation } : {}),   // an existing translation the reply quotes whole (researcher.js)
-    ...(p.locator ? { locator: p.locator } : {}),   // where in the work to cite it (Gleanings CXVII, Arabic 5, a section; #156)
+    ...(p.locator ? { locator: p.locator } : {}), ...(p.place ? { place: p.place } : {}),   // where in the work to cite it (Gleanings CXVII, Arabic 5, a section; #156)
   }));
   // the uncompiled letter files are cited last: a copy another passage holds never reaches the writer; code names it at the end
   const { passages: retrieved, held: heldLast } = holdUncompiledCopies(retrievedAll);
