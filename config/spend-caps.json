@@ -77,13 +77,21 @@
       {
         "from": "2026-11-06",
         "usd": 5
+      },
+      {
+        "from": "2026-11-09",
+        "usd": 25
+      },
+      {
+        "from": "2026-11-10",
+        "usd": 5
       }
     ]
   },
   "env_alias": {
     "improve": "IMPROVE_DAILY_USD"
   },
-  "_improve": "Improvement cycle (Opus 5.5 judge on every search trace + reply, deep analysis on weak ones; Chad 11-04). Chad 11-04: 'a forensics budget which we will start large but reduce over time. For now it should cover everything.' $200/day covers the measured projection ($75-170/day: $0.0098/judged reply, $0.031/deep analysis); lower it by adding a later dated entry (long-run target $5/day). Over the cap the improve worker DELAYS work (weak replies first, then new searches, then backfill), never drops it. 11-06 (Chad): $5/day; the 11-04..11-06 run spent ~$312 for 14 fixes with no before/after. Searches are never capped (search-query exempt). Media $20/day (Chad 11-06). 11-06 (Chad): \"Improvement budget should apply to testing and analysis, not real users\" — real readers' Anís turns are counted, never refused (ai-context organic); test turns (battery*@siftersearch.com / test:true, billTo improve-anis-test), battery-judge and exchange-audit bill to improve.",
+  "_improve": "Improvement cycle (Opus 5.5 judge on every search trace + reply, deep analysis on weak ones; Chad 11-04). Chad 11-04: 'a forensics budget which we will start large but reduce over time. For now it should cover everything.' $200/day covers the measured projection ($75-170/day: $0.0098/judged reply, $0.031/deep analysis); lower it by adding a later dated entry (long-run target $5/day). Over the cap the improve worker DELAYS work (weak replies first, then new searches, then backfill), never drops it. 11-06 (Chad): $5/day; the 11-04..11-06 run spent ~$312 for 14 fixes with no before/after. Searches are never capped (search-query exempt). Media $20/day (Chad 11-06). 11-06 (Chad): \"Improvement budget should apply to testing and analysis, not real users\" — real readers' Anís turns are counted, never refused (ai-context organic); test turns (battery*@siftersearch.com / test:true, billTo improve-anis-test), battery-judge and exchange-audit bill to improve. 11-09 (Chad, alpha demo): improve $25 for 11-09 only (tree promotion replays), Anthropic total $40/bg $35 that day so the provider cap does not undercut it; both back to $5 / $20-$15 on 11-10.",
   "providers": {
     "_note": "Provider-wide daily caps (Chad 11-06: \"cap anthropic costs to $20/day. when it hits that budget, queue up the work\"). Every group's calls to the provider count toward `usd`. Background groups stop at `background_usd`, so the rest is kept for live Anís replies (groups in `interactive`); `usd` stops everything. Env override: SPEND_CAP_<PROVIDER>_TOTAL_USD.",
     "interactive": [
@@ -92,6 +100,16 @@
     "anthropic": [
       {
         "from": "2026-11-06",
+        "usd": 20,
+        "background_usd": 15
+      },
+      {
+        "from": "2026-11-09",
+        "usd": 40,
+        "background_usd": 35
+      },
+      {
+        "from": "2026-11-10",
         "usd": 20,
         "background_usd": 15
       }
