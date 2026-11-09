@@ -60,6 +60,15 @@ describe('hard filters first, widening when thin', () => {
     expect(calls.some((f) => f.author === 'Rumi')).toBe(true); expect(calls.some((f) => !Object.keys(f).length)).toBe(true);
     expect(s.trace[1].members.map((m) => m.element)).toContain('search.shelf');
     expect(s.trace[1].members.find((m) => m.node === 'gather.1').filters.author).toBe('Rumi'); expect(s.trace[1].members.find((m) => m.node === 'gather.1').query).toBe('fana');
+    // only the pass whose filter carries the name uses the stripped topic; the others keep the whole question (dry run 5)
+    expect(s.trace[1].members.filter((m) => m.query && !m.filters?.author).every((m) => m.query === 'Sufi Rumi on fana')).toBe(true);
+  });
+  it('quoted: the reader\'s quoted words searched literal + phrase; gated free when nothing is quoted', async () => {
+    const seen = [], E = ELEMENTS;
+    const s = { ctx: {}, trace: [], question: 'q', tools: { fused_search: async (i) => { seen.push(i); return { passages: [P(1)] }; } }, onEvent: () => {} };
+    await E['search.shelf'].run({ ...s, units: { current_user_question: 'q', quoted_words: 'The earth is but one country' } }, { quoted: true, k: 4 });
+    expect(seen[0].query).toBe('The earth is but one country'); expect(seen[0].layers).toEqual(['literal', 'phrase']);
+    await E['search.shelf'].run({ ...s, units: { current_user_question: 'q' } }, { quoted: true, k: 4 }); expect(seen.length).toBe(1);
   });
 });
 

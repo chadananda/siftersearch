@@ -28,6 +28,7 @@ const understanding = tree('understanding', 'anchor', [
   ['gather', 'search.together', { list: [
     { element: 'search.shelf', params: { in_named: true, k: 6 } },   // inside the work the question names (free none when none)
     { element: 'search.shelf', params: { by_person: true, k: 6 } },   // the author the question names (free none when none)
+    { element: 'search.shelf', params: { quoted: true, k: 4 } },   // the words the reader quotes, literal + phrase layers (free none when none)
     { element: 'search.shelf', params: { authority: 'scripture', k: 6 } }, { element: 'search.shelf', params: { authority: 'interpretation', k: 4 } },
     { element: 'search.hype', params: { k: 6 } }, { element: 'search.originals', params: { k: 4 } }] }, 'tool', ['topic', 'question_frame', 'religions_specified', 'authority_floor', 'named_sources', 'named_work', 'named_person'], ['found_passages', 'missing'],
     { one: 'rank', several: 'rank', thin: 'widen', none: 'widen', error: '$fallback' }],
