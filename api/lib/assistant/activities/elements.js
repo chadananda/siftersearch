@@ -354,6 +354,7 @@ E.rank = { kind: 'transform', cls: 'code', edges: ['done', 'empty'], scope: 'str
     if (p.skip === 'given') items = items.filter((x) => !given.has(String(x.id)));
     else if (p.skip === 'flag') items = items.map((x) => (given.has(String(x.id)) ? { ...x, given: true } : x));
     items = items.map((x, i) => [x, i]).sort(([a, i], [b, j]) => { for (const c of cmp) { const d = c(a, b); if (d) return d; } return i - j; }).map(([x]) => x);
+    items = [...items.filter((x) => !x.out_of_scope), ...items.filter((x) => x.out_of_scope)];   // a widened (out-of-scope) passage never outranks an in-scope one, whatever the keys
     if (p.best && items.length) items = items.filter((x) => flat(x[p.best]) === flat(items[0][p.best]));   // best: only the first-ranked item's value of the field (one edition of the passage, whole)
     const pinned = p.pin ? items.filter((x) => x[p.pin] || x.id === p.pin) : [];
     items = [...pinned, ...items.filter((x) => !pinned.includes(x))];

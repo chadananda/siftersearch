@@ -93,3 +93,11 @@ describe('search.originals under a tradition scope', () => {
     expect(called).toBe(2);
   });
 });
+
+describe('rank keeps the scope', () => {
+  it('a widened out-of-scope passage never outranks an in-scope one, even by authority', () => {
+    const s = mk({ found_passages: [P(1, { religion: "Baha'i", authority: 'scripture', out_of_scope: true }), P(2, { religion: 'Buddhist', authority: 'other' })] });
+    ELEMENTS.rank.run(s, { by: ['named', 'authority'], k: 1 });
+    expect(s.units.found_passages.map((x) => x.id)).toEqual([2]);
+  });
+});
