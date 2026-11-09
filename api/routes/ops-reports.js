@@ -113,6 +113,14 @@ export default async function opsReportRoutes(fastify) {
     const slow = req.query?.slow ? { stage: req.query.slow, traces: budget.slowTraces(rows, String(req.query.slow), { overMs: Number(req.query.over) || undefined }) } : undefined;
     return { minutes, ...summary, breaches: budget.latencyBreaches(summary), ...(slow ? { slow } : {}) };
   });
+  // QDRANT OPTIMIZER: status of every searched collection; POST caps one collection's merge threads live (null = auto)
+  fastify.get('/ops/qdrant/optimizer', { preHandler: requireInternal }, async () => ({ collections: await (await import('../lib/search/qdrant-layers.js')).optimizerStatus() }));
+  fastify.post('/ops/qdrant/optimizer', { preHandler: requireInternal }, async (req) => {
+    const { setOptimizerThreads } = await import('../lib/search/qdrant-layers.js');
+    const t = req.body?.threads;
+    try { return { collection: req.body?.collection, now: await setOptimizerThreads(req.body?.collection, t === null || t === 'auto' ? null : Number(t)) }; }
+    catch (err) { throw new ApiError(/not a searched|threads must/.test(err.message) ? 400 : 502, err.message); }
+  });
   fastify.get('/ops/reports', { preHandler: requireInternal }, async () => ({ reports: reportNames(), recent: await recent(20) }));
   fastify.post('/ops/reports/:name', { preHandler: requireInternal }, async (req) => {
     known(req.params.name);

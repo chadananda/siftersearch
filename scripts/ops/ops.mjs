@@ -5,6 +5,7 @@
 //   node scripts/ops/ops.mjs report <name> [--days 14 | --ids 1,2,3 | --params '{json}'] [--wait] [--latest]
 //   node scripts/ops/ops.mjs media held | rejudge [id…] | progress | log [--since 6h|ISO --kind k1,k2 --limit n] | gauges [--host h] [--hours n] [--rows] | health-history <machine> [--from --to] | status <id|slug|words> | stage <stage> [--missing] [--status done] [--after N] | add <url|path>… | redo <id> <stage>…
 //   node scripts/ops/ops.mjs spend-caps                      each caller group's spend today vs. its daily cap, and whether it is blocking
+//   node scripts/ops/ops.mjs qdrant-optimizer [<collection> --threads N|auto]   searched collections' optimizer state; --threads caps merges live (bulk runs)
 //   node scripts/ops/ops.mjs search-latency [--minutes 60] [--slow qsrv:concepts [--over ms]]   per-stage p50/p95 vs the search budget (search/latency-budget.js); --slow lists that stage's slowest trace ids
 //   node scripts/ops/ops.mjs anis-forensics [--days 7] [--stage rank] [--json]   stage × class defect queue (replies, searches) + Opus judge tally
 //   node scripts/ops/ops.mjs anis-improvements [--status open] | anis-improvement-status <id> <open|accepted|done|rejected> [note]
@@ -64,6 +65,7 @@ else if (cmd === 'report' && name) {
 else if (cmd === 'cancel' && name) await out(await call('DELETE', `/ops/reports/runs/${Number(name)}`));
 else if (cmd === 'spend-caps') await out(await call('GET', '/ops/spend-caps'));
 else if (cmd === 'search-latency') await out(await call('GET', `/ops/search-latency?minutes=${val('--minutes') || 60}${val('--slow') ? `&slow=${encodeURIComponent(val('--slow'))}` : ''}${val('--over') ? `&over=${val('--over')}` : ''}`));
+else if (cmd === 'qdrant-optimizer') await out(val('--threads') ? await call('POST', '/ops/qdrant/optimizer', { collection: name && !name.startsWith('--') ? name : 'phrases', threads: val('--threads') }) : await call('GET', '/ops/qdrant/optimizer'));
 else if (cmd === 'anis-forensics') {
   const j = await call('GET', `/anis/forensics?days=${val('--days') || 7}${val('--stage') ? `&stage=${encodeURIComponent(val('--stage'))}` : ''}`);
   if (flag('--json')) await out(j);

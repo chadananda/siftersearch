@@ -239,6 +239,34 @@ export async function docPointCounts(docIds, { timeoutMs = 30000, chunk = 1000 }
   return out;
 }
 
+/** Optimizer threads PATCH body for a searched collection — validated, pure. threads null = Qdrant's auto (all cores). */
+export function optimizerThreadsPatch(collection, threads) {
+  if (!SEARCHED_COLLECTIONS.includes(collection)) throw new Error(`not a searched collection: ${collection}`);
+  if (threads !== null && !(Number.isInteger(threads) && threads >= 1 && threads <= 64)) throw new Error('threads must be 1-64 or null (auto)');
+  return { optimizers_config: { max_optimization_threads: threads } };
+}
+
+/** Each searched collection's optimizer state: status, segments, max_optimization_threads (null = auto). */
+export async function optimizerStatus(timeoutMs = 5000) {
+  const out = {};
+  for (const c of SEARCHED_COLLECTIONS) {
+    const r = await fetch(`${QD()}/collections/${c}`, { headers: qdrantHeaders(false), signal: AbortSignal.timeout(timeoutMs) });
+    const j = r.ok ? (await r.json()).result : null;
+    out[c] = j ? { status: j.status, optimizer: j.optimizer_status, segments: j.segments_count, points: j.points_count,
+      max_optimization_threads: j.config?.optimizer_config?.max_optimization_threads ?? null } : { status: `http ${r.status}` };
+  }
+  return out;
+}
+
+/** Cap (or restore) one collection's optimizer threads, live — a bulk upsert run otherwise lets segment merges take ~40
+ *  cores and the disk, and reader phrase searches go from ~10 ms to 100+ ms (11-09). Qdrant restarts its optimizers. */
+export async function setOptimizerThreads(collection, threads, timeoutMs = 30000) {
+  const body = optimizerThreadsPatch(collection, threads);
+  const r = await fetch(`${QD()}/collections/${collection}`, { method: 'PATCH', headers: qdrantHeaders(), body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs) });
+  if (!r.ok) throw new Error(`qdrant PATCH ${collection} ${r.status} ${(await r.text()).slice(0, 120)}`);
+  return (await optimizerStatus())[collection];
+}
+
 /** Qdrant liveness + each search collection's status (green = fully indexed; yellow = optimizing, searches slower). */
 export async function qdrantHealth(timeoutMs = 3000) {
   try {
