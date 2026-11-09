@@ -156,6 +156,10 @@ edits); **EXTEND** = new strategy types (planned candidate → node tests → pr
 plans runs on Jev + tools + light LLM, with synthesis only when needed. A matched turn makes zero Opus calls; a planned
 candidate joins the cards at once (probation) so the next similar question matches instead of replanning; every tree carries
 a per-run cost/time budget checked at validation, and IMPROVE promotes cheaper/faster trees at equal quality.
+**Rich trees, cheap paths (Chad 11-09):** because planning uses deep thinking, planned trees should be elaborate and
+high-quality — cheapest probe first, escalate only on thin, parallel tool calls, verification nodes, conflict branches, early
+exits, shapes per outcome. Size is not cost: the budget is the expected and worst cost/latency per run PATH; MAX_NODES is only
+a high sanity cap in config. This supersedes "keep each tree as small as the class allows".
 
 When no strategy fits a question (Jev chooses Unmatched), Anís does not improvise. It PLANS FIRST, with the §1 method, for
 this one question:
