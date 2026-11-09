@@ -23,7 +23,7 @@
 //   node scripts/ops/ops.mjs anis-strategy-stats [--days 7] [--json]  (per strategy@version: turns, p50/p95, $/turn, judge score, weak %)
 //   node scripts/ops/ops.mjs anis-branches <strategy> [--days 7] [--json]  (per branch: node:edge path, share, p50, score)
 //   node scripts/ops/ops.mjs anis-step-stats [--days 7] [--json]  (per step@version: runs, p50/p95, $, edge mix, Jev accuracy)
-//   node scripts/ops/ops.mjs anis-gaps | anis-candidates | anis-promote <id@v> [--dry] [--no-wait] | anis-rollback <id> | anis-retire <id@v> [--reason …]  [--json]  (strategy graph Phase 3: gaps → candidates → replay promotion)
+//   node scripts/ops/ops.mjs anis-gaps | anis-candidates | anis-promote <id@v> [--dry] [--no-wait] | anis-activate <id@v> [--reason …] | anis-rollback <id> | anis-retire <id@v> [--reason …]  [--json]  (strategy graph Phase 3: gaps → candidates → replay promotion)
 //   node scripts/ops/ops.mjs jev-gates [--days 7] | jev-bank <gate> [--chosen X --q question --wrong|--right|--unlabelled --since 7d --limit n --state] | jev-label <call_id> <answer> [--q question --basis note] | jev-try <gate> <variant> [--n 200 --params '{json}' --chosen X --stored --since 30d --any --max-usd 2]  (Jev decision-gate bank + tuning; --json for JSON)
 //   (the three print tables; --json prints the API's JSON)
 // Env: SIFTER_API (default: local gateway on tower, public API elsewhere), DEPLOY_SECRET (X-Internal-Key — the key requireInternal checks).
@@ -209,6 +209,7 @@ else if (cmd === 'anis-try') {   // one question through one strategy version (o
 }
 else if (cmd === 'anis-strategy-fix' && name) await out(await call('POST', '/anis/strategy-fix', { id: name, version: val('--version') ? Number(val('--version')) : null }));
 else if (cmd === 'anis-strategy-card' && name && val('--json')) await out(await call('POST', '/anis/strategy-card', { id: name, ...JSON.parse((await import('node:fs')).readFileSync(val('--json'), 'utf8')) }));
+else if (cmd === 'anis-activate' && name) { const [id, v] = name.split('@'); await out(await call('POST', '/anis/activate', { id, version: Number(v), reason: val('--reason') ?? null })); }
 else if (cmd === 'anis-rollback' && name) await out(await call('POST', '/anis/rollback', { id: name }));
 else if (cmd === 'anis-retire' && name?.includes('@')) {   // withdraw a candidate version for good (kept for history, never restored)
   const [id, v] = name.split('@');

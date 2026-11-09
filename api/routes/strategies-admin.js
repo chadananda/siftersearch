@@ -127,6 +127,18 @@ export default async function strategiesAdminRoutes(fastify, { deps = {} } = {})
     } catch (err) { return reply.code(409).send({ error: err.message }); }
   });
 
+  // Chad's go-live (11-09): a reviewed candidate goes active on probation at once, no judge, no spend; /anis/rollback restores the previous version
+  fastify.post('/anis/activate', { preHandler: requireInternal }, async (request, reply) => {
+    const b = request.body || {};
+    if (!b.id || !Number.isInteger(Number(b.version))) return reply.code(400).send({ error: 'id and version are required' });
+    try {
+      const d = await db(), v = Number(b.version);
+      (deps.promote || (await repo()).promote)(d, b.id, v, { by: 'ops-activate', decision: { provisional: true, reviewed: b.reason ?? 'activated by ops' } });
+      await (deps.startProbation || (async (...a) => (await import('../lib/repos/strategy-planner-repo.js')).startProbation(...a)))(d, b.id, v, { need: IMPROVE_CFG.planner.probation.runs, provisional: true });
+      return { id: b.id, version: v, activated: true };
+    } catch (err) { return reply.code(409).send({ error: err.message }); }
+  });
+
   fastify.post('/anis/rollback', { preHandler: requireInternal }, async (request, reply) => {
     const b = request.body || {};
     if (!b.id) return reply.code(400).send({ error: 'id is required' });
