@@ -61,7 +61,8 @@ const retrieval = ({ edges, tool, input, take, into = 'found_passages', rank = f
   async run(s, p0 = {}) {
     const u = U(s), p = { ...p0, ...u.param_overrides?.[s.node] }, t = tradsOf(u);
     if (p.tradition && t && !t.includes(canonicalTradition(p.tradition))) return finish(s, p, 'none', { read: { tradition: p.tradition } });   // scope ∩ params empty: a free none
-    if (gate && !gate(s, u, p)) return finish(s, p, 'none');
+    // gated off (e.g. in_named with no named work): routes as none, but it is no gap and no failed tier (found_outcome 'skipped')
+    if (gate && !gate(s, u, p)) { const e = finish(s, p, 'none'); u.missing.pop(); u.found_outcome[s.node ?? p.id ?? '?'] = 'skipped'; return e; }
     let out, inp;
     let raw, pick = null;
     try {
@@ -87,7 +88,11 @@ const retrieval = ({ edges, tool, input, take, into = 'found_passages', rank = f
     return finish(s, p, classify(items.length, edges, thin ? thin(items, p) : items.length > 0 && items.every((x) => typeof x.score === 'number' && x.score < (p.thin_below ?? 0.25))), { count: items.length, excluded, read: { query: inp } });
   },
 });
-const searchInput = (s, p, u, trad) => { const filters = { ...(trad ? { tradition: trad } : {}), ...(p.author ? { author: p.author } : {}), ...(p.language ? { language: p.language } : {}), ...(p.work ? { work: p.work } : {}) };
+// in_named: search INSIDE the work the question names (named_work title, else the first named source id); gated off when none is named
+const namedWork = (u) => (typeof u.named_work === 'string' && u.named_work.trim() ? { work: u.named_work.trim() }
+  : u.named_work != null && Number.isFinite(Number(u.named_work)) ? { documentId: Number(u.named_work) }
+  : Array.isArray(u.named_sources) && u.named_sources.length ? { documentId: u.named_sources[0] } : null);
+const searchInput = (s, p, u, trad) => { const filters = { ...(trad ? { tradition: trad } : {}), ...(p.in_named ? namedWork(u) : {}), ...(p.author ? { author: p.author } : {}), ...(p.language ? { language: p.language } : {}), ...(p.work ? { work: p.work } : {}) };
   return { query: text(s, u, p.query, '{{topic}}'), limit: kOf(p, u) ?? 8, ...(Object.keys(filters).length ? { filters } : {}), ...(Array.isArray(p.layers) && p.layers.length ? { layers: p.layers } : {}), ...(Array.isArray(p.tiers) && p.tiers.length ? { tiers: p.tiers } : {}), ...(p.spell ? { spell: true } : {}) }; };
 const passages = (o) => o?.passages;
 const notBuilt = (tool, edges) => ({ kind: 'tool', cls: 'code', edges, scope: 'strategy', params: [...CMN, 'id', 'key', 'subject', 'date'], reads: SCOPE, writes: ['found_records', ...OUT],
@@ -148,7 +153,8 @@ const E = {
       for (const { x, l } of res) if (l?.original || l?.translations?.length) { n++; x.original = l.original ?? x.original; x.translations = l.translations; }
       return finish(s, p, classify(n, ['one', 'several']), { count: n });
     } },
-  'search.shelf': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'fused_search', params: ['authority', 'doctrinal', 'language', 'author', 'work', 'layers', 'tiers', 'spell'], reads: ['topic'], input: searchInput, take: passages }),
+  'search.shelf': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'fused_search', params: ['authority', 'doctrinal', 'language', 'author', 'work', 'layers', 'tiers', 'spell', 'in_named'], reads: ['topic', 'named_work'], input: searchInput, take: passages,
+    gate: (s, u, p) => !p.in_named || !!namedWork(u) }),
   'search.hype': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'hype_search', params: ['shelf', 'doctrinal', 'language'], reads: ['topic'], input: searchInput, take: passages }),
   'search.originals': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'originals_search', reads: ['topic', 'search_originals'], input: searchInput, take: passages,
     gate: (s, u) => u.search_originals !== false }),
@@ -175,7 +181,8 @@ E['search.together'] = { kind: 'tool', cls: 'code', edges: TOGETHER, scope: 'str
     const edges = await Promise.all(list.map((st, i) => run1(s, `${s.node}.${i}`, st).catch(() => 'error')));
     const n = size(u) - n0;
     if (n > 0) u.missing = u.missing.filter((m) => !String(m.node ?? '').startsWith(`${s.node}.`));   // a tier that found nothing is not a gap when another tier found the answer
-    const edge = list.length && edges.every((e) => e === 'error') ? 'error' : n > 0 && edges.every((e) => ['thin', 'none', 'error'].includes(e)) && edges.includes('thin') ? 'thin' : classify(n, TOGETHER);
+    const live = edges.filter((e, i) => u.found_outcome[`${s.node}.${i}`] !== 'skipped');   // gated-off members do not vote
+    const edge = live.length && live.every((e) => e === 'error') ? 'error' : n > 0 && edges.every((e) => ['thin', 'none', 'error'].includes(e)) && edges.includes('thin') ? 'thin' : classify(n, TOGETHER);
     const note = finish(s, p, edge, { count: n, read: { list: list.map((x) => x.element), edges: edges.join(',') } }); s.note.scope_excluded = u.scope_excluded - x0; return note;
   } };
 E['search.fanout'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', 'all_none', 'error'], scope: 'strategy', params: ['by', 'facets', 'inner', 'stage'], reads: SCOPE, writes: ['found_passages', 'found_records', ...OUT],

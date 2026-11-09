@@ -66,14 +66,24 @@ export function seedStrategies(db, seed = { TEMPLATES, STEPS, STRATEGIES: seedRo
   return db.transaction(() => {
     let n = 0;
     for (const t of seed.TEMPLATES) n += tpl.run(t.id, t.version, t.text, at, 'seed').changes;
-    for (const s of seed.STEPS) n += stp.run(s.id, s.version, s.activity, JSON.stringify(s.params || {}), s.template_id ?? null, s.template_version ?? null,
-      s.budget_ms ?? null, s.budget_usd ?? null, at, 'seed').changes;
+    // tree steps (tree.*) are content-addressed: the stored version with these exact params, else the next free version, so an
+    // edited tree step ships as a new step row instead of INSERT OR IGNORE keeping the old params. Other seed steps: as given.
+    const sameStep = db.prepare('SELECT version FROM steps WHERE id = ? AND activity = ? AND params_json = ? ORDER BY version DESC LIMIT 1');
+    const maxStep = db.prepare('SELECT MAX(version) AS v FROM steps WHERE id = ?');
+    const stepV = new Map();
+    for (const s of seed.STEPS) {
+      const pj = JSON.stringify(s.params || {});
+      const v = !s.id.startsWith('tree.') ? s.version : sameStep.get(s.id, s.activity, pj)?.version ?? Math.max(s.version, (maxStep.get(s.id)?.v ?? 0) + 1);
+      stepV.set(s.id, v);
+      n += stp.run(s.id, v, s.activity, pj, s.template_id ?? null, s.template_version ?? null, s.budget_ms ?? null, s.budget_usd ?? null, at, 'seed').changes;
+    }
+    const pinSteps = (g) => (g?.nodes ? { ...g, nodes: Object.fromEntries(Object.entries(g.nodes).map(([k, nd]) => [k, stepV.has(nd.step) ? { ...nd, step_version: stepV.get(nd.step) } : nd])) } : g);
     // seed-trees rows take the NEXT FREE version: a fixed v2 collided with older candidates (11-05 understanding@2/@3, comparison@2,
-    // prayer@2) and INSERT OR IGNORE silently kept those. Seeded once per id (an existing seed-trees row = done).
-    const treeDone = db.prepare("SELECT 1 FROM strategies WHERE id = ? AND created_by = 'seed-trees' LIMIT 1");
+    // prayer@2) and INSERT OR IGNORE silently kept those. A tree is re-seeded only when its graph changed (no seed-trees row with this graph).
+    const treeDone = db.prepare("SELECT 1 FROM strategies WHERE id = ? AND created_by = 'seed-trees' AND graph_json = ? LIMIT 1");
     const maxV = db.prepare('SELECT MAX(version) AS v FROM strategies WHERE id = ?');
-    const versionOf = (s) => (s.created_by !== 'seed-trees' ? s.version : treeDone.get(s.id) ? null : Math.max(s.version, (maxV.get(s.id)?.v ?? 0) + 1));
-    for (const s0 of seed.STRATEGIES) { const v = versionOf(s0); if (v == null) continue; const s = { ...s0, version: v };
+    const versionOf = (s) => (s.created_by !== 'seed-trees' ? s.version : treeDone.get(s.id, JSON.stringify(s.graph)) ? null : Math.max(s.version, (maxV.get(s.id)?.v ?? 0) + 1));
+    for (const s1 of seed.STRATEGIES) { const s0 = s1.created_by === 'seed-trees' ? { ...s1, graph: pinSteps(s1.graph) } : s1; const v = versionOf(s0); if (v == null) continue; const s = { ...s0, version: v };
       n += str.run(s.id, s.version, s.name, s.description ?? null, JSON.stringify(s.exemplars || []), JSON.stringify(s.graph),
       s.status || 'active', s.parent_version ?? null, at, s.created_by || 'seed').changes; }
     for (const x of specs) n += spc.run(x.name, specVersion, x.kind, x.sort, JSON.stringify(x.spec), at, 'seed').changes;

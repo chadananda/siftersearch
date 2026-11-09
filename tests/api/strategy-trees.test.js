@@ -278,6 +278,17 @@ describe('new element behaviour', () => {
     const e = await ELEMENTS['search.together'].run(s, { list: [{ element: 'search.shelf', params: {} }, { element: 'search.hype', params: {} }] });
     expect(e).toBe('one'); expect(s.units.missing).toEqual([]);
   });
+  it('search.shelf in_named: searches inside the named work; with none named it is skipped free and does not vote', async () => {
+    const seen = [];
+    const fused = async (inp) => { seen.push(inp.filters || {}); return { passages: [P(1)] }; };
+    const s = mk({ named_work: 'Some Answered Questions' }, { tools: { fused_search: fused } });
+    expect(await ELEMENTS['search.shelf'].run(s, { in_named: true })).toBe('one');
+    expect(seen[0].work).toBe('Some Answered Questions');
+    seen.length = 0;
+    const s2 = mk({}, { tools: { fused_search: async () => { throw new Error('down'); }, hype_search: async () => { throw new Error('down'); } } });
+    const e = await ELEMENTS['search.together'].run(s2, { list: [{ element: 'search.shelf', params: { in_named: true } }, { element: 'search.hype', params: {} }] });
+    expect(e).toBe('error'); expect(s2.units.missing.some((m) => String(m.node).endsWith('.0'))).toBe(false);
+  });
   it('hand.strategy: version pins the sub-tree; an all-error sub-run is error, not none', async () => {
     const s = mk({}, { tools: { ...EMPTY, fused_search: boom, hype_search: boom, originals_search: boom }, templates: TPL, jev: verdict('answers'), onEvent: () => {} });
     expect(await ELEMENTS['hand.strategy'].run(s, { name: 'understanding', version: 2, upto: 'evidence' })).toBe('error');

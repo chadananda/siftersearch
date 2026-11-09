@@ -21,4 +21,19 @@ describe('tree seed versions', () => {
     const g = JSON.parse(db.prepare("SELECT graph_json FROM strategies WHERE id = 'understanding' AND version = 4").get().graph_json);
     expect(Object.keys(g.nodes).length).toBeGreaterThan(1);
   });
+
+  it('an edited tree step ships: new step version, new candidate version pinned to it; unchanged trees stay put', () => {
+    const db = openStrategiesDb(':memory:');
+    const seed = { TEMPLATES, STEPS, STRATEGIES: [...STRATEGIES, ...TREE_STRATEGIES] };
+    seedStrategies(db, seed);
+    const sid = 'tree.understanding.gather';
+    const edited = { ...seed, STEPS: STEPS.map((s) => (s.id === sid ? { ...s, params: { ...s.params, edited: true } } : s)) };
+    expect(seedStrategies(db, edited)).toBeGreaterThan(0);
+    expect(db.prepare('SELECT version FROM steps WHERE id = ? ORDER BY version').all(sid).map((r) => r.version)).toEqual([1, 2]);
+    const rows = db.prepare("SELECT version, graph_json FROM strategies WHERE id = 'understanding' AND created_by = 'seed-trees' ORDER BY version").all();
+    expect(rows.length).toBe(2);
+    expect(JSON.parse(rows[1].graph_json).nodes.gather.step_version).toBe(2);
+    expect(db.prepare("SELECT COUNT(*) AS n FROM strategies WHERE id = 'prayer' AND created_by = 'seed-trees'").get().n).toBe(1);
+    expect(seedStrategies(db, edited)).toBe(0);
+  });
 });

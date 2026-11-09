@@ -26,8 +26,9 @@ function tree(strategy, entry, rows, { needs, units } = {}) {
 const understanding = tree('understanding', 'anchor', [
   ['anchor', 'fetch.anchor', {}, 'tool', ['referent', 'reader_position', 'state.given'], ['found_passages', 'named_work'], { '*': 'gather' }],
   ['gather', 'search.together', { list: [
+    { element: 'search.shelf', params: { in_named: true, k: 6 } },   // inside the work the question names (free none when none)
     { element: 'search.shelf', params: { authority: 'scripture', k: 6 } }, { element: 'search.shelf', params: { authority: 'interpretation', k: 4 } },
-    { element: 'search.hype', params: { k: 6 } }, { element: 'search.originals', params: { k: 4 } }] }, 'tool', ['topic', 'question_frame', 'religions_specified', 'authority_floor', 'named_sources'], ['found_passages', 'missing'],
+    { element: 'search.hype', params: { k: 6 } }, { element: 'search.originals', params: { k: 4 } }] }, 'tool', ['topic', 'question_frame', 'religions_specified', 'authority_floor', 'named_sources', 'named_work'], ['found_passages', 'missing'],
     { one: 'rank', several: 'rank', thin: 'rank', none: 'rank', error: '$fallback' }],
   ['rank', 'rank', { by: ['authority'], k: { default: 4, research: 8 }, pin: 'anchor', skip: 'given', dedupe: true }, 'process', ['found_passages', 'state.given'], ['found_passages'], { done: 'stage', empty: '$absence' }],
   ['stage', 'ui.stage', { stage: 'Reading the passages in context…' }, 'process', ['channel'], [], { emitted: 'around' }],
