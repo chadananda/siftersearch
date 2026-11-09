@@ -1,0 +1,83 @@
+// Early filters (Chad 11-09): Jev's span kinds + subject religion → hard search filters; named work/author outrank authority; thin → widen; the judge reads the tree trace.
+import { describe, it, expect } from 'vitest';
+import { chooseStrategy, namedUnits } from '../../api/lib/assistant/strategy-choice.js';
+import { ELEMENTS } from '../../api/lib/assistant/activities/elements.js';
+import { graphFor, runGraph, entryUnits } from '../../api/lib/assistant/activities/graph.js';
+import { TEMPLATES } from '../../api/lib/assistant/strategy-seed.js';
+import { turnFromPath, itemsForTurn, judgeMessage } from '../../api/lib/audit/improve.js';
+
+const Q = "According to 'Abdu'l-Bahá in Some Answered Questions, what happens to the soul after death?";
+const ans = (choice, confidence = 0.95) => ({ choice, confidence });
+const P = (i, x = {}) => ({ id: i, text: `Passage ${i}`, document_id: 100 + i, paragraph_index: i, religion: "Baha'i", authority: 'scripture', score: 0.9, title: `T${i}`, ...x });
+const NONE = async () => ({ passages: [] });
+const mk = (units = {}, extra = {}) => ({ node: 'n', question: 'q', tools: {}, units: { found_passages: [], found_records: [], web_found: [], found_outcome: {}, missing: [], scope_excluded: 0, ...units }, ctx: {}, templates: {}, ...extra });
+
+describe('Jev fills the filter units in the same call', () => {
+  it('namedUnits: span kinds → named_work / named_person (frame words stripped) + topic = the question minus those spans', () => {
+    const a = { kind_1: ans('person'), kind_2: ans('work') };
+    expect(namedUnits(a, ["According to 'Abdu'l-Bahá", 'Some Answered Questions'], Q)).toEqual({ named_person: "'Abdu'l-Bahá", named_work: 'Some Answered Questions', topic: 'what happens to the soul after death?' });
+  });
+  it('namedUnits: below-confidence or "neither" kinds set nothing (topic stays the question)', () => {
+    expect(namedUnits({ kind_1: ans('work', 0.3), kind_2: ans('neither') }, ['Rumi', 'fana'], 'Rumi on fana')).toEqual({});
+  });
+  it('chooseStrategy returns the units, asks kind_N + subject_religion in ONE call, and the subject tradition is a turn-only scope', async () => {
+    let body;
+    const fetchImpl = async (url, o) => { body = JSON.parse(o.body); return { ok: true, json: async () => ({ answers: { strategy: ans('unmatched'), kind_1: ans('work'), subject_religion: ans('Buddhist'), scope_religion: ans('unchanged') } }) }; };
+    const r = await chooseStrategy([{ role: 'user', content: 'In "The Seven Valleys", what do Buddhist teachers say about anatta?' }], { apiKey: 'k', fetchImpl, options: { unmatched: 'x' } });
+    expect(Object.keys(body.questions)).toEqual(expect.arrayContaining(['kind_1', 'subject_religion', 'strategy']));
+    expect(r.units.named_work).toBe('The Seven Valleys');
+    expect(r.patch.turnOnly?.scope?.religions_specified?.length).toBe(1);
+  });
+});
+
+describe('hard filters first, widening when thin', () => {
+  it('search.shelf by_person filters by author, gated free when none; the tradition filter applies', async () => {
+    const seen = [];
+    const fused = async (i) => { seen.push(i.filters || {}); return { passages: [P(1, { religion: 'Christian' })] }; };
+    const s = mk({ named_person: 'Augustine', religions_specified: ['Christian'] }, { tools: { fused_search: fused } });
+    expect(await ELEMENTS['search.shelf'].run(s, { by_person: true })).toBe('one');
+    expect(seen[0].author).toBe('Augustine'); expect(seen[0].tradition).toBeTruthy();
+    const s2 = mk({}, { tools: { fused_search: fused } }); seen.length = 0;
+    await ELEMENTS['search.shelf'].run(s2, { by_person: true }); expect(seen.length).toBe(0); expect(s2.units.found_outcome.n).toBe('skipped');
+  });
+  it('wide: runs with no filters, only when a hard filter was applied', async () => {
+    const seen = [];
+    const fused = async (i) => { seen.push(i.filters || {}); return { passages: [P(1)] }; };
+    const f = mk({ named_person: 'Rumi' }, { tools: { fused_search: fused } });
+    await ELEMENTS['search.shelf'].run(f, { wide: true, scope: 'rank' }); expect(seen).toEqual([{}]);
+    seen.length = 0; const g = mk({}, { tools: { fused_search: fused } });
+    await ELEMENTS['search.shelf'].run(g, { wide: true }); expect(seen.length).toBe(0);
+  });
+  it('the understanding tree: a filtered pass that finds nothing widens once; the members show in the trace', async () => {
+    const g = graphFor('understanding', 2), calls = [];
+    const tools = { fused_search: async (i) => { calls.push(i.filters || {}); return { passages: i.filters?.tradition || i.filters?.author ? [] : [P(1)] }; }, hype_search: NONE, originals_search: NONE, document_search: async () => ({ works: [] }), context_lookup: NONE, source_trace: NONE, reference: NONE };
+    const choice = { units: { named_person: 'Rumi', topic: 'fana' } };
+    const s = { choice, ctx: {}, trace: [], question: 'Sufi Rumi on fana', messages: [], tools, jev: async () => ({ choice: 'answers' }), templates: Object.fromEntries(TEMPLATES.map((t) => [t.id, t.text])), onEvent: () => {} };
+    s.units = entryUnits(g, choice, { query: s.question, question: s.question, channel: { id: 'site-chat' }, messages: [], scope: { units: { religions_specified: ['Islam'] }, source: 'turn' } });
+    await runGraph(g, s);
+    const names = s.trace.map((t) => t.node);
+    expect(names.slice(0, 3)).toEqual(['anchor', 'gather', 'widen']);
+    expect(calls.some((f) => f.author === 'Rumi')).toBe(true); expect(calls.some((f) => !Object.keys(f).length)).toBe(true);
+    expect(s.trace[1].members.map((m) => m.element)).toContain('search.shelf');
+    expect(s.trace[1].members.find((m) => m.node === 'gather.1').filters.author).toBe('Rumi'); expect(s.trace[1].members.find((m) => m.node === 'gather.1').query).toBe('fana');
+  });
+});
+
+describe('rank: the named work / author outranks authority order', () => {
+  it('a named work (by title or id) and a named author come before a higher authority kind', () => {
+    const items = [P(1, { authority: 'scripture', title: 'Gleanings' }), P(2, { authority: 'interpretation', title: 'Some Answered Questions', document_id: 9 }), P(3, { authority: 'history', author: 'Augustine' })];
+    const a = mk({ found_passages: [...items], named_work: 'Some Answered Questions' }); ELEMENTS.rank.run(a, { by: ['named', 'authority'] });
+    expect(a.units.found_passages[0].id).toBe(2);
+    const b = mk({ found_passages: [...items], named_work: 9 }); ELEMENTS.rank.run(b, { by: ['named', 'authority'] }); expect(b.units.found_passages[0].id).toBe(2);
+    const c = mk({ found_passages: [...items], named_person: 'Augustine' }); ELEMENTS.rank.run(c, { by: ['named', 'authority'] }); expect(c.units.found_passages[0].id).toBe(3);
+  });
+});
+
+describe('the judge sees the tree', () => {
+  it('turnFromPath keeps node members/filters; the judge message names the gather members', () => {
+    const steps = [{ node: 'gather', step: 's@1', ms: 9, edge: 'several', count: 6, members: [{ node: 'gather.0', element: 'search.shelf', edge: 'one', count: 3, query: 'soul after death', filters: { work: 'Some Answered Questions' } }, { node: 'gather.1', element: 'search.shelf', edge: 'none', count: 0, skipped: true }] }];
+    const t = turnFromPath({ question: Q, reply: 'r', path: { strategy: { choice: 'understanding' }, steps } });
+    const msg = judgeMessage(itemsForTurn(t, { messageId: 'x' }).reply);
+    expect(msg).toContain('TREE understanding'); expect(msg).toContain('gather.0 search.shelf "soul after death" filters {"work":"Some Answered Questions"} → 3'); expect(msg).toContain('gather.1 search.shelf (skipped');
+  });
+});

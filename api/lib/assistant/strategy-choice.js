@@ -40,6 +40,21 @@ const ORD = ['FIRST', 'SECOND', 'THIRD'];
 const MAX_BOOK_SPANS = 4;
 const bookAsk = (span) => `In the latest message, is "${span}" a particular BOOK or scripture to be read for one side of the comparison? If so, which tradition's book is it? Answer "none" when it names a tradition, a people, a person or anything other than a book.`;
 
+// Early filters (Chad 11-09): what each name span IS (a work, a person, neither) and which tradition the question is about are Jev's answers in this SAME call
+// (typed choices only); code resolves them — a span becomes named_work / named_person, the topic is the question minus those spans (a search phrase, not the whole question).
+const KINDS = { work: 'a written WORK: a book, tablet, treatise or scripture (its title)', person: 'a PERSON or author whose own teaching or writing the reader asks about', neither: 'a concept, place, event, tradition or anything else' };
+const kindAsk = (span) => `In the latest message, what does "${span}" name — a written work, a person whose own teaching or writing is asked about, or neither?`;
+const SUBJECT_ASK = 'Does the latest message ask about the texts, teachers or teachings of one particular religion or tradition ("Buddhist anatta", "Sufi Rumi on fana", "Augustine on grace")? Choose it. "none" when it names no tradition.';
+const FRAME = /^(?:according to|as (?:stated|explained|written|said) (?:in|by)|per|by|from|in|on)\s+/i;
+const frameless = (n) => String(n).replace(FRAME, '').trim();
+/** Jev's span kinds → { named_work, named_person, topic } (units for the tree's `request`). Pure. */
+export function namedUnits(a = {}, spans = [], question = '', min = MIN_CONFIDENCE) {
+  const kinds = spans.map((n, i) => ({ name: frameless(n), raw: n, ...choice(a[`kind_${i + 1}`]) })).filter((k) => k.name && ['work', 'person'].includes(k.choice) && (k.confidence ?? 0) >= min);
+  const work = kinds.find((k) => k.choice === 'work'), person = kinds.find((k) => k.choice === 'person');
+  const rest = kinds.reduce((q, k) => q.replace(k.raw, '\u0000'), String(question)).replace(/(?:\b(?:according to|as (?:stated|explained|written|said) (?:in|by)|in|from|by|on|per)\s+)?\u0000[\s,;:'"’‘“”()-]*/gi, ' ').replace(/\s+/g, ' ').trim();
+  return { ...(work ? { named_work: work.name } : {}), ...(person ? { named_person: person.name } : {}), ...(kinds.length && rest.split(' ').length >= 2 ? { topic: rest } : {}) };
+}
+
 const choice = (a) => a && { choice: a.choice ?? a.value ?? null, confidence: a.confidence ?? a.distribution?.[a.choice ?? a.value] ?? null, distribution: a.distribution ?? null };
 
 /** The thread as Jev sees it (last turns, clipped). Pure. */
@@ -68,6 +83,8 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
         strategy: { type: 'choice', instructions: 'What does the LATEST user message, read in the context of the thread, ask the assistant to do?', criteria: opts },
         ...Object.fromEntries(SIDE_KEYS.map((k, i) => [k, { type: 'choice', instructions: `If the latest message compares or asks about several traditions, which is the ${ORD[i]} tradition it names or means? Otherwise "none".`, criteria: SIDES }])),
         ...Object.fromEntries(spans.map((n, i) => [`book_${i + 1}`, { type: 'choice', instructions: bookAsk(n), criteria: SIDES }])),
+        ...Object.fromEntries(spans.map((n, i) => [`kind_${i + 1}`, { type: 'choice', instructions: kindAsk(n), criteria: KINDS }])),
+        subject_religion: { type: 'choice', instructions: SUBJECT_ASK, criteria: SIDES },
         ...patchQuestions(st, TRADITIONS, turn),
       } }),
       signal,
@@ -99,9 +116,15 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
       ...(strategy.choice === 'comparison' ? [{ point: 'sides', by: 'jev', saw: state, options: Object.keys(SIDES), probabilities: Object.fromEntries(sideAnswers.map((s, i) => [SIDE_KEYS[i], jevProbabilities(s)])), chosen: sides, reason: sides.length < 2 ? 'fewer than two sides — executor widens' : null, ms },
         ...(spans.length ? [{ point: 'side-books', by: 'jev', saw: spans, options: Object.keys(SIDES), probabilities: Object.fromEntries(spans.map((n, i) => [n, jevProbabilities(choice(a[`book_${i + 1}`]) || {})])), chosen: sources, reason: null, ms }] : [])] : []),
     ];
-    const patch = { jev: jevPatch.patch, turnOnly: jevPatch.turnOnly, continues: jevPatch.continues, offer: jevPatch.offer };
+    // the tradition the question is about = a hard filter for THIS turn, unless the reader set a scope (scope_religion) or already has one in the conversation
+    const subj = choice(a.subject_religion), subjectOn = subj?.choice && subj.choice !== 'none' && SIDES[subj.choice] && (subj.confidence ?? 0) >= min && !jevPatch.patch.scope?.religions_specified && !jevPatch.turnOnly;
+    const turnOnly = subjectOn ? { scope: { religions_specified: [subj.choice] } } : jevPatch.turnOnly;
+    const units = namedUnits(a, spans, messages.filter((m) => m.role === 'user').at(-1)?.content || '', min);
+    if (subjectOn) decisions.push({ point: 'subject-religion', by: 'jev', saw: state, options: Object.keys(SIDES), probabilities: jevProbabilities(subj), chosen: subj.choice, reason: 'a hard filter for this turn', ms });
+    if (Object.keys(units).length) decisions.push({ point: 'named-units', by: 'jev', saw: spans, options: Object.keys(KINDS), chosen: units, reason: null, ms });
+    const patch = { jev: jevPatch.patch, turnOnly, continues: jevPatch.continues, offer: jevPatch.offer };
     if (Object.keys(patch.jev).length || patch.turnOnly || patch.continues || patch.offer) decisions.push({ point: 'state-patch', by: 'jev', saw: state, options: ['unchanged', 'patch'], chosen: 'patch', reason: JSON.stringify({ ...patch.jev, ...(patch.turnOnly ? { turn_only: patch.turnOnly } : {}), ...(patch.continues ? { continues: lastStrategy } : {}), ...(patch.offer ? { offer: patch.offer } : {}) }).slice(0, 400), ms });
-    return { strategy, sides, sources, ms, decisions, patch };
+    return { strategy, sides, sources, units, ms, decisions, patch };
   }
 }
 

@@ -27,10 +27,14 @@ const understanding = tree('understanding', 'anchor', [
   ['anchor', 'fetch.anchor', {}, 'tool', ['referent', 'reader_position', 'state.given'], ['found_passages', 'named_work'], { '*': 'gather' }],
   ['gather', 'search.together', { list: [
     { element: 'search.shelf', params: { in_named: true, k: 6 } },   // inside the work the question names (free none when none)
+    { element: 'search.shelf', params: { by_person: true, k: 6 } },   // the author the question names (free none when none)
     { element: 'search.shelf', params: { authority: 'scripture', k: 6 } }, { element: 'search.shelf', params: { authority: 'interpretation', k: 4 } },
-    { element: 'search.hype', params: { k: 6 } }, { element: 'search.originals', params: { k: 4 } }] }, 'tool', ['topic', 'question_frame', 'religions_specified', 'authority_floor', 'named_sources', 'named_work'], ['found_passages', 'missing'],
-    { one: 'rank', several: 'rank', thin: 'rank', none: 'rank', error: '$fallback' }],
-  ['rank', 'rank', { by: ['authority'], k: { default: 4, research: 8 }, pin: 'anchor', skip: 'given', dedupe: true }, 'process', ['found_passages', 'state.given'], ['found_passages'], { done: 'stage', empty: '$absence' }],
+    { element: 'search.hype', params: { k: 6 } }, { element: 'search.originals', params: { k: 4 } }] }, 'tool', ['topic', 'question_frame', 'religions_specified', 'authority_floor', 'named_sources', 'named_work', 'named_person'], ['found_passages', 'missing'],
+    { one: 'rank', several: 'rank', thin: 'widen', none: 'widen', error: '$fallback' }],
+  // the filtered pass was thin: once more with no hard filter (tradition, work, author); free skip when nothing was filtered
+  ['widen', 'search.together', { list: [{ element: 'search.shelf', params: { wide: true, scope: 'rank', k: 6 } }, { element: 'search.hype', params: { wide: true, scope: 'rank', k: 6 } }] }, 'tool', ['topic', 'religions_specified', 'named_work', 'named_person'], ['found_passages', 'missing'],
+    { one: 'rank', several: 'rank', thin: 'rank', none: 'rank', error: 'rank' }],
+  ['rank', 'rank', { by: ['named', 'authority'], k: { default: 4, research: 8 }, pin: 'anchor', skip: 'given', dedupe: true }, 'process', ['found_passages', 'state.given'], ['found_passages'], { done: 'stage', empty: '$absence' }],
   ['stage', 'ui.stage', { stage: 'Reading the passages in context…' }, 'process', ['channel'], [], { emitted: 'around' }],
   ['around', 'read.around', {}, 'tool', ['found_passages'], ['found_passages'], { done: 'trace' }],
   ['trace', 'read.source', {}, 'tool', ['found_passages'], ['found_passages'], { traced: 'judge', kept: 'judge' }],
@@ -38,7 +42,7 @@ const understanding = tree('understanding', 'anchor', [
   ['s_answer', 'shape', { template: 'understanding.answer', shared: 'tpl.passages', format: 'understanding', theme_by: 'authority', offers: ['the argument, the context or the original'] }, 'synthesize', ['found_passages', 'channel', 'question_frame', 'scope_clause'], ['offers'], { done: END }],
   ['s_nodirect', 'shape', { template: 'understanding.no_direct', shared: 'tpl.passages', format: 'understanding', theme_by: 'authority', offers: ['a wider search or a research report'] }, 'synthesize', ['found_passages', 'missing'], ['offers', 'missing'], { done: END }],
   ['s_conflict', 'shape', { template: 'understanding.conflict', shared: 'tpl.passages', format: 'understanding', theme_by: 'authority' }, 'synthesize', ['found_passages'], [], { done: END }],
-], { needs: ['topic', 'question_frame', 'quoted_words', 'named_work', 'audience'] });
+], { needs: ['topic', 'question_frame', 'quoted_words', 'named_work', 'named_person', 'audience'] });
 
 // ── comparison (BC §2): ONE compare_search for all sides, the understanding judge once, one rank, the sides shape ──
 const comparison = tree('comparison', 'sides', [

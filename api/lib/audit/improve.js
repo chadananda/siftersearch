@@ -80,6 +80,14 @@ export function judgeMessage(item, { maxHits = 12 } = {}) {
     for (const h of (s.hits || []).slice(0, maxHits)) L.push(`  ${compactHit(h)}`);
     if (!(s.hits || []).length) L.push('  (no hits recorded)');
   }
+  // the strategy tree's own node trace: what each parallel search asked, under which hard filters, and what it returned
+  if (item.kind === 'reply' && item.nodes?.some((n) => n.members?.length || n.filters)) {
+    L.push(`TREE ${item.strategy || ''}:`);
+    for (const n of item.nodes.slice(0, 14)) {
+      L.push(`  ${n.node} → ${n.edge}${n.count != null ? ` (${n.count})` : ''}${n.query ? ` "${clip(n.query, 100)}"` : ''}${n.filters && Object.keys(n.filters).length ? ` filters ${JSON.stringify(n.filters)}` : ''}`);
+      for (const m of n.members || []) L.push(`    ${m.node} ${m.element}${m.skipped ? ' (skipped: nothing to filter by)' : ` "${clip(m.query, 100)}" filters ${JSON.stringify(m.filters || {})} → ${m.count}`}`);
+    }
+  }
   if (item.kind === 'reply') {
     if (item.writer_passages?.length) { L.push('WRITER HAD:'); for (const h of item.writer_passages.slice(0, maxHits)) L.push(`  ${compactHit(h, 100)}`); }
     L.push(`REPLY: ${clip(item.reply, 1500)}`);
@@ -304,7 +312,7 @@ export function turnFromPath({ question, reply, path = {}, traces = [] }) {
   const cited = evidence.filter((e) => e.url && urls.has(e.url)).map((e) => ({ doc_id: e.doc_id, title: e.title }));
   // the model's own search queries (before any subject anchor rebuilt one) and Jev's resolved subject: forensics' query-drift
   const model_queries = steps.filter((s) => MODEL_SEARCH.has(s.tool)).map((s) => s.rebuilt_from ?? s.args?.query).filter(Boolean);
-  return { route: routeOf(p.recipe || p.plan?.shape), strategy: p.strategy?.choice ?? null, nodes: (Array.isArray(p.steps) ? p.steps : []).map((x) => ({ node: x.node, edge: x.edge, ms: x.ms })), question, reply, searches, writer_passages: evidence, cited,
+  return { route: routeOf(p.recipe || p.plan?.shape), strategy: p.strategy?.choice ?? null, nodes: (Array.isArray(p.steps) ? p.steps : []).map((x) => ({ node: x.node, edge: x.edge, ms: x.ms, ...(x.count != null ? { count: x.count } : {}), ...(x.search ? { query: x.search.query, filters: x.search.filters } : {}), ...(Array.isArray(x.members) ? { members: x.members } : {}) })), question, reply, searches, writer_passages: evidence, cited,
     subject: p.triage?.query ?? null, model_queries };
 }
 

@@ -43,10 +43,10 @@ export function scoped(items, u, rank) {
 }
 const merge = (u, into, items) => { const seen = new Set(u[into].map(key)); for (const p of items) if (!seen.has(key(p))) { seen.add(key(p)); u[into].push(p); } };
 const classify = (n, edges, thin = false) => (n === 0 ? 'none' : thin && edges.includes('thin') ? 'thin' : n === 1 && edges.includes('one') ? 'one' : edges.includes('several') ? 'several' : 'one');
-const finish = (s, p, edge, { count = 0, excluded = 0, read = {}, error = null } = {}) => {
+const finish = (s, p, edge, { count = 0, excluded = 0, read = {}, error = null, search = null } = {}) => {
   const u = U(s); u.found_outcome[s.node ?? p.id ?? '?'] = edge; u.scope_excluded += excluded;
   if (edge === 'none' || edge === 'error') u.missing.push({ node: s.node ?? null, edge, ...(error ? { error } : {}) });
-  s.note = { read: Object.fromEntries(Object.entries({ religions_specified: u.religions_specified, authority_floor: u.authority_floor, ...read }).map(([k, v]) => [k, trim(v)])), params: p, count, scope_excluded: excluded, ...(error ? { error } : {}) };
+  s.note = { read: Object.fromEntries(Object.entries({ religions_specified: u.religions_specified, authority_floor: u.authority_floor, ...read }).map(([k, v]) => [k, trim(v)])), params: p, count, scope_excluded: excluded, ...(search ? { search } : {}), ...(error ? { error } : {}) };
   return edge;
 };
 const kOf = (p, u) => (p.k && typeof p.k === 'object' ? (u.depth === 'research' && p.k.research !== undefined ? p.k.research : p.k.many !== undefined && (u.compare_sides || []).length > 4 ? p.k.many : p.k.default) : p.k);   // many: k once more than four sides
@@ -85,15 +85,19 @@ const retrieval = ({ edges, tool, input, take, into = 'found_passages', rank = f
     if (kinds.length) raw = raw.filter((x) => !kindOf(x) || kinds.includes(kindOf(x)));
     const { items, excluded } = scoped(raw, u, p.scope === 'rank' || rank);
     merge(u, into, items); after?.(out, u, items);
-    return finish(s, p, classify(items.length, edges, thin ? thin(items, p) : items.length > 0 && items.every((x) => typeof x.score === 'number' && x.score < (p.thin_below ?? 0.25))), { count: items.length, excluded, read: { query: inp } });
+    return finish(s, p, classify(items.length, edges, thin ? thin(items, p) : items.length > 0 && items.every((x) => typeof x.score === 'number' && x.score < (p.thin_below ?? 0.25))), { count: items.length, excluded, read: { query: inp }, search: inp && typeof inp === 'object' ? { query: inp.query, filters: inp.filters ?? {} } : null });
   },
 });
 // in_named: search INSIDE the work the question names (named_work title, else the first named source id); gated off when none is named
 const namedWork = (u) => (typeof u.named_work === 'string' && u.named_work.trim() ? { work: u.named_work.trim() }
   : u.named_work != null && Number.isFinite(Number(u.named_work)) ? { documentId: Number(u.named_work) }
   : Array.isArray(u.named_sources) && u.named_sources.length ? { documentId: u.named_sources[0] } : null);
-const searchInput = (s, p, u, trad) => { const filters = { ...(trad ? { tradition: trad } : {}), ...(p.in_named ? namedWork(u) : {}), ...(p.author ? { author: p.author } : {}), ...(p.language ? { language: p.language } : {}), ...(p.work ? { work: p.work } : {}) };
+const personOf = (u) => { const n = flat(u.named_person); return typeof n === 'string' && n.trim() && !Number.isFinite(Number(n)) ? n.trim() : null; };
+// HARD filters first (Chad 11-09): the tradition, the named work, the named author. `wide` = the widening pass: none of them (run when the filtered pass was thin)
+const searchInput = (s, p, u, trad) => { const filters = p.wide ? {} : { ...(trad ? { tradition: trad } : {}), ...(p.in_named ? namedWork(u) : {}), ...(p.by_person ? { author: personOf(u) } : {}), ...(p.author ? { author: p.author } : {}), ...(p.language ? { language: p.language } : {}), ...(p.work ? { work: p.work } : {}) };
   return { query: text(s, u, p.query, '{{topic}}'), limit: kOf(p, u) ?? 8, ...(Object.keys(filters).length ? { filters } : {}), ...(Array.isArray(p.layers) && p.layers.length ? { layers: p.layers } : {}), ...(Array.isArray(p.tiers) && p.tiers.length ? { tiers: p.tiers } : {}), ...(p.spell ? { spell: true } : {}) }; };
+// a pass ran with hard filters (so a thin result has something to widen from)
+const hardFiltered = (u) => !!(namedWork(u) || personOf(u) || tradsOf(u));
 const passages = (o) => o?.passages;
 const notBuilt = (tool, edges) => ({ kind: 'tool', cls: 'code', edges, scope: 'strategy', params: [...CMN, 'id', 'key', 'subject', 'date'], reads: SCOPE, writes: ['found_records', ...OUT],
   async run(s, p = {}) {   // index not built yet: still called (a hook may serve it), else none at no cost so the tree does not change when it arrives
@@ -153,9 +157,10 @@ const E = {
       for (const { x, l } of res) if (l?.original || l?.translations?.length) { n++; x.original = l.original ?? x.original; x.translations = l.translations; }
       return finish(s, p, classify(n, ['one', 'several']), { count: n });
     } },
-  'search.shelf': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'fused_search', params: ['authority', 'doctrinal', 'language', 'author', 'work', 'layers', 'tiers', 'spell', 'in_named'], reads: ['topic', 'named_work'], input: searchInput, take: passages,
-    gate: (s, u, p) => !p.in_named || !!namedWork(u) }),
-  'search.hype': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'hype_search', params: ['shelf', 'doctrinal', 'language'], reads: ['topic'], input: searchInput, take: passages }),
+  'search.shelf': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'fused_search', params: ['authority', 'doctrinal', 'language', 'author', 'work', 'layers', 'tiers', 'spell', 'in_named', 'by_person', 'wide'], reads: ['topic', 'named_work', 'named_person'], input: searchInput, take: passages,
+    gate: (s, u, p) => (!p.in_named || !!namedWork(u)) && (!p.by_person || !!personOf(u)) && (!p.wide || hardFiltered(u)) }),
+  'search.hype': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'hype_search', params: ['shelf', 'doctrinal', 'language', 'wide'], reads: ['topic'], input: searchInput, take: passages,
+    gate: (s, u, p) => !p.wide || hardFiltered(u) }),
   'search.originals': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'originals_search', reads: ['topic', 'search_originals'], input: searchInput, take: passages,
     gate: (s, u) => u.search_originals !== false }),
   'search.web': retrieval({ edges: ['one', 'none', 'error'], tool: 'web_search', into: 'web_found', thin: () => false, reads: ['topic'],   // never library evidence; the scope goes in as words
@@ -178,12 +183,16 @@ const TOGETHER = ['one', 'several', 'thin', 'none', 'error'];
 E['search.together'] = { kind: 'tool', cls: 'code', edges: TOGETHER, scope: 'strategy', params: ['list', 'stage'], reads: SCOPE, writes: ['found_passages', 'found_records', 'web_found', ...OUT],
   async run(s, p = {}) {   // cheap independent tiers in parallel, merged by one node (inner nodes share the units, so scope_excluded adds up)
     const u = U(s), n0 = size(u), x0 = u.scope_excluded, list = p.list || [];
-    const edges = await Promise.all(list.map((st, i) => run1(s, `${s.node}.${i}`, st).catch(() => 'error')));
+    const subs = list.map((st, i) => spawn(s, `${s.node}.${i}`));
+    const edges = await Promise.all(list.map((st, i) => E[st.element].run(subs[i], st.params || {}).catch(() => 'error')));
+    // what each member ran (element, query, hard filters, count) — the judge reads the tree's real searches, not "one unfiltered search"
+    const members = list.map((st, i) => ({ node: subs[i].node, element: st.element, edge: edges[i], count: subs[i].note?.count ?? 0, query: subs[i].note?.search?.query, filters: subs[i].note?.search?.filters ?? {}, ...(u.found_outcome[subs[i].node] === 'skipped' ? { skipped: true } : {}) }));
     const n = size(u) - n0;
     if (n > 0) u.missing = u.missing.filter((m) => !String(m.node ?? '').startsWith(`${s.node}.`));   // a tier that found nothing is not a gap when another tier found the answer
     const live = edges.filter((e, i) => u.found_outcome[`${s.node}.${i}`] !== 'skipped');   // gated-off members do not vote
+    if (!live.length && list.length) { const e = finish(s, p, 'none'); u.missing.pop(); u.found_outcome[s.node ?? '?'] = 'skipped'; return e; }   // every member gated off: no gap, no failed tier
     const edge = live.length && live.every((e) => e === 'error') ? 'error' : n > 0 && edges.every((e) => ['thin', 'none', 'error'].includes(e)) && edges.includes('thin') ? 'thin' : classify(n, TOGETHER);
-    const note = finish(s, p, edge, { count: n, read: { list: list.map((x) => x.element), edges: edges.join(',') } }); s.note.scope_excluded = u.scope_excluded - x0; return note;
+    const note = finish(s, p, edge, { count: n, read: { list: list.map((x) => x.element), edges: edges.join(',') } }); s.note.scope_excluded = u.scope_excluded - x0; s.note.members = members; return note;
   } };
 E['search.fanout'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', 'all_none', 'error'], scope: 'strategy', params: ['by', 'facets', 'inner', 'stage'], reads: SCOPE, writes: ['found_passages', 'found_records', ...OUT],
   async run(s, p = {}) {   // the inner element once per value (compare_sides, sub_themes…), in parallel, each on its own units; items tagged with their value
@@ -329,6 +338,10 @@ const COMPARE = {
   date: () => (a, b) => yearOf(b) - yearOf(a), history: () => (a, b) => yearOf(a) - yearOf(b), score: () => (a, b) => (b.score ?? 0) - (a.score ?? 0),
   length: () => (a, b) => String(a.text ?? '').length - String(b.text ?? '').length, marked: () => (a, b) => (b.marked ? 1 : 0) - (a.marked ? 1 : 0),
   occasion: (u) => (a, b) => (b.occasion === u.occasion ? 1 : 0) - (a.occasion === u.occasion ? 1 : 0), audience: (u) => (a, b) => (b.audience === u.audience ? 1 : 0) - (a.audience === u.audience ? 1 : 0),
+  // a named work / named author outranks authority order (Some Answered Questions asked for is not displaced by Gleanings)
+  named: (u) => { const f = (v) => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/gi, '').toLowerCase(), w = flat(u.named_work), who = f(personOf(u)), wf = f(w), src = new Set((Array.isArray(u.named_sources) ? u.named_sources : []).map(String));
+    const sc = (x) => (src.has(String(x.document_id ?? '')) || (w !== '' && w != null && (Number.isFinite(Number(w)) ? Number(w) === Number(x.document_id) : wf && f(x.title) && (f(x.title).includes(wf) || wf.includes(f(x.title))))) ? 2 : 0) + (who && f(x.author).includes(who) ? 1 : 0);
+    return (a, b) => sc(b) - sc(a); },
   attributed: (u) => { const who = String(flat(u.named_person) || ''); return (a, b) => (who && String(b.author) === who ? 1 : 0) - (who && String(a.author) === who ? 1 : 0); },   // the named author's own works first
   copy: (u) => { const w = String(u.translation_wanted ?? 'authorized'); const r = (x) => (x.translation && String(x.translation).includes(w) ? 0 : x.edition === 'default' ? 1 : x.language === u.reply_language ? 2 : x.translation ? 3 : 4); return (a, b) => r(a) - r(b); },
 };

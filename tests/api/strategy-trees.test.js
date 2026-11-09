@@ -51,7 +51,7 @@ describe('understanding tree', () => {
   });
   it('none after all tiers: rank is empty → $absence, never an answer from memory', async () => {
     const s = await run('understanding', 'q', { jev: verdict('answers') });
-    expect(path(s)).toEqual(['anchor', 'gather', 'rank', '$absence']); expect(s.how).toContain('does not hold this');
+    expect(path(s)).toEqual(['anchor', 'gather', 'widen', 'rank', '$absence']); expect(s.how).toContain('does not hold this');
   });
   it('error: every tier down → $fallback → (agent fails) $unavailable, never "not in the library"', async () => {
     const s = await run('understanding', 'q', { tools: { fused_search: boom, hype_search: boom, originals_search: boom }, agentRun: async () => null });
