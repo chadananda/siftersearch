@@ -45,9 +45,12 @@ export function compileGraph(row, stepOf, activities = registry()) {
     if (e.to !== END_NODE && !nodes[e.to] && !SHARED_ENDS[e.to]) throw new Error(`strategy ${row.id}: edge to unknown node ${e.to}`);
     if (e.on === '*') n.any = e.to; else n.out.set(e.on, e.to);
   }
-  // a shared end is a node only when something routes to it (and only if the registry has its element)
+  // a shared end is a node only when something routes to it (and only if the registry has its element). A TREE (declares `needs`, or routes to a shared end)
+  // always gets $fallback and $unavailable: they are where an element that throws lands (runGraph), so a bad param never fails the turn
+  const tree = !!g.needs || (g.edges || []).some((e) => SHARED_ENDS[e.to]);
   for (const [id, activity] of Object.entries(SHARED_ENDS)) {
-    if (!(g.edges || []).some((e) => e.to === id || (id === '$unavailable' && e.to === '$fallback'))) continue;
+    const routed = (g.edges || []).some((e) => e.to === id || (id === '$unavailable' && e.to === '$fallback'));
+    if (!routed && !(tree && id !== '$absence' && activities[activity])) continue;
     if (!activities[activity]) throw new Error(`strategy ${row.id}: shared end ${id} needs the ${activity} element`);
     const r = SHARED_ROUTES[id];
     nodes[id] = { id, step: id, activity, run: activities[activity].run, params: {}, out: new Map(Object.entries(r.out || {})), any: r.any, shared: true };
@@ -116,15 +119,27 @@ export async function runGraph(g, s) {
     const t = performance.now(), j0 = jevCalls?.length ?? 0;
     // a decision step's params.enrich (a tested Jev theory, jev-tuning/theories.js): its Jev calls get the registered enrichers
     // (systemone reads ctx.jevEnrich). No enrich → the node runs exactly as before (one property read).
-    let edge = n.params.enrich?.length ? withAIContext({ jevEnrich: { list: n.params.enrich, messages: s.messages ?? s.ctx?.messages ?? [] } }, () => n.run(s, n.params))
-      : n.run(s, n.params);
-    if (edge && typeof edge.then === 'function') edge = await edge;
+    // an element that THROWS never fails the turn: its node's `error` edge, else the shared $fallback (→ $unavailable → end); a decision is logged
+    let edge, failed = null;
+    try {
+      edge = n.params.enrich?.length ? withAIContext({ jevEnrich: { list: n.params.enrich, messages: s.messages ?? s.ctx?.messages ?? [] } }, () => n.run(s, n.params))
+        : n.run(s, n.params);
+      if (edge && typeof edge.then === 'function') edge = await edge;
+    } catch (err) {
+      const to = n.out.get('error') ?? (id === '$fallback' ? '$unavailable' : id === '$unavailable' ? END_NODE : g.nodes.$fallback ? '$fallback' : n.any);
+      if (to === undefined) throw err;
+      failed = err?.message || String(err); edge = 'error';
+      console.warn(`[strategy-graph] ${g.id}@${g.version} node ${id} (${n.step}) threw: ${failed}; routed to ${to}`);
+      (s.direction?.decisions ?? s.ctx?.decisions)?.record?.('graph:error', { by: 'code', saw: { strategy: g.id, node: id, step: n.step, error: failed.slice(0, 200) }, options: ['error edge', '$fallback'], chosen: to, reason: 'an element threw; the turn continues on its error route' });
+      s.note = { ...(s.note || {}), error: failed.slice(0, 200) };
+      s.route = to;
+    }
     const entry = { node: id, step: n.step, ms: Math.round((performance.now() - t) * 100) / 100, edge };
     if (s.note) { Object.assign(entry, s.note); s.note = null; }
     if (jevCalls && jevCalls.length > j0) hide(entry, 'jevCalls', jevCalls.slice(j0));
     s.trace.push(entry);
     if (s.units) (s.units.path ||= []).push(`${id}:${edge}`);   // §2a `path`: templates read judge verdicts from it
-    id = n.out.get(edge) ?? n.any;
+    id = failed !== null ? s.route : n.out.get(edge) ?? n.any;
     if (id === undefined) throw new Error(`strategy ${g.id}: node ${n.id} returned unrouted edge ${edge}`);
   }
   return s;

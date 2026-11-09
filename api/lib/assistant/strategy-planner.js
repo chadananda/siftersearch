@@ -160,7 +160,7 @@ export function validatePlan(j, { cat, acts = registry(), tests = null, requireT
   // v1 structure (steps/templates new, params known, every edge routed, acyclic, reachable, node cap)
   // the near_misses are not stored anywhere (Jev reads only description + exemplars): fold them into the saved description exactly as editStrategyCard does
   const description = misses.length ? foldNearMisses(j.description, misses) : j.description;
-  const v1 = validateCandidate({ name, description, exemplars: j.exemplars, templates: j.templates, steps, graph: { entry: g.entry, nodes, edges } }, { cat, acts });
+  const v1 = validateCandidate({ name, description, exemplars: j.exemplars, templates: j.templates, steps, graph: { entry: g.entry, nodes, edges } }, { cat, acts, slots: [...writtenAll] });
   errors.push(...(v1.errors || []));
   let cost = null;
   if (!errors.length) {

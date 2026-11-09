@@ -4,6 +4,7 @@
 // 'candidate'; promote = old active → 'retired', candidate → 'active' (rev bump: every process's catalog + Jev options reload);
 // rollback = active → 'rolled_back', the newest retired → 'active'. Rows are append-only except status. Deps: strategies-repo.
 import { openStrategiesDb, bumpRev, readAll } from './strategies-repo.js';
+import { repairParams, repairTemplate, paramProblems, templateProblems } from '../assistant/activities/contract.js';
 
 const nowIso = () => new Date().toISOString().slice(0, 19).replace('T', ' ');
 const safeJson = (s, d = null) => { try { return JSON.parse(s); } catch { return d; } };
@@ -205,26 +206,49 @@ export const fixSlots = (v, key = '') => {
 /** A search.shelf step gated on BOTH a named work (in_named) and a named person (by_person) is skipped unless the question names both: drop in_named (the person filter stays). Pure. */
 export const fixGates = (p, activity = '') => (activity === 'search.shelf' && p && p.in_named && p.by_person ? Object.fromEntries(Object.entries(p).filter(([k]) => k !== 'in_named')) : p);
 
-/** Strategy `id` at `version` (default newest) → corrected slot syntax (and fixGates) as a NEW candidate version; nothing to fix and the row is a candidate = that row stands (re-run: no @n+1).
- *  → { id, version (the target, null when nothing applies), fixed: [step ids], saved: bool, activatable: bool (a candidate whose parent is the ACTIVE version) } */
+/** The template ids a step names (template / shared / how / by_count), '@sub' excluded. */
+const tplIds = (p = {}) => [p.template, p.shared, p.how, ...Object.values(p.by_count || {})].flat().filter((x) => typeof x === 'string' && x !== '@sub');
+const latestTpl = (db, id) => db.prepare('SELECT text FROM templates WHERE id = ? ORDER BY version DESC LIMIT 1').get(id)?.text ?? null;
+/** The CONTRACT problems of a strategy row (activities/contract.js): its steps' param values and the templates they name. → [string] */
+export function contractProblems(db, row) {
+  const out = [], seen = new Set();
+  for (const [nid, n] of Object.entries(row.graph?.nodes || {})) {
+    const st = db.prepare('SELECT * FROM steps WHERE id = ? AND version = ?').get(n.step, n.step_version);
+    if (!st) continue;
+    const params = safeJson(st.params_json, {});
+    out.push(...paramProblems(st.activity, params).map((m) => `${nid}: ${m}`));
+    for (const t of tplIds(params)) { if (seen.has(`${t}|${t === params.shared}`)) continue; seen.add(`${t}|${t === params.shared}`);
+      const text = latestTpl(db, t);
+      if (text == null) out.push(`${nid}: template ${t} does not exist`); else out.push(...templateProblems(text, { shared: t === params.shared }).map((m) => `template ${t}: ${m}`)); }
+  }
+  return [...new Set(out)];
+}
+
+/** Strategy `id` at `version` (default newest) → corrected as a NEW candidate version: slot syntax, contract values (activities/contract.js repairParams: ignored or
+ *  always-wrong values dropped to the element's default, strays moved under params, shared list → one id) and the templates its steps name (single-brace slots,
+ *  a shared template wraps {{base}}); nothing to fix and the row is a candidate = that row stands (re-run: no @n+1). A fixed template is a NEW template version (live at once for every
+ *  strategy that names it). → { id, version (the target, null when nothing applies), fixed: [step ids], templates: [ids], problems: [what still breaks the contract], saved: bool, activatable: bool } */
 export function fixStrategySlots(db, id, { version = null, by = 'ops-slot-fix' } = {}) {
   const row = strategyRow(db, id, version);
   if (!row) throw new Error(`no strategy ${id}${version != null ? '@' + version : ''}`);
-  const graph = JSON.parse(JSON.stringify(row.graph)), steps = [];
+  const graph = JSON.parse(JSON.stringify(row.graph)), steps = [], shared = new Set(), names = new Set();
   for (const [nid, n] of Object.entries(graph.nodes || {})) {
     const st = db.prepare('SELECT * FROM steps WHERE id = ? AND version = ?').get(n.step, n.step_version);
     if (!st) continue;
-    const params = safeJson(st.params_json, {}), fixed = fixGates(fixSlots(params), st.activity);
+    const params = safeJson(st.params_json, {}), fixed = fixGates(fixSlots(repairParams(st.activity, params)), st.activity);
+    for (const t of tplIds(fixed)) { names.add(t); if (t === fixed.shared) shared.add(t); }
     if (JSON.stringify(fixed) === JSON.stringify(params)) continue;
     const v = maxVersion(db, 'steps', st.id) + 1 + steps.filter((x) => x.id === st.id).length;
     steps.push({ id: st.id, version: v, activity: st.activity, params: fixed, template_id: st.template_id, template_version: st.template_version });
     graph.nodes[nid] = { ...n, step_version: v };
   }
+  const templates = [...names].map((t) => ({ id: t, text: latestTpl(db, t) })).filter((t) => t.text != null)
+    .map((t) => ({ ...t, fixed: repairTemplate(t.text, { shared: shared.has(t.id) }) })).filter((t) => t.fixed !== t.text).map((t) => ({ id: t.id, text: t.fixed }));
   let target = row, saved = false;
-  if (steps.length) { const sv = saveCandidate(db, { strategy: { id, name: row.name, description: row.description, exemplars: row.exemplars, graph }, steps }, { by }); target = strategyRow(db, id, sv.version); saved = true; }
-  else if (row.status !== 'candidate') return { id, version: null, fixed: [], saved: false, activatable: false };
+  if (steps.length || templates.length) { const sv = saveCandidate(db, { strategy: { id, name: row.name, description: row.description, exemplars: row.exemplars, graph }, steps, templates }, { by }); target = strategyRow(db, id, sv.version); saved = true; }
+  else if (row.status !== 'candidate') return { id, version: null, fixed: [], templates: [], problems: contractProblems(db, row), saved: false, activatable: false };
   const active = db.prepare("SELECT MAX(version) AS v FROM strategies WHERE id = ? AND status = 'active'").get(id)?.v ?? null;
-  return { id, version: target.version, fixed: steps.map((x) => x.id), saved, activatable: target.status === 'candidate' && active != null && target.parent_version === active };
+  return { id, version: target.version, fixed: steps.map((x) => x.id), templates: templates.map((t) => t.id), problems: contractProblems(db, target), saved, activatable: target.status === 'candidate' && active != null && target.parent_version === active };
 }
 
 /** near_misses ({example|text}) folded into a description as "Not for: ..." (Jev reads only description + exemplars). Pure. */
@@ -251,5 +275,5 @@ export function editStrategyCard(db, id, { description, near_misses, exemplars, 
   const sv = saveCandidate(db, { strategy: { id, name: row.name, description: desc, exemplars: ex, graph: row.graph }, steps: [] }, { by });
   const target = strategyRow(db, id, sv.version);
   const active = db.prepare("SELECT MAX(version) AS v FROM strategies WHERE id = ? AND status = 'active'").get(id)?.v ?? null;
-  return { id, version: sv.version, description: desc, activatable: active != null && target.parent_version === active };
+  return { id, version: sv.version, description: desc, problems: contractProblems(db, target), activatable: active != null && target.parent_version === active };
 }

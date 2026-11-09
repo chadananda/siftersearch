@@ -6,6 +6,7 @@
 // a new candidate VERSION of that strategy. Deps: activities registry, graph compileGraph, strategy-gaps (words), audit/improve costOf.
 import { compileGraph } from './activities/graph.js';
 import { activities as registry } from './activities/index.js';
+import { paramProblems, templateProblems } from './activities/contract.js';
 import { END_NODE, isUnmatched } from './strategy-seed.js';
 import { IMPROVE_CFG, jaccardWords } from './strategy-gaps.js';
 
@@ -118,7 +119,7 @@ const reachable = (entry, edges) => {
  * normalized.strategy.id = name (dedupe may re-point it). New step/template ids must be new: a template id is never re-versioned,
  * because a live strategy reads its template's latest version.
  */
-export function validateCandidate(c, { cat, acts = registry() } = {}) {
+export function validateCandidate(c, { cat, acts = registry(), slots = [] } = {}) {
   const errors = [];
   if (!c || typeof c !== 'object') return { ok: false, errors: ['not a JSON object'] };
   const name = String(c.name || '');
@@ -145,10 +146,17 @@ export function validateCandidate(c, { cat, acts = registry() } = {}) {
     const params = s.params && typeof s.params === 'object' ? s.params : {};
     const bad = Object.keys(params).filter((k) => !(act.params || []).includes(k));
     if (bad.length) { errors.push(`step ${id}: unknown params ${bad.join(', ')}`); continue; }
+    const pp = paramProblems(s.activity, params, { acts, slots });
+    if (pp.length) { errors.push(...pp.map((m) => `step ${id}: ${m}`)); continue; }
     if (params.how && !newTpl.has(params.how) && !cat.templates.latest.has(params.how)) { errors.push(`step ${id}: params.how names unknown template ${params.how}`); continue; }
     const tv = params.how ? (newTpl.get(params.how)?.version ?? cat.templates.latest.get(params.how)?.version) : null;
     newSteps.set(id, { id, version: 1, activity: s.activity, params, template_id: params.how || null, template_version: tv });
   }
+  // template contract: {{x}} slots only, every slot a unit the writer fills, a shared template wraps {{base}}
+  const sharedIds = new Set([...newSteps.values()].map((x) => x.params?.shared).filter((x) => typeof x === 'string'));
+  for (const [tid, t] of newTpl) errors.push(...templateProblems(t.text, { shared: sharedIds.has(tid), slots }).map((m) => `template ${tid}: ${m}`));
+  for (const tid of sharedIds) if (!newTpl.has(tid) && cat.templates.latest.has(tid)) errors.push(...templateProblems(cat.templates.latest.get(tid).text, { shared: true, slots }).filter((m) => /no \{\{base\}\}/.test(m)).map((m) => `template ${tid}: ${m}`));
+    else if (!newTpl.has(tid)) errors.push(`shared template ${tid} does not exist`);
   const g = c.graph && typeof c.graph === 'object' ? c.graph : {};
   const nodesIn = g.nodes && typeof g.nodes === 'object' ? g.nodes : {};
   const nodes = {};

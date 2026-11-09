@@ -8,6 +8,7 @@ import { canonicalTradition } from '../tradition-name.js';
 import { parseScriptureRef } from '../scripture-ref.js';
 import { template, fill } from './templates.js';
 import { sourceTier } from '../source-tier.js';
+import { AUTH_KINDS } from './contract.js';
 import { judgeHolds, judgeTimeline, termScript } from '../judges.js';
 
 // ── units, scope, outcomes ──────────────────────────────────────────────────────────────────────────────────────────────
@@ -372,9 +373,9 @@ E['fill.term_script'] = { kind: 'decision', cls: 'jev', edges: ['filled', 'none'
   } };
 
 // ── rank / shape / plan ─────────────────────────────────────────────────────────────────────────────────────────────────
-const ORDER = ['scripture', 'guardian', 'interpretation', 'guidance', 'law', 'prayer', 'history', 'scholarship', 'other'];
+const ORDER = [...AUTH_KINDS, 'other'];
 const yearOf = (x) => Number(String(x.year ?? x.date ?? '').slice(0, 4)) || 0;
-const COMPARE = {
+export const COMPARE = {
   authority: () => (a, b) => (ORDER.indexOf(kindOf(a) ?? 'other') + 1 || 99) - (ORDER.indexOf(kindOf(b) ?? 'other') + 1 || 99),
   date: () => (a, b) => yearOf(b) - yearOf(a), history: () => (a, b) => yearOf(a) - yearOf(b), score: () => (a, b) => (b.score ?? 0) - (a.score ?? 0),
   length: () => (a, b) => String(a.text ?? '').length - String(b.text ?? '').length, marked: () => (a, b) => (b.marked ? 1 : 0) - (a.marked ? 1 : 0),
