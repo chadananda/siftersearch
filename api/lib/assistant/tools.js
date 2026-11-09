@@ -152,6 +152,28 @@ const ENTRIES = [
       }));
       return { sides };
     } },
+  // a numbered scripture reference → the verse(s): code only (scripture-ref.js parse + the library's chapter/verse layout)
+  { name: 'reference_lookup', label: 'Reference Lookup', kind: 'tool', outputName: 'Reference', cost: C(false, 150),
+    description: 'Read a numbered scripture reference (Bible "John 3:16", Qur’án "2:255", Bhagavad Gita "2:47") and return exactly those verses.',
+    purpose: 'Chapter-and-verse to the passage, deterministically; no passage and ref null when the text is not a reference or the book is not in the library.',
+    input: { type: 'object', additionalProperties: false, required: ['ref'], properties: { ref: str('The reference, e.g. "John 3:16" or "Qur’án 2:255"') } },
+    output: { type: 'object', required: ['passages', 'ref'], properties: { passages: { type: 'array', items: PASSAGE }, ref: { oneOf: [{ type: 'null' }, { type: 'object', required: ['kind', 'label'], properties: { kind: { type: 'string' }, label: { type: 'string' } } }] }, exact: { type: 'boolean' } } },
+    example: { input: { ref: 'John 3:16' }, output: { passages: [{ ...P_EX }], ref: { kind: 'bible', label: 'John 3:16' }, exact: true } },
+    async run(a, ctx = {}) {
+      const { parseScriptureRef, scriptureReference } = await import('./scripture-ref.js');
+      const ref = parseScriptureRef(a.ref);
+      if (!ref) return { passages: [], ref: null, exact: false };
+      const r = await scriptureReference({ question: a.ref, deps: ctx.deps || {} });
+      return { passages: (r?.passages || []).map(toPassage), ref: { kind: ref.kind, label: ref.label }, exact: !!r?.plan?.exact };
+    } },
+  // the Badí‘ (Bahá’í) calendar date of a civil date: pure arithmetic (Naw-Rúz = March 21 before 172 B.E.; from 172 B.E. the Tehran equinox rule)
+  { name: 'badi_calendar', label: 'Badí‘ Calendar', kind: 'tool', outputName: 'BadiDate', cost: C(false, 1),
+    description: 'Convert a civil date (YYYY-MM-DD) to its Badí‘ date: year (B.E.), month, day, Ayyám-i-Há. The Badí‘ day begins at the previous sunset; the date given is the civil daytime.',
+    purpose: 'Calendar arithmetic only. Holy-day names are not returned (the table is not verified here); Naw-Rúz is flagged.',
+    input: { type: 'object', additionalProperties: false, required: ['date'], properties: { date: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: 'Civil date, YYYY-MM-DD (1844 or later)' } } },
+    output: { type: 'object', required: ['year', 'month', 'month_name', 'day', 'naw_ruz'], properties: { year: { type: 'integer' }, month: { type: 'integer', description: '1-19; 0 = Ayyám-i-Há' }, month_name: { type: 'string' }, day: { type: 'integer' }, naw_ruz: { type: 'boolean' }, naw_ruz_date: { type: 'string' } } },
+    example: { input: { date: '2025-03-20' }, output: { year: 182, month: 1, month_name: 'Bahá', day: 1, naw_ruz: true, naw_ruz_date: '2025-03-20' } },
+    async run(a) { return (await import('./badi-calendar.js')).badiDate(a.date); } },
   // the Writings in their ORIGINAL languages (11-04, measured: an English query's fused ranking puts no Persian/Arabic Writing in
   // its top 8 — English-English phrase matches fill it — while the same query held to the ar-fa group returns 22-29 originals of 30)
   { name: 'originals_search', label: 'Originals Search', kind: 'tool', outputName: 'Passage[]', cost: C(true, 250),
