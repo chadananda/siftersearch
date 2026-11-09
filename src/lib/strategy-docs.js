@@ -11,11 +11,9 @@ export function taglineOf(s) {
   if (d) return { text: clip(d, 140), quote: false };
   return q ? { text: `“${q}”`, quote: true } : { text: '', quote: false };
 }
-/** A strategy IS a tree: only rows with a tree (or Unmatched, which plans one) are strategies; Unmatched last. */
+/** A strategy IS a tree: only rows with a tree are listed (Unmatched = the gate to no strategy or a new one), Unmatched last. */
 export const isStrategy = (s) => !!s.newest || !!s.general;
 export const strategyOrder = (list) => list.filter(isStrategy).sort((x, y) => Number(!!x.general) - Number(!!y.general));
-/** Kinds of questions seen with no tree yet: Unmatched plans one when they arrive. */
-export const untreed = (list) => list.filter((s) => !isStrategy(s));
 
 /** Status badge of a strategy's newest tree: { status, text } — "candidate v6 · active v1" when it is not the active version. */
 export function treeBadge(s) {

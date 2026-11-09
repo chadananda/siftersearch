@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-09T19:19:37.221Z",
+  "generated": "2026-11-09T19:23:41.779Z",
   "entries": [
     {
       "hash": "450c9f410",
@@ -1750,13 +1750,6 @@
       "type": "New",
       "description": "Remaster R&D round 3 (Chad's r2 pick 'still muddy, loud sibilants') — deeper mud cut, lower presence lift, split-band de-esser; picks r1/r2 recorded; VoiceRestore + AudioSR findings",
       "scope": "media"
-    },
-    {
-      "hash": "ae82d9dbc",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "Dead 'running' jobs are reaped, not listed forever (10-23: killed 'bidi-test3' Anís draft showed running 8 h in /ops/services)",
-      "scope": "jobs"
     }
   ],
   "grouped": {
@@ -3538,13 +3531,6 @@
         "type": "New",
         "description": "Remaster R&D round 3 (Chad's r2 pick 'still muddy, loud sibilants') — deeper mud cut, lower presence lift, split-band de-esser; picks r1/r2 recorded; VoiceRestore + AudioSR findings",
         "scope": "media"
-      },
-      {
-        "hash": "ae82d9dbc",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "Dead 'running' jobs are reaped, not listed forever (10-23: killed 'bidi-test3' Anís draft showed running 8 h in /ops/services)",
-        "scope": "jobs"
       }
     ]
   }

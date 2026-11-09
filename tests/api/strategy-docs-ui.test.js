@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { CHANNELS, DEPTH_FRAME, supports } from '../../api/lib/assistant/channels.js';
-import { MODES, MODE_NOTES, titleOf, taglineOf, strategyOrder, untreed, treeBadge, orderedSteps, humanStep, outcomeOf, targetsOf } from '../../src/lib/strategy-docs.js';
+import { MODES, MODE_NOTES, titleOf, taglineOf, strategyOrder, treeBadge, orderedSteps, humanStep, outcomeOf, targetsOf } from '../../src/lib/strategy-docs.js';
 
 describe('mode copy matches channels.js', () => {
   it('chat word counts and frames', () => {
@@ -45,10 +45,9 @@ describe('titles, groups, steps', () => {
     expect(treeBadge({ version: null, newest: { version: 2, status: 'retired' } }).text).toBe('retired v2 · none active');
     expect(treeBadge({ newest: null })).toBe(null);
   });
-  it('a strategy IS a tree: no live/planned groups; rows with no tree are question kinds under Unmatched', () => {
+  it('a strategy IS a tree: no live/planned groups; rows with no tree are not listed', () => {
     const rows = [{ id: 'u', general: true }, { id: 'p', newest: { version: 2 } }, { id: 'a1' }];
     expect(strategyOrder(rows).map((s) => s.id)).toEqual(['p', 'u']);
-    expect(untreed(rows).map((s) => s.id)).toEqual(['a1']);
   });
   it('step list: flow order, readable labels, exits', () => {
     expect(humanStep('respond.read_question')).toBe('Read question');

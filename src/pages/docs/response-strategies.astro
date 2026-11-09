@@ -7,7 +7,7 @@
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import StrategyCanvas from '../../components/anis/StrategyCanvas.svelte';
 import { strategiesFlat, show } from '../../lib/anis-docs.js';
-import { titleOf, taglineOf, strategyOrder, untreed, orderedSteps, outcomeOf, targetsOf, treeBadge, MODES, MODE_NOTES } from '../../lib/strategy-docs.js';
+import { titleOf, taglineOf, strategyOrder, orderedSteps, outcomeOf, targetsOf, treeBadge, MODES, MODE_NOTES } from '../../lib/strategy-docs.js';
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const soft = (path, ms) => fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(ms) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
@@ -16,7 +16,6 @@ if (data) Astro.response.headers.set('Cache-Control', 'public, s-maxage=120, sta
 const m = strategiesFlat(data);
 const strategies = data?.strategies || [];
 const sorted = strategyOrder(strategies);
-const open = untreed(strategies);
 const badge = (s) => (s.general ? 'unmatched' : s.where === 'shared-reply' ? 'in unmatched' : s.status);
 const generalId = strategies.find((x) => x.general)?.id;
 const cap = (t) => (t ? t[0].toUpperCase() + t.slice(1) : t);
@@ -160,12 +159,6 @@ const stepGroups = [...new Set(steps.map((a) => a.name.split('.')[0]))];
                     to the planner, which designs a tree for it from the <a href="#building-steps">building steps</a>, runs it, and saves it as a candidate on
                     probation; see <a href="#intro">how strategies improve</a>.
                   </p>
-                )}
-                {un && open.length > 0 && (
-                  <>
-                    <p>Kinds of question already seen that have no tree yet; the first one that arrives gets its tree planned:</p>
-                    <ul class="quotes">{open.map((o) => <li id={`strategy-${o.id}`}>{titleOf(o)}{o.patterns?.[0]?.sounds_like?.[0] && <>: “{o.patterns[0].sounds_like[0]}”</>}</li>)}</ul>
-                  </>
                 )}
                 {s.exemplars.length > 0 && <ul class="quotes">{s.exemplars.map((e) => <li>{e}</li>)}</ul>}
                 {s.patterns.map((c) => (
