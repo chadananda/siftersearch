@@ -23,6 +23,8 @@ export function splitPrayers(rows = [], { max = Infinity } = {}) {
 }
 
 /** The prayer (a splitPrayers run) holding paragraph `pi`, or null. Pure. */
+/** A prayer run that is only a heading (one short paragraph, no sentence ending): it carries no words to give or offer. Pure. */
+export const hasWords = (p) => p.length > 1 || /[.!?;:”"’']\s*$|\bAmen\b/i.test(String(p[0]?.text || '').trim()) || String(p[0]?.text || '').trim().split(/\s+/).length > 12;
 export const prayerAt = (prayers, pi) => prayers.find((p) => p.some((r) => r.paragraph_index === pi)) || null;
 
 /** The smallest section of the book holding paragraph `pi`, or null. Pure. */

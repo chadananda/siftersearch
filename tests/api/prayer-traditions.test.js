@@ -74,11 +74,38 @@ describe('the live executor takes the tradition the same way', () => {
     const out = await prayerShelf({ messages: [{ role: 'user', content: 'a prayer for healing' }], query: 'a prayer for healing', scope: { religion: 'Christian' }, deps: sd });
     expect(out.passages[0].title).toBe('Book of Common Prayer'); expect(out.passages[0].text).toMatch(/Heal us/);
   });
-  it('no tradition → one prayer from several traditions (no Jev call)', async () => {
-    const out = await prayerShelf({ messages: [{ role: 'user', content: 'a prayer for healing' }], query: 'heal', deps: { ...sd, pickOccasion: async () => { throw new Error('no Jev'); } } });
-    expect(out.plan.several).toEqual(['Christian', 'Buddhist']); expect(out.format.how).toMatch(/several traditions/);
+  it('no tradition → ONE Jev choice over every work\'s headings and hits: a heading the question never names (Janazah) is offered and served; a work Jev rates below "none" is left out', async () => {
+    const sec2 = { ...sections, 20996: [{ title: 'Janazah', level: 1, start_index: 5, end_index: 6, paragraphs: 2 }] };
+    let offered; const pickOccasion = async (m, t, { found }) => { offered = found; const k = found.find((f) => /Janazah/.test(f.text))?.key, b = found.find((f) => /Bahá’í/.test(f.heading) && /For The Departed/.test(f.text))?.key;
+      return { choice: k, confidence: 0.8, distribution: { [k]: 0.45, [b]: 0.35, none: 0.2 } }; };
+    const out = await prayerShelf({ messages: [], query: 'a prayer for someone who has passed away', deps: { ...sd, sectionsOfDoc: async (id) => sec2[id] || [], pickOccasion } });
+    expect(offered.some((f) => /Janazah/.test(f.text) && /Christian/.test(f.heading))).toBe(true);   // headings are offered beside the hits
+    expect(out.plan.several.sort()).toEqual(["Baha'i", 'Christian']); expect(out.passages.map((p) => p.religion)).toContain('Christian');
+    const none = await prayerShelf({ messages: [], query: 'x', deps: { ...sd, pickOccasion: async () => ({ choice: 'none', confidence: 0.9, distribution: { none: 1 } }) } });
+    expect(none).toBeNull();
+  });
+  it('no answer from Jev → each work\'s top meaning hit, as before', async () => {
+    const out = await prayerShelf({ messages: [], query: 'heal', deps: { ...sd, pickOccasion: async () => null } });
+    expect(out.plan.several).toEqual(['Christian', 'Buddhist']);
   });
   it('a tradition without prayer works → null (the tree names the absence)', async () => {
     expect(await prayerShelf({ messages: [], query: 'peace', scope: { religion: 'Hindu' }, deps: sd })).toBeNull();
+  });
+});
+
+describe('a heading-only run is never given or offered; the online publisher wins the work link', () => {
+  it('hasWords: a bare title has none, a prayer does', async () => {
+    const { hasWords } = await import('../../api/lib/assistant/prayer-sections.js');
+    expect(hasWords([{ text: 'A Prayer for Divine Help' }])).toBe(false); expect(hasWords([{ text: 'O Lord, heal us. Amen.' }])).toBe(true); expect(hasWords([{ text: 'A' }, { text: 'B' }])).toBe(true);
+  });
+  it('prayer_lookup offers no title-only prayer', async () => {
+    const rows = [{ id: 21, paragraph_index: 5, text: 'Heal us, O Lord, of every sickness.' }, { id: 24, paragraph_index: 6, text: '_—Augustine_' }, { id: 22, paragraph_index: 7, text: 'A Prayer for Divine Help' }];
+    const r = await REGISTRY.prayer_lookup.run({ tradition: 'Christian', occasion: 'Prayers for the Sick' }, { deps: { ...deps, paragraphsInRange: async () => rows } });
+    expect(r.passages.map((p) => p.text)).not.toContain('A Prayer for Divine Help');
+  });
+  it('workLinks: a work row without metadata takes the publisher address from link meta', async () => {
+    const { workLinks } = await import('../../api/lib/hit-links.js');
+    const m = await workLinks([{ id: 19798, title: 'Prayers of the Early Church', religion: 'Christian', slug: 'x' }], { getLinkMeta: async () => new Map([[19798, { source_url: 'https://www.gutenberg.org/ebooks/48247' }]]) });
+    expect(m.get(19798)).toBe('https://www.gutenberg.org/ebooks/48247');
   });
 });

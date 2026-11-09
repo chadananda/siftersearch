@@ -334,12 +334,14 @@ E['judge.prayer'] = { kind: 'decision', cls: 'jev', edges: ['picked', 'none', 'u
     try {
       const pick = await (s.judges?.prayer || (async () => { const [{ pickOccasion }, { jevFetch }] = await Promise.all([import('../prayer-shelf.js'), import('../../systemone.js')]); return pickOccasion(s.messages || [], [], { profile: s.profile ?? s.ctx?.profile ?? {}, fetchImpl: jevFetch('anis-prayer-occasion'), found }); }))({ found });
       s.note = { read: { found: found.length }, params: p, count: found.length, scope_excluded: 0, confidence: pick?.confidence ?? null };
-      if (!pick?.choice) return 'unjudged';
+      if (!pick?.choice) { u.found_passages = u.found_passages.slice(0, 1); return 'unjudged'; }   // no answer: the code-ranked lead alone, no unchecked offers
       const i = found.findIndex((f) => f.key === pick.choice);
       if (i < 0 || pick.choice === 'none' || (pick.confidence ?? 0) < (await import('../../scope-extract.js')).MIN_CONFIDENCE) return 'none';
-      u.found_passages = [u.found_passages[i], ...u.found_passages.filter((_, j) => j !== i)];
+      // the offers pass the SAME choice: a prayer stays only if Jev rates it likelier than "none of these fits"; no distribution = the chosen alone
+      const dist = pick.distribution || {}, none = dist.none ?? 0, keep = (j) => j === i || (dist[found[j]?.key] ?? 0) > none;
+      u.found_passages = [u.found_passages[i], ...u.found_passages.filter((_, j) => j !== i && j < found.length && keep(j))];
       return 'picked';
-    } catch (err) { s.note = { read: { found: found.length }, params: p, count: 0, scope_excluded: 0, error: err?.message }; return 'unjudged'; }
+    } catch (err) { s.note = { read: { found: found.length }, params: p, count: 0, scope_excluded: 0, error: err?.message }; u.found_passages = u.found_passages.slice(0, 1); return 'unjudged'; }
   } };
 E['judge.holds'] = { kind: 'decision', cls: 'jev', edges: ['holds', 'partial', 'none'], scope: 'strategy', params: ['quotation', 'stage'], reads: ['found_passages', 'quoted_clean', 'quoted_words'], writes: ['found_passages'],
   async run(s, p = {}) {   // ONE call over every candidate from quotation_candidates (never per item): holds / partial / no + the span; a candidate that does not hold drops. Wording alone holds without a model.

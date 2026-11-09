@@ -15,3 +15,11 @@ export async function withLinks(hits = []) {
     return { ...h, ...(l.title ? { title: l.title } : {}), url: l.url, link: { site: l.site, tier: l.tier, paragraph_level: l.paragraph_level } };
   });
 }
+
+/** Works → their best link by the same policy as a passage (the online publisher beats our own page): a work row from listDocs lacks `metadata`, so the link would fall back to our reader. { id → url|null }. */
+export async function workLinks(docs = [], { getLinkMeta = null } = {}) {
+  const { workUrl } = await import('./source-links.js');
+  getLinkMeta ??= (await import('./docs-repo.js')).getLinkMeta;
+  const meta = await getLinkMeta(docs.map((d) => d.id)).catch(() => new Map());
+  return new Map(docs.map((d) => { const m = meta.get(Number(d.id)) || {}; return [d.id, workUrl({ ...m, ...d, source_url: d.source_url || m.source_url || null, metadata: m.metadata })]; }));
+}

@@ -207,7 +207,8 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
       const { workUrl } = await import('../source-links.js');
       // only the best match is the book asked for; the others (chapter files, namesakes) are listed but take no book-step slot
       // (11-03: The Dawn-Breakers + its Chapter X + Chapter I filled all three slots and crowded out the other histories)
-      return [w.doc, ...w.others].map((x, i) => `[${addWork({ ...x, url: workUrl(x), ...(i ? { other: true } : {}) })}] ${x.title}${x.author ? ` — ${x.author}` : ''}${x.encumbered === 1 ? ' (copyrighted: opening pages only)' : ''}\nlink: ${workUrl(x) || 'none (no public page: write the title unlinked)'}`).join('\n\n');
+      const all = [w.doc, ...w.others], links = impl.work ? null : await (await import('../hit-links.js')).workLinks(all).catch(() => null), urlOf = (x) => links?.get(x.id) ?? workUrl(x);   // the online publisher wins, as for a passage
+      return all.map((x, i) => `[${addWork({ ...x, url: urlOf(x), ...(i ? { other: true } : {}) })}] ${x.title}${x.author ? ` — ${x.author}` : ''}${x.encumbered === 1 ? ' (copyrighted: opening pages only)' : ''}\nlink: ${urlOf(x) || 'none (no public page: write the title unlinked)'}`).join('\n\n');
     },
     original_lookup: async ({ english }) => show((await impl.original(english)).map((x) => add(x))),
     translation_lookup: async ({ original }) => {

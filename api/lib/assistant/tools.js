@@ -196,7 +196,7 @@ const ENTRIES = [
     example: { input: { tradition: 'Christian', list: true }, output: { passages: [], occasions: ['Morning Prayer'], book: 20996, tradition: 'Christian', works: [{ id: 20996, title: 'Book of Common Prayer', tradition: 'Christian' }] } },
     async run(a, ctx = {}) {
       if (!a.occasion && !a.incipit && !a.list) throw new ToolError('invalid_input', 'give occasion, incipit or list', false);
-      const { splitPrayers, prayerAt, sectionAt, foundCandidates } = await import('./prayer-sections.js');
+      const { splitPrayers, prayerAt, sectionAt, foundCandidates, hasWords } = await import('./prayer-sections.js');
       const { prayerWorksOf, prayerWorksAcross, traditionOf } = await import('./prayer-works.js');
       const findDocuments = await dep(ctx, 'findDocuments', 'docs'), language = a.lang || null;
       const wd = a.work ? (await REGISTRY.document_search.run({ title: a.work, min: 0.9 }, ctx).catch(() => null))?.works?.[0] : null;
@@ -210,7 +210,7 @@ const ENTRIES = [
         const byTitle = new Map(); for (const s of sections) if (!byTitle.has(s.title)) byTitle.set(s.title, s);
         const out = { doc, occasions: [...byTitle.values()].sort((x, y) => (x.level ?? 1) - (y.level ?? 1) || y.paragraphs - x.paragraphs).slice(0, 40).map((s) => s.title), lead: null, more: [] };
         if (a.list || (!a.occasion && !a.incipit)) return out;
-        const prayersOf = async (s, pi) => { const [x, y] = s ? [s.start_index, s.end_index] : [Math.max(0, pi - 20), pi + 20]; return splitPrayers(await inRange(doc.id, x, y).catch(() => []), { max: 14 }); };
+        const prayersOf = async (s, pi) => { const [x, y] = s ? [s.start_index, s.end_index] : [Math.max(0, pi - 20), pi + 20]; return splitPrayers(await inRange(doc.id, x, y).catch(() => []), { max: 14 }).filter(hasWords); };   // a heading-only run is never given or offered
         // a need no heading names: the work searched by meaning (phrase layer) and by the literal words, held to this work
         const viaHits = async (q) => {
           const scoped = (limit) => ({ query: q, limit, filters: { documentId: doc.id } });
@@ -269,8 +269,10 @@ const ENTRIES = [
     async run(a, ctx) {
       const w = await (await dep(ctx, 'findTitled', 'works'))([a.title], ...(a.min != null ? [{ min: a.min }] : []));
       if (!w?.doc) return { works: [] };
-      const workUrl = await dep(ctx, 'workUrl', 'srcl');
-      return { works: [w.doc, ...(w.others || [])].map((x) => ({ ...x, url: workUrl(x) })) };
+      const workUrl = await dep(ctx, 'workUrl', 'srcl'), all = [w.doc, ...(w.others || [])];
+      // the online publisher wins here as for a passage (the doc row lacks `metadata`, where the publisher's address lives)
+      const links = ctx?.deps?.workUrl ? null : await (await import('../hit-links.js')).workLinks(all).catch(() => null);
+      return { works: all.map((x) => ({ ...x, url: links?.get(x.id) ?? workUrl(x) })) };
     } },
   { name: 'original_lookup', label: 'Original Lookup', kind: 'tool', outputName: 'Passage[]', cost: C(true, 300),
     purpose: 'The Arabic/Persian original of an English passage, then the authorised translations linked to it.',

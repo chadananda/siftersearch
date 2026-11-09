@@ -64,14 +64,15 @@ const comparison = tree('comparison', 'sides', [
 
 // ── prayer (DE D2, 11-09 rev): the TRADITION first, then its prayer works; the prayers of every tradition are in the library ──
 // Cost per run path (code = free, Jev = one cheap-tier call, no Opus, no writer: every shape is direct):
-//   p1 → p1b → p5|p8                  : code only (catalogue lookup + the works' own headings / meaning + literal search)
+//   p1 → p1b → p8                     : code only (several traditions: each one's lead prayer, no offers to check)
+//   p1 → p1b → p3 → p5                : code + 1 Jev (the same typed choice also fit-checks the offers: kept only if likelier than "none fits")
 //   p1 → p2 → p3 → p5                 : code + 1 Jev (the typed choice among the found prayers)
 //   p1 → p2 → p3 → p4 → p5            : code + 1 Jev attempt (no answer → rank by code)
 //   p1 → p2 → p3|p2 → p6 → $absence   : code (+ 1 Jev); the absence template names the tradition and lists its prayer works
 // Tradition, as units never words: religions_specified (Jev this turn / conversation / site default) → the named work's tradition → none = several traditions (p8).
 const prayer = tree('prayer', 'p1', [
   ['p1', 'fetch.prayer', {}, 'tool', ['religions_specified', 'named_work', 'quoted_words', 'occasion', 'incipit'], ['found_passages'], { one: 'p1b', several: 'p1b', none: 'p2', error: 'p2' }],
-  ['p1b', 'switch', { on: { spread: true }, cases: { several: 'several', one: 'one' }, default: 'one' }, 'decide', ['found_passages'], [], { several: 'p8', one: 'p5' }],
+  ['p1b', 'switch', { on: { spread: true }, cases: { several: 'several', one: 'one' }, default: 'one' }, 'decide', ['found_passages'], [], { several: 'p8', one: 'p3' }],
   ['p2', 'search.hype', { shelf: 'prayer', query: '{{occasion}}', k: 6 }, 'tool', ['occasion', 'current_user_question'], ['found_passages'], { one: 'p3', several: 'p3', thin: 'p3', none: 'p6', error: '$fallback' }],
   ['p3', 'judge.prayer', {}, 'decide', ['occasion', 'found_passages'], ['found_passages'], { picked: 'p5', none: 'p6', unjudged: 'p4' }],
   ['p4', 'rank', { by: ['occasion', 'audience', 'authority'], k: 3 }, 'process', ['found_passages', 'audience', 'channel'], ['found_passages'], { done: 'p5', empty: 'p6' }],
