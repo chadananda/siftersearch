@@ -221,6 +221,38 @@ describe('compilation tree', () => {
   it('error: every search down → sw errored → $fallback → $unavailable', async () => {
     const s = await run('compilation', 'q', { tools: { subthemes: sub, fused_search: boom, hype_search: boom }, agentRun: async () => null }); expect(path(s).slice(-3)).toEqual(['sw', '$fallback', '$unavailable']);
   });
+  // Chad 11-09: doctrinal by default; talks/House/studies only from a named source or when fewer than 3 doctrinal passages are found
+  const W = (i, x = {}) => P(i, { author: 'Bahá’u’lláh', title: 'Gleanings from the Writings of Bahá’u’lláh', ...x });
+  const TALK = (i, x = {}) => P(i, { author: 'Some Speaker', collection: 'Core Talks', title: 'A talk', ...x });
+  const decide = () => { const rec = []; return { rec, ctx: { decisions: { record: (k, v) => rec.push({ k, ...v }) } } }; };
+  const fused = (calls, filtered, open) => async (i) => { calls.push(i); const f1 = filtered[i.query] ?? []; return { passages: i.filters?.authority && !(i.tiers && f1.length < (i.min_results ?? 3)) ? f1 : (open[i.query] ?? []) }; };   // emulates fused tiers[]: tier 1 filtered, escalate to open when thin
+  it('compilation sources: >=3 doctrinal passages → doctrinal only, the talk never joins; decision recorded', async () => {
+    const d = decide(), calls = [], f = [W(1), W(2), W(3), TALK(4)];
+    const s = await run('compilation', 'q', { tools: { subthemes: async () => ['equity'], fused_search: fused(calls, { equity: f }, { equity: f }) }, extra: { ctx: d.ctx } });
+    expect(s.out.passages.map((p) => p.id).sort()).toEqual([1, 2, 3]); expect(calls[0].filters.authority).toContain('scripture'); expect(calls[0].tiers).toEqual(['authority']);
+    expect(d.rec.find((r) => r.k === 'compilation:sources')?.chosen).toBe('doctrinal');
+  });
+  it('compilation sources: <3 doctrinal → escalates to all sources (talks join)', async () => {
+    const d = decide(), f = [W(1), TALK(4), TALK(5)];
+    const s = await run('compilation', 'q', { tools: { subthemes: async () => ['equity'], fused_search: fused([], { equity: [W(1)] }, { equity: f }) }, extra: { ctx: d.ctx } });
+    expect(s.out.passages.map((p) => p.id).sort()).toEqual([1, 4, 5]); expect(d.rec.find((r) => r.k === 'compilation:sources')?.chosen).toBe('all');
+  });
+  it('compilation sources: hype escalates by a second call when the doctrinal pool is thin', async () => {
+    const calls = [];
+    const hype = async (i) => { calls.push(i); return { passages: i.filters?.authority ? [W(1)] : [W(1), TALK(6)] }; };
+    const s = await run('compilation', 'q', { tools: { subthemes: async () => ['equity'], fused_search: NONE, hype_search: hype } });
+    expect(calls.length).toBe(2); expect(s.out.passages.map((p) => p.id).sort()).toEqual([1, 6]);
+  });
+  it('compilation sources: a named source is included alongside the doctrinal passages', async () => {
+    const f = [W(1), W(2), W(3), TALK(4)];
+    const s = await run('compilation', 'q', { tools: { subthemes: async () => ['equity'], fused_search: fused([], { equity: f }, { equity: f }) }, extra: { units: { named_sources: ['104'] } } });
+    expect(s.out.passages.map((p) => p.id).sort()).toEqual([1, 2, 3, 4]);
+  });
+  it('compilation headings are the sub-themes, never the source tiers', async () => {
+    const f = { equity: [W(1), W(2), W(3)], fairness: [W(4, { author: 'Shoghi Effendi', title: 'God Passes By' }), W(5), W(6)] };
+    const s = await run('compilation', 'q', { tools: { subthemes: sub, fused_search: fused([], f, f) } });
+    expect(new Set(s.out.passages.map((p) => p.theme))).toEqual(new Set(themes));
+  });
   it('no sub-theme generator wired: the topic is the one theme (plan.subthemes fails open)', async () => {
     const s = await run('compilation', 'justice', { tools: { fused_search: async () => ({ passages: [P(1)] }) } }); expect(path(s)[0]).toBe('c5'); expect(s.units.sub_themes.length).toBe(1);
   });

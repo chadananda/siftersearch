@@ -7,6 +7,7 @@ import { run as runTool } from '../tools.js';
 import { canonicalTradition } from '../tradition-name.js';
 import { parseScriptureRef } from '../scripture-ref.js';
 import { template, fill } from './templates.js';
+import { sourceTier } from '../source-tier.js';
 import { judgeHolds, judgeTimeline, termScript } from '../judges.js';
 
 // ── units, scope, outcomes ──────────────────────────────────────────────────────────────────────────────────────────────
@@ -25,6 +26,9 @@ const call = (s, tool, input) => (s.tools?.[tool] ? s.tools[tool](input, s.ctx) 
 const trim = (v) => (typeof v === 'string' ? v.slice(0, 160) : Array.isArray(v) ? v.slice(0, 5).map(trim) : v && typeof v === 'object' ? flat(v) : v);
 const tradsOf = (u) => (Array.isArray(u.religions_specified) && u.religions_specified.length ? u.religions_specified.map(canonicalTradition) : null);
 const FLOOR = { scripture: ['scripture'], interpretation: ['scripture', 'interpretation'] };
+// Chad 11-09: a `doctrinal` search draws on the Writings, the Guardian and compilations of the Writings; talks, the House and studies join only from a named source
+// or when fewer than DOC_MIN doctrinal passages are found (same rule as strategies.js compilation()). Tier 1 = authority-filtered (fused tiers[] escalate in one call; hype escalates by a second call).
+const DOCTRINAL = new Set(['writings', 'guardian', 'compilation']), DOC_MIN = 3, DOC_AUTH = ['scripture', 'interpretation'];
 const kindOf = (p) => p.authority ?? p.authority_kind;
 const key = (p) => p.id ?? p.text ?? JSON.stringify(p);
 /** Scope: filter mode drops out-of-scope hits (counted); rank mode keeps every hit, in-scope first, the rest marked out_of_scope. Named sources always first. */
@@ -59,8 +63,23 @@ const retrieval = ({ edges, tool, input, take, into = 'found_passages', rank = f
     if (p.tradition && t && !t.includes(canonicalTradition(p.tradition))) return finish(s, p, 'none', { read: { tradition: p.tradition } });   // scope ∩ params empty: a free none
     if (gate && !gate(s, u, p)) return finish(s, p, 'none');
     let out, inp;
-    try { inp = input(s, p, u, t?.length === 1 ? t[0] : undefined); out = await call(s, tool, inp); } catch (err) { return finish(s, p, 'error', { error: err?.message || String(err) }); }
-    let raw = take(out, p, u) || [];
+    let raw, pick = null;
+    try {
+      inp = input(s, p, u, t?.length === 1 ? t[0] : undefined);
+      if (!p.doctrinal) { out = await call(s, tool, inp); raw = take(out, p, u) || []; }
+      else {
+        const fused = tool === 'fused_search', n1 = { ...inp, filters: { ...inp.filters, authority: DOC_AUTH }, ...(fused ? { tiers: ['authority'], min_results: DOC_MIN } : {}) };
+        raw = take(await call(s, tool, n1), p, u) || [];
+        const named = new Set((Array.isArray(u.named_sources) ? u.named_sources : []).map(String)), tierOf = (x) => sourceTier(x);
+        const isDoc = (x) => { const t = tierOf(x); return !t || DOCTRINAL.has(t); };
+        if (!fused && raw.filter(isDoc).length < DOC_MIN) raw = [...raw, ...(take(await call(s, tool, inp), p, u) || [])];   // hype has no tiers[]: the second call is the escalation
+        const doc = raw.filter(isDoc), keepAll = doc.length < DOC_MIN, other = raw.length - doc.length;
+        if (!keepAll) raw = raw.filter((x) => isDoc(x) || named.has(String(x.document_id ?? x.id)));
+        pick = { doctrinal: doc.length, other, chosen: keepAll ? 'all' : 'doctrinal', keepAll };
+      }
+    } catch (err) { return finish(s, p, 'error', { error: err?.message || String(err) }); }
+    if (pick && pick.other) (s.direction?.decisions ?? s.ctx?.decisions)?.record?.('compilation:sources', { by: 'code', saw: { doctrinal: pick.doctrinal, other: pick.other }, options: ['doctrinal', 'all'],
+      chosen: pick.chosen, reason: pick.keepAll ? 'too few doctrinal passages' : 'doctrinal by default; only a named source adds others' });
     const kinds = [p.authority].flat().filter(Boolean);
     if (kinds.length) raw = raw.filter((x) => !kindOf(x) || kinds.includes(kindOf(x)));
     const { items, excluded } = scoped(raw, u, p.scope === 'rank' || rank);
@@ -129,8 +148,8 @@ const E = {
       for (const { x, l } of res) if (l?.original || l?.translations?.length) { n++; x.original = l.original ?? x.original; x.translations = l.translations; }
       return finish(s, p, classify(n, ['one', 'several']), { count: n });
     } },
-  'search.shelf': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'fused_search', params: ['authority', 'language', 'author', 'work', 'layers', 'tiers', 'spell'], reads: ['topic'], input: searchInput, take: passages }),
-  'search.hype': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'hype_search', params: ['shelf', 'language'], reads: ['topic'], input: searchInput, take: passages }),
+  'search.shelf': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'fused_search', params: ['authority', 'doctrinal', 'language', 'author', 'work', 'layers', 'tiers', 'spell'], reads: ['topic'], input: searchInput, take: passages }),
+  'search.hype': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'hype_search', params: ['shelf', 'doctrinal', 'language'], reads: ['topic'], input: searchInput, take: passages }),
   'search.originals': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'originals_search', reads: ['topic', 'search_originals'], input: searchInput, take: passages,
     gate: (s, u) => u.search_originals !== false }),
   'search.web': retrieval({ edges: ['one', 'none', 'error'], tool: 'web_search', into: 'web_found', thin: () => false, reads: ['topic'],   // never library evidence; the scope goes in as words

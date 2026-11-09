@@ -101,10 +101,10 @@ const compilation = tree('compilation', 'c5', [
   ['c5', 'plan.subthemes', { n: 4 }, 'process', ['topic', 'named_sources'], ['sub_themes'], { done: 'c6', fail: 'c6' }],
   ['c6', 'ui.stage', { stage: 'Planning the compilation…' }, 'process', ['sub_themes'], [], { emitted: 'c7' }],
   ['c7', 'search.fanout', { by: 'sub_themes', inner: { element: 'search.together', params: { list: [
-    { element: 'search.shelf', params: { query: '{{value}}', k: 4 } }, { element: 'search.hype', params: { query: '{{value}}', k: 4 } }] } } }, 'tool', ['sub_themes', 'religions_specified'], ['found_passages', 'missing'],
+    { element: 'search.shelf', params: { query: '{{value}}', k: 4, doctrinal: true } }, { element: 'search.hype', params: { query: '{{value}}', k: 4, doctrinal: true } }] } } }, 'tool', ['sub_themes', 'religions_specified'], ['found_passages', 'missing'],
     { all: 'rk', some_thin: 'rk', all_none: 'sw', error: 'sw' }],
   ['sw', 'switch', { on: { evidence: true }, cases: { have: 'have', errored: 'errored', nothing: 'nothing' }, default: 'nothing' }, 'decide', ['found_passages', 'found_outcome'], [], { have: 'rk', errored: '$fallback', nothing: '$absence' }],
-  ['rk', 'rank', { by: ['authority'], group: 'side', dedupe: true, k: { default: 12, research: 20 } }, 'process', ['found_passages', 'sub_themes'], ['found_passages'], { done: 'o', empty: '$absence' }],
+  ['rk', 'rank', { by: ['authority'], group: 'side', k: { default: 12, research: 20 } }, 'process', ['found_passages', 'sub_themes'], ['found_passages'], { done: 'o', empty: '$absence' }],
   ['o', 'shape', { template: 'compilation.grouped', shared: 'tpl.passages', format: 'compilation', theme_by: 'side', offers: ['the full compilation by email'] }, 'synthesize', ['found_passages', 'sub_themes', 'missing', 'scope_source', 'reader_card'], ['offers'], { done: END }],
 ], { needs: ['topic', 'amount_wanted', 'output_form', 'named_sources'], units: { absence_template: 'compilation.absence' } });
 
