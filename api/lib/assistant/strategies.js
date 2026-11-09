@@ -132,7 +132,7 @@ export async function understanding(choice, ctx) {
   const { messages, query, distil, search, plan, profile = {}, decisions = NO_LOG, searchIn, inBooks = 0, drawFrom = null, sourceTools = null } = ctx;
   // the book / author Jev named as the source (plan.drawFrom), resolved beside the search (researcher namedSource)
   const sourceP = drawFrom && sourceTools ? namedSource(drawFrom, query, sourceTools).catch(() => null) : null;
-  const religion = plan?.filters?.religion || profile.default_tradition || null;
+  const religion = plan?.filters?.religion || (ctx.scope ? ctx.scope.religion : profile.default_tradition) || null;   // scope layers (units.js) when turn.js resolved them, else the host default
   decisions.record('understanding:scope', { by: plan?.source?.religion === 'jev' ? 'jev' : 'code', saw: { plan: plan?.filters?.religion ?? null, reader: profile.default_tradition ?? null },
     options: ['one tradition', 'whole library'], chosen: religion || 'whole library', reason: religion ? 'tradition from the plan / reader' : 'no tradition known' });
   let hits = await searchSide({ search, query, messages, profile, religion, limit: 10 });
@@ -174,7 +174,7 @@ export async function understanding(choice, ctx) {
 export async function compilation(choice, ctx) {
   const { messages, query, distil, search, plan, profile = {}, decisions = NO_LOG, drawFrom = null, sourceTools = null, channel = null } = ctx;
   const sourceP = drawFrom && sourceTools ? namedSource(drawFrom, query, sourceTools).catch(() => null) : null;
-  const religion = plan?.filters?.religion || profile.default_tradition || null;
+  const religion = plan?.filters?.religion || (ctx.scope ? ctx.scope.religion : profile.default_tradition) || null;   // scope layers (units.js) when turn.js resolved them, else the host default
   decisions.record('compilation:scope', { by: plan?.source?.religion === 'jev' ? 'jev' : 'code', saw: { plan: plan?.filters?.religion ?? null, reader: profile.default_tradition ?? null },
     options: ['one tradition', 'whole library'], chosen: religion || 'whole library', reason: religion ? 'tradition from the plan / reader' : 'no tradition known' });
   // the theme as asked and its distilled subject, searched wide in parallel

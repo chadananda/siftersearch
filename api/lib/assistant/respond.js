@@ -646,7 +646,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
   const runStrat = (choice) => withStrategyPin(direction, () => {
     narrate(onEvent, direction.channel, `strategy.${strategyOf(choice)}.start`);
     return timed('strategy', () => runStrategy(choice, { messages, question, plan, query: searchQueryFor(messages), distil: distilQuery, search: d.search,
-      profile, decisions: direction.decisions, deps: d, channel: direction.channel || null,
+      profile, scope: direction.scope || null, decisions: direction.decisions, deps: d, channel: direction.channel || null,
       // a live chat's strategy gets the same in-book step as its researcher (coordinator 11-03: goth questions route to understanding)
       // and the source Jev named (plan.drawFrom → researcher namedSource), resolved beside the strategy's own search
       // (a comparison's per-side books, named by Jev in the strategy call, use the same source tools)
@@ -723,7 +723,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
   const position = !strat && !researched && !sourced && !original && !study && !conversational && (d.looksLikePosition || looksLikePositionQuestion)(question)
     ? await positionResearch({ question, create: d.create || (await import('../role-client.js')).roleCreate, search: d.search,
       authorityOf: d.authorityOf || (async (p) => { try { return (await import('../authority.js')).getAuthority(p || {}); } catch { return 0; } }),
-      defaults: profile.default_tradition ? { religion: profile.default_tradition } : {}, scope_config: profile.scope_config }).catch((err) => { console.warn('anis position research failed', err?.message); return null; })
+      defaults: (direction.scope ? direction.scope.religion : profile.default_tradition) ? { religion: direction.scope ? direction.scope.religion : profile.default_tradition } : {}, scope_config: profile.scope_config }).catch((err) => { console.warn('anis position research failed', err?.message); return null; })
     : null;
   // A LANGUAGE question (assistant/language.js): answered from knowledge of the language and the passage already under
   // discussion — a search would only bring unrelated quotations to pad it with (10-19, Lal's 'fí baytihi')
@@ -744,7 +744,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
       searchQ = (p?.via === 'named-object' || p?.via === 'haiku') && p.phrase ? p.phrase : direction.query || searchQueryFor(messages);   // direction.query: a short turn resolved from history + card (turn.js, 11-03)
       const hints = hintsOf(p);
       return timed('search', () => d.search({ query: searchQ, mode: 'passages', limit: 8, scope_config: profile.scope_config,
-        plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {}, ...(hints ? { hints } : {}) } }));
+        plan: { messages, defaults: (direction.scope ? direction.scope.religion : profile.default_tradition) ? { religion: direction.scope ? direction.scope.religion : profile.default_tradition } : {}, ...(hints ? { hints } : {}) } }));
     });
   if (phrased && res?._plan && !res._plan.quote) res._plan = { ...res._plan, phrases: phrased };
   // OWN SOURCE (own-source.js; Chad's standing rule): the passages are final here — a Central Figure's or Shoghi Effendi's
