@@ -9,6 +9,7 @@ import { parseScriptureRef } from '../scripture-ref.js';
 import { template, fill } from './templates.js';
 import { AUTH_KINDS } from './contract.js';
 import { standingOf, authorityOrder } from '../tradition-authority.js';
+import { TIER_ORDER } from '../source-tier.js';
 import { judgeHolds, judgeTimeline, termScript } from '../judges.js';
 
 // ── units, scope, outcomes ──────────────────────────────────────────────────────────────────────────────────────────────
@@ -180,7 +181,7 @@ const E = {
     } },
   'search.shelf': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'fused_search', params: ['authority', 'doctrinal', 'language', 'author', 'work', 'layers', 'tiers', 'spell', 'in_named', 'by_person', 'wide', 'quoted', 'inside', 'books'], reads: ['topic', 'named_work', 'named_person', 'quoted_words', 'found_passages'], input: searchInput, take: passages,
     gate: (s, u, p) => (!p.in_named || !!namedWork(u)) && (!p.by_person || !!personOf(u)) && (!p.wide || hardFiltered(u)) && (!p.quoted || !!String(flat(u.quoted_words) ?? '').trim()) && (!p.inside || booksOf(u).length > 0) }),
-  'search.hype': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'hype_search', params: ['shelf', 'doctrinal', 'language', 'wide'], reads: ['topic'], input: searchInput, take: passages,
+  'search.hype': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'hype_search', params: ['authority', 'doctrinal', 'language', 'wide'], reads: ['topic'], input: searchInput, take: passages,
     gate: (s, u, p) => !p.wide || hardFiltered(u) }),
   'search.originals': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'originals_search', reads: ['topic', 'search_originals'], input: searchInput, take: passages,
     gate: (s, u) => u.search_originals !== false && (!tradsOf(u) || tradsOf(u).includes("Baha'i")) }),   // the originals index is the Bahá'í Persian/Arabic Writings: a turn scoped to another tradition skips it
@@ -215,8 +216,8 @@ E['search.together'] = { kind: 'tool', cls: 'code', edges: TOGETHER, scope: 'str
     const edge = live.length && live.every((e) => e === 'error') ? 'error' : n > 0 && edges.every((e) => ['thin', 'none', 'error'].includes(e)) && edges.includes('thin') ? 'thin' : classify(n, TOGETHER);
     const note = finish(s, p, edge, { count: n, read: { list: list.map((x) => x.element), edges: edges.join(',') } }); s.note.scope_excluded = u.scope_excluded - x0; s.note.members = members; return note;
   } };
-E['search.fanout'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', 'all_none', 'error'], scope: 'strategy', params: ['by', 'facets', 'inner', 'stage'], reads: SCOPE, writes: ['found_passages', 'found_records', ...OUT],
-  async run(s, p = {}) {   // the inner element once per value (compare_sides, sub_themes…), in parallel, each on its own units; items tagged with their value
+E['search.fanout'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', 'all_none', 'error'], scope: 'strategy', params: ['by', 'facets', 'inner', 'tag', 'stage'], reads: SCOPE, writes: ['found_passages', 'found_records', ...OUT],
+  async run(s, p = {}) {   // the inner element once per value (compare_sides, sub_themes…), in parallel, each on its own units; items tagged with their value in field `tag` (default side)
     const u = U(s), values = p.facets ?? u[p.by] ?? [];
     const runs = await Promise.all(values.map(async (v, i) => {
       const own = { ...u, found_passages: [], found_records: [], web_found: [], found_outcome: {}, missing: [], path: [], scope_excluded: 0 };
@@ -225,7 +226,7 @@ E['search.fanout'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', 'a
       return { v, own, edge };
     }));
     let n = 0;
-    for (const { v, own } of runs) { for (const k of ['found_passages', 'found_records']) merge(u, k, own[k].map((x) => ({ ...x, side: flat(v) }))); n += own.found_passages.length + own.found_records.length; u.scope_excluded += own.scope_excluded; }
+    for (const { v, own } of runs) { for (const k of ['found_passages', 'found_records']) merge(u, k, own[k].map((x) => ({ ...x, [p.tag ?? 'side']: flat(v) }))); n += own.found_passages.length + own.found_records.length; u.scope_excluded += own.scope_excluded; }
     const weak = (e) => ['none', 'thin', 'error'].includes(e);
     return finish(s, p, !runs.length || runs.every((r) => r.edge === 'error') ? 'error' : runs.every((r) => r.edge === 'none' || r.edge === 'error') ? 'all_none' : runs.some((r) => weak(r.edge)) ? 'some_thin' : 'all', { count: n, read: { by: p.by, values } });
   } };
@@ -239,6 +240,30 @@ E['search.compare'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', '
     for (const sd of sides) { merge(u, 'found_passages', sd.passages.map((x) => ({ ...x, side: sd.label }))); n += sd.passages.length; }
     const empty = (sd) => !sd.passages.length;
     return finish(s, p, !sides.length || sides.every(empty) ? 'all_none' : sides.some(empty) ? 'some_thin' : 'all', { count: n, read: { by: p.by ?? 'compare_sides', values } });
+  } };
+// comparison sides (11-09 review, comparison c0/c3): fewer than two sides given → the LIBRARY's traditions (scope-extract TRADITIONS, every one, Jain
+// included), never the biggest traditions in the corpus; afterwards a side whose passages do not ANSWER is written to `missing` so the shape names it
+E['fill.sides'] = { kind: 'transform', cls: 'code', edges: ['given', 'library'], scope: 'strategy', params: ['stage'], reads: ['compare_sides', 'religions_specified'], writes: ['compare_sides'],
+  async run(s, p = {}) {   // given = Jev named two or more sides (or the scope holds two or more traditions); library = every tradition the library holds, the named one(s) first
+    const u = U(s), given = (Array.isArray(u.compare_sides) ? u.compare_sides : []).map(flat).filter(Boolean), scope = tradsOf(u) ?? [];
+    const pick = given.length > 1 ? given : scope.length > 1 ? scope : null;
+    const lib = pick ? [] : Object.keys((await import('../../scope-extract.js')).TRADITIONS).filter((t) => t !== 'none');
+    const sides = pick ?? [...given, ...lib].filter((x, i, a) => a.findIndex((y) => canonicalTradition(y) === canonicalTradition(x)) === i);
+    u.compare_sides = sides; if (!pick) u.sides_from = 'library';
+    s.note = { read: { compare_sides: given, religions_specified: u.religions_specified }, params: p, count: sides.length, scope_excluded: 0 };
+    return pick ? 'given' : 'library';
+  } };
+E['fill.missing_sides'] = { kind: 'transform', cls: 'code', edges: ['answered', 'none'], scope: 'strategy', params: ['stage'], reads: ['found_passages', 'compare_sides'], writes: ['found_passages', 'missing'],
+  run(s, p = {}) {   // after the judge: a side with no answering passage (none found, or only mentions) → missing {side, why}; its mention-only passages leave the evidence
+    const u = U(s), answers = (x) => x.verdict == null || x.verdict === 'answers' || x.verdict === 'contradicts';
+    const sides = (Array.isArray(u.compare_sides) ? u.compare_sides : []).map(flat), lack = [];
+    for (const sd of sides) {
+      const own = u.found_passages.filter((x) => flat(x.side) === sd);
+      if (!own.some(answers)) { lack.push(sd); u.missing.push({ node: s.node ?? null, side: sd, edge: own.length ? 'mentions_only' : 'no_answer' }); }
+    }
+    u.found_passages = u.found_passages.filter((x) => !lack.includes(flat(x.side)) && answers(x));
+    s.note = { read: { compare_sides: sides }, params: p, count: sides.length - lack.length, scope_excluded: 0, missing: lack };
+    return u.found_passages.length ? 'answered' : 'none';
   } };
 E.probe = { kind: 'decision', cls: 'code', edges: ['match', 'adjust', 'mismatch'], scope: 'strategy', params: ['step', 'sample', 'expect', 'target', 'stage'], reads: SCOPE, writes: ['param_overrides'],
   async run(s, p = {}) {   // run a search step on a small sample; do the hits match what the plan expects? partial → adjust the target node's params; none → mismatch (recorded on the node)
@@ -377,7 +402,9 @@ E['fill.term_script'] = { kind: 'decision', cls: 'jev', edges: ['filled', 'none'
 // ── rank / shape / plan ─────────────────────────────────────────────────────────────────────────────────────────────────
 const ORDER = [...AUTH_KINDS, 'other'];
 const yearOf = (x) => Number(String(x.year ?? x.date ?? '').slice(0, 4)) || 0;
+const standingRank = (x) => { const i = TIER_ORDER.indexOf(standingOf(x)); return i < 0 ? TIER_ORDER.length : i; };
 export const COMPARE = {
+  standing: () => (a, b) => standingRank(a) - standingRank(b),   // tradition-authority: each passage by its own tradition's tiers (Bahá’í: writings > guardian > compilation > reported > house > secondary)
   authority: () => (a, b) => (ORDER.indexOf(kindOf(a) ?? 'other') + 1 || 99) - (ORDER.indexOf(kindOf(b) ?? 'other') + 1 || 99),
   date: () => (a, b) => yearOf(b) - yearOf(a), history: () => (a, b) => yearOf(a) - yearOf(b), score: () => (a, b) => (b.score ?? 0) - (a.score ?? 0),
   length: () => (a, b) => String(a.text ?? '').length - String(b.text ?? '').length, marked: () => (a, b) => (b.marked ? 1 : 0) - (a.marked ? 1 : 0),
@@ -389,7 +416,7 @@ export const COMPARE = {
   attributed: (u) => { const who = String(flat(u.named_person) || ''); return (a, b) => (who && String(b.author) === who ? 1 : 0) - (who && String(a.author) === who ? 1 : 0); },   // the named author's own works first
   copy: (u) => { const w = String(u.translation_wanted ?? 'authorized'); const r = (x) => (x.translation && String(x.translation).includes(w) ? 0 : x.edition === 'default' ? 1 : x.language === u.reply_language ? 2 : x.translation ? 3 : 4); return (a, b) => r(a) - r(b); },
 };
-E.rank = { kind: 'transform', cls: 'code', edges: ['done', 'empty'], scope: 'strategy', params: ['by', 'k', 'per', 'best', 'pin', 'group', 'dedupe', 'skip', 'of', 'stage'], reads: ['found_passages', 'state.given'], writes: ['found_passages'],
+E.rank = { kind: 'transform', cls: 'code', edges: ['done', 'empty'], scope: 'strategy', params: ['by', 'k', 'per', 'best', 'pin', 'group', 'order', 'dedupe', 'skip', 'of', 'stage'], reads: ['found_passages', 'state.given'], writes: ['found_passages'],
   run(s, p = {}) {   // order by the listed keys (stable, earlier keys win), pin, drop repeats / already-given, keep the top k; nothing left → empty ($absence)
     const u = U(s), of = p.of ?? 'found_passages', by = [p.by].flat().filter((k) => COMPARE[k]), cmp = by.map((k) => COMPARE[k](u));
     const given = new Set((s.state?.given ?? u.given ?? []).map((g) => String(g.ref ?? g.id ?? g)));
@@ -403,8 +430,15 @@ E.rank = { kind: 'transform', cls: 'code', edges: ['done', 'empty'], scope: 'str
     const pinned = p.pin ? items.filter((x) => x[p.pin] || x.id === p.pin) : [];
     items = [...pinned, ...items.filter((x) => !pinned.includes(x))];
     const k = kOf(p, u);
-    if (p.per && k) { const n = new Map(); items = items.filter((x) => { const g = flat(x[p.per]) || 'other', c = n.get(g) ?? 0; n.set(g, c + 1); return c < k; }); } else if (k) items = items.slice(0, k);   // per: k for EACH value of the field (a side cannot crowd another out)
-    if (p.group) { const g = new Map(); for (const x of items) { const kk = flat(x[p.group]) || 'other'; g.set(kk, [...(g.get(kk) || []), x]); } u.groups = [...g].map(([k2, v]) => ({ key: k2, count: v.length, items: v })).sort((a, b) => b.count - a.count); }
+    const gk = (x, f) => [f].flat().map((ff) => flat(x[ff]) || 'other').join(' — ');   // a list of fields = one nested key (tradition — theme)
+    if (p.per && k) { const n = new Map(); items = items.filter((x) => { const g = gk(x, p.per), c = n.get(g) ?? 0; n.set(g, c + 1); return c < k; }); } else if (k) items = items.slice(0, k);   // per: k for EACH value of the field (a side cannot crowd another out)
+    if (p.group) {   // the items themselves are regrouped (the writer reads them in order): groups in the `order` unit's order (e.g. sub_themes as planned), else first appearance; rank order within
+      const g = new Map(), fs = [p.group].flat(), ord = (Array.isArray(u[p.order]) ? u[p.order] : []).map(flat), pos = (x) => { const i = ord.indexOf(flat(x[fs.at(-1)])); return i < 0 ? ord.length : i; };
+      const first = new Map(); items.forEach((x, i) => { for (let d = 1; d <= fs.length; d++) { const kk = gk(x, fs.slice(0, d)); if (!first.has(kk)) first.set(kk, i); } });
+      items = items.map((x, i) => [x, i]).sort(([a, i], [b, j]) => { for (let d = 1; d < fs.length; d++) { const c = first.get(gk(a, fs.slice(0, d))) - first.get(gk(b, fs.slice(0, d))); if (c) return c; } return pos(a) - pos(b) || first.get(gk(a, fs)) - first.get(gk(b, fs)) || i - j; }).map(([x]) => x);
+      for (const x of items) { const kk = gk(x, fs); g.set(kk, [...(g.get(kk) || []), x]); }
+      u.groups = [...g].map(([k2, v]) => ({ key: k2, count: v.length, items: v }));
+    }
     u[of] = items;
     s.note = { read: { by, k }, params: p, count: items.length, scope_excluded: 0 };
     return items.length ? 'done' : 'empty';
@@ -419,12 +453,13 @@ export const modeOf = (u) => { const c = u.channel?.id ?? u.channel; return MODE
 export const modal = (text, u) => { const m = modeOf(u), flag = { research: () => u.depth === 'research', why: () => u.question_frame === 'why', anchor: () => u.found_passages.some((x) => x.anchor), thin: () => Object.values(u.found_outcome || {}).includes('thin') }, on = (names) => names.split('|').some((n) => n === m || (flag[n] ? flag[n]() : !['voice', 'widget', 'site', 'email', 'pdf'].includes(n) && (Array.isArray(u[n]) ? u[n].length > 0 : !!u[n] && u[n] !== 'none'))); return text.replace(/\{\{#([\w|]+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (_, names, body) => (on(names) ? body : '')).replace(/\n{3,}/g, '\n\n'); };
 const tplText = (s, id) => s.templates?.[id] ?? (() => { try { return template(id); } catch (err) { if (DEFAULTS[id]) return DEFAULTS[id]; throw err; } })();
 // theme = the passage's heading in the writer's evidence: by its side / tradition / authority kind / date, else what the element set
-const themeOf = (x, by) => x.theme ?? (by === 'side' ? x.side : by === 'religion' ? x.religion : by === 'date' ? x.date ?? x.year : by === 'authority' ? kindOf(x) : undefined) ?? x.side ?? undefined;
+const themeOf = (x, by) => (Array.isArray(by) ? by.map((b) => themeOf({ ...x, theme: undefined }, b)).filter(Boolean).join(' — ') || undefined : null) ?? x.theme ?? (by === 'sub_theme' ? x.sub_theme : by === 'side' ? x.side : by === 'religion' ? x.religion : by === 'date' ? x.date ?? x.year : by === 'authority' ? kindOf(x) : undefined) ?? x.side ?? undefined;
 // opts: shared = the shared tpl.<shape> that wraps the strategy's own template as {{base}}; direct = the template alone finishes the reply (no synthesis needed)
 const writer = (s, id, extra = {}, opts = {}) => {
   const u = U(s), own = modal(tplText(s, id), u);
   const clause = tradsOf(u) && u.scope_excluded > 0 && ['conversation', 'reader'].includes(u.scope_source) ? `${u.religions_specified.join(', ')} sources only, as you asked — say 'all traditions' to widen.` : '';
-  const sl = { ...slots(u), scope_clause: clause, authority_order: authorityOrder(tradsOf(u)?.length === 1 ? tradsOf(u)[0] : null), widened_clause: u.widened ? `searched ${flat(u.widened.from)} first, then widened to all traditions` : 'in every tradition searched', missing_sides: (() => { const have = new Set(u.found_passages.map((x) => flat(x.side))), lack = (Array.isArray(u.compare_sides) ? u.compare_sides : []).map(flat).filter((x) => !have.has(x)); return lack.length ? `The library returned NOTHING from ${lack.join(', ')} on this: say so plainly in that section, never fill it from another tradition or from memory.` : ''; })(), missing_line: u.missing.length ? `Not found: ${u.missing.map((m) => m.node).filter(Boolean).join(', ')}.` : '', ...extra };
+  const sl = { ...slots(u), scope_clause: clause, authority_order: authorityOrder(tradsOf(u)?.length === 1 ? tradsOf(u)[0] : null), widened_clause: u.widened ? `searched ${flat(u.widened.from)} first, then widened to all traditions` : 'in every tradition searched', missing_sides: (() => { const have = new Set(u.found_passages.map((x) => flat(x.side))), lack = [...new Set([...(Array.isArray(u.compare_sides) ? u.compare_sides : []).map(flat).filter((x) => !have.has(x)), ...u.missing.map((m) => m.side).filter(Boolean)])];
+      return lack.length ? `Nothing the library returned from ${lack.join(', ')} answers this (each searched in its own texts): name them plainly in one line, never fill a side from another tradition or from memory.` : ''; })(), missing_line: u.missing.length ? `Not found: ${u.missing.map((m) => m.node).filter(Boolean).join(', ')}.` : '', ...extra };
   const inner = fill(own, sl);
   const how = (opts.shared ? fill(modal(tplText(s, opts.shared), u), { ...sl, base: inner }) : inner).trim();
   const fid = opts.format ?? id;
@@ -532,12 +567,14 @@ export const ELEMENT_META = {
   'fetch.facts': m('Library facts and corpus status.', 'none', 'found_records', []),
   'fetch.work_notes': m('Verified quotations on a core work’s significance, best authority first.', 'named_work', 'found_records', ['work_notes_lookup']),
   'search.shelf': m('Searches the library by authority (scripture, interpretation, guidance…), inside the scope. layers picks which layers run and merges them in one call (literal = exact words, phrase = meaning, hype = questions answered, originals); tiers is the escalation ladder (drop these filters one at a time while fewer than min results come back; each passage says its tier); spell corrects misspellings first, deterministically.', 'topic, scope, layers, tiers, spell', 'found_passages', ['fused_search']),
-  'search.hype': m('Question search: paragraphs that answer a question like this one.', 'topic, scope', 'found_passages', ['hype_search']),
+  'search.hype': m('Question search: paragraphs that answer a question like this one. authority keeps only passages of those standings (scripture, interpretation…).', 'topic, scope, authority', 'found_passages', ['hype_search']),
   'search.originals': m('Searches the original-language Writings.', 'topic, search_originals', 'found_passages', ['originals_search']),
   'search.web': m('Searches the open web; results are labelled and never quoted as library evidence.', 'topic, scope as words', 'web_found', ['web_search']),
   'search.together': m('Runs cheap independent tiers in parallel and merges their results in one step.', 'list of fetch/search steps', 'found_passages, found_records', []),
   'search.compare': m('One call for every side of a comparison (compare_search): the same question held to each side, results tagged by side; the tree judges once afterward.', 'compare_sides, topic', 'found_passages tagged by side', ['compare_search']),
-  'search.fanout': m('Runs one step once per value (each side of a comparison, each sub-theme), in parallel.', 'by (a unit) or facets', 'found_passages tagged by value', []),
+  'search.fanout': m('Runs one step once per value (each side of a comparison, each sub-theme), in parallel.', 'by (a unit) or facets; tag = the field the value is written to (default side)', 'found_passages tagged by value', []),
+  'fill.sides': m('Fills compare_sides in code: the sides Jev named (two or more), else every tradition the library holds — never chosen by corpus size.', 'compare_sides, religions_specified', 'compare_sides', []),
+  'fill.missing_sides': m('After the judge: each side with no answering passage goes to missing (named by the shape), its mention-only passages dropped.', 'found_passages (verdicts), compare_sides', 'found_passages, missing', []),
   probe: m('Runs a search step on a small sample and checks the hits are what the plan expects; adjusts or flags a mismatch.', 'step, expect', 'param_overrides', []),
   'read.around': m('Reads the paragraphs around each passage that will be quoted.', 'found_passages', 'found_passages (context)', ['context_lookup']),
   'read.source': m('Traces a quotation found in a secondary book to its primary source.', 'found_passages', 'found_passages (traced)', ['source_trace']),
@@ -548,7 +585,7 @@ export const ELEMENT_META = {
   'judge.timeline': m('One step over the typed people of fetch.person: keeps those whose cited proof does what the question asks (met, was present, died…), each with the book’s own clause.', 'found_records (people), the question', 'found_records (people, clause)', []),
   'fill.term_script': m('Fills the term_arabic unit: a Latin term’s Arabic-script spelling (already Arabic or remembered = no model; otherwise one Jev call), so fetch.renderings can look it up.', 'term', 'term_arabic', []),
   'plan.subthemes': m('A light generator for the sub-themes a topic splits into (default: the topic itself).', 'topic', 'sub_themes', []),
-  rank: m('Orders what was found by authority, date, score… keeps the top few, skips what was already given.', 'found_passages', 'found_passages', []),
+  rank: m('Orders what was found by authority, standing, date, score… keeps the top few (per a field, or fields), regroups by a field (or nested fields), skips what was already given.', 'found_passages', 'found_passages', []),
   shape: m('Sets the writer’s instruction from a template chosen by what was found, for the mode.', 'found units', 'the writer instruction', []),
   'hand.strategy': m('Runs another strategy’s tree as a sub-tree on the same units.', 'name', 'found units', []),
   'hand.job': m('Queues a long task as a job with a frozen copy of the scope and offers the result by email.', 'kind', 'a queued job', ['deep_report']),

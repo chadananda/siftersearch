@@ -276,7 +276,7 @@ export const RESPOND_ACTIVITIES = {
   'respond.conversational': { kind: 'decision', cls: 'code', run: conversational, edges: ['converse', 'no'] },
   'respond.religions': { kind: 'tool', cls: 'code', run: religions, edges: ['answered', 'empty', 'skip'] },
   'respond.work': { kind: 'tool', cls: 'code', run: work, edges: ['found', 'none', 'skip'] },
-  'ui.stage': { kind: 'transform', cls: 'code', run: stage, edges: ['emitted'] },
+  'ui.stage': { kind: 'transform', cls: 'code', run: stage, edges: ['emitted'], scope: 'strategy', params: ['stage'], reads: [], writes: [] },   // every seeded tree stages; a designed tree may too (rev-C: validateCandidate refused it)
   'respond.phrases_start': { kind: 'tool', cls: 'llm', run: phrasesStart, edges: ['started', 'skip'] },
   'respond.research': { kind: 'tool', cls: 'llm', run: research, edges: ['found', 'empty', 'skip'] },
   'respond.read_question': { kind: 'decision', cls: 'code', run: readQuestion, edges: ['original', 'quoted', 'plain'] },

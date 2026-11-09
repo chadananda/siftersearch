@@ -5,7 +5,7 @@
 
 import Ajv from 'ajv';
 import { CANON } from './work-canon.js';
-import { canonicalTradition } from './tradition-name.js';
+import { canonicalTradition, RELIGIONS } from './tradition-name.js';
 import { DOCTRINAL_KEYS } from '../search/doctrinal-rank.js';
 import { currentAIContext, withAIContext } from '../ai-context.js';
 import { FILTERS, PASSAGE, WORK, ERROR, SCHEMAS, PASSAGES, str, LIMIT, PID, nul, engineFilters, translationLabel, letterVariants, toPassage, dedupePassages, plainSchema, dep, layerDep, MOD } from './tool-kit.js';
@@ -154,7 +154,7 @@ const ENTRIES = [
     description: 'Search the same question inside each side of a comparison (a tradition, an author, a work…) in one call; results come back per side, each deduped.',
     purpose: 'Replaces a per-side search loop: one merged query per side, returned side by side (a side with no hits is an empty side, not an error).',
     input: { type: 'object', additionalProperties: false, required: ['query', 'sides'], properties: { query: str('The question, as written'),
-      sides: { type: 'array', minItems: 2, maxItems: 8, items: { type: 'object', additionalProperties: false, required: ['label', 'filters'], properties: { label: str('The side’s name, e.g. Islam'), filters: FILTERS } } },
+      sides: { type: 'array', minItems: 2, maxItems: RELIGIONS.length, items: { type: 'object', additionalProperties: false, required: ['label', 'filters'], properties: { label: str('The side’s name, e.g. Islam'), filters: FILTERS } } },
       k: { type: 'integer', minimum: 1, maximum: 10, default: 3, description: 'Passages kept per side' }, layers: LAYERS, tiers: TIERS } },
     output: { type: 'object', required: ['sides'], properties: { sides: { type: 'array', items: { type: 'object', required: ['label', 'passages'], properties: { label: { type: 'string' }, passages: { type: 'array', items: PASSAGE }, relaxed: { type: 'array', items: { type: 'string' } } } } } } },
     example: { input: { query: 'forgiveness', sides: [{ label: 'Islam', filters: { tradition: 'Islam' } }, { label: 'Christianity', filters: { tradition: 'Christianity' } }], k: 3 }, output: { sides: [{ label: 'Islam', passages: [{ ...P_EX, found_by: ['literal'] }], relaxed: [] }, { label: 'Christianity', passages: [], relaxed: [] }] } },

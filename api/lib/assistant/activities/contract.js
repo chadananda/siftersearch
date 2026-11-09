@@ -4,10 +4,10 @@
 import { UNITS } from '../units.js';
 
 export const AUTH_KINDS = Object.freeze(['scripture', 'guardian', 'interpretation', 'guidance', 'law', 'prayer', 'history', 'scholarship']);
-export const RANK_BY = Object.freeze(['authority', 'date', 'history', 'score', 'length', 'marked', 'occasion', 'audience', 'named', 'attributed', 'copy']);
+export const RANK_BY = Object.freeze(['authority', 'standing', 'date', 'history', 'score', 'length', 'marked', 'occasion', 'audience', 'named', 'attributed', 'copy']);
 // slots a param or template may name: registry units, what elements write onto the units, and what the writer adds
 export const PARAM_SLOTS = Object.freeze([...Object.keys(UNITS), 'found_passages', 'found_records', 'web_found', 'missing', 'path', 'defects', 'offers', 'value', 'base']);
-export const TEMPLATE_SLOTS = Object.freeze([...PARAM_SLOTS, 'scope_clause', 'widened_clause', 'missing_sides', 'missing_line']);
+export const TEMPLATE_SLOTS = Object.freeze([...PARAM_SLOTS, 'scope_clause', 'widened_clause', 'missing_sides', 'missing_line', 'authority_order']);   // authority_order: the writer fills it (tradition-authority)
 const SINGLE = /(?<!\{)\{(\w+)\}(?!\})/g, DOUBLE = /\{\{(\w+)\}\}/g;
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 const strs = (v) => Array.isArray(v) && v.length > 0 && v.every((x) => typeof x === 'string' && x.trim());
@@ -26,7 +26,7 @@ const RULES = {
   tradition: (v) => (typeof v === 'string' && !!v.trim() && !v.includes('{{')) || 'must be a tradition name, never a {{slot}} (the turn\'s scope already filters by tradition)',
   layers: (v) => strs(v) || 'must be a list of layer names, e.g. ["literal","phrase"]',
   tiers: (v) => strs(v) || 'must be a list of tier names',
-  per: (v, a) => a !== 'rank' || (typeof v === 'string' && !!v.trim()) || 'rank per must be a FIELD NAME (k for each value of it); a number is not a per-group count - use k for a total',
+  per: (v, a) => a !== 'rank' || [v].flat().length > 0 && [v].flat().every((x) => typeof x === 'string' && !!x.trim()) || 'rank per must be a FIELD NAME or a list of them (k for each value); a number is not a per-group count - use k for a total',
   by: (v, a) => a !== 'rank' || ([v].flat().length > 0 && [v].flat().every((x) => RANK_BY.includes(x))) || `rank by must be ${RANK_BY.join('|')} (or a list)`,
   ...Object.fromEntries(BOOL.map((n) => [n, (v) => typeof v === 'boolean' || 'must be true or false'])),
 };

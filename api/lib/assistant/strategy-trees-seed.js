@@ -47,19 +47,21 @@ const understanding = tree('understanding', 'anchor', [
   ['s_conflict', 'shape', { template: 'understanding.conflict', shared: 'tpl.passages', format: 'understanding', theme_by: 'authority' }, 'synthesize', ['found_passages'], [], { done: END }],
 ], { needs: ['topic', 'question_frame', 'quoted_words', 'named_work', 'named_person', 'audience'] });
 
-// ── comparison (BC §2): ONE compare_search for all sides, the understanding judge once, one rank, the sides shape ──
+// ── comparison (review 11-09 c0–c4): the sides are the ones named, else EVERY tradition the library holds (never the biggest by corpus size);
+// ONE compare_search (k 3 per side, each side in its own texts), ONE judge over all passages, sides with no answer named in `missing`.
+// Cost per run path (Jev = one cheap typed call per passage, all inside the one judge node; tools = code):
+//   sides → stage → cmp → judge → chk → rank → s_sides : 1 compare_search (N sides) + N·3 Jev max + 1 writer
+//   … → cmp → $absence (all_none) / judge → $absence (empty) / chk → $absence (none answered): 1 compare_search (+ judge Jev) + the shared absence writer
+//   … → cmp → $fallback (error): 1 compare_search + the shared fallback
 const comparison = tree('comparison', 'sides', [
-  ['sides', 'switch', { on: { count: 'compare_sides' }, cases: { many: 'sides' }, default: 'wide' }, 'decide', ['compare_sides'], [], { sides: 'stage', wide: 'wide' }],
+  ['sides', 'fill.sides', {}, 'process', ['compare_sides', 'religions_specified'], ['compare_sides'], { given: 'stage', library: 'stage' }],
   ['stage', 'ui.stage', { stage: 'Reading each side in its own scripture…' }, 'process', ['channel'], [], { emitted: 'cmp' }],
-  ['cmp', 'search.compare', { by: 'compare_sides', k: { default: 3, many: 1 } }, 'tool', ['compare_sides', 'topic', 'quoted_words'], ['found_passages', 'missing'],
-    { all: 'judge', some_thin: 'judge', all_none: '$absence', error: '$fallback' }],   // ONE compare_search call for all sides — no per-side sub-strategy, no Jev inside a tool or a loop
-  ['judge', 'judge.passages', {}, 'decide', ['current_user_question', 'found_passages'], ['found_passages'], { answers: 'rank', mentions_only: 'rank', conflict: 'rank', empty: '$absence' }],   // the understanding judge, once, at tree level
-  ['rank', 'rank', { by: ['authority'], per: 'side', k: { default: 3, many: 1 } }, 'process', ['found_passages', 'compare_sides'], ['found_passages'], { done: 's_sides', empty: '$absence' }],
-  ['s_sides', 'shape', { template: 'comparison.sides', shared: 'tpl.sides', format: 'comparison', theme_by: 'side', plan: { comparative: true }, offers: ['go deeper on one side'] }, 'synthesize', ['found_passages', 'compare_sides', 'topic', 'quoted_words'], ['offers'], { done: END }],
-  // fewer than two sides named: the comparative is never narrowed — one wide search, the writer covers each tradition the passages come from
-  ['wide', 'search.together', { list: [{ element: 'search.hype', params: { k: 8 } }, { element: 'search.shelf', params: { k: 8 } }] }, 'tool', ['topic'], ['found_passages', 'missing'], { one: 'rank_w', several: 'rank_w', thin: 'rank_w', none: 'rank_w', error: '$fallback' }],
-  ['rank_w', 'rank', { by: ['authority'], k: 8, dedupe: true }, 'process', ['found_passages'], ['found_passages'], { done: 's_wide', empty: '$absence' }],
-  ['s_wide', 'shape', { template: 'comparison.wide', shared: 'tpl.sides', format: 'comparison', theme_by: 'religion', plan: { comparative: true, wide: true } }, 'synthesize', ['found_passages'], [], { done: END }],
+  ['cmp', 'search.compare', { by: 'compare_sides', k: 3 }, 'tool', ['compare_sides', 'topic', 'quoted_words'], ['found_passages', 'missing'],
+    { all: 'judge', some_thin: 'judge', all_none: '$absence', error: '$fallback' }],   // ONE compare_search call for all sides; each side filtered to its own tradition
+  ['judge', 'judge.passages', {}, 'decide', ['current_user_question', 'found_passages'], ['found_passages'], { answers: 'chk', mentions_only: 'chk', conflict: 'chk', empty: '$absence' }],   // ONE judge over every side's passages
+  ['chk', 'fill.missing_sides', {}, 'process', ['found_passages', 'compare_sides'], ['found_passages', 'missing'], { answered: 'rank', none: '$absence' }],   // a side that only mentions the topic → missing, named
+  ['rank', 'rank', { by: ['standing'], per: 'side', k: 3 }, 'process', ['found_passages', 'compare_sides'], ['found_passages'], { done: 's_sides', empty: '$absence' }],   // each side by its own tradition's tiers
+  ['s_sides', 'shape', { template: 'comparison.sides', shared: 'tpl.sides', format: 'comparison', theme_by: 'side', plan: { comparative: true }, offers: ['go deeper on one side'] }, 'synthesize', ['found_passages', 'compare_sides', 'missing', 'topic', 'quoted_words'], ['offers'], { done: END }],
 ], { needs: ['compare_sides', 'topic', 'quoted_words'] });
 
 // ── prayer (DE D2, 11-09 rev): the TRADITION first, then its prayer works; the prayers of every tradition are in the library ──
@@ -73,7 +75,7 @@ const comparison = tree('comparison', 'sides', [
 const prayer = tree('prayer', 'p1', [
   ['p1', 'fetch.prayer', {}, 'tool', ['religions_specified', 'named_work', 'quoted_words', 'occasion', 'incipit'], ['found_passages'], { one: 'p1b', several: 'p1b', none: 'p2', error: 'p2' }],
   ['p1b', 'switch', { on: { spread: true }, cases: { several: 'several', one: 'one' }, default: 'one' }, 'decide', ['found_passages'], [], { several: 'p8', one: 'p3' }],
-  ['p2', 'search.hype', { shelf: 'prayer', query: '{{occasion}}', k: 6 }, 'tool', ['occasion', 'current_user_question'], ['found_passages'], { one: 'p3', several: 'p3', thin: 'p3', none: 'p6', error: '$fallback' }],
+  ['p2', 'search.hype', { query: '{{occasion}}', k: 6 }, 'tool', ['occasion', 'current_user_question'], ['found_passages'], { one: 'p3', several: 'p3', thin: 'p3', none: 'p6', error: '$fallback' }],
   ['p3', 'judge.prayer', {}, 'decide', ['occasion', 'found_passages'], ['found_passages'], { picked: 'p5', none: 'p6', unjudged: 'p4' }],
   ['p4', 'rank', { by: ['occasion', 'audience', 'authority'], k: 3 }, 'process', ['found_passages', 'audience', 'channel'], ['found_passages'], { done: 'p5', empty: 'p6' }],
   ['p5', 'shape', { template: 'prayer.one', shared: 'tpl.one_passage', format: 'prayer', direct: true, offers: ['two other prayers'] }, 'synthesize', ['found_passages', 'occasion'], ['offers'], { done: END }],
@@ -111,16 +113,25 @@ const reference = tree('reference', 'f', [
   ['o_w', 'shape', { template: 'reference.work', shared: 'tpl.one_passage', format: 'reference', direct: true }, 'synthesize', ['found_records', 'scripture_reference'], [], { done: END }],
 ], { needs: ['scripture_reference', 'named_work', 'incipit', 'translation_wanted'] });
 
-// ── compilation (FGH F1): sub-themes planned, each searched, one grouped rank, one grouped shape. The job path (c1–c3) and the prepared collection (c4) are not built. ──
+// ── compilation (review 11-09 F1): sub-themes planned, one search per sub-theme (passages tagged with it), ONE judge, then grouped by sub-theme in the
+// planned order with each group in its tradition's own tier order; never by author. Scope = religions_specified (no tradition named = the host's default,
+// resolved by siteLayer). Passages from several traditions (an interfaith host) → grouped by tradition, then by sub-theme.
+// Cost per run path (S sub-themes, P passages; Jev = one cheap typed call per passage inside the one judge node):
+//   c5 → c6 → c7 → cj → sp → rk|rt → o|ot : 1 planner call + S×(shelf+hype) searches + P Jev + 1 writer
+//   c7 → sw → $absence / $fallback, cj → $absence : 1 planner + S×2 searches (+ P Jev) + the shared end
 const compilation = tree('compilation', 'c5', [
   ['c5', 'plan.subthemes', { n: 4 }, 'process', ['topic', 'named_sources'], ['sub_themes'], { done: 'c6', fail: 'c6' }],
   ['c6', 'ui.stage', { stage: 'Planning the compilation…' }, 'process', ['sub_themes'], [], { emitted: 'c7' }],
-  ['c7', 'search.fanout', { by: 'sub_themes', inner: { element: 'search.together', params: { list: [
+  ['c7', 'search.fanout', { by: 'sub_themes', tag: 'sub_theme', inner: { element: 'search.together', params: { list: [
     { element: 'search.shelf', params: { query: '{{value}}', k: 4, doctrinal: true } }, { element: 'search.hype', params: { query: '{{value}}', k: 4, doctrinal: true } }] } } }, 'tool', ['sub_themes', 'religions_specified'], ['found_passages', 'missing'],
-    { all: 'rk', some_thin: 'rk', all_none: 'sw', error: 'sw' }],
-  ['sw', 'switch', { on: { evidence: true }, cases: { have: 'have', errored: 'errored', nothing: 'nothing' }, default: 'nothing' }, 'decide', ['found_passages', 'found_outcome'], [], { have: 'rk', errored: '$fallback', nothing: '$absence' }],
-  ['rk', 'rank', { by: ['authority'], group: 'side', k: { default: 12, research: 20 } }, 'process', ['found_passages', 'sub_themes'], ['found_passages'], { done: 'o', empty: '$absence' }],
-  ['o', 'shape', { template: 'compilation.grouped', shared: 'tpl.passages', format: 'compilation', theme_by: 'side', offers: ['the full compilation by email'] }, 'synthesize', ['found_passages', 'sub_themes', 'missing', 'scope_source', 'reader_card'], ['offers'], { done: END }],
+    { all: 'cj', some_thin: 'cj', all_none: 'sw', error: 'sw' }],
+  ['sw', 'switch', { on: { evidence: true }, cases: { have: 'have', errored: 'errored', nothing: 'nothing' }, default: 'nothing' }, 'decide', ['found_passages', 'found_outcome'], [], { have: 'cj', errored: '$fallback', nothing: '$absence' }],
+  ['cj', 'judge.passages', {}, 'decide', ['current_user_question', 'found_passages'], ['found_passages'], { answers: 'sp', mentions_only: 'sp', conflict: 'sp', empty: '$absence' }],
+  ['sp', 'switch', { on: { spread: true }, cases: { one: 'one', several: 'several' }, default: 'one' }, 'decide', ['found_passages'], [], { one: 'rk', several: 'rt' }],
+  ['rk', 'rank', { by: ['named', 'standing'], per: 'sub_theme', group: 'sub_theme', order: 'sub_themes', k: { default: 3, research: 5 } }, 'process', ['found_passages', 'sub_themes'], ['found_passages'], { done: 'o', empty: '$absence' }],
+  ['rt', 'rank', { by: ['named', 'standing'], per: ['religion', 'sub_theme'], group: ['religion', 'sub_theme'], order: 'sub_themes', k: { default: 3, research: 5 } }, 'process', ['found_passages', 'sub_themes'], ['found_passages'], { done: 'ot', empty: '$absence' }],
+  ['o', 'shape', { template: 'compilation.grouped', shared: 'tpl.passages', format: 'compilation', theme_by: 'sub_theme', offers: ['the full compilation by email'] }, 'synthesize', ['found_passages', 'sub_themes', 'missing', 'scope_source', 'reader_card'], ['offers'], { done: END }],
+  ['ot', 'shape', { template: 'compilation.traditions', shared: 'tpl.passages', format: 'compilation', theme_by: ['religion', 'sub_theme'], offers: ['the full compilation by email'] }, 'synthesize', ['found_passages', 'sub_themes', 'missing', 'scope_source', 'reader_card'], ['offers'], { done: END }],
 ], { needs: ['topic', 'amount_wanted', 'output_form', 'named_sources'], units: { absence_template: 'compilation.absence' } });
 
 const T = { understanding, comparison, prayer, guidance, reference, compilation };
@@ -136,7 +147,6 @@ export const TREE_TEMPLATES = [
   t('understanding.no_direct', "Say plainly that the texts in the library do not state this directly. Then the closest passages that touch it, labelled as touching, not answering. {{scope_clause}} One line offering a wider search or a research report. Never fill the gap with your own reasoning.\n{{#voice}}One sentence, one short passage, the offer.{{/voice}}"),
   t('understanding.conflict', "First sentence: the texts give more than one view. Each passage attributed, in authority order (Writings, Guardian, House of Justice, pilgrim notes, scholarship; other traditions: their scripture, authoritative interpretation, scholarship). Say which carries authority and why; do not reconcile them yourself. {{scope_clause}}"),
   t('comparison.sides', "A COMPARISON of {{compare_sides}} on {{topic}}. First line frames it neutrally. One section per side, in the order named, built only from that side's own passages (a passage header's theme names its side), each in its own terms and its own scripture's words, quoted and linked; no side described in another's vocabulary. Equal treatment is the same structure per side, not equal word counts. {{missing_sides}} Then \"Shared\" and \"Different\", each point tied to a cited passage. Never rank the traditions. {{scope_clause}}\n{{#quoted_words}}Quote it on its side first, then the other side's closest teaching.{{/quoted_words}}"),
-  t('comparison.wide', "This is a COMPARISON across the traditions the passages come from (a passage header's theme names its tradition). One short section per tradition, built only from that tradition's own passages; say plainly where a tradition is thin. Then what is shared and what differs. Never rank the traditions. {{scope_clause}}"),
   t('prayer.one', "First line: what the prayer is for and who revealed or wrote it (\"A prayer for {{occasion}}, revealed by …\"). {{scope_clause}} Then the FIRST prayer passage IN FULL, verbatim, as one block quotation, every paragraph, nothing shortened, linked, translator named. Then at most two alternatives as linked italic titles with their first words. No commentary.\n{{#voice}}The prayer in full, then: \"I can send you two others.\"{{/voice}}\n{{#widget}}The prayer and one alternative.{{/widget}}\n{{#email}}The prayer in full with the original beside it where held; two alternatives in full.{{/email}}"),
   t('prayer.many', "No tradition was named, so these are prayers from several traditions of the library for {{occasion}}; say so in one line. {{scope_clause}} Then, one tradition at a time (a passage header's religion names it), its prayer IN FULL, verbatim, as one block quotation, every paragraph, linked, with the work it comes from as a linked italic title. No tradition ranked above another. Offer more from any one of them. Never compose a prayer."),
   t('prayer.near', "\"I didn't find a prayer written for {{occasion}}; this one, for its own occasion, is close:\" then the first passage in full, linked. Nothing else."),
@@ -147,6 +157,7 @@ export const TREE_TEMPLATES = [
   t('reference.work', "\"I can't open {{scripture_reference}} directly yet; here is\" the work as an italic linked title, with where in it to look (chapter or section) if known."),
   t('compilation.grouped', "A compilation on {{topic}}. One sentence: what it gathers and from which sources. {{scope_clause}} One heading per theme named in the passage headers; under each, the passages in authority order (the Writings, the Guardian, the House of Justice, then others labelled: pilgrim note, scholarship). Quote every passage in full, never clipped; the citation text is the link. At most one framing line per section. Conflicting passages sit together, attributed, not reconciled. {{missing_line}}\n{{#voice}}Say how many passages in how many groups; read the strongest (two whole sentences at most) with a spoken citation; offer the email.{{/voice}}\n{{#widget}}Headings as a list; only the first passage quoted, the rest as linked titles; the email offer.{{/widget}}\n{{#email}}A greeting; every passage in full; a sources list; a close.{{/email}}"),
   { id: 'compilation.grouped', version: 2, text: "A compilation on {{topic}}. One sentence: what it gathers and from which sources. {{scope_clause}} One heading per theme named in the passage headers; under each, the passages in the authority order of their own tradition — {{authority_order}} — never one tradition's ladder applied to another's; passages of lesser standing labelled (recollection, institutional guidance, scholarship). Quote every passage in full, never clipped; the citation text is the link. At most one framing line per section. Conflicting passages sit together, attributed, not reconciled. {{missing_line}}\n{{#voice}}Say how many passages in how many groups; read the strongest (two whole sentences at most) with a spoken citation; offer the email.{{/voice}}\n{{#widget}}Headings as a list; only the first passage quoted, the rest as linked titles; the email offer.{{/widget}}\n{{#email}}A greeting; every passage in full; a sources list; a close.{{/email}}" },   // v2 11-09: the tradition's own tiers, not the Bahá’í ladder
+  t('compilation.traditions', "A compilation on {{topic}} across the traditions the library holds. One sentence: what it gathers and from which traditions. {{scope_clause}} One section per tradition, in the order of the passage headers; inside it one heading per theme (a passage header's theme reads \"tradition — theme\"), the passages in that tradition's own authority order — {{authority_order}} — never one tradition's ladder applied to another's, never one tradition ranked above another. Quote every passage in full, never clipped; the citation text is the link. {{missing_line}}\n{{#voice}}Say how many traditions and themes; read the strongest passage (two whole sentences at most) with a spoken citation; offer the email.{{/voice}}\n{{#widget}}Traditions and themes as a list; only the first passage quoted, the rest as linked titles; the email offer.{{/widget}}\n{{#email}}A greeting; every passage in full; a sources list; a close.{{/email}}"),
   t('compilation.absence', "Nothing gathers on {{topic}} within {{religions_specified}}. {{scope_clause}} Give the nearest passages, labelled nearest, and offer a research report by email."),
 ];
 

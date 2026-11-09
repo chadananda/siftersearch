@@ -79,7 +79,7 @@ describe('comparison tree', () => {
   const jev = verdict('answers');
   it('clean hit: ONE compare_search for all sides, the judge once, one rank per side, the sides shape', async () => {
     const s = await run('comparison', 'Islam and Christianity on forgiveness', { tools: byTrad(both), choice, jev });
-    expect(path(s)).toEqual(['sides', 'stage', 'cmp', 'judge', 'rank', 's_sides']); expect(s.units.found_outcome.cmp).toBe('all');
+    expect(path(s)).toEqual(['sides', 'stage', 'cmp', 'judge', 'chk', 'rank', 's_sides']); expect(s.units.found_outcome.cmp).toBe('all');
     expect(s.out.plan).toMatchObject({ shape: 'comparison', comparative: true, sides: ['Islam', 'Christianity'] }); expect(s.out.format.id).toBe('comparison');
     expect(new Set(s.out.passages.map((p) => p.theme))).toEqual(new Set(['Islam', 'Christianity'])); expect(s.how).toContain('COMPARISON of Islam, Christianity');
     expect(s.events.filter((e) => e.type === 'stage').length).toBe(1);   // the sub-runs stay quiet
@@ -91,7 +91,7 @@ describe('comparison tree', () => {
   });
   it('thin: a side with nothing says so plainly', async () => {
     const s = await run('comparison', 'q', { tools: byTrad({ Islam: both.Islam }), choice, jev });
-    expect(s.units.found_outcome.cmp).toBe('some_thin'); expect(s.how).toContain('NOTHING from Christianity');
+    expect(s.units.found_outcome.cmp).toBe('some_thin'); expect(s.how).toContain('Nothing the library returned from Christianity answers this');
   });
   it('none after all tiers: all_none → $absence once for the whole comparison', async () => {
     const s = await run('comparison', 'q', { choice, jev }); expect(path(s)).toEqual(['sides', 'stage', 'cmp', '$absence']); expect(s.how).toContain('does not hold');
@@ -104,9 +104,10 @@ describe('comparison tree', () => {
     const s = await run('comparison', 'q', { tools: byTrad(both), choice, jev: async ({ state }) => ({ choice: /Passage 2/.test(state) ? 'contradicts' : 'answers' }) });
     expect(path(s).at(-1)).toBe('s_sides'); expect(s.out.passages.find((p) => p.id === 2).verdict).toBe('contradicts');
   });
-  it('fewer than two sides: one wide search, the writer covers each tradition the passages come from', async () => {
-    const s = await run('comparison', 'q', { tools: byTrad({ '*': [P(1, { religion: 'Islam' }), P(2, { religion: 'Judaism' })] }), choice: { sides: ['Islam'] }, jev });
-    expect(path(s)).toEqual(['sides', 'wide', 'rank_w', 's_wide']); expect(s.out.plan).toMatchObject({ comparative: true, wide: true }); expect(s.out.passages.map((p) => p.theme).sort()).toEqual(['Islam', 'Judaism']);
+  it('fewer than two sides: the sides become every library tradition (the named one first), never a wide top-k', async () => {
+    const s = await run('comparison', 'q', { tools: byTrad({ Islam: [P(1, { religion: 'Islam' })], Judaism: [P(2, { religion: 'Judaism' })] }), choice: { sides: ['Islam'] }, jev });
+    expect(path(s)).toEqual(['sides', 'stage', 'cmp', 'judge', 'chk', 'rank', 's_sides']); expect(s.units.compare_sides[0]).toBe('Islam'); expect(s.units.compare_sides).toContain('Jain');
+    expect(s.out.passages.map((p) => p.theme).sort()).toEqual(['Islam', 'Judaism']); expect(s.how).toContain('Jain');   // the empty sides are named
   });
 });
 
@@ -223,13 +224,13 @@ describe('compilation tree', () => {
   const both = { equity: [P(1, { authority: 'guardian' }), P(2, { authority: 'scholarship' })], fairness: [P(3)] };
   it('clean hit: sub-themes planned, each searched, grouped by theme, authority order within', async () => {
     const s = await run('compilation', 'compile passages on justice', { tools: { subthemes: sub, fused_search: per(both) } });
-    expect(path(s)).toEqual(['c5', 'c6', 'c7', 'rk', 'o']); expect(s.units.sub_themes).toEqual(themes); expect(s.out.format.id).toBe('compilation');
+    expect(path(s)).toEqual(['c5', 'c6', 'c7', 'cj', 'sp', 'rk', 'o']); expect(s.units.sub_themes).toEqual(themes); expect(s.out.format.id).toBe('compilation');
     expect(new Set(s.out.passages.map((p) => p.theme))).toEqual(new Set(themes)); expect(s.out.passages.map((p) => p.id)).toEqual([3, 1, 2].sort((a, b) => 0) && s.out.passages.map((p) => p.id));
     expect(s.out.passages.filter((p) => p.theme === 'equity').map((p) => p.id)).toEqual([1, 2]);
   });
   it('several: the amount is capped by k, never clipped inside a passage', async () => {
     const many = { equity: Array.from({ length: 10 }, (_, i) => P(100 + i)), fairness: Array.from({ length: 10 }, (_, i) => P(200 + i)) };
-    const s = await run('compilation', 'q', { tools: { subthemes: sub, fused_search: per(many) } }); expect(s.out.passages.length).toBe(12); expect(s.out.passages[0].text).toBe('Passage 100');
+    const s = await run('compilation', 'q', { tools: { subthemes: sub, fused_search: per(many) } }); expect(s.out.passages.length).toBe(6); expect(s.out.passages.filter((p) => p.theme === 'equity').length).toBe(3); expect(s.out.passages[0].text).toBe('Passage 100');   // k per sub-theme
   });
   it('thin: a sub-theme with nothing is named as missing, the rest compile', async () => {
     const s = await run('compilation', 'q', { tools: { subthemes: sub, fused_search: per({ equity: [P(1)] }) } });
@@ -266,7 +267,7 @@ describe('compilation tree', () => {
   it('compilation sources: a named source is included alongside the doctrinal passages', async () => {
     const f = [W(1), W(2), W(3), TALK(4)];
     const s = await run('compilation', 'q', { tools: { subthemes: async () => ['equity'], fused_search: fused([], { equity: f }, { equity: f }) }, extra: { units: { named_sources: ['104'] } } });
-    expect(s.out.passages.map((p) => p.id).sort()).toEqual([1, 2, 3, 4]);
+    expect(s.out.passages.map((p) => p.id)).toEqual([4, 1, 2]);   // the named source leads its sub-theme (named outranks standing) and is never cut by the per-theme k
   });
   it('compilation headings are the sub-themes, never the source tiers', async () => {
     const f = { equity: [W(1), W(2), W(3)], fairness: [W(4, { author: 'Shoghi Effendi', title: 'God Passes By' }), W(5), W(6)] };
