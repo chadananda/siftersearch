@@ -1,6 +1,6 @@
 // Phrase-indexer pure helpers: units of a paragraph, the vector cache key, half-precision storage, Arabic-script share.
 import { describe, it, expect } from 'vitest';
-import { unitsOf, vecKey, packF16, unpackF16, arabicShare, pointId, paragraphLang, normLang, estTokens } from '../../api/lib/phrase-vectors.js';
+import { unitsOf, unitChange, vecKey, packF16, unpackF16, arabicShare, pointId, paragraphLang, normLang, estTokens } from '../../api/lib/phrase-vectors.js';
 import { segment, SEG_VERSION, segVersion } from '../../api/lib/phrases.js';
 
 describe('unitsOf', () => {
@@ -77,4 +77,15 @@ describe('estTokens', () => {
     expect(estTokens(ar)).toBe(1000);
     expect(estTokens(en)).toBe(1000);
   });
+});
+
+describe('unitChange (a segmentation bump never re-sends identical units)', () => {
+  const u = { start: 0, end: 12, segV: 'phr-v4' };
+  it('same text, span and label → same', () => expect(unitChange({ key: 'k', start: 0, end: 12, seg_v: 'phr-v4' }, u, 'k')).toBe('same'));
+  it('only the label moved → restamp (no re-upsert)', () => expect(unitChange({ key: 'k', start: 0, end: 12, seg_v: 'phr-v3' }, u, 'k')).toBe('restamp'));
+  it('new text → changed', () => expect(unitChange({ key: 'x', start: 0, end: 12, seg_v: 'phr-v3' }, u, 'k')).toBe('changed'));
+  it('same text at a new span → changed (payload offsets differ)', () => expect(unitChange({ key: 'k', start: 1, end: 13, seg_v: 'phr-v4' }, u, 'k')).toBe('changed'));
+  it('no stored unit → changed', () => expect(unitChange(undefined, u, 'k')).toBe('changed'));
+  it('hype/concept units have no span: null and undefined match', () =>
+    expect(unitChange({ key: 'k', start: null, end: null, seg_v: 'hype-v1' }, { segV: 'hype-v1' }, 'k')).toBe('same'));
 });

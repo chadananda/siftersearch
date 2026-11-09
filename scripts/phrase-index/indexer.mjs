@@ -30,7 +30,7 @@ import dotenv from 'dotenv';
 import { mkdirSync, statfsSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { unitsOf, vecKey, packF16, unpackF16, arabicShare, paragraphLang, estTokens } from '../../api/lib/phrase-vectors.js';
+import { unitsOf, unitChange, vecKey, packF16, unpackF16, arabicShare, paragraphLang, estTokens } from '../../api/lib/phrase-vectors.js';
 import { faShare } from '../../api/lib/arabic-script.js';
 import { dirBytes, hotVerdict } from './hot-space.mjs';
 import { boilerplateTexts, keepSiteParagraph } from '../../api/lib/site-boilerplate.js';
@@ -157,7 +157,8 @@ const keep = (text) => {
   return true;
 };
 
-const haveUnit = store.prepare('SELECT seg_v, key, upserted FROM units WHERE point_id = ?');
+const haveUnit = store.prepare('SELECT seg_v, key, start, "end", upserted FROM units WHERE point_id = ?');
+const restamp = store.prepare('UPDATE units SET seg_v = ? WHERE point_id = ?');
 const putUnit = store.prepare(`INSERT INTO units (point_id, paragraph_id, doc_id, k, start, "end", seg_v, key, fa_share, religion, author, lang_label, field, lang_group, collection, scope, upserted)
   VALUES (@pointId, @pid, @doc, @k, @start, @end, @segV, @key, @fa, @religion, @author, @lang, @field, @group, @collection, @scope, 0)
   ON CONFLICT(point_id) DO UPDATE SET start=@start, "end"=@end, seg_v=@segV, key=@key, fa_share=@fa, religion=@religion, author=@author,
@@ -187,18 +188,17 @@ const stale = [];
 
 // Paragraphs → units (stored) + texts still needing a vector. Returns the pending map for this chunk.
 function unitize(paras) {
-  const pending = new Map(), buf = [];
+  const pending = new Map(), buf = [], relabel = [];
   for (const p of paras) {
     const { seg, group } = paragraphLang(p.text, p.language);
     const units = unitsFor(p, seg);
-    if (FIELD === 'hype' || FIELD === 'concepts') {
-      const keep = new Set(units.map((u) => u.pointId));
-      for (const { point_id: id } of unitsInBlock.all(p.id * 1000, p.id * 1000 + 999)) if (!keep.has(id)) { dropUnit.run(id); stale.push(id); }
-    }
+    let changed = 0;
     for (const u of units) {
       const key = vecKey(MODEL, DIMS, u.embedText), tl = performance.now(), old = haveUnit.get(u.pointId);
       T.lookup_ms += performance.now() - tl;
-      const same = old && old.seg_v === u.segV && old.key === key;
+      const how = unitChange(old, u, key), same = how !== 'changed';
+      if (how === 'restamp') relabel.push([u.segV, u.pointId]);
+      if (!same) changed++;
       if (!same)
         buf.push({ ...u, pid: String(p.id), doc: String(p.doc_id), key, fa: faShare(u.embedText), religion: p.religion, author: paragraphAuthor(p),
           lang: p.language, field: FIELD, group, collection: p.collection || null, scope: p.scope || 'primary' });
@@ -207,8 +207,14 @@ function unitize(paras) {
       // crawl (10-14, job 92: 36 s CPU in 15 min, sdc 93% busy). A stored-but-never-upserted unit is still checked.
       if (!(same && old.upserted)) { const tv = performance.now(), have = haveVec.get(key); T.lookup_ms += performance.now() - tv; if (!have) pending.set(key, u.embedText); }
     }
+    // Points the paragraph no longer has (re-segmented into fewer phrases, re-hyped to fewer questions, claims re-extracted)
+    // leave the store and the collection. Phrase text checks only when one of its units changed; hype/concepts always did.
+    if (FIELD === 'hype' || FIELD === 'concepts' || changed) {
+      const keep = new Set(units.map((u) => u.pointId));
+      for (const { point_id: id } of unitsInBlock.all(p.id * 1000, p.id * 1000 + 999)) if (!keep.has(id)) { dropUnit.run(id); stale.push(id); }
+    }
   }
-  tx(buf);
+  tx(buf); if (relabel.length) store.transaction(() => relabel.forEach((r) => restamp.run(...r)))();
   return { pending, units: buf.length };
 }
 

@@ -15,6 +15,14 @@ export function unitsOf({ id, text, lang }) {
   return spans.map((s, k) => ({ pointId: pointId(id, k), k, start: s.start, end: s.end, embedText: anchored(phr, k), segV: segVersion(lang) }));
 }
 
+/** A stored unit against its re-derived self → 'same', 'restamp' or 'changed'. 'restamp' = only the segmentation label moved
+ *  (same text → same vector, same span, same point): relabel the store row, never re-upsert. 11-07: the Arabic/Persian bump to
+ *  phr-v4 compared labels only, so every ar/fa unit in the store (~11M) went back to Qdrant unchanged. Pure. */
+export function unitChange(old, u, key) {
+  if (!old || old.key !== key || (old.start ?? null) !== (u.start ?? null) || (old.end ?? null) !== (u.end ?? null)) return 'changed';
+  return old.seg_v === u.segV ? 'same' : 'restamp';
+}
+
 export const vecKey = (model, dims, text) => createHash('sha1').update(`${model}\u0000${dims}\u0000${text}`).digest('hex');
 
 export const packF16 = (v) => Buffer.from(new Float16Array(v).buffer);
