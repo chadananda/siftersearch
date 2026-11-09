@@ -16,6 +16,11 @@ import { GATHERED } from '../respond.js';
 // turn.js) and each trace entry carries, NON-enumerably, the Jev calls its node made — neither changes path.steps' JSON.
 const hide = (o, k, v) => Object.defineProperty(o, k, { value: v, enumerable: false, configurable: true, writable: true });
 
+// SHARED ENDS (strategy-trees §2): edge targets a tree may route to that are not its own nodes, so they never count toward the node
+// limit — the not-found sub-tree, the research-agent fallback, "couldn't search". Each runs its element once and routes on (below).
+export const SHARED_ENDS = Object.freeze({ $absence: 'end.absence', $fallback: 'end.fallback', $unavailable: 'end.unavailable' });
+const SHARED_ROUTES = { $absence: { any: END_NODE }, $fallback: { out: { answered: END_NODE, fail: '$unavailable' } }, $unavailable: { any: END_NODE } };
+
 export const strategyGraphOn = (env = process.env.ANIS_STRATEGY_GRAPH) => env !== '0';
 
 /** Compile one strategy row against a step lookup (key 'id@v' → step row). Throws on anything that would not run. Pure. */
@@ -34,11 +39,21 @@ export function compileGraph(row, stepOf, activities = registry()) {
   for (const e of g.edges || []) {
     const n = nodes[e.from];
     if (!n) throw new Error(`strategy ${row.id}: edge from unknown node ${e.from}`);
-    if (e.to !== END_NODE && !nodes[e.to]) throw new Error(`strategy ${row.id}: edge to unknown node ${e.to}`);
+    if (e.to !== END_NODE && !nodes[e.to] && !SHARED_ENDS[e.to]) throw new Error(`strategy ${row.id}: edge to unknown node ${e.to}`);
     if (e.on === '*') n.any = e.to; else n.out.set(e.on, e.to);
   }
+  // a shared end is a node only when something routes to it (and only if the registry has its element)
+  for (const [id, activity] of Object.entries(SHARED_ENDS)) {
+    if (!(g.edges || []).some((e) => e.to === id || (id === '$unavailable' && e.to === '$fallback'))) continue;
+    if (!activities[activity]) throw new Error(`strategy ${row.id}: shared end ${id} needs the ${activity} element`);
+    const r = SHARED_ROUTES[id];
+    nodes[id] = { id, step: id, activity, run: activities[activity].run, params: {}, out: new Map(Object.entries(r.out || {})), any: r.any, shared: true };
+  }
   for (const n of Object.values(nodes)) {
-    const uncovered = n.any === undefined ? (activities[n.activity].edges || []).filter((x) => !n.out.has(x)) : [];
+    if (n.shared) continue;
+    // an element whose edges depend on its params (switch cases, judge options) lists them with edgesFor
+    const edges = activities[n.activity].edgesFor ? activities[n.activity].edgesFor(n.params) : activities[n.activity].edges || [];
+    const uncovered = n.any === undefined ? edges.filter((x) => !n.out.has(x)) : [];
     if (uncovered.length) throw new Error(`strategy ${row.id}: node ${n.id} has no route for edge(s) ${uncovered.join(', ')}`);
   }
   return { id: row.id, version: row.version, name: row.name, entry: g.entry, nodes };
@@ -85,6 +100,7 @@ export async function runGraph(g, s) {
   for (let hops = 0; id !== END_NODE; hops++) {
     if (hops > 1000) throw new Error(`strategy ${g.id}: no end after 1000 steps`);
     const n = g.nodes[id];
+    s.node = id;   // the running node's id: elements key found_outcome / param overrides by it
     const t = performance.now(), j0 = jevCalls?.length ?? 0;
     // a decision step's params.enrich (a tested Jev theory, jev-tuning/theories.js): its Jev calls get the registered enrichers
     // (systemone reads ctx.jevEnrich). No enrich → the node runs exactly as before (one property read).
@@ -95,6 +111,7 @@ export async function runGraph(g, s) {
     if (s.note) { Object.assign(entry, s.note); s.note = null; }
     if (jevCalls && jevCalls.length > j0) hide(entry, 'jevCalls', jevCalls.slice(j0));
     s.trace.push(entry);
+    if (s.units) (s.units.path ||= []).push(`${id}:${edge}`);   // §2a `path`: templates read judge verdicts from it
     id = n.out.get(edge) ?? n.any;
     if (id === undefined) throw new Error(`strategy ${g.id}: node ${n.id} returned unrouted edge ${edge}`);
   }

@@ -11,7 +11,7 @@ import { IMPROVE_CFG, jaccardWords } from './strategy-gaps.js';
 
 export const DESIGN_ROLE = 'strategy-design';
 export const DESIGN_CALLER = 'improve-strategy-design';
-const MAX_NODES = 6;
+const MAX_NODES = 16;   // working nodes; the shared ends ($absence $fallback $unavailable) are not nodes
 const ID_OK = /^[a-z][a-z0-9_]{2,30}$/;            // a candidate's own option key (model output, never the reader's text)
 const STEP_ID_OK = /^[a-z][a-z0-9_.-]{2,60}$/;
 const RESERVED = new Set(['other', 'unmatched', 'respond', 'none']);
