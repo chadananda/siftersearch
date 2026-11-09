@@ -97,3 +97,20 @@ describe('title links: the publisher page, never siftersearch.com', () => {
     expect(workLead({ doc: ocean })).toMatch(/\[\*God Passes By\*\]\(https:\/\/oceanlibrary\.com\/god-passes-by\/\)/);
   });
 });
+
+describe('work links resolve the online publisher (11-09)', () => {
+  const bare = { id: 20910, title: 'Selections from the Writings', author: 'A', religion: 'Baha\'i', collection: 'Core', slug: 'selections' };
+  const gut = { id: 7, title: 'Moby', author: 'M', encumbered: 0 };
+  const urlOf = (d) => (d.id === 7 ? 'https://gutenberg.org/ebooks/2701' : workUrl(d));
+  it('workLead links Gutenberg when link meta has it, else the library reader', () => {
+    expect(workLead({ doc: gut, others: [bare] }, urlOf)).toMatch(/\[\*Moby\*\]\(https:\/\/gutenberg\.org\/ebooks\/2701\)/);
+    expect(workLead({ doc: gut, others: [bare] }, urlOf)).toMatch(/\]\(https:\/\/siftersearch\.com\/library\//);
+  });
+  it('linkTitles uses resolved links, falling back to the reader', async () => {
+    const find = async (t) => ({ doc: /Moby/.test(t) ? gut : bare });
+    const links = async () => new Map([[7, 'https://gutenberg.org/ebooks/2701']]);
+    const r = await linkTitles('See *Moby* and *Selections from the Writings*.', { find, links });
+    expect(r.text).toMatch(/\[\*Moby\*\]\(https:\/\/gutenberg\.org\/ebooks\/2701\)/);
+    expect(r.text).toMatch(/\(https:\/\/siftersearch\.com\/library\//);
+  });
+});

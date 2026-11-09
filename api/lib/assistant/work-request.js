@@ -131,9 +131,9 @@ export async function findTitled(cands, { index = null, match = null, listDocs =
 }
 
 /** The reply's first lines: the work, linked (and other copies). Pure. */
-export function workLead({ doc, others = [] }) {
-  const url = workUrl(doc), by = doc.author ? ` by ${doc.author}` : '';
-  const ln = (d, t = `*${d.title}*`) => (workUrl(d) ? `[${t}](${workUrl(d)})` : t);   // no publisher page = the title unlinked, never our own address
+export function workLead({ doc, others = [] }, urlOf = workUrl) {
+  const url = urlOf(doc), by = doc.author ? ` by ${doc.author}` : '';
+  const ln = (d, t = `*${d.title}*`) => (urlOf(d) ? `[${t}](${urlOf(d)})` : t);   // the online publisher when there is one, else our library reader (workUrl's fallback)
   const lines = [doc.encumbered === 1
     ? `${ln(doc)}${by} is in the library. It is still under copyright, so the opening pages are open to read here${url ? `: ${ln(doc, `read the opening of *${doc.title}*`)}` : '.'}.`
     : `${ln(doc)}${by} is here in the library${url ? `, the full text: ${ln(doc, `read *${doc.title}*`)}` : ''}.`];
@@ -144,7 +144,7 @@ export function workLead({ doc, others = [] }) {
 export const workOffer = ({ doc }) => (doc.encumbered === 1 ? ''
   : `If you like, I can read it with you a page at a time, with notes on the people, places and words it mentions — just say “read ${doc.title} with me”.`);
 /** The whole reply when nothing ABOUT the book was found: the link and the offer. Pure. */
-export const workReply = (w) => [workLead(w), workOffer(w)].filter(Boolean).join('\n\n');
+export const workReply = (w, urlOf) => [workLead(w, urlOf), workOffer(w)].filter(Boolean).join('\n\n');
 
 /** What to search for passages ABOUT the work (its importance and role, Chad 11-01: "very thin … juicy bits"). Pure. */
 export const workAboutQuery = ({ doc }) => `the importance and station of ${mainTitle(doc.title)}${doc.author ? ` by ${doc.author}` : ''}`;
@@ -164,16 +164,18 @@ export const WORK_HOW = ({ doc }) => `The reader asked for the book *${doc.title
 // the name of a book to the book in the library" — "The Seven Valleys" was italicised and linked nowhere). First mention only;
 // italics already inside a link, and titles whose copy the reply already links, are left alone. No match → left as written.
 const ITALIC = /(?<![*\w])\*(?!\*)([^*\n]{3,90}?)\*(?![*\w])/g;
-export async function linkTitles(text, { find = (t, min) => findTitled([t], { min }) } = {}) {
+export async function linkTitles(text, { find = (t, min) => findTitled([t], { min }), links = async (docs) => (await import('../hit-links.js')).workLinks(docs) } = {}) {
   const s = String(text || '');
   const inLink = [...s.matchAll(/\[[^\]\n]*\]\([^)\s]*\)/g)].map((m) => [m.index, m.index + m[0].length]);
   const seen = new Set();
   const hits = [...s.matchAll(ITALIC)].filter((m) => !inLink.some(([a, b]) => m.index >= a && m.index < b) && /\p{Lu}/u.test(m[1])
     && !seen.has(m[1].toLowerCase()) && seen.add(m[1].toLowerCase())).slice(0, 8);
   const found = await Promise.all(hits.map((m) => find(m[1], m[1].trim().includes(' ') ? 0.9 : 0.95).catch(() => null)));
+  // the online publisher beats our own page: resolve link meta for the found works (a listDocs row has none)
+  const urls = await links(found.map((f) => f?.doc).filter(Boolean)).catch(() => null);
   let out = s, shift = 0, linked = 0;
   hits.forEach((m, i) => {
-    const url = found[i]?.doc && workUrl(found[i].doc);
+    const url = found[i]?.doc && (urls?.get(found[i].doc.id) ?? workUrl(found[i].doc));
     if (!url || s.includes(`](${url})`)) return;
     const link = `[${m[0]}](${url})`;
     out = out.slice(0, m.index + shift) + link + out.slice(m.index + shift + m[0].length);

@@ -8,6 +8,7 @@ import { extractPhrases, fixedPhrases, hintsOf } from './phrases.js';
 import { religionsReply } from './library-facts.js';
 import { findWork, workReply, workLead, workOffer, workAboutQuery, aboutWork, WORK_HOW, linkTitles, dropPreamble } from './work-request.js';
 import { workUrl } from '../source-links.js';
+import { workLinks } from '../hit-links.js';
 import { speakerTradition, followUpAsks } from '../search-plan.js';
 import { jevSubject } from './query-anchor.js';
 import { questionSubject } from '../planned-search.js';
@@ -819,8 +820,9 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   if (work) {
     retrieved.splice(0, retrieved.length, ...aboutWork(work, retrieved).slice(0, 8));
     if (!retrieved.length) {   // nothing speaks of the book: the link and the offer
-      const reply = workReply(work);
-      const citations = [work.doc, ...work.others].map((x) => ({ title: x.title, author: x.author, url: workUrl(x), religion: x.religion, document_id: x.id, paragraph_index: null, text: '' }));
+      const wl = await workLinks([work.doc, ...work.others]).catch(() => null), urlOf = (x) => wl?.get(x.id) ?? workUrl(x);
+      const reply = workReply(work, urlOf);
+      const citations = [work.doc, ...work.others].map((x) => ({ title: x.title, author: x.author, url: urlOf(x), religion: x.religion, document_id: x.id, paragraph_index: null, text: '' }));
       onEvent({ type: 'sources', sources: citations, plan: res._plan, ms: Date.now() - t0 });
       onEvent({ type: 'stage', stage: 'craft' });
       onEvent({ type: 'text', content: reply });
@@ -878,7 +880,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   if (d.upgradeLinks) await timed('upgrade-links', () => Promise.all(retrieved.map(async (q) => { if (q.citation_url) q.citation_url = await d.upgradeLinks(q.citation_url).catch(() => q.citation_url); })));
   const citations = retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url,
     religion: q.religion, document_id: q.doc_id, paragraph_index: q.paragraph_index, text: q.text.slice(0, 300) }));
-  if (work) citations.unshift(...[work.doc, ...work.others].map((x) => ({ title: x.title, author: x.author, url: workUrl(x), religion: x.religion, document_id: x.id, paragraph_index: null, text: '' })));
+  const wl2 = work ? await workLinks([work.doc, ...work.others]).catch(() => null) : null, urlOf2 = (x) => wl2?.get(x.id) ?? workUrl(x);
+  if (work) citations.unshift(...[work.doc, ...work.others].map((x) => ({ title: x.title, author: x.author, url: urlOf2(x), religion: x.religion, document_id: x.id, paragraph_index: null, text: '' })));
   // Something useful before the first token (backlog 0023): the sources are known in ~0.2s.
   if (!conversational) {
     onEvent({ type: 'sources', sources: citations, plan: res?._plan || null, ms: searchMs });
@@ -995,7 +998,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     const about = work && /\]\(https?:\/\/[^)]+\)/.test(titled.text.replace(/\[\*[^\]]*\*\]\([^)]*\)/g, '')) ? titled.text.trim() : '';
     // quoted words look different from Anís's own (Chad 11-04): held quotations italic, long ones a block, originals marked —
     // last, so linkTitles never reads an italic quotation as a book title
-    const reply = citeHeldLast(markQuotes(work ? [workLead(work), about, workOffer(work)].filter(Boolean).join('\n\n') : titled.text, conversational ? [] : retrieved).text, conversational || work ? [] : heldLast);
+    const wl3 = work ? await workLinks([work.doc, ...work.others]).catch(() => null) : null, urlOf3 = (x) => wl3?.get(x.id) ?? workUrl(x);
+    const reply = citeHeldLast(markQuotes(work ? [workLead(work, urlOf3), about, workOffer(work)].filter(Boolean).join('\n\n') : titled.text, conversational ? [] : retrieved).text, conversational || work ? [] : heldLast);
     return { reply, guarded, introduced, speakers, quoteLinked, firstTokenMs, fmt, writer, writeMs, usage };
   };
   const runs = variantList(variants);
