@@ -7,6 +7,7 @@ import { run as runTool } from '../tools.js';
 import { canonicalTradition } from '../tradition-name.js';
 import { parseScriptureRef } from '../scripture-ref.js';
 import { template, fill } from './templates.js';
+import { judgeHolds, judgeTimeline, termScript } from '../judges.js';
 
 // ── units, scope, outcomes ──────────────────────────────────────────────────────────────────────────────────────────────
 export const U = (s) => {
@@ -68,7 +69,7 @@ const retrieval = ({ edges, tool, input, take, into = 'found_passages', rank = f
   },
 });
 const searchInput = (s, p, u, trad) => { const filters = { ...(trad ? { tradition: trad } : {}), ...(p.author ? { author: p.author } : {}), ...(p.language ? { language: p.language } : {}), ...(p.work ? { work: p.work } : {}) };
-  return { query: text(s, u, p.query, '{{topic}}'), limit: kOf(p, u) ?? 8, ...(Object.keys(filters).length ? { filters } : {}) }; };
+  return { query: text(s, u, p.query, '{{topic}}'), limit: kOf(p, u) ?? 8, ...(Object.keys(filters).length ? { filters } : {}), ...(Array.isArray(p.layers) && p.layers.length ? { layers: p.layers } : {}), ...(Array.isArray(p.tiers) && p.tiers.length ? { tiers: p.tiers } : {}), ...(p.spell ? { spell: true } : {}) }; };
 const passages = (o) => o?.passages;
 const notBuilt = (tool, edges) => ({ kind: 'tool', cls: 'code', edges, scope: 'strategy', params: [...CMN, 'id', 'key', 'subject', 'date'], reads: SCOPE, writes: ['found_records', ...OUT],
   async run(s, p = {}) {   // index not built yet: still called (a hook may serve it), else none at no cost so the tree does not change when it arrives
@@ -93,8 +94,8 @@ const E = {
     gate: (s, u, p) => /[\u0600-\u06FF]/.test(text(s, u, p.term, '{{term_arabic}}', '{{term}}')),   // Arabic script only: Latin → Arabic is the term_arabic unit (Jev), not the tool
     input: (s, p, u) => ({ term_arabic: text(s, u, p.term, '{{term_arabic}}', '{{term}}'), ...(p.translator ? { translator: p.translator } : {}) }), take: (o) => (o?.found ? o.passages : []), thin: () => false,
     after: (o, u) => { if (o?.found) merge(u, 'found_records', [{ term: o.term, transliteration: o.transliteration, root: o.root, meaning: o.meaning, renderings: o.renderings }]); } }),
-  'fetch.prayer': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'hype_search', params: ['key', 'value'], reads: ['occasion', 'incipit'],   // HyPE over the prayer shelf until the index exists
-    input: (s, p, u) => ({ query: `prayer ${text(s, u, p.value, p.key === 'incipit' || (!p.key && u.incipit) ? '{{incipit}}' : '{{occasion}}')}`, limit: kOf(p, u) ?? 6 }), take: passages, thin: () => false }),
+  'fetch.prayer': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'prayer_lookup', params: ['key', 'value'], reads: ['occasion', 'incipit'],   // the prayer book's own headings and attribution lines; no heading/incipit match = none (p2 then searches the shelf)
+    input: (s, p, u) => { const inc = p.key === 'incipit' || (!p.key && u.incipit); return { [inc ? 'incipit' : 'occasion']: text(s, u, p.value, inc ? '{{incipit}}' : '{{occasion}}') }; }, take: passages, thin: () => false }),
   'fetch.guidance': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'fused_search', reads: ['topic'], thin: () => false,
     input: (s, p, u) => ({ query: text(s, u, p.query, '{{topic}}'), filters: { author: 'Universal House of Justice' }, limit: kOf(p, u) ?? 6 }), take: passages }),
   'fetch.work_notes': retrieval({ edges: ['one', 'none', 'error'], tool: 'work_notes_lookup', rank: true, params: ['work'], reads: ['named_work'], into: 'found_records',
@@ -128,7 +129,7 @@ const E = {
       for (const { x, l } of res) if (l?.original || l?.translations?.length) { n++; x.original = l.original ?? x.original; x.translations = l.translations; }
       return finish(s, p, classify(n, ['one', 'several']), { count: n });
     } },
-  'search.shelf': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'fused_search', params: ['authority', 'language', 'author', 'work'], reads: ['topic'], input: searchInput, take: passages }),
+  'search.shelf': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'fused_search', params: ['authority', 'language', 'author', 'work', 'layers', 'tiers', 'spell'], reads: ['topic'], input: searchInput, take: passages }),
   'search.hype': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'hype_search', params: ['shelf', 'language'], reads: ['topic'], input: searchInput, take: passages }),
   'search.originals': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'originals_search', reads: ['topic', 'search_originals'], input: searchInput, take: passages,
     gate: (s, u) => u.search_originals !== false }),
@@ -261,6 +262,37 @@ E['judge.passages'] = { kind: 'decision', cls: 'jev', edges: ['answers', 'mentio
     if (edge !== 'mentions_only') u.found_passages = u.found_passages.filter((x) => x.verdict !== 'mentions_only');
     s.note = { read: { question: q }, params: p, count: u.found_passages.length, scope_excluded: 0, verdicts };
     return edge;
+  } };
+
+E['judge.holds'] = { kind: 'decision', cls: 'jev', edges: ['holds', 'partial', 'none'], scope: 'strategy', params: ['quotation', 'stage'], reads: ['found_passages', 'quoted_clean', 'quoted_words'], writes: ['found_passages'],
+  async run(s, p = {}) {   // ONE call over every candidate from quotation_candidates (never per item): holds / partial / no + the span; a candidate that does not hold drops. Wording alone holds without a model.
+    const u = U(s), quotation = text(s, u, p.quotation, '{{quoted_clean}}', '{{quoted_words}}');
+    if (!u.found_passages.length) return finish(s, p, 'none');
+    try {
+      const r = await (s.judges?.holds || judgeHolds)({ quotation, passages: u.found_passages, ...(s.decide ? { decide: s.decide } : {}) });
+      u.found_passages = r.passages;
+      s.note = { read: { quotation }, params: p, count: r.passages.length, scope_excluded: 0, asked: r.asked, judged: r.judged };
+      const edge = r.passages.some((x) => x.verdict === 'holds') ? 'holds' : r.passages.some((x) => x.verdict === 'partial') ? 'partial' : 'none';
+      u.found_outcome[s.node ?? 'judge.holds'] = edge; return edge;
+    } catch (err) { s.note = { read: { quotation }, params: p, count: 0, scope_excluded: 0, error: err?.message }; return 'none'; }
+  } };
+E['judge.timeline'] = { kind: 'decision', cls: 'jev', edges: ['matched', 'none', 'unjudged'], scope: 'strategy', params: ['query', 'stage'], reads: ['found_records', 'current_user_question'], writes: ['found_records'],
+  async run(s, p = {}) {   // ONE DeepSeek step over the typed people from biography_search: only those whose cited proof does what the question asks stay, each with the book's own clause. No answer → unjudged, people untouched.
+    const u = U(s), query = text(s, u, p.query, '{{current_user_question}}'), people = u.found_records.filter((x) => Array.isArray(x.evidence));
+    if (!people.length) return finish(s, p, 'none');
+    const r = await (s.judges?.timeline || judgeTimeline)({ query, people, ...(s.complete ? { complete: s.complete } : {}) }).catch(() => ({ people, judged: false }));
+    s.note = { read: { query }, params: p, count: r.people.length, scope_excluded: 0, judged: r.judged, lead: r.lead ?? '' };
+    if (!r.judged) return 'unjudged';
+    u.found_records = [...u.found_records.filter((x) => !Array.isArray(x.evidence)), ...r.people];
+    return r.people.length ? 'matched' : 'none';
+  } };
+E['fill.term_script'] = { kind: 'decision', cls: 'jev', edges: ['filled', 'none'], scope: 'strategy', params: ['term', 'stage'], reads: ['term'], writes: ['term_arabic'],
+  async run(s, p = {}) {   // the Arabic-script spelling of a Latin term, for fetch.renderings: already Arabic or remembered = free; otherwise ONE Jev/model call
+    const u = U(s), term = text(s, u, p.term, '{{term_arabic}}', '{{term}}');
+    const r = await (s.judges?.termScript || termScript)(term, s.complete ? { complete: s.complete } : {}).catch(() => null);
+    s.note = { read: { term }, params: p, count: r ? 1 : 0, scope_excluded: 0, via: r?.via ?? null };
+    if (!r) return 'none';
+    u.term_arabic = r.term_arabic; return 'filled';
   } };
 
 // ── rank / shape / plan ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -398,14 +430,14 @@ const m = (description, input, output, tools = []) => ({ description, input, out
 export const ELEMENT_META = {
   'fetch.work': m('Finds a work by its title in any spelling; named works are ranked by the scope, never filtered.', 'named_work or title', 'found_records (works)', ['document_search']),
   'fetch.reference': m('Reads a numbered reference (Bible, Qur’án, Gita) and returns that passage.', 'the question or scripture_reference', 'found_passages', ['reference']),
-  'fetch.phrase': m('Traces quoted words to the passage that holds them (exact, or close wording).', 'quoted_words', 'found_passages', ['quotation_candidates']),
+  'fetch.phrase': m('Candidates for where quoted words come from (quotation_candidates): the source in core literature, the original tablet, works quoting it, each with a score (share of the quote’s words held). Deterministic, no model; judge.holds decides which candidate is right.', 'quoted_words', 'found_passages (score, role)', ['quotation_candidates']),
   'fetch.person': m('Finds the person record the question names (several bearers of a name come back as several).', 'named_person', 'found_records (people)', ['biography_search']),
   'fetch.original': m('Finds the Arabic or Persian original of an English passage.', 'quoted_words or found_passages', 'found_passages', ['original_lookup']),
   'fetch.translation': m('Finds the existing English translations of an original-language text.', 'quoted_words or found_passages', 'found_passages', ['translation_lookup']),
   'fetch.renderings': m('How the authorized translator rendered a word, with counts and paired passages.', 'term', 'found_passages + found_records', ['rendering_lookup']),
   'fetch.align': m('Attaches each passage’s recorded original and translations.', 'found_passages', 'found_passages (annotated)', ['links_lookup']),
   'fetch.anchor': m('Loads the passage the question is about: the one pointed at, the reader’s place, or the last evidence.', 'referent, reader_position, previous_evidence', 'found_passages', ['context_lookup']),
-  'fetch.prayer': m('Finds a prayer by occasion or opening words.', 'occasion or incipit', 'found_passages', ['hype_search']),
+  'fetch.prayer': m('Serves a prayer from the prayer book by its occasion heading or its opening words: the first in full, then two more. No heading match = none.', 'occasion or incipit', 'found_passages', ['prayer_lookup']),
   'fetch.guidance': m('Finds the House of Justice’s guidance on a subject.', 'topic', 'found_passages', ['fused_search']),
   'fetch.collection': m('A prepared topic collection (index not built yet: answers none at no cost).', 'id, key', 'found_records', []),
   'fetch.events': m('Dated claims about a subject from the entity graph (not built yet: answers none).', 'subject', 'found_records', []),
@@ -413,7 +445,7 @@ export const ELEMENT_META = {
   'fetch.activity': m('The reader’s reading plans (not built yet: answers none).', 'reader', 'reading_plan', []),
   'fetch.facts': m('Library facts and corpus status.', 'none', 'found_records', []),
   'fetch.work_notes': m('Verified quotations on a core work’s significance, best authority first.', 'named_work', 'found_records', ['work_notes_lookup']),
-  'search.shelf': m('Searches the library by authority (scripture, interpretation, guidance…), inside the scope.', 'topic, scope', 'found_passages', ['fused_search']),
+  'search.shelf': m('Searches the library by authority (scripture, interpretation, guidance…), inside the scope. layers picks which layers run and merges them in one call (literal = exact words, phrase = meaning, hype = questions answered, originals); tiers is the escalation ladder (drop these filters one at a time while fewer than min results come back; each passage says its tier); spell corrects misspellings first, deterministically.', 'topic, scope, layers, tiers, spell', 'found_passages', ['fused_search']),
   'search.hype': m('Question search: paragraphs that answer a question like this one.', 'topic, scope', 'found_passages', ['hype_search']),
   'search.originals': m('Searches the original-language Writings.', 'topic, search_originals', 'found_passages', ['originals_search']),
   'search.web': m('Searches the open web; results are labelled and never quoted as library evidence.', 'topic, scope as words', 'web_found', ['web_search']),
@@ -426,6 +458,9 @@ export const ELEMENT_META = {
   switch: m('Branches on a unit in code (which is filled, a count, an earlier outcome): no model call.', 'on, cases', 'an edge', []),
   judge: m('ONE Jev decision over a fixed set of options given as params.', 'question, options', 'an option edge', []),
   'judge.passages': m('Jev says per passage whether it answers, only mentions, or contradicts.', 'found_passages', 'found_passages (verdicts)', []),
+  'judge.holds': m('One step over all quotation candidates: does each hold the quoted sentence (same words, or another translation)? Marks holds / partial, with the span; the rest drop. Wording that holds needs no model.', 'found_passages (from fetch.phrase), quoted_words', 'found_passages (verdict, span)', []),
+  'judge.timeline': m('One step over the typed people of fetch.person: keeps those whose cited proof does what the question asks (met, was present, died…), each with the book’s own clause.', 'found_records (people), the question', 'found_records (people, clause)', []),
+  'fill.term_script': m('Fills the term_arabic unit: a Latin term’s Arabic-script spelling (already Arabic or remembered = no model; otherwise one Jev call), so fetch.renderings can look it up.', 'term', 'term_arabic', []),
   'plan.subthemes': m('A light generator for the sub-themes a topic splits into (default: the topic itself).', 'topic', 'sub_themes', []),
   rank: m('Orders what was found by authority, date, score… keeps the top few, skips what was already given.', 'found_passages', 'found_passages', []),
   shape: m('Sets the writer’s instruction from a template chosen by what was found, for the mode.', 'found units', 'the writer instruction', []),

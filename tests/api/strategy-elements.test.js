@@ -37,7 +37,7 @@ describe('scope', () => {
 });
 
 describe('search.* / fetch.* retrieval paths', () => {
-  const cases = [['search.shelf', 'fused_search'], ['search.hype', 'hype_search'], ['search.originals', 'originals_search'], ['fetch.guidance', 'fused_search'], ['fetch.prayer', 'hype_search'],
+  const cases = [['search.shelf', 'fused_search'], ['search.hype', 'hype_search'], ['search.originals', 'originals_search'], ['fetch.guidance', 'fused_search'], ['fetch.prayer', 'prayer_lookup'],
     ['fetch.original', 'original_lookup'], ['fetch.translation', 'translation_lookup'], ['fetch.phrase', 'quotation_candidates']];
   for (const [name, tool] of cases) {
     it(`${name}: several / none / error, scope_excluded, note`, async () => {

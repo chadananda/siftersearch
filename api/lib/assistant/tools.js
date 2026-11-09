@@ -174,6 +174,43 @@ const ENTRIES = [
     output: { type: 'object', required: ['year', 'month', 'month_name', 'day', 'naw_ruz'], properties: { year: { type: 'integer' }, month: { type: 'integer', description: '1-19; 0 = Ayyám-i-Há' }, month_name: { type: 'string' }, day: { type: 'integer' }, naw_ruz: { type: 'boolean' }, naw_ruz_date: { type: 'string' } } },
     example: { input: { date: '2025-03-20' }, output: { year: 182, month: 1, month_name: 'Bahá', day: 1, naw_ruz: true, naw_ruz_date: '2025-03-20' } },
     async run(a) { return (await import('./badi-calendar.js')).badiDate(a.date); } },
+  // the prayer book (Bahá’í Prayers) by occasion heading or opening words: its own sections and attribution lines, no model. Which heading fits a need is a Jev unit; this gives the headings (list) and serves one.
+  { name: 'prayer_lookup', label: 'Prayer Lookup', kind: 'tool', outputName: 'Prayers', cost: C(true, 400),
+    description: 'A prayer from the prayer book: by occasion (a heading of the book, exactly as listed in occasions) or by its opening words (incipit). Returns the first prayer in full and up to two more, linked; list:true returns the headings alone.',
+    purpose: 'The prayer book’s own structure: headings → prayers split on their attribution lines; opening words found by the literal and phrase layers inside the book. Deterministic.',
+    input: { type: 'object', additionalProperties: false, required: [], properties: { occasion: str('A heading of the prayer book, as listed in occasions', 200), incipit: str('The prayer’s opening words', 300),
+      list: { type: 'boolean', description: 'true = return the headings only' }, lang: str('Language of the book (default: any)', 8) } },
+    output: { type: 'object', required: ['passages', 'occasions'], properties: { passages: { type: 'array', items: PASSAGE }, occasions: { type: 'array', items: { type: 'string' }, description: 'The headings of the prayer book' }, book: nul('integer') } },
+    example: { input: { list: true }, output: { passages: [], occasions: ['For The Departed'], book: 77 } },
+    async run(a, ctx = {}) {
+      if (!a.occasion && !a.incipit && !a.list) throw new ToolError('invalid_input', 'give occasion, incipit or list', false);
+      const { PRAYER_BOOK, splitPrayers, prayerAt, sectionAt, foundCandidates } = await import('./prayer-sections.js');
+      const doc = ((await REGISTRY.document_search.run({ title: PRAYER_BOOK, min: 0.9 }, ctx))?.works || []).find((w) => /prayers/i.test(w.title) && (!a.lang || !w.language || w.language === a.lang));
+      if (!doc) return { passages: [], occasions: [], book: null };
+      const sections = ((await (await dep(ctx, 'sectionsOfDoc', 'sections'))(doc.id).catch(() => [])) || []).filter((s) => s.title && s.paragraphs > 0);
+      const byTitle = new Map(); for (const s of sections) if (!byTitle.has(s.title)) byTitle.set(s.title, s);
+      const occasions = [...byTitle.values()].sort((x, y) => (x.level ?? 1) - (y.level ?? 1) || y.paragraphs - x.paragraphs).slice(0, 40).map((s) => s.title);
+      if (a.list || (!a.occasion && !a.incipit)) return { passages: [], occasions, book: doc.id };
+      const inRange = await dep(ctx, 'paragraphsInRange', 'paragraphs');
+      const prayersOf = async (s, pi) => { const [x, y] = s ? [s.start_index, s.end_index] : [Math.max(0, pi - 20), pi + 20]; return splitPrayers(await inRange(doc.id, x, y).catch(() => [])); };
+      let lead = null, more = [];
+      if (a.occasion) {
+        const s = byTitle.get(a.occasion) || [...byTitle.values()].find((x) => fold(x.title) === fold(a.occasion));
+        const prayers = s ? await prayersOf(s) : [];
+        [lead, ...more] = prayers;
+      } else {
+        const scoped = (limit) => ({ query: a.incipit, limit, filters: { documentId: doc.id } });
+        const [lit, ph] = await Promise.all([REGISTRY.literal_search.run(scoped(3), ctx).catch(() => null), REGISTRY.phrase_search.run(scoped(6), ctx).catch(() => null)]);
+        for (const f of foundCandidates(doc.id, [lit?.passages || [], ph?.passages || []], sections).slice(0, 4)) {
+          const prayers = await prayersOf(f.section, f.p.paragraph_index), hit = prayerAt(prayers, f.p.paragraph_index);
+          if (hit && !lead) { lead = hit; more = prayers.filter((p) => p !== hit); } else if (hit && hit[0].paragraph_index !== lead[0].paragraph_index) more.unshift(hit);
+        }
+      }
+      if (!lead) return { passages: [], occasions, book: doc.id };
+      const chosen = [...lead.map((r) => ({ r, role: 'prayer' })), ...more.slice(0, 2).map((p) => ({ r: p[0], role: 'alternative' }))];
+      const linked = await (await dep(ctx, 'withLinks', 'links'))(chosen.map(({ r }) => ({ id: r.id, doc_id: doc.id, paragraph_index: r.paragraph_index, text: r.text, title: doc.title }))).catch(() => chosen.map(({ r }) => r));
+      return { passages: chosen.map(({ r, role }, i) => toPassage({ id: r.id, text: r.text, title: doc.title, author: doc.author, religion: doc.religion, collection: doc.collection, language: doc.language, document_id: doc.id, paragraph_index: r.paragraph_index, source_url: linked[i]?.url || null, role })), occasions, book: doc.id };
+    } },
   // the Writings in their ORIGINAL languages (11-04, measured: an English query's fused ranking puts no Persian/Arabic Writing in
   // its top 8 — English-English phrase matches fill it — while the same query held to the ar-fa group returns 22-29 originals of 30)
   { name: 'originals_search', label: 'Originals Search', kind: 'tool', outputName: 'Passage[]', cost: C(true, 250),
@@ -348,7 +385,10 @@ const ENTRIES = [
       // the source must be CORE literature (Chad 11-03); a line held only by commentary has no source here. decide:null = wording only, no Jev
       const r = await hunt(quotation, { phrases: via('phrase_search'), keyword: via('literal_search'), decide: null }, { coreOnly: true });
       if (r?.error) throw new ToolError('invalid_input', r.error, false);
-      if (!r?.origin) return { passages: [] };
+      const sc0 = (x) => Math.round(contentContainment(quotation, x?.text || '') * 100) / 100;
+      // rows the wording did not hold (cross-translation holders among them): handed on as role 'candidate' for the tree-level judge.holds
+      const maybe = (r?.unsure || []).map((x) => toPassage({ text: x.text, title: x.title, author: x.author, source_url: x.url, document_id: x.documentId, role: 'candidate', score: sc0(x) }));
+      if (!r?.origin) return { passages: dedupePassages(maybe) };
       const o = r.origin, t = r.tablet?.certain ? r.tablet : null, c0 = !t ? r.tablet?.candidates?.[0] : null, who = r.quoteAuthor || o.author;
       const sc = (x) => Math.round(contentContainment(quotation, x?.text || '') * 100) / 100;
       const orig = (x, role) => toPassage({ text: x.text, title: x.meta?.title || x.title, author: who, source_url: x.meta?.links?.oceanoflightsRange || x.rangeUrl || x.url,
@@ -356,7 +396,7 @@ const ENTRIES = [
       return { passages: dedupePassages([toPassage({ text: o.text, title: o.title, author: who, source_url: o.rangeUrl || o.url, document_id: o.documentId, role: 'source', score: sc(o) }),
         ...(t ? [orig(t, 'original')] : c0?.text ? [orig(c0, 'possible_original')] : []),
         ...(r.citedBy || []).slice(0, 3).map((c) => toPassage({ text: c.text || c.excerpt || `${c.title} quotes it${c.paragraphs ? ` (${c.paragraphs} paragraphs)` : ''}.`,
-          title: c.title, author: c.author, source_url: c.rangeUrl || c.url, document_id: c.documentId, role: 'cited_by', score: sc(c) }))]) };
+          title: c.title, author: c.author, source_url: c.rangeUrl || c.url, document_id: c.documentId, role: 'cited_by', score: sc(c) })), ...maybe]) };
     } },
 ];
 

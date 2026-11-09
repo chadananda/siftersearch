@@ -88,7 +88,8 @@ const guidance = tree('guidance', 'g1', [
 const reference = tree('reference', 'f', [
   ['f', 'fetch.reference', {}, 'tool', ['scripture_reference', 'translation_wanted'], ['found_passages'], { one: 'ra', several: 'rk', none: 'p', error: 'p' }],
   ['rk', 'rank', { by: ['copy'], best: 'translation' }, 'process', ['found_passages', 'translation_wanted', 'reply_language'], ['found_passages'], { done: 'ra', empty: 'w' }],   // empty → the work lookup (never back to p: no cycle through a process node)
-  ['p', 'fetch.phrase', { mode: 'close', words: '{{incipit}}', scope: 'rank' }, 'tool', ['incipit', 'named_work'], ['found_passages'], { one: 'ra', several: 'rk', thin: 'w', none: 'w', error: 'w' }],
+  ['p', 'fetch.phrase', { mode: 'close', words: '{{incipit}}', scope: 'rank' }, 'tool', ['incipit', 'named_work'], ['found_passages'], { one: 'ph', several: 'ph', thin: 'w', none: 'w', error: 'w' }],
+  ['ph', 'judge.holds', { quotation: '{{incipit}}' }, 'decide', ['found_passages', 'incipit'], ['found_passages'], { holds: 'rk', partial: 'w', none: 'w' }],   // candidates are scored only; ONE judge over them all
   ['w', 'fetch.work', { title: '{{named_work}}', scope: 'rank' }, 'tool', ['named_work'], ['found_records'], { one: 'o_w', several: 'o_w', none: '$absence', error: '$fallback' }],
   ['ra', 'read.around', {}, 'tool', ['found_passages'], ['found_passages'], { done: 'o' }],
   ['o', 'shape', { template: 'reference.passage', shared: 'tpl.one_passage', format: 'reference', direct: true, offers: ['the rest of the chapter by email'] }, 'synthesize', ['found_passages', 'scripture_reference'], ['offers'], { done: END }],

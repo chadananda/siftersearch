@@ -34,7 +34,7 @@ export const PASSAGE = { $id: 'AnisPassage', type: 'object', additionalPropertie
   found_by: { type: 'array', items: { type: 'string' }, description: 'Which search layers found it' },
   tier: nul('string'), side: nul('string'),
   translation: { ...nul('string'), description: 'What kind of translation this is (authorized / published / provisional)' },
-  role: { ...nul('string'), description: 'quotation_candidates: source | original | possible_original | cited_by' },
+  role: { ...nul('string'), description: 'quotation_candidates: source | original | possible_original | cited_by | candidate (unjudged near match; judge.holds turns it into source, holder or near)' },
   locator: { ...nul('string'), description: 'Where in the work to cite it: traditional number (Gleanings CXVII, Hidden Words Arabic 5, Íqán ¶12) or the section heading' } } };
 export const WORK = { $id: 'AnisWork', type: 'object', additionalProperties: true, required: ['id', 'title'], properties: {
   id: { type: 'integer' }, title: { type: 'string' }, author: nul('string'), religion: nul('string'), collection: nul('string'),
@@ -119,7 +119,7 @@ export function dedupePassages(list = []) {
 // a dependency: the caller's override (ctx.deps — tests), else the live module's export
 export const MOD = { layers: '../search/qdrant-layers.js', paragraphs: '../paragraphs-repo.js', links: '../hit-links.js', chat: '../../routes/chat.js',
   plinks: '../passage-links.js', people: '../people-search.js', works: './work-request.js', web: '../perplexity.js', ctai: './ctai-term.js',
-  docs: '../docs-repo.js', search: '../search.js', hunt: '../source-hunt.js', position: './position.js', rights: '../repos/rights-repo.js', srcl: '../source-links.js' };
+  docs: '../docs-repo.js', search: '../search.js', hunt: '../source-hunt.js', position: './position.js', rights: '../repos/rights-repo.js', sections: '../repos/sections-repo.js', srcl: '../source-links.js' };
 export const dep = async (ctx, name, mod) => ctx?.deps?.[name] || (await import(MOD[mod]))[name];
 // a raw Qdrant layer, its calls traced as layer:<name> while a tool runs it (search-trace.js traceLayer); a test's injected one is not wrapped
 export const layerDep = async (ctx, fnName) => (ctx?.deps?.[fnName] ? ctx.deps[fnName]

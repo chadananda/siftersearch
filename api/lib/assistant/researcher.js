@@ -524,7 +524,7 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
     translation: (original) => passages('translation_lookup', { original }),
     wordStudy: async (word) => {
       // the lookup takes Arabic script; a Latin spelling is turned into Arabic here (a model step of the researcher, not the tool's)
-      const term = /[؀-ۿ]/.test(word) ? word : await (await import('./ctai-term.js')).resolveTerm(word).catch(() => null);
+      const term = (await (await import('./judges.js')).termScript(word).catch(() => null))?.term_arabic;
       if (!term) return null;
       const s = await runTool('rendering_lookup', { term_arabic: term }, ctx);
       if (!s.found) return null;
@@ -540,7 +540,10 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
     // the original is labelled for the writer, and only offered when the reader quoted exactly (Chad 11-02)
     sourceOf: async (quotation) => {
       const tag = (label) => (isExactQuote(quotation) ? ` (${label})` : ` (${label} — give only if the reader asked for it)`);
-      return (await passages('quotation_candidates', { quotation })).map(({ role, ...p }) => shape({ ...p,
+      // the tool returns scored candidates only; the holds judgement is this fixed second step (judge.holds, one call): a candidate that does not hold the quoted sentence drops
+      const cands = await passages('quotation_candidates', { quotation });
+      const judged = (await (await import('./judges.js')).judgeHolds({ quotation, passages: cands }).catch(() => null))?.passages ?? cands;
+      return judged.map(({ role, ...p }) => shape({ ...p,
         title: `${p.title}${role === 'original' ? tag('original') : role === 'possible_original' ? tag('possible original') : ''}` }));
     },
     web: async (query) => { const r = await runTool('web_search', { query }, ctx); return r.text ? { text: r.text, citations: r.citations.map((url) => ({ url })) } : null; },

@@ -115,24 +115,24 @@ describe('prayer tree', () => {
   const q = 'a prayer for healing';
   const nth = (...calls) => { let n = 0; return async () => ({ passages: calls[Math.min(n++, calls.length - 1)] }); };
   it('clean hit: the index answers in one step, no Jev decision, a direct template (no synthesis)', async () => {
-    const s = await run('prayer', q, { tools: { hype_search: async () => ({ passages: prayer }) } });
+    const s = await run('prayer', q, { tools: { prayer_lookup: async () => ({ passages: prayer }) } });
     expect(path(s)).toEqual(['p1', 'p5']); expect(s.out.format).toMatchObject({ id: 'prayer', direct: true }); expect(s.how).toContain('IN FULL'); expect(s.out.passages[0].id).toBe(1);
   });
   it('several: p1 several → rank → p5', async () => {
-    const s = await run('prayer', q, { tools: { hype_search: async () => ({ passages: [P(1), P(2, { occasion: 'healing' }), P(3)] }) } });
+    const s = await run('prayer', q, { tools: { prayer_lookup: async () => ({ passages: [P(1), P(2, { occasion: 'healing' }), P(3)] }) } });
     expect(path(s)).toEqual(['p1', 'p4', 'p5']);
   });
   it('thin: the shelf search then Jev: fits → rank → p5; near → p7', async () => {
-    const t = { hype_search: nth([], [P(1), P(2)]) };
+    const t = { prayer_lookup: async () => ({ passages: [] }), hype_search: nth([P(1), P(2)]) };
     expect(path(await run('prayer', q, { tools: t, jev: verdict('fits') }))).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
-    const near = await run('prayer', q, { tools: { hype_search: nth([], [P(1), P(2)]) }, jev: verdict('near') });
+    const near = await run('prayer', q, { tools: { prayer_lookup: async () => ({ passages: [] }), hype_search: nth([P(1), P(2)]) }, jev: verdict('near') });
     expect(path(near)).toEqual(['p1', 'p2', 'p3', 'p7']); expect(near.how).toContain("didn't find a prayer written for");
   });
   it('none after all tiers: the prayer books → $absence with the prayer absence template', async () => {
     const s = await run('prayer', q, { jev: verdict('fits') }); expect(path(s)).toEqual(['p1', 'p2', 'p6', '$absence']); expect(s.how).toContain("can't find a prayer"); expect(s.how).not.toContain('{{');
   });
   it('error: p1 → p2 → $fallback → $unavailable', async () => {
-    const s = await run('prayer', q, { tools: { hype_search: boom }, agentRun: async () => null }); expect(path(s)).toEqual(['p1', 'p2', '$fallback', '$unavailable']);
+    const s = await run('prayer', q, { tools: { prayer_lookup: boom, hype_search: boom }, agentRun: async () => null }); expect(path(s)).toEqual(['p1', 'p2', '$fallback', '$unavailable']);
   });
   it('conflicting sources: two translations of one prayer — the standard-occasion one first', async () => {
     const s = await run('prayer', q, { tools: { hype_search: async () => ({ passages: [P(7, { occasion: 'other' }), P(8, { occasion: 'healing' })] }) }, extra: { units: { occasion: 'healing' } } });
@@ -268,7 +268,7 @@ describe('cost per run path (node kinds)', () => {
   it('a clean path ends in at most one synthesize node, and direct templates carry none of the LLM kinds', async () => {
     const u = await run('understanding', 'q', { tools: { fused_search: async () => ({ passages: [P(1)] }) }, jev: verdict('answers') });
     expect(cnt(u)).toEqual({ tool: 4, process: 2, decide: 1, synthesize: 1 });
-    const p = await run('prayer', 'a prayer for healing', { tools: { hype_search: async () => ({ passages: [P(1)] }) } });
+    const p = await run('prayer', 'a prayer for healing', { tools: { prayer_lookup: async () => ({ passages: [P(1)] }) } });
     expect(cnt(p)).toEqual({ tool: 1, synthesize: 1 });   // one code lookup, then the direct reply: no decide, no LLM judgement
     const r = await run('reference', 'John 3:16', { tools: { reference: async () => ({ passages: [P(1)] }) } });
     expect(r.kinds.filter((k) => k === 'decide').length).toBe(0); expect(r.kinds.at(-1)).toBe('synthesize');
