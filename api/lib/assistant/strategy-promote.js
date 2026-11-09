@@ -28,8 +28,9 @@ const median = (xs) => { const a = xs.filter(Number.isFinite).sort((x, y) => x -
 const mean = (xs) => { const a = xs.filter(Number.isFinite); return a.length ? a.reduce((n, x) => n + x, 0) / a.length : null; };
 const r3 = (x) => (x == null ? null : Math.round(x * 1000) / 1000);
 
-/** A judge verdict → 0-10. The judge's own `score` when it gives one; else pass 10, weak 10 − 3·severity. Pure. */
-export const scoreOf = (j) => (j == null ? null : Number.isFinite(Number(j.score)) && j.score !== null ? Math.max(0, Math.min(10, Number(j.score)))
+/** A judge verdict → 0-10. The judge's own `score` when it gives one; else pass 10, weak 10 − 3·severity. An unreadable verdict
+ *  (verdict null) is UNJUDGED → null, never a made-up 4: it drops out of the means and is counted. Pure. */
+export const scoreOf = (j) => (j == null || (j.verdict == null && j.score == null) ? null : Number.isFinite(Number(j.score)) && j.score !== null ? Math.max(0, Math.min(10, Number(j.score)))
   : j.verdict === 'pass' ? 10 : Math.max(0, 10 - 3 * (Number(j.severity) || 2)));
 
 /** The question set. → { questions: [{ question, set: 'fresh'|'held'|'historic'|'guard', of? }], usd, fresh: [to freeze] | null }.
@@ -60,8 +61,10 @@ export async function questionSet({ row, held = [], cat, writeQuestions, nFresh 
 export function decidePromotion(rows, { name, cfg = IMPROVE_CFG.promote, replay = null, nodes = null, nodeBar = IMPROVE_CFG.planner?.node_pass_bar ?? 0.8 } = {}) {
   const cls = rows.filter((r) => r.set !== 'guard' && r.cand?.score != null && r.cur?.score != null);
   const guards = rows.filter((r) => r.set === 'guard');
+  const asked = rows.filter((r) => r.set !== 'guard' && (r.cand || r.cur)).length, unjudged = asked - cls.length;
   const failed = [];
   if (!cls.length) failed.push('no class question was measured');
+  else if (unjudged * 2 > asked) failed.push(`judge unreadable on ${unjudged}/${asked} class questions: too few measured`);
   const mc = mean(cls.map((r) => r.cand.score)), mu = mean(cls.map((r) => r.cur.score));
   const worst = cls.reduce((w, r) => (r.cur.score - r.cand.score > (w?.drop ?? -Infinity) ? { question: r.question, drop: r.cur.score - r.cand.score } : w), null);
   const p50c = median(cls.map((r) => r.cand.ms)), p50u = median(cls.map((r) => r.cur.ms));
@@ -85,7 +88,7 @@ export function decidePromotion(rows, { name, cfg = IMPROVE_CFG.promote, replay 
   const weak = Object.entries(nodes?.nodes || {}).filter(([, n]) => n.rate < nodeBar).map(([node, n]) => ({ node, rate: n.rate, pass: n.pass, total: n.total }));
   for (const w of weak) failed.push(`node ${w.node}: ${w.pass}/${w.total} node tests pass (${w.rate}; bar ${nodeBar})`);
   return { promote: failed.length === 0, failed, nodes: nodes ? { rate: nodes.rate, per_node: nodes.nodes, failed: nodes.failed, weak } : null, cost_saving: costSaving, numbers: { replay_n: replay?.labelled ?? 0, replay_broken: broken, replay_confidence_drops: drops, n_class: cls.length, n_guard: guards.length, mean_candidate: r3(mc), mean_current: r3(mu),
-    worst_drop: worst?.drop ?? null, p50_ms_candidate: p50c, p50_ms_current: p50u, usd_turn_candidate: r3(usdC), usd_turn_current: r3(usdU),
+    worst_drop: worst?.drop ?? null, unjudged, p50_ms_candidate: p50c, p50_ms_current: p50u, usd_turn_candidate: r3(usdC), usd_turn_current: r3(usdU),
     jev_class_picks: picks, jev_guard_steals: steals } };
 }
 
@@ -138,8 +141,9 @@ export function liveJudge(call = opusCall) {
   return async ({ question, reply, path }) => {
     const { JUDGE_SYSTEM, JUDGE_ROLE, judgeMessage, parseJudge, turnFromPath, itemsForTurn } = await import('../audit/improve.js');
     const item = itemsForTurn(turnFromPath({ question, reply, path: path || {} }), { messageId: 'dry-run' }).reply;
-    const r = await call(JUDGE_ROLE, JUDGE_SYSTEM, judgeMessage(item), 600, JUDGE_CALLER);
-    const j = parseJudge(r.text);
-    return j ? { ...j, usd: r.usd || 0 } : { verdict: null, score: null, usd: r.usd || 0 };
+    // one retry on an unreadable verdict; still unreadable → unjudged (score null), with the head of the raw text as the why
+    let usd = 0, r = null, j = null;
+    for (let i = 0; i < 2 && !j; i++) { r = await call(JUDGE_ROLE, JUDGE_SYSTEM, judgeMessage(item), 1500, JUDGE_CALLER); usd += r.usd || 0; j = parseJudge(r.text); }
+    return j ? { ...j, usd } : { verdict: null, score: null, usd, why: `unjudged: ${String(r?.text ?? '').slice(0, 200) || '(empty reply)'}` };
   };
 }
