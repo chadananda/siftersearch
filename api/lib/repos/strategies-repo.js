@@ -68,8 +68,14 @@ export function seedStrategies(db, seed = { TEMPLATES, STEPS, STRATEGIES: seedRo
     for (const t of seed.TEMPLATES) n += tpl.run(t.id, t.version, t.text, at, 'seed').changes;
     for (const s of seed.STEPS) n += stp.run(s.id, s.version, s.activity, JSON.stringify(s.params || {}), s.template_id ?? null, s.template_version ?? null,
       s.budget_ms ?? null, s.budget_usd ?? null, at, 'seed').changes;
-    for (const s of seed.STRATEGIES) n += str.run(s.id, s.version, s.name, s.description ?? null, JSON.stringify(s.exemplars || []), JSON.stringify(s.graph),
-      s.status || 'active', s.parent_version ?? null, at, s.created_by || 'seed').changes;
+    // seed-trees rows take the NEXT FREE version: a fixed v2 collided with older candidates (11-05 understanding@2/@3, comparison@2,
+    // prayer@2) and INSERT OR IGNORE silently kept those. Seeded once per id (an existing seed-trees row = done).
+    const treeDone = db.prepare("SELECT 1 FROM strategies WHERE id = ? AND created_by = 'seed-trees' LIMIT 1");
+    const maxV = db.prepare('SELECT MAX(version) AS v FROM strategies WHERE id = ?');
+    const versionOf = (s) => (s.created_by !== 'seed-trees' ? s.version : treeDone.get(s.id) ? null : Math.max(s.version, (maxV.get(s.id)?.v ?? 0) + 1));
+    for (const s0 of seed.STRATEGIES) { const v = versionOf(s0); if (v == null) continue; const s = { ...s0, version: v };
+      n += str.run(s.id, s.version, s.name, s.description ?? null, JSON.stringify(s.exemplars || []), JSON.stringify(s.graph),
+      s.status || 'active', s.parent_version ?? null, at, s.created_by || 'seed').changes; }
     for (const x of specs) n += spc.run(x.name, specVersion, x.kind, x.sort, JSON.stringify(x.spec), at, 'seed').changes;
     if (n) bumpRev(db);
     return n;
