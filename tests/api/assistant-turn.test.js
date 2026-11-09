@@ -4,6 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { anisTurn } from '../../api/lib/assistant/turn.js';
 import { makeStrikes } from '../../api/lib/assistant/strikes.js';
 import { CANNED, NOTHING_FOUND } from '../../api/lib/assistant/canned.js';
+import { currentAIContext } from '../../api/lib/ai-context.js';
 
 function harness({ triage = null, reply = 'The passage reads…', broken = 0.01, strikes = makeStrikes(), respondThrows = false } = {}) {
   const calls = { open: [], close: [], fail: [], respond: [], triage: 0 };
@@ -32,6 +33,15 @@ describe('anisTurn', () => {
     expect(r).toMatchObject({ status: 'answered', conversationId: 'conv_1' });
     expect(h.events[0]).toEqual({ type: 'stage', stage: 'understand' });   // the neutral word first (W3), then the session
     expect(h.events).toContainEqual({ type: 'session', conversation_id: 'conv_1' });
+  });
+
+  it('the strategy graph trace is the path steps (the judge and the promotion rows read what ran)', async () => {
+    const h = harness({ triage: t() });
+    const respond = h.calls.respond;
+    const orig = respond.push.bind(respond);
+    respond.push = (a) => { currentAIContext().graphRuns?.push({ graph: 'understanding@5', trace: [{ node: 'gather', edge: 'thin', count: 2 }, { node: 'widen', edge: 'ok' }] }); return orig(a); };
+    await h.run();
+    expect(h.calls.close[0].path.steps).toEqual([{ graph: 'understanding@5', node: 'gather', edge: 'thin', count: 2 }, { graph: 'understanding@5', node: 'widen', edge: 'ok' }]);
   });
 
   it('a thanks gets a canned reply with ZERO LLM calls', async () => {

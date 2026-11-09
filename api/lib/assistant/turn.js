@@ -180,6 +180,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     // where the time went (route.timeline in the thread view): stage spans since turn start + each model call's completion
     try { const jc = jevTurnCalls(); if (jc.length) path.jev_calls = jc; } catch { /* the gate link is bookkeeping */ }   // [{gate, id}] → calls.db rows of this turn's Jev decisions
     const runs = currentAIContext().graphRuns;   // measured off the reply path: buffered pushes, flushed by a timer
+    // the trees' node trace is the turn's path.steps when the executor returned none: the judge and the promotion rows read what actually ran
+    if (!Array.isArray(path.steps) && runs?.length) path.steps = runs.flatMap((x) => x.trace.map((e) => ({ graph: x.graph, ...e }))).slice(0, 60);
     if (runs?.length && ex?.conversationId) import('../repos/strategy-stats-repo.js').then((m) => m.logTurnRuns({ turnId: `${ex.conversationId}:${ex.round}`, runs, usd: path.meta?.usd ?? null })).catch((err) => console.warn(`[strategy-stats] logTurnRuns failed: ${err?.message}`));
     path.timeline = timelineOf(timeline, t0); path.llm = meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null }));
     if (ex) await d.close({ ...ex, reply, status, path, channel: channel.id }).catch(() => {});
