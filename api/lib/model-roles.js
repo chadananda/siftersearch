@@ -21,6 +21,8 @@ export const MODEL_ROLES = {
     why: 'extract the word a CTAI question is about (20 tokens)' },
   'anis-understood': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-03', needs: ['fast', 'tiny-output'],
     why: 'the "what I understood" line: one noun phrase restating the resolved request from Jev\'s decision (System One has no free-text type)' },
+  'anis-unmatched-recheck': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-08', needs: ['fast', 'json', 'tiny-output'],
+    why: 'Chad 11-08: before a new strategy is built for an Unmatched question, a fast model checks whether Jev simply failed to pick a good one (active strategies + pending candidates named; one name or null)' },
   'assistant-phrases': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-01', needs: ['fast', 'tiny-output'],
     why: 'name the search phrase (wording, person, work, term) of a specific question that has no quote marks; Jev still routes' },
   'deep-research-rerank': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-13', needs: ['ranking', 'json'],

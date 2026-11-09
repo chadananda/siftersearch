@@ -7,13 +7,14 @@ export const CHANNELS = {
     description: 'a small chat window embedded on a website; brief answers',
     frame: 'Reply in about 150 words unless the question truly needs more. Quote briefly.',
     capabilities: ['links', 'lists', 'quotes'], linkCap: 1, newsCap: 1, renderer: 'markdown-lite', privileged: false,
-    live: true,   // a reader watches the screen: first text within seconds (respond.js liveResearch, the thinking-off writer)
+    live: true, progress: true,   // progress: narrate.js says what is happening while a longer stage runs (a future voice channel sets it too)
+    // a reader watches the screen: first text within seconds (respond.js liveResearch, the thinking-off writer)
   },
   'site-chat': {
     description: 'the chat on siftersearch.com; brief-to-moderate answers',
     frame: 'Reply in about 150–250 words unless the question truly needs more.',
     capabilities: ['links', 'lists', 'quotes', 'tables', 'headings'], linkCap: 2, newsCap: 1, renderer: 'markdown', privileged: false,
-    live: true,
+    live: true, progress: true,
   },
   email: {
     description: 'a considered letter by email',

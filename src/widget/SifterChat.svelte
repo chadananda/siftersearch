@@ -29,6 +29,7 @@
   // Perception line (Claude-Code-style): the server's specific status ("Reading Gleanings…") replaces the stage
   // text; if the first words are slow, it rotates gently. The first token of the answer replaces all of it.
   let statusText = $state('');
+  let serverStatus = false;   // a status line from the server (Anís narrates longer stages) is never overwritten by the generic WAITING lines
   const WAITING = ['Gathering the passages…', 'Weighing what the texts say…', 'Putting it into words…'];
   let statusTimer = null;
   function stopStatus() { if (statusTimer) { clearInterval(statusTimer); statusTimer = null; } }
@@ -154,8 +155,8 @@
     input = '';
     errorMsg = '';
     pendBuf = ''; replay = ''; gotLive = false; streamDone = false; pendCites = null;
-    statusText = ''; stopStatus();
-    { let i = 0; statusTimer = setInterval(() => { if (Date.now() - t0 > 3500) statusText = WAITING[i++ % WAITING.length]; }, 2200); }
+    statusText = ''; serverStatus = false; stopStatus();
+    { let i = 0; statusTimer = setInterval(() => { if (!serverStatus && Date.now() - t0 > 3500) statusText = WAITING[i++ % WAITING.length]; }, 2200); }
     messages = [...messages, { role: 'user', content: text }, { role: 'assistant', content: '', citations: [], pending: true }];
     busy = true;
     phase = 'research';
@@ -190,7 +191,7 @@
           if (!line) continue;
           let ev; try { ev = JSON.parse(line.slice(6)); } catch { continue; }
           if (ev.type === 'stage' && ev.stage) { if (phase !== 'streaming') phase = ev.stage; }
-          else if (ev.type === 'status' && typeof ev.text === 'string') { statusText = ev.text; }
+          else if (ev.type === 'status' && typeof ev.text === 'string') { statusText = ev.text; serverStatus = true; }
           else if (ev.type === 'text' && typeof ev.content === 'string') { gotLive = true; stopStatus(); pendBuf += ev.content; }
           else if (ev.type === 'chunk' && typeof ev.text === 'string') { stopStatus(); if (gotLive) replay += ev.text; else pendBuf += ev.text; }
           else if (ev.type === 'citations' && Array.isArray(ev.citations)) { pendCites = ev.citations; }

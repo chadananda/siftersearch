@@ -8,6 +8,8 @@ import {
   originalWording, huntSource, fillTags, evidenceOf, searchQueryFor, distilQuery,
 } from '../respond.js';
 import { strategyOf } from '../strategy-choice.js';
+import { isUnmatched, resolveUnmatched, withStrategyPin } from '../unmatched.js';
+import { narrate } from '../narrate.js';
 import { timed } from '../timeline.js';
 import { textRequest } from '../text-request.js';
 import { religionsReply } from '../library-facts.js';
@@ -89,17 +91,37 @@ const phrasesStart = (s) => {
   return 'started';
 };
 
+// the strategy executor, ONE function for Jev's strategy and an Unmatched turn's (unmatched.js): narrates a slow strategy's start, pins a candidate's graph
+const runStrat = (s, choice) => {
+  const { messages, question, plan: p, d, profile, live, direction, onEvent } = s;
+  return withStrategyPin(direction, () => {
+    narrate(onEvent, direction.channel, `strategy.${strategyOf(choice)}.start`);
+    return timed('strategy', () => runStrategy(choice, { messages, question, plan: p, query: searchQueryFor(messages), distil: distilQuery, search: d.search,
+      profile, decisions: direction.decisions, deps: d, channel: direction.channel || null,
+      ...(live ? { inBooks: live.inBooks, searchIn: (d.researchTools || libraryTools({ search: d.search })).searchIn, sourceTools: d.researchTools || libraryTools({ search: d.search }) } : {}),
+      ...(live && p?.drawFrom?.name ? { drawFrom: p.drawFrom.name } : {}) }));
+  });
+};
+
 const research = (s) => {
-  const { fast: f, conversational: c, work: w, direction, deps, d, messages, plan: p } = s;
+  const { fast: f, conversational: c, work: w, direction, deps, d, messages, plan: p, question, onEvent } = s;
   s.live = liveResearch(direction);
   const live = s.live;
-  const researchOn = !f && !c && !w && !strategyOf(direction.strategy)   // Jev's strategy first on every channel (Chad 11-08)
-    && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
-  const set = (R) => { s.researched = R?.passages?.length || R?.brief ? R : null; return researchOn ? (s.researched ? 'found' : 'empty') : 'skip'; };
-  if (!researchOn) return set(null);
-  return (d.research || runResearch)({ messages, ...(live || {}), drawFrom: p?.drawFrom?.name || null, subject: jevSubject(direction, p),
-    create: d.researchCreate || (async (params) => (await import('../../role-client.js')).roleCreate('anis-researcher', params)),
-    tools: d.researchTools || libraryTools({ search: d.search }) }).catch((err) => { console.warn('anis research failed', err?.message); return null; }).then(set);
+  const want = !f && !c && !w && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
+  const go = () => {
+    const researchOn = want && !strategyOf(direction.strategy);   // Jev's strategy first on every channel (Chad 11-08)
+    const set = (R) => { s.researched = R?.passages?.length || R?.brief ? R : null; return researchOn ? (s.researched ? 'found' : 'empty') : 'skip'; };
+    if (!researchOn) return set(null);
+    return (d.research || runResearch)({ messages, ...(live || {}), narrate: (key, slots) => narrate(onEvent, direction.channel, key, slots), drawFrom: p?.drawFrom?.name || null, subject: jevSubject(direction, p),
+      create: d.researchCreate || (async (params) => (await import('../../role-client.js')).roleCreate('anis-researcher', params)),
+      tools: d.researchTools || libraryTools({ search: d.search }) }).catch((err) => { console.warn('anis research failed', err?.message); return null; }).then(set);
+  };
+  // UNMATCHED (Jev found no strategy) where the researcher would answer: reuse / recheck / design a strategy (unmatched.js) — it runs now,
+  // and the direction then names it, so every gate below treats the turn as strategy-chosen; any failure leaves the researcher
+  const unmatchedFn = want && isUnmatched(direction.strategy) ? (d.unmatched || (deps ? null : resolveUnmatched)) : null;
+  if (!unmatchedFn) return go();
+  return unmatchedFn({ direction, messages, question, onEvent, run: (choice) => runStrat(s, choice) }).catch((err) => { console.warn('anis unmatched failed', err?.message); return null; })
+    .then((pre) => { s.pre = pre; return go(); });
 };
 
 const readQuestion = (s) => {
@@ -170,12 +192,9 @@ const termStudy = (s) => {
 };
 
 const strategy = (s) => {
-  const { fast: f, researched, sourced, original, study, conversational: c, direction, messages, question, plan: p, d, profile, live } = s;
+  const { fast: f, researched, sourced, original, study, conversational: c, direction } = s;
   if (!(!f && !researched && !sourced && !original && !study && !c && strategyOf(direction.strategy))) { s.strat = null; return 'skip'; }
-  return timed('strategy', () => runStrategy(direction.strategy, { messages, question, plan: p, query: searchQueryFor(messages), distil: distilQuery, search: d.search,
-    profile, decisions: direction.decisions, deps: d, channel: direction.channel || null,
-    ...(live ? { inBooks: live.inBooks, searchIn: (d.researchTools || libraryTools({ search: d.search })).searchIn, sourceTools: d.researchTools || libraryTools({ search: d.search }) } : {}),
-    ...(live && p?.drawFrom?.name ? { drawFrom: p.drawFrom.name } : {}) })).catch((err) => { console.warn('anis strategy failed', err?.message); return null; })
+  return Promise.resolve(s.pre?.out ?? runStrat(s, direction.strategy)).catch((err) => { console.warn('anis strategy failed', err?.message); return null; })
     .then((x) => { s.strat = x; return x ? 'found' : 'empty'; });
 };
 

@@ -352,7 +352,7 @@ async function resolveSource(nm, question, impl, maxAuthors) {
   return { works, passages, authors, name: nm };
 }
 
-export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10, brief: wantBrief = true, inBooks = 0, perBook = 1, extraMs = Infinity, drawFrom = null, around = null, subject = null }) {
+export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10, brief: wantBrief = true, inBooks = 0, perBook = 1, extraMs = Infinity, drawFrom = null, around = null, subject = null, narrate = null }) {
   const t0 = Date.now();
   const { found, works, searched, run, add, addWork, rowsAround } = toolRunner(impl);
   // spec #5 (11-06): the first round's library search must carry Jev's subject (query-anchor.js) — code checks, never intent
@@ -366,6 +366,7 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
   const steps = [];
   let calls = 0, final = '';
   for (let round = 0; round < maxRounds; round++) {
+    if (round > 0) narrate?.('research.round');   // humanized status on a live channel (narrate.js); a no-op elsewhere
     // without a brief every round may call tools (the last one too); with one, the last round writes it
     const last = wantBrief && (round === maxRounds - 1 || calls >= maxCalls);
     // one retry for a timed-out or dropped round; the failure says which round and how long (10-19: bare "Request timed out")
@@ -414,6 +415,10 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
     // (the named source's works come first: booksFound takes works before searched documents)
     const question = userQ;
     const books = booksFound({ works: [...(src?.works || []), ...works.values()], searched, question, n: inBooks, perBook });
+    if (books.length) {
+      const title = [...(src?.works || []), ...works.values()].find((w) => Number(w.id) === books[0].document_id)?.title;
+      narrate?.(title ? 'research.reading' : 'research.reading_more', { book: title });
+    }
     // every (book × query) pair at once: the fan-out widens the evidence without another model round. Each book's own query is
     // awaited (as before the fan-out); the extra queries get at most extraMs beyond those, and a late one costs only its passages
     // (11-03 smoke: 9 searches at once ran 2.5-5.8 s on a loaded tower and doubled the first text)

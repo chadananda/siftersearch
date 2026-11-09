@@ -3,6 +3,8 @@
 // rollback. Pure data. Templates use {{slot}} (activities/templates.js fills them); a strategy's `name` is its Jev option key
 // ('other' = the default respond graph). Activities named here are code (activities/index.js).
 
+import { NARRATION_TEMPLATES } from './narration-seed.js';
+
 export const SEED_VERSION = 1;
 
 // ── Templates: the writer instructions, verbatim from the code they replace (equivalence: tests/api/strategy-graph.test.js) ──
@@ -28,6 +30,7 @@ export const TEMPLATES = [
   { id: 'prayer.occasion', version: 1, text: ' ({{occasion}})' },
   { id: 'guidance.how', version: 1, text: "The reader asks for the Universal House of Justice's guidance. The passages are its letters, NEWEST FIRST (each header's theme is the letter's date{{dates}}). Lead with the most recent and say its date; where an earlier letter differs, say which is current and that the later one supersedes it. Quote the letters' own words. The House of Justice gives guidance and legislates — present these as its guidance on the matter, never as interpretation of the Writings; do not add views it has not stated." },
   { id: 'guidance.dates', version: 1, text: ': {{dates}}' },
+  ...NARRATION_TEMPLATES,
 ];
 
 // ── Steps: one use of an activity, with its params. Phase 1 params are empty except where an activity reads them. ──

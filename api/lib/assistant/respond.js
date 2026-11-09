@@ -33,6 +33,8 @@ import { research as runResearch, libraryTools, RESEARCH_HOW, isExactQuote, asks
 import { looksLikePositionQuestion, positionResearch, POSITION_HOW } from './position.js';
 import { runStrategy } from './strategies.js';   // W3: executes the strategy Jev chose (comparison / understanding / prayer / guidance / reference)
 import { strategyOf } from './strategy-choice.js';
+import { isUnmatched, resolveUnmatched, withStrategyPin } from './unmatched.js';   // Jev found no strategy: reuse / recheck / design one on the fly
+import { narrate } from './narrate.js';   // humanized status lines on live channels
 import { gatherByGraph, strategyGraphOn } from './activities/graph.js';   // the strategy graph (Phase 1: the same steps as data)
 import { PASSAGE_CHARS } from './prompt.js';
 import { quoteSourceHow, holdUncompiledCopies, citeHeldLast } from './quote-origin.js';
@@ -639,9 +641,24 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
   // Jev's strategy comes first on EVERY channel (Chad 11-08: the channel sets time and options, never which strategy); the
   // researcher answers only when no strategy fits. On a LIVE chat it is one parallel round (liveResearch).
   const live = liveResearch(direction);
-  const researchOn = !fast && !conversational && !work && !strategyOf(direction.strategy)
-    && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
-  const R = researchOn ? await (d.research || runResearch)({ messages, ...(live || {}), drawFrom: plan?.drawFrom?.name || null, subject: jevSubject(direction, plan),
+  const researchWant = !fast && !conversational && !work && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
+  // the strategy executor, ONE closure for Jev's strategy and an Unmatched turn's (unmatched.js): narrates a slow strategy's start, pins a candidate's graph
+  const runStrat = (choice) => withStrategyPin(direction, () => {
+    narrate(onEvent, direction.channel, `strategy.${strategyOf(choice)}.start`);
+    return timed('strategy', () => runStrategy(choice, { messages, question, plan, query: searchQueryFor(messages), distil: distilQuery, search: d.search,
+      profile, decisions: direction.decisions, deps: d, channel: direction.channel || null,
+      // a live chat's strategy gets the same in-book step as its researcher (coordinator 11-03: goth questions route to understanding)
+      // and the source Jev named (plan.drawFrom → researcher namedSource), resolved beside the strategy's own search
+      // (a comparison's per-side books, named by Jev in the strategy call, use the same source tools)
+      ...(live ? { inBooks: live.inBooks, searchIn: (d.researchTools || libraryTools({ search: d.search })).searchIn, sourceTools: d.researchTools || libraryTools({ search: d.search }) } : {}),
+      ...(live && plan?.drawFrom?.name ? { drawFrom: plan.drawFrom.name } : {}) }));
+  });
+  // UNMATCHED (Jev found no strategy) where the researcher would answer: reuse / recheck / design a strategy (unmatched.js) — it runs now,
+  // and the direction then names it, so every gate below treats the turn as strategy-chosen; any failure leaves the researcher
+  const unmatchedFn = researchWant && isUnmatched(direction.strategy) ? (d.unmatched || (deps ? null : resolveUnmatched)) : null;
+  const pre = unmatchedFn ? await unmatchedFn({ direction, messages, question, onEvent, run: runStrat }).catch((err) => { console.warn('anis unmatched failed', err?.message); return null; }) : null;
+  const researchOn = researchWant && !strategyOf(direction.strategy);
+  const R = researchOn ? await (d.research || runResearch)({ messages, ...(live || {}), narrate: (key, slots) => narrate(onEvent, direction.channel, key, slots), drawFrom: plan?.drawFrom?.name || null, subject: jevSubject(direction, plan),
     create: d.researchCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-researcher', params)),
     tools: d.researchTools || libraryTools({ search: d.search }) }).catch((err) => { console.warn('anis research failed', err?.message); return null; }) : null;
   const researched = R?.passages?.length || R?.brief ? R : null;
@@ -699,13 +716,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
   // searches of a comparison, the prayer shelf, the House of Justice's letters newest first, a chapter-and-verse reference.
   // null = nothing found to execute (e.g. the reference did not parse) → the ordinary path; each decision lands in direction.decisions.
   const strat = !fast && !researched && !sourced && !original && !study && !conversational && strategyOf(direction.strategy)
-    ? await timed('strategy', () => runStrategy(direction.strategy, { messages, question, plan, query: searchQueryFor(messages), distil: distilQuery, search: d.search,
-      profile, decisions: direction.decisions, deps: d, channel: direction.channel || null,
-      // a live chat's strategy gets the same in-book step as its researcher (coordinator 11-03: goth questions route to understanding)
-      // and the source Jev named (plan.drawFrom → researcher namedSource), resolved beside the strategy's own search
-      // (a comparison's per-side books, named by Jev in the strategy call, use the same source tools)
-      ...(live ? { inBooks: live.inBooks, searchIn: (d.researchTools || libraryTools({ search: d.search })).searchIn, sourceTools: d.researchTools || libraryTools({ search: d.search }) } : {}),
-      ...(live && plan?.drawFrom?.name ? { drawFrom: plan.drawFrom.name } : {}) })).catch((err) => { console.warn('anis strategy failed', err?.message); return null; })
+    ? (pre?.out ?? await runStrat(direction.strategy).catch((err) => { console.warn('anis strategy failed', err?.message); return null; }))
     : null;
   // A POSITION question ("the Bahá'í position on socialism, equality and property") → its themes, each searched, the
   // authoritative texts first (assistant/position.js; Chad 10-19: "extremely shallow and wishy washy")

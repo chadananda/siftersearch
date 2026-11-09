@@ -12,6 +12,7 @@ import { cannedReply } from './canned.js';
 import { strikes as liveStrikes, tarpitResponse } from './strikes.js';
 import { lintReply, finalForm } from './lint.js';
 import { channelFor } from './channels.js';
+import { narrate } from './narrate.js';
 import { turnMeta } from './turn-meta.js';
 import { progressText } from './progress.js';
 import { chooseStrategy, strategyOf } from './strategy-choice.js';
@@ -204,10 +205,14 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
 
     // Jev's depth = deep_report: the deep-research JOB is queued beside the normal answer (never run inline)
     const deepOn = d.reports && engine === undefined && research === undefined && !variants && !llm && tri?.depth?.choice === 'deep_report' && (tri.depth.confidence ?? 0) >= T.depth;
+    let streaming = true;   // the stream is open until the reply returns: a late status line must not be written after it
     const jobP = deepOn ? timed('deep-report', () => d.reports.start(resolved?.query || text)).catch(() => null) : null;
+    // a deep report queued: a live channel says so beside the normal answer (narrate.js; never email)
+    jobP?.then((j) => { if (j?.researchId && streaming) narrate(onEvent, channel, 'deep_report.queued'); }).catch(() => {});
     // research / llm / variants: a caller's override (the /draft battery compares the researcher, writers and templates before they go live)
-    const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { stance: triageSummary?.stance ?? null,
+    const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { turnId: ex?.conversationId != null ? `${ex.conversationId}:${ex.round}` : null, stance: triageSummary?.stance ?? null,
       kind: route.kind, guarded: route.action === 'guarded', channel, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, outcome: tri?.outcome ?? null, depth: triageSummary?.depth ?? null, query: resolved?.query ?? null, card: card?.text ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), ...(lkIntent ? { lookupIntent: lkIntent } : {}), strategy: strat, decisions, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
+    streaming = false;
     // the form pass on EVERY reply path (agent, craft, sourcehunt, strategies): a closing search offer dropped, brackets in link
     // text made parens (writer residuals 11-05: titles like "Book of Common Prayer [King's Chapel]" broke their links)
     let reply = typeof r.reply === 'string' ? finalForm(r.reply) : r.reply;

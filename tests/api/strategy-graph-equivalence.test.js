@@ -65,6 +65,8 @@ function world(c, log) {
     stripLinks: (x) => x,
   };
   if (c.research) d.research = rec('research', async () => ({ passages: [P(7)], steps: [{ tool: 'search_library', args: { query: 'x' } }], ms: 3 }));
+  if (c.strategy === 'other-hit') d.unmatched = rec('unmatched', async ({ direction: dir, run }) => { dir.strategy = { strategy: { choice: 'understanding', confidence: 0.8 }, sides: [] }; return { via: 'recheck', name: 'understanding', out: await run(dir.strategy) }; });
+  if (c.strategy === 'other-miss') d.unmatched = rec('unmatched', async () => null);
   if (c.agent) d.agentCreate = rec('agentCreate', async () => { throw new Error('agent model down'); });
   return d;
 }
@@ -86,6 +88,7 @@ function direction(c) {
   if (c.fast === 'quote') dir.lookup = { kind: 'quote', passages: [P(4)], phrase: 'one country' };
   if (c.strategy === 'comparison') dir.strategy = { strategy: { choice: 'comparison', confidence: 0.9 }, sides: ['Islam', 'Christian'] };
   if (c.strategy === 'understanding') dir.strategy = { strategy: { choice: 'understanding', confidence: 0.9 }, sides: [] };
+  if (c.strategy === 'other-hit' || c.strategy === 'other-miss') dir.strategy = { strategy: { choice: 'other', confidence: 0.3 }, sides: [] };
   if (c.agent) dir.engine = 'agent';
   return dir;
 }
@@ -109,7 +112,7 @@ const CASES = [];
 for (const fast of ['none', 'book', 'quote'])
   for (const work of [0, 1])
     for (const conv of [0, 1])
-      for (const strategy of ['none', 'comparison', 'understanding'])
+      for (const strategy of ['none', 'comparison', 'understanding', 'other-hit', 'other-miss'])
         for (const hunt of ['off', 'plain', 'asks', 'none-found'])
           for (const m of MINORS) CASES.push({ fast, work, conv, strategy, hunt, ...m });
 
