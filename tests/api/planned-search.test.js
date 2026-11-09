@@ -597,3 +597,10 @@ describe('plannedSearch: the Writings pass (spec #1)', () => {
     expect(owesWritings({ shape: 'topic', filters: {} })).toBe(false);
   });
 });
+
+describe('questionSubject — the subject ends at the asking sentence (11-09)', async () => {
+  const { questionSubject } = await import('../../api/lib/planned-search.js');
+  it('drops a follow-on ask after the question mark', () => {
+    expect(questionSubject('What does Sikh scripture say about humility? Give me the key passages in order of authority.')).toBe('humility');
+  });
+});

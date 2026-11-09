@@ -59,7 +59,8 @@ export function questionSubject(query) {
   const q = String(query || '').trim();
   const m = q.match(FRAME);
   if (!m) return q;
-  const rest = q.slice(m[0].length).replace(/[?？]+\s*$/, '').trim();
+  // the subject ends with the asking sentence: what follows its "?" is a further ask ("Give me the key passages…"), not part of the subject
+  const rest = q.slice(m[0].length).split(/[?？]/)[0].trim();
   return /[\p{L}\p{N}]{3,}/u.test(rest) ? rest : q;
 }
 /** Subject terms: content words of the query that are not the author's name. */

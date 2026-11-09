@@ -1288,6 +1288,13 @@ export async function multiIndexSearch(query, options = {}) {
   return withQdrantCallLog(qcalls, () => multiIndexSearchRun(query, options, qcalls));
 }
 
+// Concept-lexicon scope: Bahá'í only, so a religion other than Bahá'í, or an author / collection filter, excludes the layer entirely.
+const BAHAI_FOLD = (r) => String(r || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/gi, '').toLowerCase();
+export const conceptInScope = (f = {}) => (!f.religion || BAHAI_FOLD(f.religion) === 'bahai') && !f.author && !f.collection && !f.language && f.yearFrom == null && f.yearTo == null;
+export const conceptInDocs = (r, f = {}) => {
+  const ids = f.documentId != null ? [].concat(f.documentId).map(Number) : null;
+  return ids ? { ...r, hits: (r?.hits || []).filter((h) => ids.includes(Number(h.doc_id))) } : r;
+};
 async function multiIndexSearchRun(query, options, qcalls) {
   const limit = options.limit || 10;
   const overFetch = Math.max(limit * 3, 30);
@@ -1404,8 +1411,10 @@ async function multiIndexSearchRun(query, options, qcalls) {
       : Promise.resolve({ hits: [] }),
     // Concept layer (Chad 10-12, "use all the indexes we create"): a symbol the question NAMES → the authoritative
     // interpretation's proof paragraph from the cited concept lexicon. Empty unless a symbol is named.
-    (options.conceptLayer && (!scope_config || scope_config.primary))
-      ? timed('concept', import('./search/concepts.js').then((m) => m.searchConceptProofs({ getMeili, INDEXES }, query, { limit: 8 }))).catch(err => {
+    // The lexicon is Bahá'í and its hits are stubs the filters never see: under any scope it cannot be shown to satisfy (another
+    // religion, an author, a collection) it contributes nothing; a document scope keeps only that document's proofs.
+    (options.conceptLayer && (!scope_config || scope_config.primary) && conceptInScope(filters))
+      ? timed('concept', import('./search/concepts.js').then((m) => m.searchConceptProofs({ getMeili, INDEXES }, query, { limit: 8 })).then((r) => conceptInDocs(r, filters))).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: concept layer failed');
           return { hits: [] };
         })
