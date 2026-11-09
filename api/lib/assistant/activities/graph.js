@@ -7,10 +7,13 @@
 // `enrich` runs inside ctx.jevEnrich — the ONLY way a tested Jev theory reaches the reply path (jev-tuning/enrich.js).
 import { catalog } from '../../repos/strategies-repo.js';
 import { currentAIContext, withAIContext } from '../../ai-context.js';
-import { STRATEGIES as SEED_STRATEGIES, STEPS as SEED_STEPS, END_NODE, LOOKUP_STRATEGIES } from '../strategy-seed.js';
+import { STRATEGIES as BASE_STRATEGIES, TREE_STRATEGIES, STEPS as SEED_STEPS, END_NODE, LOOKUP_STRATEGIES } from '../strategy-seed.js';
+const SEED_STRATEGIES = [...BASE_STRATEGIES, ...TREE_STRATEGIES];
 import { strategyOf } from '../strategy-choice.js';
 import { activities as registry } from './index.js';
 import { GATHERED } from '../respond.js';
+import { buildUnits, emptyState, UNITS } from '../units.js';
+import { parseScriptureRef } from '../scripture-ref.js';
 
 // Phase 2 measurement (strategy-stats-repo): each run is offered to the turn's ctx.graphRuns ([{graph:'id@v', trace}], opened by
 // turn.js) and each trace entry carries, NON-enumerably, the Jev calls its node made — neither changes path.steps' JSON.
@@ -56,21 +59,30 @@ export function compileGraph(row, stepOf, activities = registry()) {
     const uncovered = n.any === undefined ? edges.filter((x) => !n.out.has(x)) : [];
     if (uncovered.length) throw new Error(`strategy ${row.id}: node ${n.id} has no route for edge(s) ${uncovered.join(', ')}`);
   }
-  return { id: row.id, version: row.version, name: row.name, entry: g.entry, nodes };
+  return { id: row.id, version: row.version, name: row.name, entry: g.entry, nodes, ...(g.needs ? { needs: g.needs } : {}), ...(g.units ? { units: g.units } : {}) };
 }
 
+// the seed's graphs by id@version; `id` alone = the highest ACTIVE version (a seeded candidate is never the fallback)
 let seedCompiled = null;
-const seedGraph = (id) => {
-  if (!seedCompiled) {
-    const steps = new Map(SEED_STEPS.map((x) => [`${x.id}@${x.version}`, x]));
-    seedCompiled = new Map(SEED_STRATEGIES.map((r) => [r.id, compileGraph(r, (k) => steps.get(k))]));
-  }
-  return seedCompiled.get(id) || null;
+const seedSteps = new Map(SEED_STEPS.map((x) => [`${x.id}@${x.version}`, x]));
+const seedGraph = (id, version = null) => {
+  seedCompiled ||= new Map();
+  const rows = SEED_STRATEGIES.filter((r) => r.id === id && (version != null ? r.version === version : r.status === 'active'));
+  const row = rows.sort((a, b) => b.version - a.version)[0];
+  if (!row) return null;
+  const k = `${row.id}@${row.version}`;
+  if (!seedCompiled.has(k)) seedCompiled.set(k, compileGraph(row, (x) => seedSteps.get(x)));
+  return seedCompiled.get(k);
 };
 const compiledByCatalog = new WeakMap();
 /** The compiled graph of strategy `id` from the current catalog (cached per rev); invalid or absent → the seed's. */
 const compiledByPin = new WeakMap();
-export function graphFor(id) {
+export function graphFor(id, version = null) {
+  // a tree names the exact version of a sub-tree it was designed with (hand.strategy version): the seed's row, its steps from the store first
+  if (version != null) {
+    const row = SEED_STRATEGIES.find((r) => r.id === id && r.version === version);
+    if (row) { const c = catalog(); return compileGraph(row, (k) => c.steps.byKey.get(k) ?? seedSteps.get(k)); }
+  }
   // a dry run PINS one strategy@version (strategy-try.js, ai-context strategyPin): that row, compiled against the store's steps
   const pin = currentAIContext().strategyPin;
   if (pin?.row?.id === id) {
@@ -133,6 +145,27 @@ export async function gatherByGraph(s) {
 export async function runStrategyGraph(name, choice, ctx) {
   const g = graphFor(name);
   if (!g) return undefined;   // no such graph: the caller runs the registry tool directly
-  const s = await runGraph(g, { choice, ctx, trace: [] });
-  return s.out;
+  const s = await runGraph(g, { choice, ctx, trace: [], question: ctx?.query ?? ctx?.question ?? '', messages: ctx?.messages, state: ctx?.state ?? undefined, onEvent: ctx?.onEvent ?? (() => {}), ...(g.needs ? { units: entryUnits(g, choice, ctx) } : {}) });
+  return s.out === undefined && !s.done ? undefined : (s.out ?? null);   // the research agent answered (a tree's $fallback): nothing to execute, the ordinary path has the reply
+}
+
+/**
+ * The units a TREE runs on (units.js buildUnits): the scope the turn resolved through its layers (ctx.scope.units, the turn's highest layer — a default
+ * authority_floor stays 'any', as the old executors filtered nothing), the conversation_state, the reader's channel and depth, and the request units the
+ * tree declares in `needs` (from Jev's choice: sides → compare_sides). A one-node graph (no `needs`) keeps the old executor's world: no units are built.
+ */
+export function entryUnits(g, choice, ctx = {}) {
+  const sc = ctx.scope?.units || {}, floor = sc.scope_sources?.authority_floor;
+  const turnLayer = { ...(sc.religions_specified ? { religions_specified: sc.religions_specified } : {}), ...(sc.reply_language ? { reply_language: sc.reply_language } : {}),
+    ...(ctx.scope?.source && ctx.scope.source !== 'default' && sc.authority_floor ? { authority_floor: sc.authority_floor } : {}) };
+  const ch = ctx.channel?.id ?? ctx.channel ?? null;
+  const u = buildUnits({ question: ctx.query ?? ctx.question ?? '', messages: ctx.messages || [], state: ctx.state || emptyState(), turnLayer, profile: ctx.profile || {}, needs: g.needs || [],
+    request: { ...(choice?.units || {}), ...(choice?.sides?.length ? { compare_sides: choice.sides } : {}) }, channel: ch, depth: ctx.depth ?? null });
+  if (u.authority_floor === 'interpretation' && !turnLayer.authority_floor && !floor) u.authority_floor = 'any';   // the registry default is not a filter
+  Object.assign(u, g.units || {});   // the tree's own unit defaults (absence_template)
+  u.given = ctx.state?.given || [];
+  if (g.needs?.includes('scripture_reference')) u.scripture_reference = parseScriptureRef(u.current_user_question);
+  if (g.needs?.includes('compare_sides') && !u.compare_sides && Array.isArray(u.religions_specified) && u.religions_specified.length > 1) u.compare_sides = u.religions_specified;
+  if (choice?.sources && Object.keys(choice.sources).length) u.named_sources = Object.values(choice.sources);
+  return u;
 }

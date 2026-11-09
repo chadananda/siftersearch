@@ -4,6 +4,7 @@
 // ('unmatched' = the default respond graph, called 'other' before 11-08). Activities named here are code (activities/index.js).
 
 import { NARRATION_TEMPLATES } from './narration-seed.js';
+import { TREE_TEMPLATES, TREE_STEPS, TREE_GRAPHS, TREE_IDS } from './strategy-trees-seed.js';
 
 export const SEED_VERSION = 1;
 // The row that catches every message no other strategy names (Chad 11-08: 'unmatched' is clearer than 'general'). Logs and stats written
@@ -37,6 +38,7 @@ export const TEMPLATES = [
   { id: 'guidance.how', version: 1, text: "The reader asks for the Universal House of Justice's guidance. The passages are its letters, NEWEST FIRST (each header's theme is the letter's date{{dates}}). Lead with the most recent and say its date; where an earlier letter differs, say which is current and that the later one supersedes it. Quote the letters' own words. The House of Justice gives guidance and legislates — present these as its guidance on the matter, never as interpretation of the Writings; do not add views it has not stated." },
   { id: 'guidance.dates', version: 1, text: ': {{dates}}' },
   ...NARRATION_TEMPLATES,
+  ...TREE_TEMPLATES,
 ];
 
 // ── Steps: one use of an activity, with its params. Phase 1 params are empty except where an activity reads them. ──
@@ -71,6 +73,7 @@ export const STEPS = [
   step('strategy.guidance', 'strategy.guidance', { template_id: 'guidance.how', template_version: 1 }),
   step('strategy.reference', 'strategy.reference', { template_id: 'reference.how', template_version: 1 }),
   step('strategy.compilation', 'strategy.compilation', { template_id: 'compilation.how', template_version: 1 }),
+  ...TREE_STEPS,
 ];
 
 // a linear graph: every node continues to the next whatever its edge, except the edges named in `stops` (→ the end)
@@ -157,5 +160,7 @@ export const STRATEGIES = [
   strategy('about', 'about', LOOKUP_GRAPHS.about),
   strategy('respond', UNMATCHED, RESPOND_GRAPH, 2, UNMATCHED_V2),
   strategy('respond', UNMATCHED, RESPOND_UNMATCHED_GRAPH, 3),
+  // v2 of the six executors as element trees (strategy-trees-seed.js): CANDIDATES — the promotion gate on tower decides; v1 (one node) stays active for rollback
 ];
+export const TREE_STRATEGIES = TREE_IDS.map((id) => ({ ...strategy(id, id, TREE_GRAPHS[id], 2), status: 'candidate', created_by: 'seed-trees' }));
 export const END_NODE = END;

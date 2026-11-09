@@ -15,8 +15,8 @@ export const U = (s) => {
   u.found_outcome ||= {}; u.scope_excluded ??= 0; u.religions_specified ??= 'all'; u.authority_floor ??= 'any'; u.current_user_question ??= s.question ?? '';
   return u;
 };
-const flat = (v) => (Array.isArray(v) ? v.map(flat).join(' ') : v && typeof v === 'object' ? (v.name ?? v.title ?? v.text ?? '') : v ?? '');
-const slots = (u) => ({ ...Object.fromEntries(Object.entries(u).map(([k, v]) => [k, /^found_/.test(k) ? (v?.length ? 'the passages below' : '') : flat(v)])), base: u.base ?? '' });
+const flat = (v) => (Array.isArray(v) ? v.map(flat).join(' ') : v && typeof v === 'object' ? (v.name ?? v.title ?? v.label ?? v.text ?? '') : v ?? '');
+const slots = (u) => ({ ...Object.fromEntries(Object.entries(u).map(([k, v]) => [k, /^found_/.test(k) ? (v?.length ? 'the passages below' : '') : Array.isArray(v) ? v.map(flat).join(', ') : flat(v)])), base: u.base ?? '' });
 const sub = (u, v) => (typeof v === 'string' ? fill(v, slots(u)) : v);
 const deep = (o, f) => (Array.isArray(o) ? o.map((x) => deep(x, f)) : o && typeof o === 'object' ? Object.fromEntries(Object.entries(o).map(([k, v]) => [k, deep(v, f)])) : f(o));
 const text = (s, u, ...cands) => String(cands.map((c) => flat(sub(u, c))).find((x) => String(x).trim()) ?? u.current_user_question).trim();
@@ -44,7 +44,7 @@ const finish = (s, p, edge, { count = 0, excluded = 0, read = {}, error = null }
   s.note = { read: Object.fromEntries(Object.entries({ religions_specified: u.religions_specified, authority_floor: u.authority_floor, ...read }).map(([k, v]) => [k, trim(v)])), params: p, count, scope_excluded: excluded, ...(error ? { error } : {}) };
   return edge;
 };
-const kOf = (p, u) => (p.k && typeof p.k === 'object' ? (u.depth === 'research' ? p.k.research : p.k.default) : p.k);
+const kOf = (p, u) => (p.k && typeof p.k === 'object' ? (u.depth === 'research' && p.k.research !== undefined ? p.k.research : p.k.many !== undefined && (u.compare_sides || []).length > 4 ? p.k.many : p.k.default) : p.k);   // many: k once more than four sides
 const SCOPE = ['religions_specified', 'authority_floor', 'named_sources', 'search_originals'];
 const OUT = ['found_outcome', 'scope_excluded', 'missing'];
 const CMN = ['stage', 'tradition', 'scope', 'k', 'min', 'thin_below'];
@@ -92,7 +92,7 @@ const E = {
     input: (s, p, u) => ({ word: text(s, u, p.term, '{{term}}') }), take: (o) => (o?.found ? o.passages : []), thin: () => false,
     after: (o, u) => { if (o?.found) merge(u, 'found_records', [{ term: o.term, transliteration: o.transliteration, root: o.root, meaning: o.meaning, renderings: o.renderings }]); } }),
   'fetch.prayer': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'hype_search', params: ['key', 'value'], reads: ['occasion', 'incipit'],   // HyPE over the prayer shelf until the index exists
-    input: (s, p, u) => ({ query: `prayer ${text(s, u, p.value, p.key === 'incipit' ? '{{incipit}}' : '{{occasion}}')}`, limit: kOf(p, u) ?? 6 }), take: passages, thin: () => false }),
+    input: (s, p, u) => ({ query: `prayer ${text(s, u, p.value, p.key === 'incipit' || (!p.key && u.incipit) ? '{{incipit}}' : '{{occasion}}')}`, limit: kOf(p, u) ?? 6 }), take: passages, thin: () => false }),
   'fetch.guidance': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'fused_search', reads: ['topic'], thin: () => false,
     input: (s, p, u) => ({ query: text(s, u, p.query, '{{topic}}'), author: 'Universal House of Justice', limit: kOf(p, u) ?? 6 }), take: passages }),
   'fetch.work_notes': retrieval({ edges: ['one', 'none', 'error'], tool: 'work_notes_lookup', rank: true, params: ['work'], reads: ['named_work'], into: 'found_records',
@@ -109,7 +109,7 @@ const E = {
     async run(s, p = {}) {   // the passage a question is about: the pointed-at item, the reader's place, the last evidence; quoted words alone are thin
       const u = U(s), pos = u.reader_position, hit = (u.referent && typeof u.referent === 'object' && u.referent.text ? u.referent : null) ?? u.previous_evidence?.passages?.[0];
       try {
-        if (hit) { merge(u, 'found_passages', [hit]); return finish(s, p, 'one', { count: 1, read: { referent: u.referent } }); }
+        if (hit) { merge(u, 'found_passages', [{ ...hit, anchor: true }]); return finish(s, p, 'one', { count: 1, read: { referent: u.referent } }); }
         if (pos?.doc) {
           const c = await call(s, 'context_lookup', { document_id: pos.doc, paragraph_index: pos.paragraph ?? 0, before: 0, after: 0 });
           const items = c?.passages || []; merge(u, 'found_passages', items); return finish(s, p, items.length ? 'one' : 'none', { count: items.length, read: { reader_position: pos } });
@@ -152,6 +152,7 @@ E['search.together'] = { kind: 'tool', cls: 'code', edges: TOGETHER, scope: 'str
     const u = U(s), n0 = size(u), x0 = u.scope_excluded, list = p.list || [];
     const edges = await Promise.all(list.map((st, i) => run1(s, `${s.node}.${i}`, st).catch(() => 'error')));
     const n = size(u) - n0;
+    if (n > 0) u.missing = u.missing.filter((m) => !String(m.node ?? '').startsWith(`${s.node}.`));   // a tier that found nothing is not a gap when another tier found the answer
     const edge = list.length && edges.every((e) => e === 'error') ? 'error' : n > 0 && edges.every((e) => ['thin', 'none', 'error'].includes(e)) && edges.includes('thin') ? 'thin' : classify(n, TOGETHER);
     const note = finish(s, p, edge, { count: n, read: { list: list.map((x) => x.element), edges: edges.join(',') } }); s.note.scope_excluded = u.scope_excluded - x0; return note;
   } };
@@ -206,7 +207,9 @@ const filled = (v) => (Array.isArray(v) ? v.length > 0 : v != null && v !== '' &
 E.switch = { kind: 'decision', cls: 'code', edges: [], edgesFor: (p) => [...new Set([...Object.values(p?.cases || {}), p?.default ?? 'default'])], scope: 'strategy', params: ['on', 'cases', 'default'], reads: ['<on>'], writes: [],
   run(s, p = {}) {   // on: {first_filled:[units]} | {count:'unit'} | {outcome:'node'} | {unit:'u'} (filled|empty) | {value:'u'}; cases map the result to an edge
     const u = U(s), on = p.on || {};
-    const v = on.first_filled ? on.first_filled.find((k) => filled(u[k])) ?? 'none' : on.count ? (() => { const n = (u[on.count] ?? []).length; return n > 1 ? 'many' : String(n); })()
+    const kinds = () => { const ps = u.found_passages; const g = ps.some((x) => kindOf(x) === 'guidance' || /House of Justice/i.test(x.author || '')); return g ? 'has_guidance' : 'writings_only'; };
+    const errored = () => Object.values(u.found_outcome).includes('error');
+    const v = on.evidence ? (u.found_passages.length ? (on.mix ? kinds() : 'have') : errored() ? 'errored' : 'nothing') : on.first_filled ? on.first_filled.find((k) => filled(u[k])) ?? 'none' : on.count ? (() => { const n = (u[on.count] ?? []).length; return n > 1 ? 'many' : String(n); })()
       : on.outcome ? u.found_outcome[on.outcome] ?? 'none' : on.unit ? (filled(u[on.unit]) ? 'filled' : 'empty') : on.value ? String(flat(u[on.value]) || 'none') : 'none';
     s.note = { read: { on, value: v }, params: p, count: 0, scope_excluded: 0 };
     return (p.cases || {})[v] ?? p.default ?? 'default';
@@ -260,7 +263,7 @@ const COMPARE = {
   attributed: (u) => { const who = String(flat(u.named_person) || ''); return (a, b) => (who && String(b.author) === who ? 1 : 0) - (who && String(a.author) === who ? 1 : 0); },   // the named author's own works first
   copy: (u) => { const w = String(u.translation_wanted ?? 'authorized'); const r = (x) => (x.translation && String(x.translation).includes(w) ? 0 : x.edition === 'default' ? 1 : x.language === u.reply_language ? 2 : x.translation ? 3 : 4); return (a, b) => r(a) - r(b); },
 };
-E.rank = { kind: 'transform', cls: 'code', edges: ['done', 'empty'], scope: 'strategy', params: ['by', 'k', 'pin', 'group', 'dedupe', 'skip', 'of', 'stage'], reads: ['found_passages', 'state.given'], writes: ['found_passages'],
+E.rank = { kind: 'transform', cls: 'code', edges: ['done', 'empty'], scope: 'strategy', params: ['by', 'k', 'per', 'best', 'pin', 'group', 'dedupe', 'skip', 'of', 'stage'], reads: ['found_passages', 'state.given'], writes: ['found_passages'],
   run(s, p = {}) {   // order by the listed keys (stable, earlier keys win), pin, drop repeats / already-given, keep the top k; nothing left → empty ($absence)
     const u = U(s), of = p.of ?? 'found_passages', by = [p.by].flat().filter((k) => COMPARE[k]), cmp = by.map((k) => COMPARE[k](u));
     const given = new Set((s.state?.given ?? u.given ?? []).map((g) => String(g.ref ?? g.id ?? g)));
@@ -269,9 +272,11 @@ E.rank = { kind: 'transform', cls: 'code', edges: ['done', 'empty'], scope: 'str
     if (p.skip === 'given') items = items.filter((x) => !given.has(String(x.id)));
     else if (p.skip === 'flag') items = items.map((x) => (given.has(String(x.id)) ? { ...x, given: true } : x));
     items = items.map((x, i) => [x, i]).sort(([a, i], [b, j]) => { for (const c of cmp) { const d = c(a, b); if (d) return d; } return i - j; }).map(([x]) => x);
+    if (p.best && items.length) items = items.filter((x) => flat(x[p.best]) === flat(items[0][p.best]));   // best: only the first-ranked item's value of the field (one edition of the passage, whole)
     const pinned = p.pin ? items.filter((x) => x[p.pin] || x.id === p.pin) : [];
     items = [...pinned, ...items.filter((x) => !pinned.includes(x))];
-    const k = kOf(p, u); if (k) items = items.slice(0, k);
+    const k = kOf(p, u);
+    if (p.per && k) { const n = new Map(); items = items.filter((x) => { const g = flat(x[p.per]) || 'other', c = n.get(g) ?? 0; n.set(g, c + 1); return c < k; }); } else if (k) items = items.slice(0, k);   // per: k for EACH value of the field (a side cannot crowd another out)
     if (p.group) { const g = new Map(); for (const x of items) { const kk = flat(x[p.group]) || 'other'; g.set(kk, [...(g.get(kk) || []), x]); } u.groups = [...g].map(([k2, v]) => ({ key: k2, count: v.length, items: v })).sort((a, b) => b.count - a.count); }
     u[of] = items;
     s.note = { read: { by, k }, params: p, count: items.length, scope_excluded: 0 };
@@ -280,21 +285,35 @@ E.rank = { kind: 'transform', cls: 'code', edges: ['done', 'empty'], scope: 'str
 const ABSENCE = 'Say plainly that the library does not hold this ({{widened_clause}}). Then give the nearest real passage below, labelled as the nearest — never present it as an answer. If web results are given, say they are from outside the library, labelled.';
 const UNAVAILABLE = "Say: I couldn't search the library just now. Offer to try again. NEVER say the answer is not in the library.";
 const DEFAULTS = { 'tpl.absence': ABSENCE, 'tpl.unavailable': UNAVAILABLE };
-const writer = (s, id, extra = {}) => {
-  const u = U(s), t = s.templates?.[id] ?? (() => { try { return template(id); } catch (err) { if (DEFAULTS[id]) return DEFAULTS[id]; throw err; } })();
+// MODE BLOCKS: a template holds {{#voice}}…{{/voice}} blocks (voice | widget | site | email | pdf | research, joined with | for several); a block is
+// kept only for the unit `channel` (widget-chat → widget, site-chat → site) or, for research, `depth`. Text outside a block is every mode's.
+const MODE = { 'widget-chat': 'widget', 'site-chat': 'site' };
+export const modeOf = (u) => { const c = u.channel?.id ?? u.channel; return MODE[c] ?? c ?? 'widget'; };
+export const modal = (text, u) => { const m = modeOf(u), flag = { research: () => u.depth === 'research', why: () => u.question_frame === 'why', anchor: () => u.found_passages.some((x) => x.anchor), thin: () => Object.values(u.found_outcome || {}).includes('thin') }, on = (names) => names.split('|').some((n) => n === m || (flag[n] ? flag[n]() : !['voice', 'widget', 'site', 'email', 'pdf'].includes(n) && (Array.isArray(u[n]) ? u[n].length > 0 : !!u[n] && u[n] !== 'none'))); return text.replace(/\{\{#([\w|]+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (_, names, body) => (on(names) ? body : '')).replace(/\n{3,}/g, '\n\n'); };
+const tplText = (s, id) => s.templates?.[id] ?? (() => { try { return template(id); } catch (err) { if (DEFAULTS[id]) return DEFAULTS[id]; throw err; } })();
+// theme = the passage's heading in the writer's evidence: by its side / tradition / authority kind / date, else what the element set
+const themeOf = (x, by) => x.theme ?? (by === 'side' ? x.side : by === 'religion' ? x.religion : by === 'date' ? x.date ?? x.year : by === 'authority' ? kindOf(x) : undefined) ?? x.side ?? undefined;
+// opts: shared = the shared tpl.<shape> that wraps the strategy's own template as {{base}}; direct = the template alone finishes the reply (no synthesis needed)
+const writer = (s, id, extra = {}, opts = {}) => {
+  const u = U(s), own = modal(tplText(s, id), u);
   const clause = tradsOf(u) && u.scope_excluded > 0 && ['conversation', 'reader'].includes(u.scope_source) ? `${u.religions_specified.join(', ')} sources only, as you asked — say 'all traditions' to widen.` : '';
-  const how = fill(t, { ...slots(u), scope_clause: clause, widened_clause: u.widened ? `searched ${flat(u.widened.from)} first, then widened to all traditions` : 'in every tradition searched', ...extra });
-  s.out = { passages: u.found_passages, records: u.found_records, plan: { shape: id }, format: { id, by: 'element:shape', how, variant: id } };
+  const sl = { ...slots(u), scope_clause: clause, widened_clause: u.widened ? `searched ${flat(u.widened.from)} first, then widened to all traditions` : 'in every tradition searched', missing_sides: (() => { const have = new Set(u.found_passages.map((x) => flat(x.side))), lack = (Array.isArray(u.compare_sides) ? u.compare_sides : []).map(flat).filter((x) => !have.has(x)); return lack.length ? `The library returned NOTHING from ${lack.join(', ')} on this: say so plainly in that section, never fill it from another tradition or from memory.` : ''; })(), missing_line: u.missing.length ? `Not found: ${u.missing.map((m) => m.node).filter(Boolean).join(', ')}.` : '', ...extra };
+  const inner = fill(own, sl);
+  const how = (opts.shared ? fill(modal(tplText(s, opts.shared), u), { ...sl, base: inner }) : inner).trim();
+  const fid = opts.format ?? id;
+  s.out = { passages: u.found_passages.map((x) => { const th = themeOf(x, opts.theme_by); return th === undefined ? x : { ...x, theme: th }; }), records: u.found_records,
+    plan: { shape: fid, ...(opts.plan || {}), ...(Array.isArray(u.compare_sides) && u.compare_sides.length ? { sides: u.compare_sides } : {}) },
+    format: { id: fid, by: opts.format ? `strategy:${opts.format}` : 'element:shape', how, variant: id, ...(opts.direct ? { direct: true } : {}) } };
   return how;
 };
-E.shape = { kind: 'writer', cls: 'code', edges: ['done'], scope: 'strategy', params: ['template', 'by_count', 'allow', 'offers', 'stage'], reads: ['found_passages', 'found_records', 'channel', 'depth', 'reply_language', 'path'], writes: ['offers'],
-  run(s, p = {}) {   // the writer instruction from a template (by count, or '@sub' = the sub-tree's); a sub-run stopped at evidence leaves it alone
+E.shape = { kind: 'writer', cls: 'code', edges: ['done'], scope: 'strategy', params: ['template', 'shared', 'by_count', 'allow', 'offers', 'direct', 'theme_by', 'format', 'plan', 'stage'], reads: ['found_passages', 'found_records', 'channel', 'depth', 'reply_language', 'path'], writes: ['offers'],
+  run(s, p = {}) {   // the writer instruction from a template (by count, or '@sub' = the sub-tree's) wrapped in its shared tpl.<shape>, for the mode; a sub-run stopped at evidence leaves it alone
     const u = U(s);
     if (s.stopAtShape) return 'done';
     const n = u.found_passages.length, id = p.by_count ? (n === 1 ? p.by_count[1] ?? p.by_count.n : p.by_count.n ?? p.by_count[1]) : p.template === '@sub' ? u.sub_template : p.template;
-    writer(s, id);
+    writer(s, id, {}, { shared: p.shared, direct: p.direct, theme_by: p.theme_by, format: p.format, plan: p.plan });
     for (const o of [p.offers].flat().filter(Boolean)) u.offers.push({ what: sub(u, o), turn: s.turn ?? null, strategy: s.choice?.strategy ?? null });
-    s.note = { read: { template: id }, params: p, count: n, scope_excluded: 0 };
+    s.note = { read: { template: id, mode: modeOf(u) }, params: p, count: n, scope_excluded: 0, ...(p.direct ? { direct: true } : {}) };
     return 'done';
   } };
 E['plan.subthemes'] = { kind: 'tool', cls: 'llm', edges: ['done', 'fail'], scope: 'strategy', params: ['n', 'stage'], reads: ['topic'], writes: ['sub_themes'],
@@ -305,18 +324,18 @@ E['plan.subthemes'] = { kind: 'tool', cls: 'llm', edges: ['done', 'fail'], scope
   } };
 
 // ── hand-offs and delivery ──────────────────────────────────────────────────────────────────────────────────────────────
-E['hand.strategy'] = { kind: 'tool', cls: 'code', edges: ['found', 'thin', 'none', 'error'], scope: 'strategy', params: ['name', 'upto', 'units', 'min', 'stage'], reads: ['found_passages'], writes: ['found_passages', 'found_records', ...OUT],
+E['hand.strategy'] = { kind: 'tool', cls: 'code', edges: ['found', 'thin', 'none', 'error'], scope: 'strategy', params: ['name', 'version', 'upto', 'units', 'min', 'stage'], reads: ['found_passages'], writes: ['found_passages', 'found_records', ...OUT],
   async run(s, p = {}) {   // another strategy's tree as a sub-tree, on the same units (its Jev calls count toward the caller's step-7 budget)
     const u = U(s);
     try {
       const { runGraph, graphFor } = await import('./graph.js');
-      const g = s.graphFor ? s.graphFor(p.name) : graphFor(p.name);
+      const g = s.graphFor ? s.graphFor(p.name, p.version) : graphFor(p.name, p.version);   // version: pin the sub-tree (a candidate runs on the tree it was designed with)
       if (!g) return finish(s, p, 'error', { error: `no tree ${p.name}` });
       Object.assign(u, p.units || {});
       const n0 = u.found_passages.length + u.found_records.length;
-      await runGraph(g, { ...s, trace: [], units: u, done: undefined, stopAtShape: p.upto === 'evidence' || undefined, out: undefined });
+      await runGraph(g, { ...s, ...(p.upto === 'evidence' ? { onEvent: () => {} } : {}), trace: [], units: u, done: undefined, stopAtShape: p.upto === 'evidence' || undefined, out: undefined });
       const n = u.found_passages.length + u.found_records.length - n0;
-      return finish(s, p, n >= (p.min ?? 1) ? 'found' : n > 0 ? 'thin' : 'none', { count: n });
+      return finish(s, p, n >= (p.min ?? 1) ? 'found' : n > 0 ? 'thin' : Object.values(u.found_outcome).includes('error') ? 'error' : 'none', { count: n });   // every tier errored and nothing came back: an error, never a false absence
     } catch (err) { return finish(s, p, 'error', { error: err?.message }); }
   } };
 E['hand.job'] = { kind: 'tool', cls: 'code', edges: ['queued', 'error'], scope: 'strategy', params: ['kind', 'stage'], reads: SCOPE, writes: ['offers'],
@@ -336,6 +355,7 @@ E['deliver.email'] = { kind: 'tool', cls: 'code', edges: ['sent', 'no_address', 
   } };
 E['fallback.agent'] = { kind: 'tool', cls: 'llm', edges: ['answered', 'fail'], scope: 'strategy', params: ['stage'], reads: ['current_user_question', 'found_passages'], writes: ['defects'],
   async run(s) {   // the research agent: LAST resort, logged as a defect of this tree (which node errored / what was missing)
+    if (s.stopAtShape) return 'fail';   // never inside a sub-run: its caller decides
     const u = U(s); u.defects.push({ kind: 'fallback', after: u.path.at(-1) ?? null, missing: u.missing.slice(-3) });
     try {
       const A = s.agentRun ? await s.agentRun(s) : await import('../respond.js').then((x) => x.agentRespond({ messages: s.messages, onEvent: s.onEvent, d: s.d, t0: s.t0 }));
@@ -347,6 +367,7 @@ E['fallback.agent'] = { kind: 'tool', cls: 'llm', edges: ['answered', 'fail'], s
 // ── shared ends ($absence $fallback $unavailable; graph.js routes to them without counting them as nodes) ───────────────────
 E['end.absence'] = { kind: 'tool', cls: 'code', edges: ['done'], scope: 'strategy', params: [], reads: [...SCOPE, 'missing', 'found_passages', 'web_found'], writes: ['widened', 'found_passages', 'found_outcome'],
   async run(s) {   // the not-found sub-tree (E2): the ONLY place the scope widens (once, stated); the nearest real passage, labelled; then the ABSENCE shape
+    if (s.stopAtShape) return 'done';   // a sub-run that stops at evidence leaves the not-found end to its caller
     const u = U(s), was = u.religions_specified;
     if (was !== 'all' || FLOOR[u.authority_floor]) { u.widened = { from: was, floor: u.authority_floor, why: 'nothing in scope' }; u.religions_specified = 'all'; u.authority_floor = 'any'; }
     if (!u.found_passages.length) {

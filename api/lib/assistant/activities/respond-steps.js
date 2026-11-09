@@ -100,7 +100,7 @@ const runStrat = (s, choice) => {
   return withStrategyPin(direction, () => {
     narrate(onEvent, direction.channel, `strategy.${strategyOf(choice)}.start`);
     return timed('strategy', () => runStrategy(choice, { messages, question, plan: p, query: searchQueryFor(messages), distil: distilQuery, search: d.search,
-      profile, decisions: direction.decisions, deps: d, channel: direction.channel || null,
+      profile, scope: direction.scope || null, state: direction.state || null, onEvent, decisions: direction.decisions, deps: d, channel: direction.channel || null,
       ...(live ? { inBooks: live.inBooks, searchIn: (d.researchTools || libraryTools({ search: d.search })).searchIn, sourceTools: d.researchTools || libraryTools({ search: d.search }) } : {}),
       ...(live && p?.drawFrom?.name ? { drawFrom: p.drawFrom.name } : {}) }));
   });
