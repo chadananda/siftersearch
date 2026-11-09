@@ -60,6 +60,7 @@ import { docCorrectionsJob } from './doc-corrections-job.js';
 import { oceanoflightsSlugAuthorsJob } from './oceanoflights-slug-authors-job.js';
 import { bahaiLibraryWritingsAuthorsJob } from './bahai-library-writings-authors-job.js';
 import { siteReligionDefaultJob } from './site-religion-default-job.js';
+import { doctrinalTierDocsJob } from './doctrinal-tier-docs-job.js';
 import { docTwinsJob } from './doc-twins-job.js';
 import { excludedPointsPurgeJob } from './excluded-points-purge-job.js';
 import { lettersIndexJob } from './letters-index-job.js';
@@ -280,6 +281,7 @@ REPORTS['doc-corrections'] = docCorrectionsJob;   // params { fixes: [{ id, auth
 REPORTS['oceanoflights-slug-authors'] = oceanoflightsSlugAuthorsJob;   // params { write, limit?, sample? } — slug authors on oceanoflights.org → the Central Figure the prefix names; dry by default; write queues doc-author-restamp
 REPORTS['bahai-library-writings-authors'] = bahaiLibraryWritingsAuthorsJob;   // params { write, limit?, sample? } — bahai-library.com 'writings-<figure>-…' slugs → the Central Figure (editorial parts: religion only)
 REPORTS['site-religion-default'] = siteReligionDefaultJob;   // params { write, limit?, sample? } — bahai-library.com / oceanoflights docs with no religion → Baha'i (Bible/Qur'an copies → Christian/Islam); dry by default; write queues doc-author-restamp
+REPORTS['doctrinal-tier-docs'] = doctrinalTierDocsJob;   // params { religion?, sample? } — read-only: docs per religion × doctrinal tier (core | gray | supplemental) with title samples; shows a scripture the canon table misses
 REPORTS['doc-twins'] = docTwinsJob;   // params { sites?, write, limit?, afterId?, share? } — scraped second copies (mutual ≥90% same texts) → duplicate_of the better copy; dry by default
 REPORTS['excluded-points-purge'] = excludedPointsPurgeJob;   // params { apply, chunk? } — delete the points of docs search excludes (duplicates, metadata, tag pages); dry by default
 REPORTS['compilation-authors'] = compilationAuthorsJob;   // params { write } — library records crediting a compilation to its first contributor

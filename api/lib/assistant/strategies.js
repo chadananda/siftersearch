@@ -10,7 +10,8 @@ import { combinedSearch } from './combined-search.js';
 import { booksFound, namedSource } from './researcher.js';
 import { drawFromCriteria } from '../search-plan.js';
 import { render, template } from './activities/templates.js';
-import { sourceTier, TIER_ORDER } from './source-tier.js';
+import { TIER_ORDER } from './source-tier.js';
+import { standingOf, authorityOrder } from './tradition-authority.js';
 import { supports } from './channels.js';
 import { strategyGraphOn, runStrategyGraph } from './activities/graph.js';
 import { LOOKUP_STRATEGIES } from './strategy-seed.js';
@@ -18,7 +19,7 @@ import { lastTopic, lastPassages } from './units.js';
 import { withReplyContext } from './reply-anchors.js';
 
 export const COVER = { covered: 3, thin: 1 };   // passages per side: ≥3 covered, 1–2 thin (widen once), 0 missing
-const DOCTRINAL = new Set(['writings', 'guardian', 'compilation']);   // source-tier.js tiers a compilation draws on by default
+const DOCTRINAL = new Set(['writings', 'guardian', 'compilation']);   // standing tiers a compilation draws on by default (any tradition: its scripture and authorised interpretation)
 const PER_SIDE = 6, MAX_PASSAGES = 12, MAX_COMPARED = 18, MAX_COMPILED = 15, COMPILE_POOL = 24;
 
 // the writer's instruction: words = template rows (strategy-seed.js → strategies-repo), slots filled here
@@ -36,6 +37,7 @@ export const UNDERSTANDING_HOW = (religion, coverage) => render('understanding.h
 // compilation: headings are markdown; a channel that cannot show them (channels.js) gets bold theme labels. ctx.channel is not passed by
 // respond.js yet, so absent = headings.
 export const COMPILATION_HOW = (religion, coverage, channel = null) => render('compilation.how', {
+  authority_order: authorityOrder(religion),
   within: religion ? render('compilation.within', { religion }) : '',
   headings: channel && !supports(channel, ['headings'])
     ? 'a bold theme label (**Theme**) per theme and an italic sub-label where a theme holds distinct aspects (no sub-label for a single passage).'
@@ -173,7 +175,7 @@ export async function understanding(choice, ctx) {
     top = [...top, ...more];
   }
   // scripture first, then interpretation (the writer leads with the Writings themselves)
-  const scripture = (p) => /scripture|revelation|doctrine/i.test(p.standing || '') ? 0 : 1;
+  const scripture = (p) => /scripture|revelation|doctrine/i.test(p.standing || '') || standingOf(p) === 'writings' ? 0 : 1;   // position.js's standing, else the passage's own tradition's canon
   const passages = top.map((p) => ({ ...p, theme: scripture(p) === 0 ? 'scripture' : 'interpretation' })).sort((a, b) => scripture(a) - scripture(b));
   const named = (src?.works || []).filter((w) => !w.other).map((w) => Number(w.id));
   return { passages, plan: { shape: 'understanding', religion, coverage: c, ...(named.length ? { namedWorks: named } : {}) }, format: { id: 'understanding', by: 'strategy:understanding', how: UNDERSTANDING_HOW(religion, c) } };
@@ -203,19 +205,19 @@ export async function compilation(choice, ctx) {
       options: ['drawn from the named source'], chosen: `${src.passages.length} passages`, reason: 'Jev named the book or author the compilation is drawn from' });
     hits = dedupe([...src.passages, ...hits]);
   }
-  // authority order (source-tier.js: writings > guardian > compilation > reported > house > secondary; other traditions after), search rank kept within a tier
+  // authority order (standing: scripture > authorised interpretation > compilation > reported > house > scholarship — each tradition by its own canon), search rank kept within a tier
   const rank = (t) => { const i = TIER_ORDER.indexOf(t); return i < 0 ? TIER_ORDER.length : i; };
-  const ranked = hits.map((p, i) => { const t = sourceTier(p); return { p, i, r: rank(t), t }; }).sort((a, b) => a.r - b.r || a.i - b.i);
-  // Chad 11-09: a compilation is interpretive and DOCTRINAL by default — the Writings, Shoghi Effendi, compilations of the Writings.
+  const ranked = hits.map((p, i) => { const t = standingOf(p); return { p, i, r: rank(t), t }; }).sort((a, b) => a.r - b.r || a.i - b.i);
+  // Chad 11-09: a compilation is interpretive and DOCTRINAL by default — the tradition's scripture and authorised interpretation (Bahá’í: the Writings, Shoghi Effendi, compilations of the Writings).
   // Talks, the House and studies join only from the source the reader named (Jev's drawFrom) or when the doctrine is thin.
   const named = new Set((src?.passages || []).map((p) => `${p.document_id}:${p.paragraph_index}`));
-  const doctrinal = ranked.filter(({ t }) => !t || DOCTRINAL.has(t));
+  const doctrinal = ranked.filter(({ t }) => t && DOCTRINAL.has(t));
   const others = ranked.length - doctrinal.length;
   const keepAll = doctrinal.length < COVER.covered;
   if (others) decisions.record('compilation:sources', { by: 'code', saw: { doctrinal: doctrinal.length, other: others }, options: ['doctrinal', 'all'],
     chosen: keepAll ? 'all' : 'doctrinal', reason: keepAll ? 'too few doctrinal passages' : 'doctrinal by default; only the named source adds others' });
   // no `theme` from the tier: the writer read "theme: writings" as the heading and grouped by author (11-09). Topics come from the passages.
-  const passages = ranked.filter(({ p, t }) => keepAll || !t || DOCTRINAL.has(t) || named.has(`${p.document_id}:${p.paragraph_index}`))
+  const passages = ranked.filter(({ p, t }) => keepAll || (t && DOCTRINAL.has(t)) || named.has(`${p.document_id}:${p.paragraph_index}`))
     .slice(0, MAX_COMPILED).map(({ p }) => p);
   return { passages, plan: { shape: 'compilation', religion, coverage: c }, format: { id: 'compilation', by: 'strategy:compilation', how: COMPILATION_HOW(religion, c, channel) } };
 }

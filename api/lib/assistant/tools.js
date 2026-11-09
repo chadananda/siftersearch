@@ -86,10 +86,13 @@ const layer = (name, label, fnName, purpose, cost) => ({ name, label, kind: 'too
   run: (a, ctx) => layerSearch(fnName, a, ctx) });
 /** The original-language Writings: the doctrinal writers as writers, language group ar-fa (qdrant-layers: fa and ar map to one group). */
 export const ORIGINALS_FILTER = { author: DOCTRINAL_KEYS, writerOnly: true, language: 'fa' };
-const FUSED_DESC = 'Search the library (primary texts in English and in their original Arabic/Persian, authorised interpretation, history, scholarship), every layer fused on the query as written: no planner, no LLM. Phrase the query in the words the texts themselves would use; narrow with filters (author, work, authority, tradition, years, language) and pick layers to run only some.';
+/** The originals index holds the Bahá'í Persian/Arabic Writings ONLY: a scope on another tradition keeps the layer OUT — it never swaps the tradition for Bahá'í. */
+const originalsOut = (f = {}) => !!f.religion && canonicalTradition(f.religion) !== "Baha'i";
+const NO_ORIGINALS = (f) => `no originals index for ${canonicalTradition(f.religion)}: the originals layer holds the Bahá'í Persian/Arabic Writings only`;
+const FUSED_DESC = 'Search the library (primary texts in English, and in their original Arabic/Persian for the Bahá’í Writings only, authorised interpretation, history, scholarship), every layer fused on the query as written: no planner, no LLM. Phrase the query in the words the texts themselves would use; narrow with filters (author, work, authority, tradition, years, language) and pick layers to run only some.';
 const RENDER = { type: 'array', items: { type: 'object', properties: { en: { type: 'string' }, count: { type: 'integer' } } } };
 const LAYERS = { type: 'array', minItems: 1, uniqueItems: true, items: { type: 'string', enum: ['literal', 'phrase', 'hype', 'originals'] },
-  description: 'Run only these layers and merge them (literal = exact words, no embedding; phrase = meaning of a phrase; hype = questions answered; originals = Arabic/Persian Writings). Omit = every layer fused.' };
+  description: 'Run only these layers and merge them (literal = exact words, no embedding; phrase = meaning of a phrase; hype = questions answered; originals = the Bahá’í Persian/Arabic Writings ONLY — skipped when the tradition is another). Omit = every layer fused.' };
 const DROPS = { work: ['work', 'documentId'], author: ['author', 'writerOnly'], collection: ['collection'], tradition: ['tradition'], authority: ['authority'], years: ['yearFrom', 'yearTo'], language: ['language'] };
 const TIERS = { type: 'array', minItems: 1, uniqueItems: true, items: { type: 'string', enum: Object.keys(DROPS) },
   description: 'Escalation ladder: if fewer than min_results come back, drop these filters one at a time in this order and search again; each passage says its tier (strict | relaxed:<dropped filters>). Omit = filters are hard.' };
@@ -107,7 +110,7 @@ async function searchOnce(query, a, filters, ctx) {
   if (typeof f.author === 'string') f.author = (await import('../search-plan.js')).keywordAuthor(f.author) || f.author.trim();
   if (!a.layers) return finish(await fastRows(query, f, n, ctx), limit, authority);
   const lists = await Promise.all(a.layers.map(async (l) => (l === 'originals'
-    ? (await fastRows(query, { ...f, religion: "Baha'i", ...ORIGINALS_FILTER }, n, ctx)).map((p) => ({ ...p, found_by: ['originals'] }))
+    ? originalsOut(f) ? [] : (await fastRows(query, { ...f, religion: "Baha'i", ...ORIGINALS_FILTER }, n, ctx)).map((p) => ({ ...p, found_by: ['originals'] }))
     : layerRows(LAYER_FN[l], query, n, f, ctx))));
   const rrf = new Map(), key = (p) => `${p.id ?? p.text}`;
   lists.forEach((l) => l.forEach((p, r) => rrf.set(key(p), (rrf.get(key(p)) || 0) + 1 / (60 + r))));
@@ -243,13 +246,14 @@ const ENTRIES = [
   // the Writings in their ORIGINAL languages (11-04, measured: an English query's fused ranking puts no Persian/Arabic Writing in
   // its top 8 — English-English phrase matches fill it — while the same query held to the ar-fa group returns 22-29 originals of 30)
   { name: 'originals_search', label: 'Originals Search', kind: 'tool', outputName: 'Passage[]', cost: C(true, 250),
-    description: "Search the Writings of the Báb, Bahá'u'lláh, 'Abdu'l-Bahá and Shoghi Effendi in their ORIGINAL Persian and Arabic. Words in English (the phrase layer matches across languages) or in Persian/Arabic. A hit with no linked translation is the original alone.",
+    description: "Bahá'í Persian/Arabic originals ONLY (no other tradition has an originals index here; another tradition's filter returns an empty list with `unavailable`). Search the Writings of the Báb, Bahá'u'lláh, 'Abdu'l-Bahá and Shoghi Effendi in their ORIGINAL Persian and Arabic. Words in English (the phrase layer matches across languages) or in Persian/Arabic. A hit with no linked translation is the original alone.",
     purpose: 'The fast engine held to the doctrinal writers and the Arabic/Persian language group: the originals an English search ranks out.',
     input: SEARCH_INPUT(), output: PASSAGES, llmOmit: ['limit', 'filters'],
     example: { input: { query: 'kings increase their expenditures and lay the burden on their subjects' }, output: { passages: [{ ...P_EX, id: 88, language: 'ar', text: 'يا معشر الملوك…' }] } },
     async run(a, ctx = {}) {
       const { f, authority, none } = await scope(a.filters, ctx);
       if (none) return { passages: [] };
+      if (originalsOut(f)) return { passages: [], unavailable: NO_ORIGINALS(f) };
       const limit = a.limit ?? 6;
       return { passages: finish(await fastRows(a.query, { ...f, religion: "Baha'i", ...ORIGINALS_FILTER }, want(limit, authority), ctx), limit, authority) };
     } },
@@ -397,8 +401,8 @@ const ENTRIES = [
   // a signpost's recorded quote links, else a pure fused_search held to the authoritative standings (scripture, Guardian): no planner, no model
   { name: 'source_trace', label: 'Source Trace', kind: 'tool', refInput: true, outputName: 'Passage[]', cost: C(true, 300),
     purpose: 'The primary passages a signpost (a House letter, a scholar, a compilation) quotes or rests on.',
-    description: "A House of Justice letter, a scholar or a compilation stating a teaching is a SIGNPOST (Chad 10-19: when they refer to the teachings there is a presumption they mean something specific — we hold it): give its ref (e.g. P4) and get the primary passages it quotes or rests on — from the library's quote links, else the closest passages of Bahá'u'lláh, the Báb, 'Abdu'l-Bahá and Shoghi Effendi. Cite THOSE.",
-    input: { type: 'object', additionalProperties: false, required: ['text'], properties: { paragraph_id: PID, text: str('The signpost passage text', 20000) } }, output: PASSAGES,
+    description: "A House of Justice letter, a scholar or a compilation stating a teaching is a SIGNPOST (Chad 10-19: when they refer to the teachings there is a presumption they mean something specific — we hold it): give its ref (e.g. P4) and get the primary passages it quotes or rests on — from the library's quote links, else the closest scripture and authorised interpretation of the signpost's tradition (default Bahá'í: Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi; pass `tradition` for another). Cite THOSE.",
+    input: { type: 'object', additionalProperties: false, required: ['text'], properties: { paragraph_id: PID, text: str('The signpost passage text', 20000), tradition: { ...nul('string'), description: 'The signpost’s own tradition for the fallback search (default Bahá’í — name another, e.g. Christian, when the signpost is not Bahá’í)' } } }, output: PASSAGES,
     example: { input: { paragraph_id: 50, text: 'The unity of mankind is the pivot round which all the teachings revolve.' }, output: { passages: [P_EX] } },
     async run(a, ctx) {
       const out = [];
@@ -406,7 +410,7 @@ const ENTRIES = [
         const linked = (await (await dep(ctx, 'resolveLinks', 'plinks'))([a.paragraph_id], { quotedBy: false })).get(Number(a.paragraph_id))?.sources || [];
         out.push(...linked.slice(0, 4).map(toPassage));
       }
-      if (out.length < 2) out.push(...(await run('fused_search', { query: String(a.text).slice(0, 500), limit: 4, filters: { tradition: "Baha'i", authority: ['scripture', 'interpretation'] } }, ctx)).passages);
+      if (out.length < 2) out.push(...(await run('fused_search', { query: String(a.text).slice(0, 500), limit: 4, filters: { tradition: a.tradition ? canonicalTradition(a.tradition) : "Baha'i", authority: ['scripture', 'interpretation'] } }, ctx)).passages);
       return { passages: dedupePassages(out).slice(0, 4) };
     } },
   // quotation_candidates: the sourcehunt engine with NO model — phrase + keyword layers, holds() on the wording, links; the decision is a tree node (judge.passages)

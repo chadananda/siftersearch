@@ -31,6 +31,7 @@ export const TRADITIONS = {
   Buddhist: 'Sutras, Pali Canon, Buddhist tradition',
   Hindu: 'Vedas, Upanishads, Bhagavad Gita, Hindu tradition',
   Zoroastrian: 'Gathas, Avesta, Zoroastrian tradition',
+  Jain: 'Agamas, Tattvartha Sutra, Jain tradition',
   Sikh: 'Guru Granth Sahib, Sikh tradition',
   Tao: 'Tao Te Ching, Taoist tradition',
   Confucian: 'Analects, Confucian tradition',

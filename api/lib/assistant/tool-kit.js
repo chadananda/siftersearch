@@ -2,6 +2,7 @@
 // dependency lookup. Pure except dep(). A tool takes typed JSON and returns typed JSON; none calls an LLM.
 import { canonicalTradition } from './tradition-name.js';
 import { sourceTier } from './source-tier.js';
+import { traditionKind } from './tradition-authority.js';
 import { placeOf } from '../refs/place.js';
 import { titleTranslator } from '../authorship/translators.js';
 
@@ -28,7 +29,7 @@ export const PASSAGE = { $id: 'AnisPassage', type: 'object', additionalPropertie
   id: { type: ['integer', 'string', 'null'], description: 'Paragraph id' }, document_id: nul('integer'), paragraph_index: nul('integer'),
   title: nul('string'), author: nul('string'), book_author: nul('string'), religion: nul('string'), collection: nul('string'), language: nul('string'),
   text: { type: 'string' }, source_url: nul('string'), link_site: nul('string'), score: nul('number'),
-  authority: { ...nul('string'), enum: [...AUTHORITY_KINDS, null], description: 'The passage’s standing: scripture (a Central Figure’s written text) · interpretation (the Guardian) · guidance (the House) · compilation · reported (talks, notes) · scholarship; null = not Bahá’í / unknown' },
+  authority: { ...nul('string'), enum: [...AUTHORITY_KINDS, null], description: 'The passage’s standing in ITS OWN tradition: scripture (its canon — a Bahá’í Central Figure’s text, the Qur’án, the Bible, the Gita…) · interpretation (authorised interpretation or recognised second tier — the Guardian, hadith, Talmud) · guidance (an institution’s, e.g. the House) · compilation · reported (talks, notes) · scholarship; null = unknown' },
   year: { ...nul('integer'), description: 'The document’s year' }, translator: { ...nul('string'), description: 'Who translated this text, where known' }, edition: { ...nul('string'), description: 'Which edition/copy, where known' },
   original: { anyOf: [{ type: 'null' }, { type: 'object', additionalProperties: true, properties: { text: nul('string'), language: nul('string'), translit: nul('string') } }], description: 'The original-language text beside this one, where known' },
   copies: { type: 'array', items: COPY, description: 'The same text in other copies/editions/layers (deduped into this one)' },
@@ -73,8 +74,8 @@ export const letterVariants = (s) => [...new Set([String(s), String(s).replace(/
 
 // standing (source-tier.js, from metadata only) → the kinds trees rank and filter by
 const KIND = { writings: 'scripture', guardian: 'interpretation', house: 'guidance', compilation: 'compilation', reported: 'reported', secondary: 'scholarship' };
-/** A passage's standing as a Passage.authority kind, or null when it cannot be read from metadata (non-Bahá’í, web). Pure. */
-export const authorityKind = (p) => { try { return p.authority_kind ?? (typeof p.authority === 'string' ? p.authority : null) ?? KIND[sourceTier(p)] ?? null; } catch { return null; } };
+/** A passage's standing as a Passage.authority kind: Bahá’í by source-tier, every other tradition by its own canon (tradition-authority); null only when truly unknown (no religion, web). Pure. */
+export const authorityKind = (p) => { try { return p.authority_kind ?? (typeof p.authority === 'string' ? p.authority : null) ?? KIND[sourceTier(p)] ?? traditionKind(p); } catch { return null; } };
 
 /** Any hit / paragraph / link row → the Passage shape (score, link_site, role, authority, year, translator, edition, original kept when known). Pure. */
 // author = the PARAGRAPH's writer; book_author = the WORK's author (a quotation keeps its writer in another's book: own-source.js)

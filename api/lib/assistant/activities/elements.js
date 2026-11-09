@@ -7,8 +7,8 @@ import { run as runTool } from '../tools.js';
 import { canonicalTradition } from '../tradition-name.js';
 import { parseScriptureRef } from '../scripture-ref.js';
 import { template, fill } from './templates.js';
-import { sourceTier } from '../source-tier.js';
 import { AUTH_KINDS } from './contract.js';
+import { standingOf, authorityOrder } from '../tradition-authority.js';
 import { judgeHolds, judgeTimeline, termScript } from '../judges.js';
 
 // ── units, scope, outcomes ──────────────────────────────────────────────────────────────────────────────────────────────
@@ -74,8 +74,8 @@ const retrieval = ({ edges, tool, input, take, into = 'found_passages', rank = f
       else {
         const fused = tool === 'fused_search', n1 = { ...inp, filters: { ...inp.filters, authority: DOC_AUTH }, ...(fused ? { tiers: ['authority'], min_results: DOC_MIN } : {}) };
         raw = take(await call(s, tool, n1), p, u) || [];
-        const named = new Set((Array.isArray(u.named_sources) ? u.named_sources : []).map(String)), tierOf = (x) => sourceTier(x);
-        const isDoc = (x) => { const t = tierOf(x); return !t || DOCTRINAL.has(t); };
+        const named = new Set((Array.isArray(u.named_sources) ? u.named_sources : []).map(String)), tierOf = (x) => standingOf(x);
+        const isDoc = (x) => { const t = tierOf(x); return !!t && DOCTRINAL.has(t); };   // unknown standing is not doctrinal (it was: every non-Bahá’í hit passed)
         if (!fused && raw.filter(isDoc).length < DOC_MIN) raw = [...raw, ...(take(await call(s, tool, inp), p, u) || [])];   // hype has no tiers[]: the second call is the escalation
         const doc = raw.filter(isDoc), keepAll = doc.length < DOC_MIN, other = raw.length - doc.length;
         if (!keepAll) raw = raw.filter((x) => isDoc(x) || named.has(String(x.document_id ?? x.id)));
@@ -424,7 +424,7 @@ const themeOf = (x, by) => x.theme ?? (by === 'side' ? x.side : by === 'religion
 const writer = (s, id, extra = {}, opts = {}) => {
   const u = U(s), own = modal(tplText(s, id), u);
   const clause = tradsOf(u) && u.scope_excluded > 0 && ['conversation', 'reader'].includes(u.scope_source) ? `${u.religions_specified.join(', ')} sources only, as you asked — say 'all traditions' to widen.` : '';
-  const sl = { ...slots(u), scope_clause: clause, widened_clause: u.widened ? `searched ${flat(u.widened.from)} first, then widened to all traditions` : 'in every tradition searched', missing_sides: (() => { const have = new Set(u.found_passages.map((x) => flat(x.side))), lack = (Array.isArray(u.compare_sides) ? u.compare_sides : []).map(flat).filter((x) => !have.has(x)); return lack.length ? `The library returned NOTHING from ${lack.join(', ')} on this: say so plainly in that section, never fill it from another tradition or from memory.` : ''; })(), missing_line: u.missing.length ? `Not found: ${u.missing.map((m) => m.node).filter(Boolean).join(', ')}.` : '', ...extra };
+  const sl = { ...slots(u), scope_clause: clause, authority_order: authorityOrder(tradsOf(u)?.length === 1 ? tradsOf(u)[0] : null), widened_clause: u.widened ? `searched ${flat(u.widened.from)} first, then widened to all traditions` : 'in every tradition searched', missing_sides: (() => { const have = new Set(u.found_passages.map((x) => flat(x.side))), lack = (Array.isArray(u.compare_sides) ? u.compare_sides : []).map(flat).filter((x) => !have.has(x)); return lack.length ? `The library returned NOTHING from ${lack.join(', ')} on this: say so plainly in that section, never fill it from another tradition or from memory.` : ''; })(), missing_line: u.missing.length ? `Not found: ${u.missing.map((m) => m.node).filter(Boolean).join(', ')}.` : '', ...extra };
   const inner = fill(own, sl);
   const how = (opts.shared ? fill(modal(tplText(s, opts.shared), u), { ...sl, base: inner }) : inner).trim();
   const fid = opts.format ?? id;
