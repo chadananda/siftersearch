@@ -10,6 +10,7 @@
 //   POST /anis/try {question, history?, strategy?:{id, version}, caller?, jev_only?} → { reply, path, steps, ms, usd, jev_pick }
 //        the full-reply DRY RUN: no thread, no mail, billed to an improve-* caller (default improve-replay)
 //   POST /anis/promote {id, version, dry?} → job (async-jobs); GET /anis/promote/:key polls it
+//   POST /anis/strategy-fix {id} → { id, version|null, fixed[] }: slot syntax ({x}, from:x → {{x}}) of the newest graph as a new candidate version
 //   POST /anis/rollback {id} → { id, rolled_back, restored }
 // Deps: repos/strategies-repo + strategy-stats-repo + strategy-candidates-repo (strategies.db), improve-repo + jev-calls-repo
 // (read, via the stats repo), assistant/strategy-{gaps,try,improve}, async-jobs.
@@ -90,6 +91,13 @@ export default async function strategiesAdminRoutes(fastify, { deps = {} } = {})
   fastify.get('/anis/promote/:key', { preHandler: requireInternal }, async (request, reply) => {
     const rec = (await store()).get(request.params.key);
     return rec || reply.code(404).send({ error: 'no such promotion job' });
+  });
+
+  // re-normalizes slot syntax of a strategy's newest graph into a NEW candidate version (promote it with /anis/promote); never edits a row
+  fastify.post('/anis/strategy-fix', { preHandler: requireInternal }, async (request, reply) => {
+    const b = request.body || {};
+    if (!b.id) return reply.code(400).send({ error: 'id is required' });
+    try { return (await repo()).fixStrategySlots(await db(), b.id, { by: 'ops' }); } catch (err) { return reply.code(409).send({ error: err.message }); }
   });
 
   fastify.post('/anis/rollback', { preHandler: requireInternal }, async (request, reply) => {

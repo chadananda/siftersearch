@@ -21,7 +21,9 @@ const flat = (v) => (Array.isArray(v) ? v.map(flat).join(' ') : v && typeof v ==
 const slots = (u) => ({ ...Object.fromEntries(Object.entries(u).map(([k, v]) => [k, /^found_/.test(k) ? (v?.length ? 'the passages below' : '') : Array.isArray(v) ? v.map(flat).join(', ') : flat(v)])), base: u.base ?? '' });
 const sub = (u, v) => (typeof v === 'string' ? fill(v, slots(u)) : v);
 const deep = (o, f) => (Array.isArray(o) ? o.map((x) => deep(x, f)) : o && typeof o === 'object' ? Object.fromEntries(Object.entries(o).map(([k, v]) => [k, deep(v, f)])) : f(o));
-const text = (s, u, ...cands) => String(cands.map((c) => flat(sub(u, c))).find((x) => String(x).trim()) ?? u.current_user_question).trim();
+// a candidate whose {{slot}} unit is empty is skipped (falls to the next candidate / the question), never sent as " origin founded date history"
+const slotEmpty = (u, c) => typeof c === 'string' && [...c.matchAll(/\{\{(\w+)\}\}/g)].some(([, k]) => !String(slots(u)[k] ?? '').trim());
+const text = (s, u, ...cands) => String(cands.filter((c) => !slotEmpty(u, c)).map((c) => flat(sub(u, c))).find((x) => String(x).trim()) ?? u.current_user_question).trim();
 const call = (s, tool, input) => (s.tools?.[tool] ? s.tools[tool](input, s.ctx) : runTool(tool, input, s.ctx || {}));
 const trim = (v) => (typeof v === 'string' ? v.slice(0, 160) : Array.isArray(v) ? v.slice(0, 5).map(trim) : v && typeof v === 'object' ? flat(v) : v);
 const tradsOf = (u) => (Array.isArray(u.religions_specified) && u.religions_specified.length ? u.religions_specified.map(canonicalTradition) : null);

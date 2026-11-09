@@ -112,6 +112,17 @@ export function validatePlan(j, { cat, acts = registry(), tests = null, requireT
     for (const f of ['reads', 'writes']) if (n[f] !== undefined && !Array.isArray(n[f])) errors.push(`node ${nid}: ${f} must be a list of unit names`);
     kinds[nid] = k; steps.push({ id: `${name}.${nid}`, activity: n.element, params: n.params && typeof n.params === 'object' ? n.params : {} }); nodes[nid] = { step: `${name}.${nid}` };
   }
+  // param slot syntax: `{{unit}}` is the ONLY way a param references a unit (single braces, "from:x", "x+y" or a bare unit name are sent literally)
+  const QUERYISH = /^(query|words|name|term|title|work|value|text|translator)$/;
+  const writtenAll = new Set(Object.values(nodesIn).flatMap((n) => (Array.isArray(n?.writes) ? n.writes : [])));
+  const known = (w) => w in UNITS || writtenAll.has(w) || w === 'base';
+  const walk = (v, key, f) => { if (typeof v === 'string') f(v, key); else if (Array.isArray(v)) v.forEach((x) => walk(x, key, f)); else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) walk(x, k, f); };
+  for (const [nid, n] of Object.entries(nodesIn)) walk(n?.params, '', (str, key) => {
+    for (const [, w] of str.matchAll(/(?<!\{)\{(\w+)\}(?!\})/g)) errors.push(`node ${nid}: param "${key}" has {${w}} - a unit slot is written {{${w}}} (double braces)`);
+    for (const [, w] of str.matchAll(/\{\{(\w+)\}\}/g)) if (!known(w)) errors.push(`node ${nid}: param "${key}" slot {{${w}}} is not a unit (registry unit or one an earlier node writes)`);
+    const toks = str.trim().split(/[\s+,]+/).filter(Boolean);
+    if (QUERYISH.test(key) && !str.includes('{{') && (/^from:/.test(str.trim()) || (toks.length && toks.every((t) => t in UNITS)))) errors.push(`node ${nid}: param "${key}" "${str}" names a unit without a slot - write {{unit}} (e.g. "{{challenged_claim}} {{topic}}")`);
+  });
   const written = new Set(Object.values(nodesIn).flatMap((n) => (Array.isArray(n?.writes) ? n.writes : [])));
   for (const [nid, n] of Object.entries(nodesIn)) for (const u of [...(n?.reads || []), ...(n?.writes || [])]) if (!(u in UNITS) && !written.has(u)) errors.push(`node ${nid}: unit "${u}" is not declared (not a registry unit, written by no node)`);
   for (const nd of Array.isArray(j.needs) ? j.needs : []) if (!(nd?.unit in UNITS)) errors.push(`needs: unit "${nd?.unit}" is not in the unit registry`);

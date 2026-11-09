@@ -22,6 +22,18 @@ describe('catalog and registry', () => {
   });
 });
 
+describe('query slots', () => {
+  it('a slot whose unit is empty is skipped: the question is searched, never " origin founded date history"', async () => {
+    let q = null;
+    const s = mk({ fused_search: async (i) => { q = i.query; return { passages: [P(1)] }; } }, { topic: null });
+    await go('search.shelf', s, { query: '{{topic}} origin founded date history' });
+    expect(q).toBe('what is love');
+    const s2 = mk({ fused_search: async (i) => { q = i.query; return { passages: [P(1)] }; } }, { topic: 'the Sikhs' });
+    await go('search.shelf', s2, { query: '{{topic}} origin founded date history' });
+    expect(q).toBe('the Sikhs origin founded date history');
+  });
+});
+
 describe('scope', () => {
   it('filter mode drops and counts; rank mode keeps, in-scope first, marks the rest', () => {
     const hits = [P(1, { religion: 'Islam' }), P(2)], u = { religions_specified: ["Baha'i"] };

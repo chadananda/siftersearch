@@ -189,3 +189,34 @@ export function confusionDigest(db, { since }) {
     .map((d) => ({ setting_of: d.status.slice(11), label: d.label, at: d.created_at }));
   return { rejected, setting_of };
 }
+
+// ── slot-syntax repair (a planner wrote `{topic}` / "from:x" / "x+y" for a unit slot; the only syntax is `{{unit}}`) ──
+const QUERYISH = /^(query|words|name|term|title|work|value|text|translator)$/;
+/** params → the same with unit slots in `{{unit}}` form. Pure. */
+export const fixSlots = (v, key = '') => {
+  if (typeof v === 'string') {
+    let t = v.replace(/(?<!\{)\{(\w+)\}(?!\})/g, '{{$1}}');
+    if (QUERYISH.test(key) && !t.includes('{{') && /^from:/.test(t.trim())) t = t.trim().slice(5).split(/[+\s,]+/).filter(Boolean).map((u) => `{{${u}}}`).join(' ');
+    return t;
+  }
+  if (Array.isArray(v)) return v.map((x) => fixSlots(x, key));
+  return v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fixSlots(x, k)])) : v;
+};
+/** Newest version of strategy `id` → a NEW candidate version whose pinned steps carry corrected slot syntax. → { id, version, fixed: [step ids] } | { id, version: null, fixed: [] } (nothing to fix) */
+export function fixStrategySlots(db, id, { by = 'ops-slot-fix' } = {}) {
+  const row = strategyRow(db, id);
+  if (!row) throw new Error(`no strategy ${id}`);
+  const graph = JSON.parse(JSON.stringify(row.graph)), steps = [];
+  for (const [nid, n] of Object.entries(graph.nodes || {})) {
+    const st = db.prepare('SELECT * FROM steps WHERE id = ? AND version = ?').get(n.step, n.step_version);
+    if (!st) continue;
+    const params = safeJson(st.params_json, {}), fixed = fixSlots(params);
+    if (JSON.stringify(fixed) === JSON.stringify(params)) continue;
+    const version = maxVersion(db, 'steps', st.id) + 1;
+    steps.push({ id: st.id, version, activity: st.activity, params: fixed, template_id: st.template_id, template_version: st.template_version });
+    graph.nodes[nid] = { ...n, step_version: version };
+  }
+  if (!steps.length) return { id, version: null, fixed: [] };
+  const saved = saveCandidate(db, { strategy: { id, name: row.name, description: row.description, exemplars: row.exemplars, graph }, steps }, { by });
+  return { ...saved, fixed: steps.map((x) => x.id) };
+}

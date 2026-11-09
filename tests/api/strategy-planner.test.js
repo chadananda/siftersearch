@@ -61,6 +61,15 @@ describe('plan -> a valid tree', () => {
     expect(v.wishes.map((w) => w.element)).toEqual(['compare_search']);
     expect(v.normalized.strategy.graph.nodes.check).toMatchObject({ kind: 'decide', element: 'judge.passages' });
   });
+  it('rejects param slots that are not {{unit}} (single braces, from:x, x+y, bare unit, unknown unit)', () => {
+    fresh(); const bad = (q) => P.validatePlan((() => { const p = PLAN(); p.graph.nodes.find.params = { query: q }; return p; })(), ctx()).errors.join();
+    expect(bad('{topic} origin founded')).toMatch(/\{\{topic\}\}/);
+    expect(bad('from:challenged_claim')).toMatch(/names a unit without a slot/);
+    expect(bad('challenged_claim+topic')).toMatch(/names a unit without a slot/);
+    expect(bad('topic')).toMatch(/names a unit without a slot/);
+    expect(bad('{{nonsense_unit}} history')).toMatch(/not a unit/);
+    expect(bad('{{topic}} origin founded')).not.toMatch(/slot|unit/);
+  });
   it('rejects: kind mismatch, impure tool, unknown unit, short card, no mode block, missing shape, error to absence, synthesize reach', () => {
     fresh(); const bad = (f) => { const p = PLAN(); f(p); return P.validatePlan(p, ctx()); };
     expect(bad((p) => { p.graph.nodes.check.kind = 'tool'; }).errors.join()).toMatch(/node check: judge.passages is a decide node/);
