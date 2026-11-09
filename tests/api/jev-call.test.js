@@ -74,14 +74,11 @@ describe('the Jev callers retry and report', () => {
   it('prayer occasion: a timeout is a jev:timeout decision beside prayer:occasion', async () => {
     process.env.TYPESAFE_API_KEY = 'k';
     const decisions = decisionLog();
-    const deps = { findTitled: async () => ({ doc: { id: 20762, title: 'Bahá’í Prayers' } }), findDocuments: async () => ({ docs: [{ id: 20762, title: 'Bahá’í Prayers', religion: "Baha'i", collection: 'Bahá’u’lláh', paragraph_count: 900 }] }),
-      sectionsOfDoc: async () => [{ title: 'For The Departed', level: 2, start_index: 106, end_index: 126, paragraphs: 21 }],
-      fetchImpl: flaky(1, { occasion: { choice: 'For The Departed', confidence: 0.9 } }),
-      paragraphsInRange: async () => [{ id: 1, paragraph_index: 107, text: 'O my God! This is Thy servant…' }, { id: 2, paragraph_index: 108, text: '_—Bahá’u’lláh_' }],
-      withLinks: async (h) => h, searchPhrases: async () => ({ hits: [] }), searchKeywordQdrant: async () => ({ hits: [] }),
-      resolveQdrantFilters: async (f) => f, paragraphsByIds: async () => [] };
-    const out = await prayerShelf({ messages: msgs, query: 'q', scope: { religion: "Baha'i" }, search: async () => ({ passages: [] }), decisions, deps });
-    expect(out.plan.occasion).toBe('For The Departed');
+    const departed = { id: 1, text: 'O my God! This is Thy servant…', document_id: 20762, paragraph_index: 107, religion: "Baha'i", tradition: "Baha'i", work: 'Bahá’í Prayers', opening: 'O my God! This is Thy servant…' };
+    const deps = { fetchImpl: flaky(1, { occasion: { choice: 'found:0', confidence: 0.9 } }),
+      tools: { prayer_lookup: async () => ({ passages: [departed], searched: [] }), whole_lookup: async () => ({ passages: [departed, { ...departed, id: 2, paragraph_index: 108, text: '_—Bahá’u’lláh_' }], bound: 'attribution' }) } };
+    const out = await prayerShelf({ messages: msgs, query: 'q', scope: { religion: "Baha'i" }, decisions, deps });
+    expect(out.passages.map((x) => x.id)).toEqual([1, 2]); expect(out.plan.bound).toEqual(['attribution']);
     expect(decisions.list().find((d) => d.point === 'jev:timeout')).toMatchObject({ saw: 'occasion', chosen: 'answered on retry' });
   });
 });

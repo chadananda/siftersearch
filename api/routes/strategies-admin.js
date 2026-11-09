@@ -1,18 +1,19 @@
 // Anís strategy graph admin: Phase 1 read-only view, Phase 2 measurements (strategy-stats-repo), Phase 3 gaps → candidates →
 // dry run → promotion (strategy-candidates-repo). requireInternal (X-Internal-Key). CLI: scripts/ops/ops.mjs anis-strategies |
-// anis-strategy-stats | anis-branches <id> | anis-step-stats | anis-gaps | anis-candidates | anis-promote <id@v> [--dry] | anis-rollback <id>.
+// anis-strategy-stats | anis-branches <id> | anis-step-stats | anis-gaps | anis-candidates | anis-promote <id@v> [--dry] | anis-rollback <id> | anis-retire <id@v>.
 //   GET /anis/strategies                   → { rev, source: db|seed, db, templates[], steps[], strategies[], activities[] }
 //   GET /anis/strategies/stats?days=7      → per strategy@version: turns, share, p50/p95 ms, $/turn, judged, score, weak %, top defects
 //   GET /anis/strategies/:id/branches?days → per branch (node:edge path): share of the strategy's turns + the same metrics
 //   GET /anis/steps/stats?days=7           → per step@version: runs, p50/p95 ms, $, edge mix, Jev accuracy vs gold (decision steps)
 //   GET  /anis/gaps         → { gaps (internal only: questions never leave the admin API), clusters (ready flag), designs }
-//   GET  /anis/candidates   → { candidates (status candidate|retired|rolled_back|active), promotions (ledger, numbers per row) }
+//   GET  /anis/candidates   → { candidates (status candidate|retired|rolled_back|withdrawn|active), promotions (ledger, numbers per row) }
 //   POST /anis/try {question, history?, strategy?:{id, version}, caller?, jev_only?} → { reply, path, steps, ms, usd, jev_pick }
 //        the full-reply DRY RUN: no thread, no mail, billed to an improve-* caller (default improve-replay)
 //   POST /anis/promote {id, version, dry?} → job (async-jobs); GET /anis/promote/:key polls it
 //   POST /anis/strategy-card {id, description?, near_misses?, exemplars?} → new card version (activated provisionally when it replaces the live one)
 //   POST /anis/strategy-fix {id, version?} → { id, version|null, fixed[] }: slot syntax ({x}, from:x → {{x}}) of the newest graph as a new candidate version
 //   POST /anis/rollback {id} → { id, rolled_back, restored }
+//   POST /anis/retire {id, version, reason?} → { id, version, was, changed }: a non-active version → 'withdrawn' (out of candidates, kept for history)
 // Deps: repos/strategies-repo + strategy-stats-repo + strategy-candidates-repo (strategies.db), improve-repo + jev-calls-repo
 // (read, via the stats repo), assistant/strategy-{gaps,try,improve}, async-jobs.
 import { requireInternal } from '../lib/auth.js';
@@ -130,5 +131,11 @@ export default async function strategiesAdminRoutes(fastify, { deps = {} } = {})
     const b = request.body || {};
     if (!b.id) return reply.code(400).send({ error: 'id is required' });
     try { return (await repo()).rollback(await db(), b.id, { by: 'ops' }); } catch (err) { return reply.code(409).send({ error: err.message }); }
+  });
+
+  fastify.post('/anis/retire', { preHandler: requireInternal }, async (request, reply) => {
+    const b = request.body || {};
+    if (!b.id || !Number.isInteger(Number(b.version)) || b.version === null || b.version === '') return reply.code(400).send({ error: 'id and version are required' });
+    try { return (await repo()).withdraw(await db(), b.id, Number(b.version), { reason: b.reason ?? null, by: 'ops' }); } catch (err) { return reply.code(409).send({ error: err.message }); }
   });
 }

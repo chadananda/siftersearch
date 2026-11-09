@@ -135,8 +135,19 @@ const E = {
     gate: (s, u, p) => /[\u0600-\u06FF]/.test(text(s, u, p.term, '{{term_arabic}}', '{{term}}')),   // Arabic script only: Latin → Arabic is the term_arabic unit (Jev), not the tool
     input: (s, p, u) => ({ term_arabic: text(s, u, p.term, '{{term_arabic}}', '{{term}}'), ...(p.translator ? { translator: p.translator } : {}) }), take: (o) => (o?.found ? o.passages : []), thin: () => false,
     after: (o, u) => { if (o?.found) merge(u, 'found_records', [{ term: o.term, transliteration: o.transliteration, root: o.root, meaning: o.meaning, renderings: o.renderings }]); } }),
-  'fetch.prayer': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'prayer_lookup', params: ['key', 'value'], reads: ['occasion', 'incipit'],   // the tradition's prayer works, their own headings and attribution lines; no match = none (t2 then searches the shelf)
-    input: (s, p, u, trad) => { const inc = p.key === 'incipit' || (!p.key && u.incipit); return { [inc ? 'incipit' : 'occasion']: text(s, u, p.value, inc ? '{{incipit}}' : '{{occasion}}'), ...(trad ? { tradition: trad } : {}), ...(namedWork(u) ? { work: namedWork(u).work } : {}) }; }, take: passages, thin: () => false }),
+  // a prayer of ANY tradition (11-09): mode 'named' = the name (named_work) or opening words (incipit / quoted_words) across the tradition's whole scope,
+  // scripture included; mode 'need' = what it is for (occasion, else the question) by meaning, core first, plus the tradition's prayer works. Tradition =
+  // religions_specified (one) → the named work's → none (each tradition, kept only with real hits). What was searched is written to found_records (the honest absence).
+  'fetch.prayer': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'prayer_lookup', params: ['mode', 'key', 'value'], reads: ['occasion', 'incipit', 'named_work', 'quoted_words'],
+    input: (s, p, u, trad) => {
+      const work = namedWork(u)?.work, inc = flat(u.incipit) || flat(u.quoted_words) || null;
+      const base = { ...(trad ? { tradition: trad } : {}), ...(work ? { work } : {}) };
+      if (p.mode === 'named') return { ...base, ...(work ? { name: work } : {}), ...(inc ? { incipit: inc } : {}) };
+      if (p.key === 'incipit') return { ...base, incipit: text(s, u, p.value, '{{incipit}}') };   // pre-11-09 rows
+      return { ...base, need: text(s, u, p.value, '{{occasion}}') };
+    },
+    take: passages, thin: () => false,
+    after: (o, u) => { for (const x of o?.searched || []) merge(u, 'found_records', [{ name: `${x.tradition}: searched ${(x.how || []).join('; ') || 'nothing'}${x.found ? '' : ' — no prayer found'}`, tradition: x.tradition, searched: true, found: x.found ?? 0 }]); } }),
   // the prayer works the library has for the tradition (or one per tradition when none is known): the absence answer lists them, and names the tradition when it has none
   'fetch.prayer_works': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'prayer_lookup', into: 'found_records', reads: ['religions_specified', 'named_work'],
     input: (s, p, u, trad) => ({ list: true, ...(trad ? { tradition: trad } : {}), ...(namedWork(u) ? { work: namedWork(u).work } : {}) }),
@@ -288,6 +299,22 @@ E['read.around'] = { kind: 'transform', cls: 'code', edges: ['done'], scope: 'st
     s.note = { read: { found_passages: u.found_passages }, params: p, count: top.filter((x) => x.context).length, scope_excluded: 0 };
     return 'done';
   } };
+// the WHOLE prayer (11-09): the first candidate extended to the prayer holding it (whole_lookup: attribution run, short section, contiguous address); one
+// tradition → that prayer + the next two candidates as offers (opening only); several traditions → each tradition's first, whole. Edges name which shape follows.
+E['read.whole'] = { kind: 'transform', cls: 'code', edges: ['one', 'several', 'none'], scope: 'strategy', params: ['offers', 'stage'], reads: ['found_passages'], writes: ['found_passages'],
+  async run(s, p = {}) {
+    const u = U(s), c = u.found_passages.filter((x) => x.document_id != null && x.paragraph_index != null);
+    const tr = (x) => canonicalTradition(x.tradition || x.religion || '') || '?', trads = [...new Set(c.map(tr))];
+    const leads = trads.length > 1 ? trads.slice(0, 4).map((t) => c.find((x) => tr(x) === t)) : c.slice(0, 1);
+    const whole = await Promise.all(leads.map((x) => call(s, 'whole_lookup', { document_id: x.document_id, paragraph_index: x.paragraph_index })
+      .then((w) => (w?.passages?.length ? w.passages : [x]), () => [x])));
+    const inWhole = (x) => whole.some((rows) => rows.some((r) => Number(r.document_id) === Number(x.document_id) && r.paragraph_index === x.paragraph_index));
+    const offers = trads.length > 1 ? [] : c.filter((x) => x !== leads[0] && !inWhole(x)).slice(0, p.offers ?? 2);
+    u.found_passages = [...whole.flatMap((rows, i) => rows.map((r) => ({ ...r, work: leads[i].work ?? r.title, tradition: tr(leads[i]), theme: trads.length > 1 ? tr(leads[i]) : 'prayer' }))),
+      ...offers.map((x) => ({ ...x, theme: 'alternative' }))];
+    s.note = { read: { found_passages: c.length, traditions: trads }, params: p, count: whole.flat().length, scope_excluded: 0 };
+    return !leads.length ? 'none' : trads.length > 1 ? 'several' : 'one';
+  } };
 E['read.source'] = { kind: 'transform', cls: 'code', edges: ['traced', 'kept'], scope: 'strategy', params: ['k', 'stage'], reads: ['found_passages'], writes: ['found_passages'],
   async run(s, p = {}) {   // a quotation found in a secondary book → its primary source (source_trace), flagged traced; the secondary copy stays after it
     const u = U(s), top = u.found_passages.slice(0, p.k ?? 3), primary = [];
@@ -354,7 +381,8 @@ E['judge.passages'] = { kind: 'decision', cls: 'jev', edges: ['answers', 'mentio
 
 E['judge.prayer'] = { kind: 'decision', cls: 'jev', edges: ['picked', 'none', 'unjudged'], scope: 'strategy', params: ['stage'], reads: ['found_passages', 'occasion', 'current_user_question'], writes: ['found_passages'],
   async run(s, p = {}) {   // ONE typed Jev choice (prayer-shelf pickOccasion) among the prayers found — never a judge per prayer; the chosen goes first. No answer → unjudged (list untouched)
-    const u = U(s), found = u.found_passages.slice(0, 8).map((x, i) => ({ key: `found:${i}`, text: String(x.text || '').replace(/\s+/g, ' ').trim().slice(0, 220), heading: x.occasion || x.title || null }));
+    const u = U(s), found = u.found_passages.slice(0, 8).map((x, i) => ({ key: `found:${i}`, text: x.opening || String(x.text || '').replace(/\s+/g, ' ').trim().slice(0, 220),
+      heading: [[x.work || x.title, x.tradition || x.religion].filter(Boolean).join(' — '), x.heading || x.occasion].filter(Boolean).join(', ') || null }));   // labelled by work, tradition and its heading
     if (!found.length) return finish(s, p, 'none');
     try {
       const pick = await (s.judges?.prayer || (async () => { const [{ pickOccasion }, { jevFetch }] = await Promise.all([import('../prayer-shelf.js'), import('../../systemone.js')]); return pickOccasion(s.messages || [], [], { profile: s.profile ?? s.ctx?.profile ?? {}, fetchImpl: jevFetch('anis-prayer-occasion'), found }); }))({ found });
@@ -556,9 +584,9 @@ export const ELEMENT_META = {
   'fetch.renderings': m('How the authorized translator rendered a word, with counts and paired passages.', 'term', 'found_passages + found_records', ['rendering_lookup']),
   'fetch.align': m('Attaches each passage’s recorded original and translations.', 'found_passages', 'found_passages (annotated)', ['links_lookup']),
   'fetch.anchor': m('Loads the passage the question is about: the one pointed at, the reader’s place, or the last evidence.', 'referent, reader_position, previous_evidence', 'found_passages', ['context_lookup']),
-  'fetch.prayer': m('Serves a prayer from the prayer works of the tradition in scope (or the named work’s tradition; none known = a prayer from several traditions) by occasion heading, a need their prayers answer, or opening words: the first in full, then two more. No match = none.', 'occasion or incipit', 'found_passages', ['prayer_lookup']),
+  'fetch.prayer': m('Candidate prayers of the tradition in scope (or the named work’s; none known = each tradition, kept only with real hits), scripture included: mode named = by name or opening words across the whole tradition; mode need = by meaning, core first, plus its prayer works. Headings only rank. Writes what was searched to found_records. No match = none.', 'named_work, incipit, quoted_words (named); occasion (need)', 'found_passages + found_records', ['prayer_lookup']),
   'fetch.prayer_works': m('Lists the prayer works the library has for the tradition (one per tradition when none is known); a tradition with none is named as having none.', 'religions_specified or named_work', 'found_records', ['prayer_lookup']),
-  'judge.prayer': m('ONE typed Jev choice among the prayers found (the chosen goes first); not a judge per prayer.', 'found_passages', 'found_passages (the chosen first)', []),
+  'judge.prayer': m('ONE typed Jev choice among the candidate prayers, each labelled by its opening text, work and tradition, "none fits" an option: which are whole prayers that fit, best first; not a judge per prayer.', 'found_passages', 'found_passages (the chosen first)', []),
   'fetch.guidance': m('Finds the House of Justice’s guidance on a subject.', 'topic', 'found_passages', ['fused_search']),
   'fetch.collection': m('A prepared topic collection (index not built yet: answers none at no cost).', 'id, key', 'found_records', []),
   'fetch.events': m('Dated claims about a subject from the entity graph (not built yet: answers none).', 'subject', 'found_records', []),
@@ -577,6 +605,7 @@ export const ELEMENT_META = {
   'fill.missing_sides': m('After the judge: each side with no answering passage goes to missing (named by the shape), its mention-only passages dropped.', 'found_passages (verdicts), compare_sides', 'found_passages, missing', []),
   probe: m('Runs a search step on a small sample and checks the hits are what the plan expects; adjusts or flags a mismatch.', 'step, expect', 'param_overrides', []),
   'read.around': m('Reads the paragraphs around each passage that will be quoted.', 'found_passages', 'found_passages (context)', ['context_lookup']),
+  'read.whole': m('Extends the chosen prayer to the whole prayer (attribution line, short section, contiguous address); one tradition: it in full + two offers; several: each tradition’s first in full.', 'found_passages', 'found_passages (whole prayer first)', ['whole_lookup']),
   'read.source': m('Traces a quotation found in a secondary book to its primary source.', 'found_passages', 'found_passages (traced)', ['source_trace']),
   switch: m('Branches on a unit in code (which is filled, a count, an earlier outcome): no model call.', 'on, cases', 'an edge', []),
   judge: m('ONE Jev decision over a fixed set of options given as params.', 'question, options', 'an option edge', []),

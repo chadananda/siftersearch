@@ -2,7 +2,8 @@
 // strategy served, internal only — questions never leave this DB), the DESIGN runs (Opus candidates, valid or dropped) and the
 // PROMOTIONS ledger, all in strategies.db (strategies-repo's open function). A candidate is a strategies row with status
 // 'candidate'; promote = old active → 'retired', candidate → 'active' (rev bump: every process's catalog + Jev options reload);
-// rollback = active → 'rolled_back', the newest retired → 'active'. Rows are append-only except status. Deps: strategies-repo.
+// rollback = active → 'rolled_back', the newest retired → 'active'; withdraw = a non-active version → 'withdrawn' (out of the candidates
+// and never restored by rollback or promoted, kept for history). Rows are append-only except status. Deps: strategies-repo.
 import { openStrategiesDb, bumpRev, readAll } from './strategies-repo.js';
 import { repairParams, repairTemplate, paramProblems, templateProblems } from '../assistant/activities/contract.js';
 
@@ -120,6 +121,7 @@ export function promote(db, id, version, { decision = null, usd = null, by = 'im
   return db.transaction(() => {
     const row = db.prepare('SELECT status FROM strategies WHERE id = ? AND version = ?').get(id, version);
     if (!row) throw new Error(`no strategy ${id}@${version}`);
+    if (row.status === 'withdrawn') throw new Error(`${id}@${version} is withdrawn`);
     db.prepare("UPDATE strategies SET status = 'retired' WHERE id = ? AND status = 'active' AND version != ?").run(id, version);
     db.prepare("UPDATE strategies SET status = 'active' WHERE id = ? AND version = ?").run(id, version);
     bumpRev(db);
@@ -140,6 +142,22 @@ export function rollback(db, id, { by = 'ops' } = {}) {
     bumpRev(db);
     logPromotion(db, { strategy_id: id, version: cur.version, action: 'rollback', decision: { restored: prev?.version ?? null }, by });
     return { id, rolled_back: cur.version, restored: prev?.version ?? null };
+  })();
+}
+
+/** Withdraw id@version for good (e.g. a candidate built on a wrong assumption): any status but 'active' → 'withdrawn'. A withdrawn row
+ *  leaves the candidates, is never restored by rollback (that reads 'retired') nor promoted, and stays in the table for history. */
+export function withdraw(db, id, version, { reason = null, by = 'ops' } = {}) {
+  ensureCandidatesSchema(db);
+  return db.transaction(() => {
+    const row = db.prepare('SELECT status FROM strategies WHERE id = ? AND version = ?').get(id, version);
+    if (!row) throw new Error(`no strategy ${id}@${version}`);
+    if (row.status === 'active') throw new Error(`${id}@${version} is active: promote another version or roll back first`);
+    if (row.status === 'withdrawn') return { id, version, was: 'withdrawn', changed: false };
+    db.prepare("UPDATE strategies SET status = 'withdrawn' WHERE id = ? AND version = ?").run(id, version);
+    bumpRev(db);
+    logPromotion(db, { strategy_id: id, version, action: 'withdraw', decision: reason ? { reason } : null, by });
+    return { id, version, was: row.status, changed: true };
   })();
 }
 
