@@ -1,13 +1,13 @@
-// Unmatched runtime (Chad 11-08): Jev found no strategy → (1) reuse a pending candidate that already holds a like question,
-// (2) a fast model checks Jev did not simply miss an existing strategy (records the miss), (3) else Opus designs a candidate
+// Unmatched runtime (Chad 11-08): Jev found no strategy → (1) a fast model checks Jev did not simply miss an existing strategy or a
+// pending candidate (records the miss; a candidate it picks is reused), (2) else Opus designs a candidate
 // graph on the fly (saved as a CANDIDATE; replay + promotion unchanged) and it runs for this turn. Any failure → null (the
 // researcher / general reply). Runs where the researcher would, on every channel; only the narration is live-only.
 // Deps: strategy-candidates-repo, strategy-design, strategy-gaps, narrate, ai-context (strategyPin runs a not-yet-active graph).
 import { randomUUID } from 'node:crypto';
 import { catalog } from '../repos/strategies-repo.js';
-import { candidatesDb, listCandidates, heldQuestions, recordGap, logDesign, saveCandidate, pinFor } from '../repos/strategy-candidates-repo.js';
+import { candidatesDb, listCandidates, recordGap, logDesign, saveCandidate, pinFor } from '../repos/strategy-candidates-repo.js';
 import { designCandidate, opusCall } from './strategy-design.js';
-import { IMPROVE_CFG, jaccardWords } from './strategy-gaps.js';
+import { IMPROVE_CFG } from './strategy-gaps.js';
 import { withAIContext } from '../ai-context.js';
 import { narrate } from './narrate.js';
 
@@ -69,20 +69,8 @@ export async function resolveUnmatched({ direction, messages, question, onEvent 
   try {
     db = io.db || candidatesDb(); cat = io.cat || catalog();
     const pending = listCandidates(db);
-    // (b) REUSE: a pending candidate already holding a like question (free, no model)
-    let best = null;
-    for (const c of pending) for (const q of heldQuestions(db, c.id, c.version)) {
-      const sim = jaccardWords(q, question);
-      if (sim >= CFG.reuse_similarity && (!best || sim > best.sim)) best = { c, sim };
-    }
-    if (best) {
-      const pin = pinFor(db, best.c.id, best.c.version);
-      rec('unmatched:reuse', { options: pending.map((c) => c.id), chosen: `${best.c.id}@${best.c.version}`, probabilities: { [best.c.id]: Math.round(best.sim * 100) / 100 }, ms: Date.now() - t0 });
-      narrate(onEvent, channel, 'unmatched.planned', {}, io);
-      const r = pin && await adopt(best.c.id, 'reuse', { pin });
-      if (r) return r;
-    }
-    // (a) RECHECK: did Jev simply fail to pick a good strategy? (the active strategies, and the pending candidates by description)
+    // (a) RECHECK: did Jev simply fail to pick a good strategy? The active strategies AND the pending candidates, by description — an
+    // earlier on-the-fly design is reused only when the model picks it (never by word overlap: intent is never word parsing, Chad 11-03)
     const options = [...cat.strategies.filter((s) => s.description && !['other', 'unmatched'].includes(s.name)).map((s) => ({ name: s.name, description: s.description })),
       ...pending.map((c) => ({ name: c.id, description: c.description, candidate: c }))];
     const re = await (io.recheck || haikuRecheck)({ question, thread: threadOf(messages), options }).catch((err) => { console.warn('anis unmatched recheck failed', err?.message); return null; });

@@ -7,7 +7,7 @@
   "promote": { "n_fresh": 12, "n_guard": 6, "margin": 0.5, "max_regress": 2, "ms_ratio": 1.5, "usd_ratio": 1.5, "jev_class_share": 0.6, "jev_guard_max": 0 },
   "theory": { "_doc": "jev-tuning/theories.js: a weak gate verdict → Opus theories → tested on historic + frozen synthetic gold.", "synthetic_n": 40, "historic_n": 140, "margin": 0.05, "max_broken": 2, "token_ratio": 1.5, "max_usd": 1, "per_day": 6, "diagnose_max_tokens": 1500, "synthetic_max_tokens": 6000,
     "promote": { "margin": -0.3, "jev_class_share": 0, "jev_guard_max": 999 } },
-  "unmatched": { "_doc": "unmatched.js: a live Unmatched turn. reuse_similarity = held-question overlap that re-runs a pending candidate; the timeouts are safety bounds on the LLM calls (any failure falls back to the researcher).", "reuse_similarity": 0.45, "recheck_min_confidence": 0.6, "recheck_max_tokens": 120, "recheck_timeout_ms": 8000, "design_timeout_ms": 120000 },
+  "unmatched": { "_doc": "unmatched.js: a live Unmatched turn. a pending candidate is reused only when the recheck model names it (never by word overlap); the timeouts are safety bounds on the LLM calls (any failure falls back to the researcher).", "recheck_min_confidence": 0.6, "recheck_max_tokens": 120, "recheck_timeout_ms": 8000, "design_timeout_ms": 120000 },
   "class_sets": { "historic_n": 6 },
   "llm_fast": { "every_days": 7 }
 }

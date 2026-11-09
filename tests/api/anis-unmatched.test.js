@@ -1,4 +1,4 @@
-// Unmatched runtime (unmatched.js: reuse / recheck / design a strategy for a turn Jev could not match) and the spoken progress lines
+// Unmatched runtime (unmatched.js: recheck / design a strategy for a turn Jev could not match) and the spoken progress lines
 // (narrate.js: live channels only). Fake recheck + fake Opus; a real in-memory strategies store.
 import { describe, it, expect, afterEach, vi } from 'vitest';
 vi.mock('../../api/lib/repos/ai-usage-repo.js', () => ({ dailySpendByCaller: vi.fn(async () => ({})) }));
@@ -66,7 +66,7 @@ describe('Unmatched: recheck', () => {
   });
 });
 
-describe('Unmatched: design and reuse', () => {
+describe('Unmatched: design, and reuse only when the recheck names the candidate', () => {
   it('designs a candidate (saved as a candidate, tied to the question), pins it and runs it for this turn', async () => {
     const db = fresh(), t = turn(), run = vi.fn(async () => OUT), call = opus(GOOD);
     const r = await resolveUnmatched({ direction: t.direction, messages: [{ role: 'user', content: Q }], question: Q, onEvent: t.onEvent, run }, { db, recheck: async () => null, call, rand: rand0 });
@@ -83,20 +83,6 @@ describe('Unmatched: design and reuse', () => {
     // the pin is what lets the not-yet-active graph and its template run
     await withStrategyPin(t.direction, async () => expect(currentAIContext().strategyPin).toBe(t.direction.strategyPin));
     await withStrategyPin({}, async () => expect(currentAIContext().strategyPin).toBeUndefined());
-  });
-
-  it('a like question later re-runs the pending candidate with no model call', async () => {
-    const db = fresh(), run = vi.fn(async () => OUT), call = opus(GOOD), recheck = vi.fn(async () => null);
-    const first = turn();
-    await resolveUnmatched({ direction: first.direction, messages: [], question: Q, onEvent: first.onEvent, run }, { db, recheck, call });
-    recheck.mockClear();
-    const t = turn();
-    const r = await resolveUnmatched({ direction: t.direction, messages: [], question: 'How did the Nineteen Day Feast develop across the decades?', onEvent: t.onEvent, run }, { db, recheck, call });
-    expect(r).toMatchObject({ via: 'reuse', name: 'timeline' });
-    expect(call).toHaveBeenCalledTimes(1);                                              // only the first design
-    expect(recheck).not.toHaveBeenCalled();
-    expect(points(t)).toEqual(['unmatched:reuse']);
-    expect(t.direction.strategyPin.row.id).toBe('timeline');
   });
 
   it('a pending candidate named by the recheck runs too (pinned)', async () => {
