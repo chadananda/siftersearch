@@ -51,3 +51,38 @@ describe('doctrinalTier (per paragraph author; Chad 11-09)', () => {
     expect(coverageTier({ ...bahai, collection: 'Pilgrim Notes', title: 'n', author: 'x' })).toBe(2);
   });
 });
+
+describe('doctrinalTier canon fixes (11-09, real titles from ops report 1392521)', () => {
+  const D = (religion, title, author) => ({ religion, collection: 'Books', title, author });
+  it('A: commentary on a scripture is not the scripture (author + form markers)', () => {
+    for (const [t, a] of [['Abarbanel on Ezekiel', 'Sefaria Community Translation'], ['Haamek Davar on Exodus', 'Sefaria Community Translation'], ['Ibn Ezra on Genesis', "Ibn Ezra's commentary on the Pentateuch, tran. and annot. by H. Norman Strickman"]]) expect(T(D('Judaism', t, a))).toBe('supplemental');
+    expect(T(D('Islam', 'al-Itqan fi Ulum al-Quran (Arabic)', 'Jalal al-Din al-Suyuti'))).toBe('supplemental');
+    expect(T(D('Islam', 'al-Jami li-Ahkam al-Quran (Arabic)', 'al-Qurtubi'))).toBe('supplemental');
+    expect(T(D('Christian', 'Epistle Sermons Vol. 3 - Trinity Sunday to Advent', 'Martin Luther'))).toBe('supplemental');
+    expect(T(D('Christian', 'The Epistles of St. Peter and St. Jude', 'Martin Luther'))).toBe('supplemental');
+    expect(T(D('Taoist', '太上道德經講義 (Taishang Daodejing Jiangyi)', '宋常星 (Song Changxing)'))).toBe('supplemental');
+    expect(T(D('Taoist', '道德真經論 司馬光 (Sima Guang on Daodejing)', '司馬光 (Sima Guang)'))).toBe('supplemental');
+    expect(T(D('Confucian', '通書 (Tongshu - Penetrating the Book of Changes)', '周敦頤 (Zhou Dunyi)'))).toBe('supplemental');
+  });
+  it('A: real scriptures stay core', () => {
+    expect(T(D('Christian', '1 Corinthians', 'Paul'))).toBe('core');
+    expect(T(D('Christian', 'Douay-Rheims Bible', 'Various'))).toBe('core');
+    expect(T(D('Taoist', 'Tao Te Ching (tr. D.C. Lau)', 'Laozi, tr. D.C. Lau'))).toBe('core');
+    expect(T(D('Confucian', 'The Analects of Confucius (tr. James Legge)', 'Confucius, tr. James Legge'))).toBe('core');
+    expect(T(D('Hindu', 'The Upanishads', 'tr. Swami Paramananda'))).toBe('core');
+    expect(T(D('Islam', 'Sura CX. Help', 'Muhammad'))).toBe('core');
+    expect(T(D('Judaism', 'Genesis', 'Unknown'))).toBe('core');
+  });
+  it('B: missed scriptures are core', () => {
+    expect(T(D('Jain', 'Akaranga Sutra (Book 1)', 'tr. Hermann Jacobi'))).toBe('core');
+    expect(T(D('Jain', 'Akaranga Sutra (Book 2)', 'tr. Hermann Jacobi'))).toBe('core');
+    expect(T(D('Jain', 'Uttaradhyayana - Harikesa (Lecture 12)', 'tr. Hermann Jacobi'))).toBe('core');
+    for (const t of ['Afrinagan 2', 'Afrinagan 3', 'Afrinagan 4', 'Sirozah 1', 'Sirozah 2']) expect(T(D('Zoroastrian', t, 'tr. James Darmesteter'))).toBe('core');
+    expect(T(D('Zoroastrian', 'Arda Wiraz Namag', 'Unknown'))).toBe('gray');
+    for (const [t, a] of [['周易 (Zhouyi)', '孔子 (Confucius)'], ['尚書 (Shangshu)', 'Various'], ['詩經 (Shijing)', 'Various'], ['The Shih King (Book of Poetry)', 'tr. James Legge']]) expect(T(D('Confucian', t, a))).toBe('core');
+  });
+  it('C: scholarship introductions are not scripture', () => {
+    expect(T(D('Jain', 'Jain Sutras - Introduction (SBE Vol. 22)', 'Hermann Jacobi'))).toBe('supplemental');
+    expect(T(D('Jain', 'Jain Sutras - Introduction (SBE Vol. 45)', 'Hermann Jacobi'))).toBe('supplemental');
+  });
+});

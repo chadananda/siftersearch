@@ -385,19 +385,30 @@ const GRAY_AUTHORS = new Set(['Mencius', 'Zhuangzi', 'Chuang Tzu']);
 // Per-tradition canon by TITLE, unanchored ("Chandogya Upanishad", "Sri Guru Granth Sahib", "The New Testament (RSV)", "The Noble
 // Quran"): a scripture is core whatever its edition string; a title naming a commentary on it never is (ABOUT). The data behind
 // assistant/tradition-authority.js (one authority model per tradition). Folded text (norm); tested per tradition.
-const ABOUT = /\b(commentar(y|ies)|tafsir|according to|study of|studies|introduction to|guide to|companion|essays?|lectures?|reflections?|explained|interpreted by|history of|life of)\b/;
+const ABOUT = /\b(commentar(y|ies)|tafsir|according to|study of|studies|introduction to|guide to|companion|essays?|lectures?|reflections?|explained|interpreted by|history of|life of|introduction|sermons?|ulum|ahkam)\b/;
 const CANON = [
   [/^hind/, { core: /\b(vedas?|rig ?veda|yajur ?veda|sama ?veda|atharva ?veda|upanishads?|bhagavad ?gita|ramayana|mahabharata|brahma ?sutras?)\b/, gray: /\b(puranas?|bhagavata|manu ?smriti|laws of manu|dharma ?(shastras?|sutras?)|yoga sutras?)\b/ }],
   [/^budd/, { core: /\b(nikaya|dhammapada|sutta ?nipata|udana|itivuttaka|theragatha|therigatha|sutras?|suttas?|tripitaka|pali canon|vinaya)\b/, gray: /\b(jataka|buddhist birth stories|milindapanha|visuddhimagga|abhidhamma|abhidharma)\b/ }],
-  [/^jain/, { core: /\b(agamas?|acaranga|sutrakritanga|sutrakrtanga|kalpa ?sutra|uttaradhyayana|bhagavati|tattvartha ?sutra|samayasara|jain sutras?)\b/, gray: /\b(niryukti|churni|tika)\b/ }],
+  [/^jain/, { core: /\b(agamas?|acaranga|sutrakritanga|sutrakrtanga|kalpa ?sutra|uttaradhyayana|akaranga|bhagavati|tattvartha ?sutra|samayasara|jain sutras?)\b/, gray: /\b(niryukti|churni|tika)\b/ }],
   [/^sikh/, { core: /\b(guru granth( sahib)?|adi granth|japji|sukhmani|jaap sahib|anand sahib)\b/, gray: /\b(dasam granth|janamsakhi|rehras|rahit ?nama|vars? of bhai gurdas)\b/ }],
-  [/^(zoro|parsi)/, { core: /\b(avesta|gathas?|yasna|vendidad|videvdat|visperad|yashts?)\b/, gray: /\b(bundahishn|denkard|pahlavi|zand|arda viraf|dadistan)\b/ }],
-  [/^(tao|dao)/, { core: /\b(tao te ching|dao de jing|daodejing|tao ?teh ?king|i ching|yi ?jing)\b/, gray: /\b(liezi|lieh tzu|huainanzi|daozang)\b/ }],
-  [/^confuc/, { core: /\b(analects|lunyu|doctrine of the mean|great learning|i ching|yi jing|book of changes|book of songs|book of documents|classic of filial piety|four books|five classics)\b/, gray: /\b(xunzi|hsun tzu|mencius|record of rites|book of rites)\b/ }],
+  [/^(zoro|parsi)/, { core: /\b(avesta|gathas?|yasna|vendidad|videvdat|visperad|yashts?|afrinagan|sirozah|nyayesh|nyaish|khordeh)\b/, gray: /\b(bundahishn|denkard|pahlavi|zand|arda viraf|arda wiraz|dadistan)\b/ }],
+  [/^(tao|dao)/, { core: /\b(tao te ching|dao de jing|daodejing|tao ?teh ?king|i ching|yi ?jing)\b|道德經|道德真經/, gray: /\b(liezi|lieh tzu|huainanzi|daozang)\b/ }],
+  [/^confuc/, { core: /\b(analects|lunyu|doctrine of the mean|great learning|i ching|yi jing|book of changes|book of songs|book of documents|classic of filial piety|four books|five classics|zhou ?yi|shang ?shu|shu ?jing|shi ?jing|shih ?king|shu ?king|book of poetry|book of odes)\b|周易|尚書|詩經|書經/, gray: /\b(xunzi|hsun tzu|mencius|record of rites|book of rites)\b/ }],
   [/^(jud|jew)/, { core: /\b(tanakh|tanach|torah|pentateuch|hebrew bible|genesis|exodus|leviticus|deuteronomy|isaiah|jeremiah|ezekiel|psalms|proverbs|ecclesiastes|lamentations|book of (numbers|job|esther|daniel))\b/, gray: /\b(talmud|mishnah|midrash|zohar|tosefta|mishneh torah)\b/ }],
   [/^christ/, { core: /\b(bible|new testament|old testament|gospels?|epistles?|acts of the apostles)\b/, gray: /\b(apocrypha|pseudepigrapha|gospel of thomas|didache|apostolic fathers)\b/ }],
   [/^(islam|muslim)/, { core: /\b(qur ?an|koran)\b/, gray: null }],
 ];
+// Commentary vs scripture by AUTHOR first (Chad 11-09 canon fix): a title that names a scripture is the scripture only when its author
+// is the scripture's own writer / anthology ("Various", "Unknown") / absent (translator only: "tr. X", "retold by X"); a named later author
+// (Luther on the Epistles, al-Suyuti, Zhou Dunyi) makes it commentary. Plus the catalogue's own form markers ("X on Genesis", 講義/註/論).
+const SCRIPTURE_WRITER = /^(various|unknown|traditional|anonymous|attrib|sefaria|community translation|laozi|lao tzu|confucius|zengzi|kongzi|vyasa|valmiki|moses|paul|john|peter|james|jude|matthew|mark|luke|guru|bhagat|sikh|mahavira|buddha|muhammad|david|solomon|zarathustra|zoroaster|mahabharata|ramayana)\b/;
+const COMMENTARY_MARK = /註|注|疏|講義|讲义|論(?!語)/;
+const authorIsScripture = (author) => {
+  const raw = String(author || '').replace(/(^|[,;]\s*)(tr|tran|trans|translated|retold|ed|edited)\b.*$/i, '').replace(/\(.*?\)/g, '').trim(), a = norm(raw);
+  if (/[^\x00-\x7f]/.test(raw) && /[\u3400-\u9fff]/.test(raw)) return /老子|孔子|曾子|孟子|莊子/.test(raw);   // CJK author: only the scripture's own
+  return !a || SCRIPTURE_WRITER.test(a);
+};
+const isCommentaryOn = (rel, title, author) => COMMENTARY_MARK.test(title) || (/^(jud|jew|christ)/.test(rel) && /\bon [a-z]/i.test(title)) || !authorIsScripture(author);
 const canonFor = (rel) => CANON.find(([re]) => re.test(rel))?.[1] ?? null;
 const isScriptureAuthor = (a) => !!a && (AUTHOR_AUTHORITY[a] ?? 0) >= 7 && !GRAY_AUTHORS.has(a) && a !== 'Muhammad'
   && !WRITER_RE.test(norm(a)) && !/universal house of justice|research department|^compilation/i.test(a);
@@ -417,16 +428,17 @@ export function doctrinalTier(doc = {}, para = null) {
     if (w != null) return WRITER_RE.test(w) || /^compilation/.test(w) ? 'core' : 'supplemental';
     return titleCore([undefined]) || /^compilation/.test(a) || WRITER_RE.test(a) ? 'core' : 'supplemental';
   }
-  const canon = canonFor(rel), plain = !ABOUT.test(t);   // a title naming a commentary on a scripture is the commentary
-  const canonCore = !!canon?.core && plain && canon.core.test(t), canonGray = !!canon?.gray && plain && canon.gray.test(t);
+  const canon = canonFor(rel), plain = !ABOUT.test(norm(title.replace(/\([^)]*\b(book|lecture|part|vol|volume|chapter)\b[^)]*\)/gi, '')));   // a title naming a commentary on a scripture is the commentary
+  const canonCore = !!canon?.core && plain && (canon.core.test(t) || canon.core.test(title)) && !isCommentaryOn(rel, title, author), canonGray = !!canon?.gray && plain && (canon.gray.test(t) || canon.gray.test(title));
+  const comm = isCommentaryOn(rel, title, author);
   if (/^(islam|muslim)/.test(rel)) {
-    if (titleCore(['quran']) || canonCore) return 'core';
+    if (!comm && titleCore(['quran']) || canonCore) return 'core';
     if (ISLAM_GRAY_TITLE.test(t)) return 'gray';
     return author === 'Muhammad' ? 'core' : 'supplemental';   // OceanLibrary Qur'an surahs carry author "Muhammad"
   }
-  if (/^christ/.test(rel)) return canonGray ? 'gray' : titleCore(['bible']) || canonCore || isScriptureAuthor(author) ? 'core' : 'supplemental';   // the Bible
+  if (/^christ/.test(rel)) return canonGray ? 'gray' : !comm && titleCore(['bible']) || canonCore || isScriptureAuthor(author) ? 'core' : 'supplemental';   // the Bible
   if (OTHER_GRAY_TITLE.test(t) || GRAY_AUTHORS.has(author) || canonGray) return 'gray';
-  return titleCore(['quran', 'bible', undefined]) || canonCore || isScriptureAuthor(author) ? 'core' : 'supplemental';
+  return !comm && titleCore(['quran', 'bible', undefined]) || canonCore || isScriptureAuthor(author) ? 'core' : 'supplemental';
 }
 
 // Site registry hook. Wired at boot from api/index.js + worker startup so
