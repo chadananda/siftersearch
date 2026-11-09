@@ -20,7 +20,7 @@ beforeEach(async () => {
   ctx = await import('../../api/lib/ai-context.js');
 });
 afterEach(() => so._test.reset());
-const log = (task, chosen, extra = {}) => so.record(task, extra.state ?? `state of ${chosen}`, Q, { answers: ans(chosen), tokens: extra.tokens ?? 800, ms: 30, ...(extra.ref ? { ref: extra.ref } : {}) });
+const log = (task, chosen, extra = {}) => so.record(task, extra.state ?? `state of ${chosen}`, Q, { answers: ans(chosen), tokens: extra.tokens ?? 800, ms: extra.ms ?? 30, ...(extra.ref ? { ref: extra.ref } : {}) });
 
 describe('turn link', () => {
   it('calls made before the thread exists get the turn ref when it is linked (queued and already-flushed rows)', async () => {
@@ -56,6 +56,10 @@ describe('bank queries + labels', () => {
     expect(g.map((x) => x.task).sort()).toEqual(['anis-format', 'anis-strategy']);
     expect(s).toMatchObject({ calls: 3, avg_tokens: 800, gold: 1, gold_coverage: 0.333 });
     expect(s.answers.strategy).toEqual({ find_book: 1, answer: 2 });
+  });
+  it('gateStats: latency percentiles of answered calls (nearest rank) and token percentiles', () => {
+    for (const ms of [100, 200, 300, 400, 1000]) log('anis-lat', 'answer', { ms, tokens: ms * 2 }); so.flushCalls();
+    expect(bank.gateStats({ days: 1 }).find((x) => x.task === 'anis-lat')).toMatchObject({ calls: 5, ms_p50: 300, ms_p90: 1000, ms_p95: 1000, ms_max: 1000, tokens_p50: 600, tokens_p95: 2000 });
   });
   it('listCalls: by gate, chosen, ref, gold state (right / wrong / none)', () => {
     expect(bank.listCalls({ task: 'anis-strategy', chosen: 'find_book' }).map((c) => c.ref)).toEqual(['a:1']);

@@ -5,7 +5,7 @@
 // Pure: workRequest / titleCandidates / workReply. findWork takes the index + listDocs injected (tests) or loads them lazily.
 import { workUrl } from '../source-links.js';
 import { isCoreLiterature } from '../rights/canonical.js';
-import { getAuthority } from '../authority.js';
+import { getAuthority, doctrinalTier } from '../authority.js';
 
 // a work is core literature by the same rule as a passage (rights/canonical.js isCoreLiterature), its author being the book's
 export const coreWork = (doc) => { let a = doc.book_authority; if (a == null) { try { a = getAuthority(doc); } catch { a = null; } }
@@ -55,7 +55,9 @@ const AUTHORS = /bah[aá].?u.?ll[aá]h|abdu.?l.?bah[aá]|\bthe b[aá]b\b|shoghi 
 // the fullest text by its own author: size first (an excerpt is not the book), the canonical author, the canonical site, English
 const workRank = (d, asked) => Math.log10((d.paragraph_count || 0) + 1) + (AUTHORS.test(d.author || '') ? 1 : 0)
   + (d.source_site === 'oceanlibrary.com' ? 0.5 : 0) + (/^en/i.test(d.language || 'en') ? 0.5 : 0)
-  - (derived(d.title, asked) ? 2 : 0);
+  - (derived(d.title, asked) ? 2 : 0)
+  // the work itself — its tradition's scripture/primary text — outranks a study whose title merely contains the name (11-09: "Gita" → Gita and Gospel)
+  + (d.religion && doctrinalTier(d) === 'core' ? 3 : 0);
 const derived = (title, asked) => { const w = DERIVED.exec(title || '')?.[0]; return !!w && !new RegExp(`\\b${w}\\b`, 'i').test(asked); };
 
 const foldTitle = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/^the /, '');
@@ -110,7 +112,7 @@ export async function findTitled(cands, { index = null, match = null, listDocs =
   // one-word query 0 against a longer title (right for the librarian's duplicate checks), so when no book matched, look for one
   if (!books.length && prefix && index.docs) {
     const qs = cands.map(foldTitle).filter((q) => q.length >= 4);
-    books = index.docs.filter((d) => !notBook(d) && qs.some((q) => foldTitle(d.title).startsWith(`${q} `))).slice(0, 200).map((doc) => ({ doc, score: min }));
+    books = index.docs.filter((d) => !notBook(d) && qs.some((q) => foldTitle(d.title).startsWith(`${q} `) || foldTitle(d.title).endsWith(` ${q}`))).slice(0, 200).map((doc) => ({ doc, score: min }));
   }
   const pool = books.length ? books : all;
   if (!pool.length) return null;

@@ -22,11 +22,15 @@ const shape = (r) => {
 };
 
 /** Per gate over the last `days`: calls, answer distribution, gold coverage + accuracy, tokens/ms, shadow agreement. */
+// nearest-rank percentile of a numeric list (null when empty)
+const pct = (a, p) => { if (!a.length) return null; const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.ceil(p * s.length) - 1)]; };
+/** Answered calls only: a call that timed out never lands here, so these ms are censored at the gate's limit (JEV_LIMITS). */
 export function gateStats({ days = 7, maxRows = 300000 } = {}) {
   const db = callsDb(), since = Date.now() - days * 86400000, gates = {};
-  const g = (t) => (gates[t] ||= { task: t, calls: 0, tokens: 0, ms: 0, answers: {}, gold: 0, gold_right: 0, shadow: {} });
+  const g = (t) => (gates[t] ||= { task: t, calls: 0, tokens: 0, ms: 0, mss: [], toks: [], answers: {}, gold: 0, gold_right: 0, shadow: {} });
   for (const r of db.prepare('SELECT task, jev, jev_tokens, jev_ms, gold, questions FROM calls WHERE at >= ? ORDER BY at DESC LIMIT ?').iterate(since, maxRows)) {
     const x = g(r.task); x.calls++; x.tokens += r.jev_tokens || 0; x.ms += r.jev_ms || 0;
+    if (r.jev_ms != null) x.mss.push(r.jev_ms); if (r.jev_tokens != null) x.toks.push(r.jev_tokens);
     const ans = parse(r.jev);
     for (const [q, c] of Object.entries(chosenOf(ans))) { const d = (x.answers[q] ||= {}); d[c ?? 'null'] = (d[c ?? 'null'] || 0) + 1; }
     if (r.gold) { const ok = matchesGold(ans, parse(r.gold), parse(r.questions)); if (ok != null) { x.gold++; if (ok) x.gold_right++; } }
@@ -36,6 +40,7 @@ export function gateStats({ days = 7, maxRows = 300000 } = {}) {
     s.n++; if (Object.keys(a).every((q) => a[q] === b[q])) s.agree++;
   }
   return Object.values(gates).sort((a, b) => b.calls - a.calls).map((x) => ({ task: x.task, calls: x.calls, avg_tokens: x.calls ? Math.round(x.tokens / x.calls) : 0, avg_ms: x.calls ? Math.round(x.ms / x.calls) : 0,
+    ms_p50: pct(x.mss, 0.5), ms_p90: pct(x.mss, 0.9), ms_p95: pct(x.mss, 0.95), ms_max: pct(x.mss, 1), tokens_p50: pct(x.toks, 0.5), tokens_p95: pct(x.toks, 0.95),
     answers: x.answers, gold: x.gold, gold_coverage: x.calls ? +(x.gold / x.calls).toFixed(3) : 0, accuracy: x.gold ? +(x.gold_right / x.gold).toFixed(3) : null,
     shadow_agreement: Object.fromEntries(Object.entries(x.shadow).map(([b, s]) => [b, { n: s.n, agree: +(s.agree / s.n).toFixed(3) }])) }));
 }

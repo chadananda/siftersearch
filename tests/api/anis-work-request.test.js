@@ -186,3 +186,14 @@ describe('respond: findWork is core-only unless Jev\'s lookup intent is book', (
   it('Unmatched runs no book lookup at all', async () => { expect(await run({})).toBeUndefined(); });
   it('Jev said book (no lookup result) → every book', async () => { expect((await run({ lookupIntent: 'book' }))?.coreOnly).toBeFalsy(); });
 });
+
+describe('the work itself outranks a study whose title contains its name (11-09 "Gita")', () => {
+  const rows = [
+    { id: 90, title: 'Gita and Gospel', author: 'J. N. Farquhar', religion: 'Christianity', collection: 'Books', slug: 'gita-gospel', language: 'en', paragraph_count: 400 },
+    { id: 91, title: 'The Bhagavad-Gita', author: 'Vyasa', religion: 'Hinduism', collection: 'Scripture', slug: 'bg', language: 'en', paragraph_count: 700 },
+  ];
+  it('picks the scripture, lists the study after it', async () => {
+    const w = await findWork('Where can I read Gita?', { index: buildIndex(rows), match: matchTitle, listDocs: async ({ ids }) => ({ docs: rows.filter((r) => ids.includes(r.id)) }) });
+    expect(w.doc.id).toBe(91);
+  });
+});
