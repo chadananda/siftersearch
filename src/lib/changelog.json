@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-10T18:12:44.380Z",
+  "generated": "2026-11-10T19:29:12.208Z",
   "entries": [
+    {
+      "hash": "bdb8551ec",
+      "date": "2026-11-10",
+      "type": "Other",
+      "description": "Anís tradition rollout order + per-tradition readiness gate + HyPE seeded with the bank top-100",
+      "scope": null
+    },
     {
       "hash": "00d570d8d",
       "date": "2026-11-10",
@@ -1120,38 +1127,17 @@
       "type": "New",
       "description": "Boss restores D/E talks (UniPASE on its ROCm iGPU + the worker-image CPU tail) beside aorus's whole imports; boss heat limits 96/99/93 (measured: no throttling at 90-92 C); media-cloud-order backfill mode, worst grade first",
       "scope": "media"
-    },
-    {
-      "hash": "a99eea6d9",
-      "date": "2026-10-25",
-      "type": "Fixed",
-      "description": "Drain excess rentals when the uplink limits throughput",
-      "scope": "media"
-    },
-    {
-      "hash": "6f8dd79cc",
-      "date": "2026-10-25",
-      "type": "Fixed",
-      "description": "Keep unfinished stages queued under worker backpressure",
-      "scope": "media"
-    },
-    {
-      "hash": "b8b0aed1f",
-      "date": "2026-10-25",
-      "type": "Fixed",
-      "description": "Survive worker backpressure and persist rental allocations",
-      "scope": "media"
-    },
-    {
-      "hash": "0b0efd026",
-      "date": "2026-10-25",
-      "type": "Fixed",
-      "description": "Bound transfer batches so rental workers stay fed",
-      "scope": "media"
     }
   ],
   "grouped": {
     "2026-11-10": [
+      {
+        "hash": "bdb8551ec",
+        "date": "2026-11-10",
+        "type": "Other",
+        "description": "Anís tradition rollout order + per-tradition readiness gate + HyPE seeded with the bank top-100",
+        "scope": null
+      },
       {
         "hash": "00d570d8d",
         "date": "2026-11-10",
@@ -2294,36 +2280,6 @@
         "date": "2026-10-28",
         "type": "New",
         "description": "Boss restores D/E talks (UniPASE on its ROCm iGPU + the worker-image CPU tail) beside aorus's whole imports; boss heat limits 96/99/93 (measured: no throttling at 90-92 C); media-cloud-order backfill mode, worst grade first",
-        "scope": "media"
-      }
-    ],
-    "2026-10-25": [
-      {
-        "hash": "a99eea6d9",
-        "date": "2026-10-25",
-        "type": "Fixed",
-        "description": "Drain excess rentals when the uplink limits throughput",
-        "scope": "media"
-      },
-      {
-        "hash": "6f8dd79cc",
-        "date": "2026-10-25",
-        "type": "Fixed",
-        "description": "Keep unfinished stages queued under worker backpressure",
-        "scope": "media"
-      },
-      {
-        "hash": "b8b0aed1f",
-        "date": "2026-10-25",
-        "type": "Fixed",
-        "description": "Survive worker backpressure and persist rental allocations",
-        "scope": "media"
-      },
-      {
-        "hash": "0b0efd026",
-        "date": "2026-10-25",
-        "type": "Fixed",
-        "description": "Bound transfer batches so rental workers stay fed",
         "scope": "media"
       }
     ]
