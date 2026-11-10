@@ -383,7 +383,7 @@ E.judge = { kind: 'decision', cls: 'jev', edges: [], edgesFor: (p) => (p?.option
     s.note = { read: { question }, params: { options: options.map((o) => o.edge) }, count: 0, scope_excluded: 0, confidence: r?.confidence ?? null };
     return chosen;
   } };
-E['judge.passages'] = { kind: 'decision', cls: 'jev', edges: ['answers', 'mentions_only', 'conflict', 'empty'], scope: 'strategy', params: ['precedence', 'question', 'stage'], reads: ['found_passages', 'topic'], writes: ['found_passages'],
+E['judge.passages'] = { kind: 'decision', cls: 'jev', edges: ['answers', 'mentions_only', 'conflict', 'empty'], scope: 'strategy', params: ['precedence', 'question', 'mentions', 'stage'], reads: ['found_passages', 'topic'], writes: ['found_passages'],
   async run(s, p = {}) {   // Jev per passage: answers / only mentions / contradicts another; mentions-only passages drop when others answer
     const u = U(s);
     if (!u.found_passages.length) return 'empty';
@@ -400,7 +400,9 @@ E['judge.passages'] = { kind: 'decision', cls: 'jev', edges: ['answers', 'mentio
     const edge = verdicts.includes('contradicts') ? 'conflict' : verdicts.includes('answers') ? 'answers' : 'mentions_only';
     // mentions-only passages drop where their OWN part (side / heading; the whole list when untagged) has an answer — one side's answer never empties another side
     const part = (x) => { const r = roleOf(x); return r ? r.join(':') : ''; }, answered = new Set(u.found_passages.filter((x) => x.verdict !== 'mentions_only').map(part));
-    if (edge !== 'mentions_only') u.found_passages = u.found_passages.filter((x) => x.verdict !== 'mentions_only' || !answered.has(part(x)));
+    // mentions: 'keep' — passages on the subject that don't state the fact stay as its setting (round 5: "Who founded Sikhism?" kept one
+    // British author's sentence and dropped Macauliffe's Life of Guru Nanak and Guru Nanak's own hymns); rank 'verdict' puts them after the answers
+    if (edge !== 'mentions_only' && p.mentions !== 'keep') u.found_passages = u.found_passages.filter((x) => x.verdict !== 'mentions_only' || !answered.has(part(x)));
     s.note = { read: { question: q }, params: p, count: u.found_passages.length, scope_excluded: 0, verdicts };
     return edge;
   } };
@@ -495,6 +497,7 @@ const standingRank = (x) => { const i = TIER_ORDER.indexOf(standingOf(x)); retur
 export const COMPARE = {
   standing: () => (a, b) => standingRank(a) - standingRank(b) || translationRank(a) - translationRank(b),   // tradition-authority: each passage by its own tradition's tiers (Bahá’í: writings > guardian > compilation > reported > house > secondary)
   authority: () => (a, b) => (ORDER.indexOf(kindOf(a) ?? 'other') + 1 || 99) - (ORDER.indexOf(kindOf(b) ?? 'other') + 1 || 99),
+  verdict: () => (a, b) => (a.verdict === 'mentions_only' ? 1 : 0) - (b.verdict === 'mentions_only' ? 1 : 0),   // judge.passages: what states the fact before what only sets it
   date: () => (a, b) => yearOf(b) - yearOf(a), history: () => (a, b) => yearOf(a) - yearOf(b), score: () => (a, b) => (b.score ?? 0) - (a.score ?? 0),
   length: () => (a, b) => String(a.text ?? '').length - String(b.text ?? '').length, marked: () => (a, b) => (b.marked ? 1 : 0) - (a.marked ? 1 : 0),
   occasion: (u) => (a, b) => (b.occasion === u.occasion ? 1 : 0) - (a.occasion === u.occasion ? 1 : 0), audience: (u) => (a, b) => (b.audience === u.audience ? 1 : 0) - (a.audience === u.audience ? 1 : 0),

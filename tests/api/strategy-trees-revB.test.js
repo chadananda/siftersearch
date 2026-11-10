@@ -131,6 +131,21 @@ describe('history_fact', () => {
     s = await run('history_fact', 'when', { tools, units: { topic: 'founding' }, jev: async () => ({ choice: 'contradicts' }) });
     expect(path(s)).toEqual(['h1', 'h2', 'h3', 'h4c', 'h6']);
   });
+  it('round 5 "Who founded Sikhism?": the founder\'s own scripture is searched beside the histories, and passages that only set the fact stay after the one that states it', async () => {
+    const auths = [], P = (id, title, authority, text) => ({ id, title, authority, text, religion: 'Sikh', document_id: id, paragraph_index: 1, score: 0.5 });
+    const tools = { fused_search: async (i) => { const a = [i.filters?.authority].flat().filter(Boolean); auths.push(a);
+      return { passages: a.includes('scripture') ? [P(3, 'Guru Granth Sahib - Japji Sahib', 'scripture', 'There is but one God, whose name is true, the Creator.')]
+        : [P(2, 'The Sikh Religion Vol. 1 - Life of Guru Nanak', 'scholarship', 'Guru Nanak was born in 1469 at Talwandi.'), P(1, 'The Sikhs', 'scholarship', 'The Sikh religion as it was founded by Nanak was a pure monotheism.')] }; } };
+    const jev = async ({ state }) => ({ choice: /founded/.test(state) ? 'answers' : 'mentions_only' });
+    const s = await run('history_fact', 'Who founded Sikhism?', { tools, units: { topic: 'founder of Sikhism', fact_asked: 'founder' }, jev });
+    expect(path(s)).toEqual(['h1', 'h2', 'h3', 'h4', 'h5']);
+    expect(auths.some((a) => a.includes('scripture'))).toBe(true);
+    expect(auths.some((a) => a.includes('history'))).toBe(true);
+    const ids = s.out.passages.filter((p) => !p.web).map((p) => p.id);
+    expect(ids[0]).toBe(1);                                   // the passage that states the founder leads
+    expect([...ids].sort()).toEqual([1, 2, 3]);                 // Macauliffe's life and Guru Nanak's own words stay as the setting
+    expect(s.how).toContain("the founder's own words");
+  });
 });
 
 describe('every rev-B tree passes validateCandidate', () => {
