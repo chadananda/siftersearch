@@ -2041,7 +2041,8 @@
                 {/if}
                 {#if msg.book}<BookCard book={msg.book} />{/if}
                 {#each msg.passages || [] as passage}<PassageCard {passage} />{/each}
-                <!-- Assistant response -->
+                <!-- Assistant response (a passage card that already holds the whole reply leaves no empty bubble) -->
+                {#if !(msg.passages?.length && !msg.isStreaming && !msg.error && !withoutQuote(msg.content).trim())}
                 <div class="research-bubble research-bubble-assistant {msg.error ? 'error' : ''}">
                   {#if msg.isStreaming && !msg.content}
                     <span class="research-typing"><span></span><span></span><span></span></span>
@@ -2065,6 +2066,7 @@
                     {/if}
                   {/if}
                 </div>
+                {/if}
                 <!-- Citations (collapsed by default) -->
                 {#if msg.citations?.length > 0}
                   <details class="research-citations">
