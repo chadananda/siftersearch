@@ -11,6 +11,10 @@
     { "title": "The Secret of Divine Civilization", "names": ["Secret of Divine Civilization", "Risaliy-i-Madaniyyih", "The Mysterious Forces of Civilization", "Mysterious Forces of Civilization"] },
     { "title": "Gems of Divine Mysteries", "names": ["Javahiru'l-Asrar", "Javahir al-Asrar"] },
     { "title": "God Passes By", "names": ["GPB"] },
-    { "title": "Gleanings", "names": ["Gleanings from the Writings", "Gleanings from the Writings of Bahá'u'lláh"] }
+    { "title": "Gleanings", "names": ["Gleanings from the Writings", "Gleanings from the Writings of Bahá'u'lláh"] },
+    { "title": "The Gospel of Matthew", "names": ["Matthew", "Gospel of Matthew", "Gospel According to Matthew", "The Gospel According to Matthew", "Saint Matthew", "St Matthew"] },
+    { "title": "The Gospel of Mark", "names": ["Mark", "Gospel of Mark", "Gospel According to Mark", "The Gospel According to Mark", "Saint Mark", "St Mark"] },
+    { "title": "The Gospel of Luke", "names": ["Luke", "Gospel of Luke", "Gospel According to Luke", "The Gospel According to Luke", "Saint Luke", "St Luke"] },
+    { "title": "The Gospel of John", "names": ["John", "Gospel of John", "Gospel According to John", "The Gospel According to John", "Saint John", "St John"] }
   ]
 }
