@@ -59,4 +59,5 @@ Chad, 10-19: "We need a way to rapidly iterate without breaking in-process work.
 
 - **Cut-over, 10-19:** 18 requests were retried while the search API moved off 7839, and none failed. A 61-question battery ran straight through it.
 - **Coordinator:** it boots each new build of the gateway, Anís and ops services on a test port (`/healthz`) before any reload. A build that fails is not deployed.
+- **Dependencies first (11-10):** when `package-lock.json` differs from the running commit, the updater runs `npm ci --omit=dev` *before* the import gate. Before this, a commit that added a package (pdfkit) was refused as "not installed". If `npm ci` fails, the deploy is refused and the tree is reset to the running commit.
 - **Still to do:** the `ecosystem.config.cjs` rule is still global, so any edit to it touches every service. It should affect only the apps whose own block changed. Phase 4, release directories and detached runs, is not started.

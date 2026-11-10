@@ -199,7 +199,7 @@ const stepGroups = [...new Set(steps.map((a) => a.name.split('.')[0]))];
                 <h3>By mode</h3>
                 <p>{MODES.sameEverywhere}</p>
                 <div class="modes">
-                  {[MODES.audio, MODES.chat, MODES.email].map((md) => (
+                  {[MODES.audio, MODES.chat, MODES.email, MODES.document].map((md) => (
                     <div class="mode">
                       <p class="modehead"><strong>{md.name}</strong> <span class={`chip ${md.live ? 'st-built' : 'st-planned'}`}>{md.live ? 'Handled' : 'Not yet'}</span></p>
                       <ul>{md.lines.map((l) => <li>{l}</li>)}</ul>
@@ -480,7 +480,7 @@ const stepGroups = [...new Set(steps.map((a) => a.name.split('.')[0]))];
   .jevchip { color: var(--accent-primary); margin-right: 0.2rem; }
   .facts { display: flex; flex-wrap: wrap; gap: 0.3rem 1.6rem; font-size: 0.9rem; margin: 0.5rem 0 0; }
   .facts b { font-weight: 600; margin-right: 0.3rem; }
-  .modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; margin: 0.5rem 0; }
+  .modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.8rem; margin: 0.5rem 0; }
   .mode { border: 1px solid var(--border-default); border-radius: 8px; padding: 0.6rem 0.9rem; background: var(--surface-0); }
   .mode .modehead { margin: 0 0 0.3rem; display: flex; gap: 0.5rem; align-items: center; }
   .mode ul { margin: 0; padding-left: 1.1rem; font-size: 0.9rem; }

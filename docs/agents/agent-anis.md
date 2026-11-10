@@ -14,7 +14,7 @@ search strategies) exists so Anís can answer well.
 
 ## Soul
 
-The live prompt is the source of truth: `api/lib/anis/soul.md` in the repository.
+The live prompt is the source of truth: `api/lib/assistant/soul.md` in the repository.
 In short:
 
 - **Loves every tradition** and helps people find wonder in traditions not their own, while keeping apart what a
@@ -37,33 +37,42 @@ In short:
 
 ## How a turn works
 
-One pipeline for every channel (`api/lib/anis/turn.js`):
+One pipeline for every channel (`api/lib/assistant/turn.js`):
 
 1. **Write it down first** — the message is logged as a pending turn before any model runs (exchange log).
 2. **Triage** (Jev, System-1): real question, small talk, junk or abuse → canned reply / hidden tarpit / research.
-   Non-research replies cost zero LLM tokens.
+   Non-research replies cost zero LLM tokens. Jev also reads whether the message fetches something exact (a lookup:
+   a book, a quote, `find_passage` for a passage somewhere in the library) and whether the reader wants the answer as a
+   document (`text`, `pdf_previous`, `pdf_new`) delivered by `link` or `email`.
 3. **Research** (`respond.js`): Jev plans the search; retrieval is raw search with **no LLM in the loop**; findings
    (people, claims, scenes, terms) are gathered in code.
-4. **One answer**, streamed, in one of 17 formats chosen against the question, the data and the channel.
-5. **Checks** — unverified quotes are dropped, the output is checked for persona breaks, voice lint.
+4. **One answer**, streamed, in one of 17 formats chosen against the question, the data and the channel. A find with
+   one literal hit is the passage only: the clause quoted, the phrase in bold, "— author, *Work*, place" linked under it.
+   The chat shows it as a passage card (small cover, the excerpt with the phrase marked, the whole card links to the
+   phrase). No discussion follows.
+5. **Checks** — unverified quotes are dropped, the output is checked for persona breaks, voice lint. At the exit, one
+   citation is one link to one source, and last-resort sources (uncompiled letters) come last.
 
 ## Tools
 
 | Tool | What it gives Anís | Where |
 |---|---|---|
 | Planned search | passages from the whole library, every tradition; question frames stripped, quoted voices tiered | `api/lib/planned-search.js` |
+| Quote search | the passage holding given words, literal first then by meaning; filters religions / authors / works (a book in context = that work) | `api/lib/assistant/quote-search.js` |
 | Source resolution | each quote served from its original work, copies listed as "also in" | `api/lib/source-resolve.js` |
 | People and encounters | who someone was, who met whom, who was at an event — with cited evidence | `api/lib/people-answer.js` |
-| Term study | the Arabic/Persian word, its root, how Shoghi Effendi rendered it, paired passages (CTAI concordance) | `api/lib/anis/ctai-term.js` |
+| Term study | the Arabic/Persian word, its root, how Shoghi Effendi rendered it, paired passages (CTAI concordance) | `api/lib/assistant/ctai-term.js` |
 | Deep research | stored, checked research on recurring questions | `api/lib/deep-research.js` |
-| Answer formats | direct answer, yes/no with proof, decisive passage, range of voices, authority layers, popular vs literature, term with original, find passage, people record, list, timeline, comparison (+table), reading suggestion, study question, honest absence, letter | `api/lib/anis/formats.js` |
-| Channels | widget chat, site chat, email — each with its own length, tone and capabilities | `api/lib/anis/channels.js` |
+| Answer formats | direct answer, yes/no with proof, decisive passage, range of voices, authority layers, popular vs literature, term with original, find passage, people record, list, timeline, comparison (+table), reading suggestion, study question, honest absence, letter | `api/lib/assistant/formats.js` |
+| Channels | widget chat, site chat, email — each with its own length, tone and capabilities | `api/lib/assistant/channels.js` |
+| Documents | the third modality after chat and email: any answer as a branded printable PDF, every link numbered with a QR code; a download link (R2) or a letter (report outbox) | `api/lib/assistant/pdf/`, `api/lib/qr.js` |
 | Mail | inbound threading, drafts, stop/pause, bounces; outbound via SES | `worker/mail/` |
 
 ## Sample scenarios
 
-1. **"Where does Bahá'u'lláh say the earth is but one country?"** → find-passage format: the decisive passage from
-   Gleanings, linked to its exact range on OceanLibrary, with the Persian original beside it and "also quoted in …".
+1. **"Where does Bahá'u'lláh say the earth is but one country?"** → find passage: one literal hit, so the reply is the
+   passage only — the clause quoted with the phrase in bold, its citation linked to the exact range on OceanLibrary. In
+   chat it is a passage card.
 2. **"What does 'Sun of Truth' mean?"** → term with original: the Arabic, its root, how Shoghi Effendi rendered it, two
    passages that use it, and the Íqán's own explanation.
 3. **"Did Ṭáhirih meet Quddús?"** → people record: met · contested · no evidence, each with the cited passage and date.
@@ -71,7 +80,9 @@ One pipeline for every channel (`api/lib/anis/turn.js`):
    own reading — what is shared and what differs beneath the shared words.
 5. **An email, two weeks later:** "I neglected to mention — I can also show you the original Arabic of any passage you
    quote." (Onboarding letters; drafts reviewed by Chad unless the sender was invited.)
-6. **"asdf lol"** → canned reply, zero model cost. Repeated abuse → hidden tarpit.
+6. **"Can I have that timeline as a PDF?"** → document `pdf_previous`: the last reply rendered as a branded PDF,
+   a download link in the reply (or, asked for by email, a letter carrying the link).
+7. **"asdf lol"** → canned reply, zero model cost. Repeated abuse → hidden tarpit.
 
 ## Memory strategy
 
@@ -90,7 +101,8 @@ the library and search only.*
 
 ## Status
 
-Built: answering (P0/P1), 17 formats, term study, email with threading and safety, onboarding letters (partial).
+Built: answering (P0/P1), 17 formats, term study, email with threading and safety, onboarding letters (partial),
+PDF documents by link or mail (11-10).
 Next: **P2** — identity and history in D1, memory, profile. Then host-site precedence, any-language, the Anís app,
 reading plans, study guides, voice. Detail: `planning/anis-hyper-engagement-prd.md`,
 `planning/functionality-plan-20261010.md` §4.1.

@@ -364,6 +364,10 @@ When `host_site` is set:
 
 The parameter is optional; when absent, the chat behaves as today (no site context).
 
+### Trying the widget on a host site
+
+A site owner can see what Anís does before going live with the "Try a sample" menu: one showcase question per answering strategy, each run as a real turn. Turn it on with `data-samples="true"` on the embed script, or open any page of the site with `?anis-samples` (that browser remembers it; `?anis-samples=0` forgets). It is not shown to the public yet. Embed details: `docs/architecture/anis-trm.md` (Widget).
+
 ## Library watcher — special handling for `-sites/`
 
 The library-watcher currently infers `religion` from the top-level Dropbox folder structure. That breaks for `-sites/oceanlibrary/` — we don't want OceanLibrary content tagged with `religion = 'oceanlibrary'`.

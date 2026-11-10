@@ -58,5 +58,7 @@ export const MODES = {
     lines: ['Works live: progress is narrated while a longer step runs.', 'About 150 words in the widget on other sites; 150–250 in the chat on the library site, with tables and headings.', 'Full length (often 500–900 words) when Jev judges the question needs depth.'] },
   email: { name: 'Email', live: true, emailWords: 600,
     lines: ['A considered letter of up to about 600 words.', 'Passages are quoted in full; an Arabic or Persian original sits beside the English, line by line, as a table.', 'No progress messages: the letter arrives when it is ready.'] },
+  document: { name: 'Document', live: true,
+    lines: ['Any reply as a branded, printable PDF when the reader asks for one: the previous answer, or a new one researched first.', 'Every link is numbered and printed with a QR code.', 'Delivered as a download link in the reply, or by email when asked.'] },
 };
 export const MODE_NOTES = { compilation: 'Headings become bold theme labels in any mode that cannot show headings.' };

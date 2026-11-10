@@ -9,7 +9,7 @@ Scope: how Anís works **as built** (code read 2026-10-10). Who he is and why (s
 
 ## 1. Overview
 
-Anís is one transport-neutral turn function, `anisTurn()` in `api/lib/anis/turn.js`, running in the tower Fastify API (`siftersearch-api`). Three callers reach it: the embeddable widget, the siftersearch.com chat (both through `POST /api/chat/stream`), and email (the Cloudflare Worker calls `POST /api/v1/anis/draft`). Each turn does the following. It logs the inbound message as pending. One Jev (System-1) call triages it. The turn then takes one of three paths: a canned reply (no LLM), a hidden tarpit, or the research path. The research path runs planned raw search, or SourceHunt, or a CTAI term study, and then makes **one** streamed LLM call that writes the reply. Code checks the reply: a quote gate, a link filter, a Jev persona check and a voice lint. Finally the log row is completed with the path that produced it. Every reply that does not take the research path costs zero LLM tokens.
+Anís is one transport-neutral turn function, `anisTurn()` in `api/lib/assistant/turn.js`, running in the tower Fastify API (`siftersearch-api`). Three callers reach it: the embeddable widget, the siftersearch.com chat (both through `POST /api/chat/stream`), and email (the Cloudflare Worker calls `POST /api/v1/anis/draft`). Each turn does the following. It logs the inbound message as pending. One Jev (System-1) call triages it. The turn then takes one of three paths: a canned reply (no LLM), a hidden tarpit, or the research path. The research path runs planned raw search, or SourceHunt, or a CTAI term study, and then makes **one** streamed LLM call that writes the reply. Code checks the reply: a quote gate, a link filter, a Jev persona check and a voice lint. Finally the log row is completed with the path that produced it. Every reply that does not take the research path costs zero LLM tokens.
 
 ```
 inbound message (widget / site chat / email)
@@ -53,7 +53,7 @@ lintReply (log only)
 
 ### Channel registry
 
-`api/lib/anis/channels.js` defines each channel as data. Unknown names, and privileged names from untrusted callers, resolve to `widget-chat`.
+`api/lib/assistant/channels.js` defines each channel as data. Unknown names, and privileged names from untrusted callers, resolve to `widget-chat`.
 
 | Channel | Used by | Frame (length/tone) | Capabilities | linkCap | Privileged |
 |---|---|---|---|---|---|
@@ -61,16 +61,17 @@ lintReply (log only)
 | `site-chat` | `/api/chat/stream` without `widget_token` | ~150–250 words | + tables, headings | 2 | no |
 | `email` | `/api/v1/anis/draft`, `/outreach` (`trusted: true`) | letter up to ~600 words | + charts, rtl | 3 | yes |
 
-`linkCap` and `newsCap` are declared but nothing in `api/lib/anis/` reads them. Capabilities filter the answer formats (`supports()`) and decide whether a term study renders a chart or table.
+`linkCap` and `newsCap` are declared but nothing in `api/lib/assistant/` reads them. Capabilities filter the answer formats (`supports()`) and decide whether a term study renders a chart or table.
 
 ### Widget (web component)
 
-- **Loader:** `api/static/widget/widget.js` (hand-written). Embed: `<script src="https://siftersearch.com/widget.js" data-key="wgt_…" async>`. Optional `data-accent`, `data-name`, `data-mission` pass through to the element.
+- **Loader:** `api/static/widget/widget.js` (hand-written). Embed: `<script src="https://siftersearch.com/widget.js" data-key="wgt_…" async>`. Optional `data-accent`, `data-name`, `data-mission`, `data-samples` pass through to the element.
+- **Try a sample (11-10):** a menu of showcase questions, one per answering strategy (`src/lib/anis-samples.js`; a thread's earlier turns are sent first). Shown when the element has a `samples` attribute (`data-samples="true"` on the embed), or on a browser that once opened a page with `?anis-samples` (remembered; `?anis-samples=0` forgets). For site owners to try Anís, not yet for the public: `SAMPLES_FOR_EVERYONE` is false.
 - **Element:** `<sifter-chat>`, built from `src/widget/SifterChat.svelte` (`npm run build:widget`) to `api/static/widget/sifter-chat.js`. It is served by `api/routes/widget.js`. The loader URL carries a content hash (`?v=`), so the bundle can be cached as immutable.
 - **Config:** `GET /api/v1/widget/config/:token` is origin-checked against `widget_profiles.domains`. It returns greeting, accent, position, `chatbotLocation` and placeholder.
 - **Chat:** `POST /api/chat/stream` with `{messages (last 12), widget_token, name?, mission?, chatbot_location?}`, using `credentials: 'include'` (the anonymous session cookie is the identity). The widget does **not** send `conversationId`. Thread continuity therefore depends on the 30-minute idle rule (§6).
 - **Transcript:** kept in `localStorage` per token, plus an anonymous id `sifter-chat-sid:<token>`.
-- **One Tap:** `POST /api/v1/widget/onetap` verifies a Google ID token and upserts `widget_connections`. It merges the browser's anonymous history into the account (`connectParticipant`) and sends a welcome email carrying a tower pause link (`api/lib/anis/pause-link.js`).
+- **One Tap:** `POST /api/v1/widget/onetap` verifies a Google ID token and upserts `widget_connections`. It merges the browser's anonymous history into the account (`connectParticipant`) and sends a welcome email carrying a tower pause link (`api/lib/assistant/pause-link.js`).
 - **Events:** `POST /api/v1/widget/events` (beacons) writes to `widget_events`.
 - **Typing prewarm:** the widget calls `POST /api/chat/prep` while the user types. See open question 2.
 
@@ -139,12 +140,12 @@ A refused letter becomes `blocked` with a reason. `sendMail()` wraps the body wi
 **Tower side** (`api/routes/anis.js`, prefix `/api/v1/anis`):
 
 - `POST /draft` (`x-internal-key == INTERNAL_API_KEY`) runs `anisTurn({ channel: 'email', trusted: true, participant: {id: 'email:<sha256-32>'} })` and returns `{reply, status, triage, retrieved, format}`. This is a normal turn: it is exchange-logged on tower and audited.
-- `POST /outreach` gets `outreachPrompt(step, lastQuestion)` (`api/lib/anis/outreach.js`). Steps 0–1 show a capability (`original`, `range`); later steps are a `follow-up`. It then calls `anisRespond` **directly**: no triage, no persona check, no lint, no exchange log. It returns `{silent: true}` if nothing was retrieved.
+- `POST /outreach` gets `outreachPrompt(step, lastQuestion)` (`api/lib/assistant/outreach.js`). Steps 0–1 show a capability (`original`, `range`); later steps are a `follow-up`. It then calls `anisRespond` **directly**: no triage, no persona check, no lint, no exchange log. It returns `{silent: true}` if nothing was retrieved.
 - `GET/POST /pause` is the tower-side pause for One Tap research-summary emails. It sets `widget_connections.unsubscribed_at` and uses `ANIS_LINK_SECRET`. It is a different system from the Worker's `/_mail/pause`.
 
 D1 schema: `worker/d1/anis/0001–0009`. Tables: `mail_messages`, `mail_events`, `mail_suppression`, `mail_ignore`, `mail_settings`, `mail_allowlist` (`email`, `name`, `asked_by`, `note`), `mail_stop` (address hash only) and `mail_templates` (`welcome`, `support_welcome`, `support_reply`). Statuses in use: inbound `new|drafting|drafted|handled|spam|auto|unsubscribe`; outbound `draft|sent|failed|suppressed|blocked|discarded|silent`.
 
-## 3. The turn pipeline (`api/lib/anis/turn.js`)
+## 3. The turn pipeline (`api/lib/assistant/turn.js`)
 
 | Step | Code | Output |
 |---|---|---|
@@ -157,7 +158,7 @@ D1 schema: `worker/d1/anis/0001–0009`. Tables: `mail_messages`, `mail_events`,
 | Lint | `lintReply(reply)` | List of hits, **logged only, never blocks** |
 | Close | `closeExchange()` / on throw `failExchange()` | Assistant row + `path_json`; the user row is updated |
 
-### Triage gate (`api/lib/anis/triage.js`)
+### Triage gate (`api/lib/assistant/triage.js`)
 
 One Jev call (`jev-latest`, `https://api.typesafe.ai/v1/systemone`) over the last 4 messages, each clipped to 800 chars, with a 700 ms timeout. It goes through `jevFetch('anis-triage')`, so it is logged and Clef-shadowed. Questions asked:
 
@@ -170,21 +171,21 @@ Thresholds (`T`): `malicious ≥ 0.9` → refuse + strike. `complete ≤ 0.2` �
 
 **Fail open:** with no `TYPESAFE_API_KEY`, a timeout or an error, `triageMessage` returns `null`, the route is `research`, and the turn proceeds normally.
 
-### Canned replies (`api/lib/anis/canned.js`)
+### Canned replies (`api/lib/assistant/canned.js`)
 
 Pools: `refuse`, `about_anis`, `thanks`, `feedback`, `off_topic`, `unclear`, `cut_off`, and `NOTHING_FOUND`. A reply is chosen by a sha1 of `kind:message:date`. `{name}` is the persona. `{self}` is `ANIS_SELF` ("an experimental AI research assistant with my own email address (anis@oceanlibrary.com)") when the persona is named Anís/Anis, and a generic description otherwise.
 
-### Strikes and tarpit (`api/lib/anis/strikes.js`)
+### Strikes and tarpit (`api/lib/assistant/strikes.js`)
 
 The strike key is sha256 of `anis-strike:<clientKey>`. Two strikes within 24h puts the key in the tarpit. State is an in-process `Map`: a PM2 restart forgives every strike (`siftersearch-api` is a single fork instance). Tarpit replies come from the same pools at realistic delays, so an attacker cannot recognise the tarpit.
 
-## 4. Research path (`api/lib/anis/respond.js`)
+## 4. Research path (`api/lib/assistant/respond.js`)
 
 ### Order of decisions
 
 1. **Plan:** `planSearch(messages)` (`api/lib/search-plan.js`). One Jev call (`search-plan`, 700 ms) with questions `tradition`, `comparative`, `author`, `shape` and `about`. `shape === 'converse'` → conversational turn: no search, no sources event, and a DIRECTION of 1–3 warm sentences. Successful plans are cached in process. If Jev fails, a keyword backstop picks tradition and author.
 2. **Source question?** `direction.kind === 'source_lookup'`, or `looksLikeSourceQuestion()` (source wording plus a separate quotation of 8+ words) → `huntSource()` → `sourceHunt()` (`api/lib/source-hunt.js`). If SourceHunt finds an origin, the reply is a **template built from the hunt, with no LLM call**. `{book}`, `{tablet}`, `{inventory}` and `{citedN}` tags are filled with exact links (`fillTags`), and links are upgraded to range links. If nothing is found, the turn falls through.
-3. **Term question?** `termQuestion()` (`api/lib/anis/ctai-term.js`) → CTAI study (below). If there are no passages, the turn falls through.
+3. **Term question?** `termQuestion()` (`api/lib/assistant/ctai-term.js`) → CTAI study (below). If there are no passages, the turn falls through.
 4. **Search:** `executeSearch({query: searchQueryFor(messages), mode: 'passages', limit: 8, scope_config, plan: {messages, defaults: {religion: default_tradition}}})` (`api/routes/chat.js`) → `plannedSearch()` (`api/lib/planned-search.js`). `searchQueryFor` prepends the previous user turn when the current one is ≤5 words or contains an anaphor.
 
 ### Search strategies ("recipes")
@@ -217,9 +218,9 @@ Results are cached for 10 minutes, keyed by query, filters, author, shape, limit
 
 ### Findings, data profile and format
 
-- `toFindings()` (`api/lib/anis/findings.js`): passages become `text_shows` findings and people records become `documented` ones. An empty result becomes one `absence` finding. Each passage gets an authority class from `companion/authority.js`: `B1_REVEALED` → "scripture", `B2_AUTH_INTERPRETATION` → "authorized interpretation", and so on.
+- `toFindings()` (`api/lib/assistant/findings.js`): passages become `text_shows` findings and people records become `documented` ones. An empty result becomes one `absence` finding. Each passage gets an authority class from `companion/authority.js`: `B1_REVEALED` → "scripture", `B2_AUTH_INTERPRETATION` → "authorized interpretation", and so on.
 - `dataProfile()` counts passages, authors, traditions, authority kinds, people, denied, disputed, dates, `hasOriginal`, `absence`, `comparative` and `shape`.
-- `chooseFormat()` (`api/lib/anis/formats.js`): code removes formats the data or the channel cannot support. If one feasible format remains, or there is no API key, code picks. Otherwise one Jev call (`anis-format`, 600 ms) chooses. On failure, `SHAPE_DEFAULT` picks (`people_record` if any people are present). The format choice runs in parallel with the Companion plan.
+- `chooseFormat()` (`api/lib/assistant/formats.js`): code removes formats the data or the channel cannot support. If one feasible format remains, or there is no API key, code picks. Otherwise one Jev call (`anis-format`, 600 ms) chooses. On failure, `SHAPE_DEFAULT` picks (`people_record` if any people are present). The format choice runs in parallel with the Companion plan.
 
 Answer formats (`FORMATS` in `formats.js`):
 
@@ -245,7 +246,7 @@ Answer formats (`FORMATS` in `formats.js`):
 
 The SourceHunt path and the term study set the format directly: `{id: 'source', by: 'sourcehunt'}` and `{id: 'term_study', by: 'ctai'}`.
 
-### CTAI term study (`api/lib/anis/ctai-term.js`)
+### CTAI term study (`api/lib/assistant/ctai-term.js`)
 
 - **Trigger:** Arabic script plus a term cue word, or a Latin pattern ("the word X", "what does X mean", "meaning of <diacritic word>"). A `NOT_TERMS` list excludes common English words.
 - **Latin to Arabic script:** `resolveTerm()` makes one DeepSeek call (`deepseek-v4-flash`, thinking off, 20 tokens, caller `anis-term`).
@@ -253,7 +254,7 @@ The SourceHunt path and the term study set the format directly: `{id: 'source', 
 - **Rendering counts:** computed from aligned passages and grouped by inflection. If fewer than 3 passages align, CTAI's root-level counts are used instead.
 - **Model output and code output:** the model writes the opening sentence, the `[[RENDERINGS]]` and `[[PASSAGES]]` tokens, and a short reading. Code fills the tokens (`placeRenderings`): a ` ```chart ` block or a text line for renderings, and a table or list for passages, depending on the channel's capabilities. The model never writes the counts.
 
-### The one LLM call (`api/lib/anis/craft.js`, `prompt.js`)
+### The one LLM call (`api/lib/assistant/craft.js`, `prompt.js`)
 
 - **System prompt:** `soul.md` (persona name substituted) + `HOUSE_STYLE` (grounding, verbatim quotes of ≥5 words as linked fragments, exact URLs only, authority kinds kept distinct, no "machinery" talk). It is constant per persona, so the provider can cache it as a prefix.
 - **User message:** the DIRECTION block, built by `anisDirection()` from:
@@ -268,7 +269,7 @@ The SourceHunt path and the term study set the format directly: `{id: 'source', 
 - **Parameters:** temperature 0.3. `max_tokens` is 700, or 1500 when `reasoning_effort` is set and not `none`. Streaming with usage. DeepSeek gets top-level `thinking: {type: 'disabled'}`. OpenAI SDK with `maxRetries: 0`. **No timeout or abort signal is passed.**
 - **Rollback switch:** `ANIS_PROMPT=jafar` swaps in `craftAnswerStream` from `jafar-pipeline.js`.
 
-### Reply guards (`api/lib/anis/quotes.js`, `respond.js`, `lint.js`)
+### Reply guards (`api/lib/assistant/quotes.js`, `respond.js`, `lint.js`)
 
 - **Streaming sentence gate** (`createSentenceGate`): text is released one sentence at a time, and only when every quoted span in the sentence appears verbatim (folded, via `quote-text.js` `containsQuote`) in a retrieved passage. An invented quote is never displayed.
 - **Final text:**
@@ -338,7 +339,7 @@ Models flagged `unpriced` are listed separately in Costs.
 
 `participant.authed` means a signed-in account. One Tap connects from the widget call `connectParticipant`, which merges the anonymous session.
 
-### Threads (`api/lib/anis/exchange-log.js`)
+### Threads (`api/lib/assistant/exchange-log.js`)
 
 A message joins a thread in one of two ways:
 
@@ -413,7 +414,7 @@ Moving Anís history and the turn itself into D1/Worker is **(planned)** in `pla
 | Assessment, Activity, Costs, System-1 | `AnisInsights.svelte` (one shared fetch per window) | `GET /api/admin/anis/overview?days=1..365` (`api/routes/anis-admin.js`, `requireTier('admin')`) |
 | About Anís | content collection `agents` → `agent-anis` | static |
 
-`/api/admin/anis/overview` (`api/lib/anis/admin-overview.js`) returns four sections. Each fails on its own as `{available: false}`.
+`/api/admin/anis/overview` (`api/lib/assistant/admin-overview.js`) returns four sections. Each fails on its own as `{available: false}`.
 
 - **activity:** assistant replies by day and channel, by `path_json.gate`, by `path_json.recipe`, distinct participants, and the last 25 rows with question, path, strategy and format.
 - **costs:** `ai_usage` rows where `caller LIKE 'anis%'`, or the caller is `system1:` plus one of `ANIS_S1_TASKS` (`anis-triage`, `anis-format`, `anis-persona-check`, `search-plan`, `source-resolve`). Also lists unpriced models.
@@ -538,24 +539,24 @@ Other no-deploy controls: `mail_ignore` (domain or address), `mail_allowlist` (`
 
 | File | Responsibility |
 |---|---|
-| `api/lib/anis/turn.js` | One turn: tarpit, log ‖ triage, route, canned/research, output check, lint, close |
-| `api/lib/anis/triage.js` | Jev triage gate, `routeTriage` thresholds, persona output check |
-| `api/lib/anis/canned.js` | Canned reply pools, `NOTHING_FOUND`, `ANIS_SELF` |
-| `api/lib/anis/strikes.js` | In-memory strikes, tarpit response timing |
-| `api/lib/anis/respond.js` | Research path: plan, SourceHunt, term study, search, findings, format, Companion, craft, guards |
-| `api/lib/anis/formats.js` | Answer-format catalog, feasibility, Jev choice, defaults |
-| `api/lib/anis/findings.js` | Typed findings, authority names, data profile |
-| `api/lib/anis/prompt.js` | System prompt (soul + house style), DIRECTION, user payload |
-| `api/lib/anis/soul.md` | Persona text (system prompt layer 1) |
-| `api/lib/anis/craft.js` | The single streamed LLM call; provider switch; spend log |
-| `api/lib/anis/ctai-term.js` | Term detection, transliteration, CTAI study, code-built renderings/passages |
-| `api/lib/anis/quotes.js` | Quote verification, streaming sentence gate, `dropUnverified` |
-| `api/lib/anis/lint.js` | Voice lint (log-only), `unmachine` |
-| `api/lib/anis/channels.js` | Channel registry, privilege check, capability test |
-| `api/lib/anis/exchange-log.js` | Thread choice, pending/complete/failed rows, replay query |
-| `api/lib/anis/pause-link.js` | Tower-side signed pause links (One Tap emails) |
-| `api/lib/anis/outreach.js` | Prompts for letters Anís starts, by step |
-| `api/lib/anis/admin-overview.js` | Data for the hub's Activity/Costs/Assessment/System-1 tabs |
+| `api/lib/assistant/turn.js` | One turn: tarpit, log ‖ triage, route, canned/research, output check, lint, close |
+| `api/lib/assistant/triage.js` | Jev triage gate, `routeTriage` thresholds, persona output check |
+| `api/lib/assistant/canned.js` | Canned reply pools, `NOTHING_FOUND`, `ANIS_SELF` |
+| `api/lib/assistant/strikes.js` | In-memory strikes, tarpit response timing |
+| `api/lib/assistant/respond.js` | Research path: plan, SourceHunt, term study, search, findings, format, Companion, craft, guards |
+| `api/lib/assistant/formats.js` | Answer-format catalog, feasibility, Jev choice, defaults |
+| `api/lib/assistant/findings.js` | Typed findings, authority names, data profile |
+| `api/lib/assistant/prompt.js` | System prompt (soul + house style), DIRECTION, user payload |
+| `api/lib/assistant/soul.md` | Persona text (system prompt layer 1) |
+| `api/lib/assistant/craft.js` | The single streamed LLM call; provider switch; spend log |
+| `api/lib/assistant/ctai-term.js` | Term detection, transliteration, CTAI study, code-built renderings/passages |
+| `api/lib/assistant/quotes.js` | Quote verification, streaming sentence gate, `dropUnverified` |
+| `api/lib/assistant/lint.js` | Voice lint (log-only), `unmachine` |
+| `api/lib/assistant/channels.js` | Channel registry, privilege check, capability test |
+| `api/lib/assistant/exchange-log.js` | Thread choice, pending/complete/failed rows, replay query |
+| `api/lib/assistant/pause-link.js` | Tower-side signed pause links (One Tap emails) |
+| `api/lib/assistant/outreach.js` | Prompts for letters Anís starts, by step |
+| `api/lib/assistant/admin-overview.js` | Data for the hub's Activity/Costs/Assessment/System-1 tabs |
 | `api/lib/systemone.js` | Jev/Clef/Laya client, call log, shadows, spend |
 | `api/lib/search-plan.js` | Jev search plan (shape, tradition, author, about), layers |
 | `api/lib/planned-search.js` | Planned retrieval: relax, author preference, target, resolve, people |

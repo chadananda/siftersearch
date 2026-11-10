@@ -17,49 +17,59 @@ Anís searches the library with a set of named tools. Each kind of search, and e
 
 - A tool whose name ends in `_search` takes words (`query`, or a `title`) and returns ranked results.
 - A tool whose name ends in `_lookup` takes one known thing (a paragraph id, a work title or a word) and returns facts about it. It never takes a `query`.
-- A strategy (`kind: "strategy"`) combines tools. For example, `quotation_trace` runs sourceHunt over the `phrase_search` and `literal_search` layers.
-- A name means one function. Two engines get two names. For example, `combined_search` is the planned search and `fused_search` has no planner.
-- An old name is an **alias**, listed in `ALIASES`. It is accepted on input only, through `run()` and as a hidden route. Lists, the spec and models show the canonical name.
+- A strategy (`kind: "strategy"`) combines tools. Strategies are internal (see below); the contract tools are all `kind: "tool"`.
+- A name means one function. Two engines get two names. For example, `fused_search` fuses every layer on the query as written; `quote_search` finds the passage holding given words.
+- There are no aliases. They were retired on 11-09: a caller uses the canonical name.
 - Intent is never decided here. Jev chooses the tool or strategy, and the tool only executes it.
 
 ## Shared schemas
 
 | Schema | Used for |
 |---|---|
-| `AnisToolFilters` | the hard filters of every passage search: `tradition`, `collection`, `author`, `writerOnly`, `language`, `documentId`, `yearFrom`, `yearTo` |
-| `AnisPassage` | one paragraph. It keeps the executeSearch field names (`id` = paragraph id, `document_id`, `source_url`) so citations and links keep working. `role` is set by `quotation_trace`. |
+| `AnisToolFilters` | the hard filters of every passage search: `tradition`, `collection`, `author`, `writerOnly`, `language`, `documentId`, `work`, `authority`, `yearFrom`, `yearTo` (`quote_search` takes its own lists: `religions`, `authors`, `works`) |
+| `AnisPassage` | one paragraph. It keeps the executeSearch field names (`id` = paragraph id, `document_id`, `source_url`) so citations and links keep working. `role` (source, original, translation, quoting) is set by `quotation_candidates` and `edition_lookup`. |
 | `AnisWork` | one work: `id`, `title`, `author`, `url`, `encumbered` |
 | `AnisToolError` | the error envelope |
 
 ## Tools
 
-| Name | Label | Kind | Output | Aliases | Purpose |
-|---|---|---|---|---|---|
-| literal_search | Literal Search (BM25) | tool | Passage[] | — | BM25 keyword search over whole paragraphs: the exact words, folded for accents and spelling. |
-| phrase_search | Phrase Search | tool | Passage[] | — | Phrase-vector search: paragraphs holding a phrase like the query, in any wording. |
-| hype_search | HyPE Search | tool | Passage[] | — | Question search (HyPE): paragraphs that answer a question like the query. |
-| combined_search | Combined Search | tool | Passage[] | search_library, planned_search | The planned library search: a planner reads the query (and the conversation), sets the scope, and fuses every layer. |
-| fused_search | Fused Search | tool | Passage[] | — | Every layer fused on the query as written: no planner, no LLM, no relaxing. |
-| quote_search | Quote Search | tool | Passage[] | — | Find the passage(s) holding given words: literal first, then meaning; filters religions / authors / works (any of each, all kinds AND). A book in context = works:[id]. |
-| biography_search | Biography Search | tool | Person[] | people_search | People search: who did, met or wrote something, each person with the cited evidence. |
-| document_search | Document Search | tool | Work[] | find_work | A work in the library by its title, any spelling: the best match first, then close others. |
-| web_search | Web Search | tool | WebAnswer | — | The open web, for what a library of texts cannot hold; never scripture. |
-| original_lookup | Original Lookup | tool | Passage[] | find_original | The Arabic/Persian original of an English passage, then the authorised translations linked to it. |
-| translation_lookup | Translation Lookup | tool | Passage[] | find_translation | Existing English translations of an Arabic/Persian text. |
-| links_lookup | Links Lookup | tool | PassageLinks | passage_links | A paragraph's recorded links: its original, translations, the sources it quotes and the works quoting it. |
-| context_lookup | Context Lookup | tool | Context | read_around | The paragraphs before and after one paragraph (none for a copyrighted book). |
-| rendering_lookup | Rendering Lookup (CTAI) | tool | Renderings | word_study | How Shoghi Effendi rendered an Arabic/Persian word or root, with counts and paired passages. |
-| work_notes_lookup | Work Notes Lookup | tool | WorkNotes | about_work | Verified quotations on a core work's significance, best authority first. |
-| source_trace | Source Trace | tool | Passage[] | trace_source | The primary passages that a signpost (a House letter, a scholar, a compilation) quotes or rests on. |
-| quotation_trace | Quotation Trace | strategy | Passage[] | source_of | Where a quotation comes from: its published source, the original tablet and the works quoting it. |
+The contract tools (`REGISTRY`), as of 11-10. The live list, with call counts and timings, is `GET /api/v1/tools` and /docs/anis-tools.
 
-Some entries are **internal** strategies (`internal: true`): `comparison`, `understanding`, `prayer`, `guidance` and `reference`. The answer pipeline runs them through `run()` once Jev has chosen them. They are not routes.
+| Name | Label | Output | Purpose |
+|---|---|---|---|
+| literal_search | Literal Search (BM25) | Passage[] | BM25 keyword search over whole paragraphs: the exact words, folded for accents and spelling. |
+| phrase_search | Phrase Search | Passage[] | Phrase-vector search: paragraphs holding a phrase like the query, in any wording. |
+| hype_search | HyPE Search | Passage[] | Question search (HyPE): paragraphs that answer a question like the query. |
+| fused_search | Fused Search | Passage[] | The one typed search: every layer (or the ones you pick) fused on the query as written, filtered, deduped across layers/copies/editions. |
+| quote_search | Quote Search | Passage[] | Answers "find the passage that says X", "where does <author/tradition> say X", "search for X in <work>": one search type, filters from the strategy and context. |
+| compare_search | Compare Search | Side[] | Replaces a per-side search loop: one merged query per side, returned side by side (a side with no hits is an empty side, not an error). |
+| reference_lookup | Reference Lookup | Reference | Chapter-and-verse to the passage, deterministically; no passage and ref null when the text is not a reference or the book is not in the library. |
+| badi_calendar | Badí‘ Calendar | BadiDate | Calendar arithmetic only. Holy-day names are not returned (the table is not verified here); Naw-Rúz is flagged. |
+| prayer_lookup | Prayer Lookup | Prayers | A name or incipit → literal and phrase search (and meaning, for a name) across the tradition’s whole scope; a need → meaning search (hype + phrase) in the tradition plus inside its prayer works. Headings, titles and prayer works only rank (with the tradition’s own authority, core first); they never decide. Deterministic. |
+| whole_lookup | Whole Prayer Lookup | Whole prayer | Extends one paragraph to the whole prayer or devotional unit holding it: an attribution-closed run, a short section, else the contiguous paragraphs that address God. Never for a copyrighted book. |
+| originals_search | Originals Search | Passage[] | The fast engine held to the doctrinal writers and the Arabic/Persian language group: the originals an English search ranks out. |
+| biography_search | Biography Search | Person[] | People search: who did, met or wrote something, each person with the cited evidence (deterministic: the evidence index, no model). |
+| document_search | Document Search | Work[] | A work in the library by its title, any spelling: the best match first, then close others. |
+| original_lookup | Original Lookup | Passage[] | The Arabic/Persian original of an English passage, then the authorised translations linked to it. |
+| translation_lookup | Translation Lookup | Passage[] | Existing English translations of an Arabic/Persian text: the library’s copy of the original and the translations linked to it. |
+| links_lookup | Links Lookup | PassageLinks | A paragraph’s recorded links: its original, its translations, the sources it quotes and the works quoting it. |
+| context_lookup | Context Lookup | Context | The paragraphs before and after one paragraph of a document (none for a copyrighted book). |
+| rendering_lookup | Rendering Lookup (CTAI) | Renderings | How Shoghi Effendi (or another translator) rendered an Arabic/Persian word or root (the CTAI concordance), with counts and paired passages. |
+| work_notes_lookup | Work Notes Lookup | WorkNotes | Verified quotations on a core work’s significance, best authority first. |
+| author_lookup | Author Lookup | Authors | The library’s author strings for a person’s name (Augustine → Augustine of Hippo, Saint Augustine). |
+| source_trace | Source Trace | Passage[] | The primary passages a signpost (a House letter, a scholar, a compilation) quotes or rests on. |
+| edition_lookup | Edition Lookup | Editions | A passage’s original-language edition, or its existing translations, in any tradition: recorded links, else the same work in another language aligned by verse/section, else by meaning. |
+| quotation_candidates | Quotation Candidates | Passage[] | Where a quotation may come from: the passage holding its words (source), the original tablet, works quoting it — each with a containment score; deterministic, no model. |
 
-`POST /api/v1/tools/search`, the older multi-mode tool in `public-api.js`, is still served for existing callers. Its successor is `combined_search`.
+`PROCESS` holds the rest, callable through `run()` but not routes or contract tools: `web_search` (it calls an LLM), and the **internal** strategies (`internal: true`) `comparison`, `understanding`, `prayer`, `guidance`, `reference`, `compilation` and `deep_report`. The answer pipeline runs those once Jev has chosen them.
+
+`quote_search` is the one find-a-passage tool (11-10): `{query, mode, religions, authors, works, from, to}`. `mode` is `literal`, `meaning` or `auto` (literal first, then meaning when nothing matches). The filters come from the strategy and the context, never from the tool: a book in context becomes `works:[id]`, so finding words inside a book is the same tool, not its own. Jev's library-wide case is the triage lookup kind `find_passage`.
+
+`POST /api/v1/tools/search`, the older multi-mode tool in `public-api.js`, is still served for existing callers. Its successor is `fused_search`. `combined_search` (the planned search) left the registry on 11-09; it lives in `combined-search.js` for the researcher's rollback path only.
 
 ## Adding a tool
 
-1. Pick the name by the naming rule, and make sure it is not used by another function. If the tool replaces an old name, add that name to `ALIASES`.
+1. Pick the name by the naming rule, and make sure it is not used by another function.
 2. Add an entry to `ENTRIES` in `tools.js` with:
    - `name`, `label`, `kind` and `purpose` (one sentence);
    - `input` (JSON Schema; reuse `FILTERS` for passage filters);
