@@ -110,6 +110,19 @@ describe('experiment harness (fake Jev)', () => {
     expect(r2.truncated).toMatch(/maxUsd/); expect(r2.done).toBeLessThan(4);
     await expect(run({ task: 'x', variant: 'nope' }, { sample: async () => [] })).rejects.toThrow(/unknown variant "nope".*baseline/);
   });
+  it('backend variant re-asks the same call on another model and reports latency percentiles', async () => {
+    const { runExperiment: run } = await import('../../api/lib/jev-tuning/experiment.js');
+    for (let i = 0; i < 4; i++) log('anis-strategy', 'answer', { ref: `b:${i}` });
+    so.flushCalls();
+    for (const c of bank.listCalls({ task: 'anis-strategy' })) bank.labelCall(c.id, 'answer');
+    const seen = [];
+    const rerun = async (t, st, q, opts) => { seen.push(opts?.backend ?? 'jev'); return { answers: ans(opts?.backend ? 'find_book' : 'answer'), tokens: 10, ms: opts?.backend ? 50 : 300 }; };
+    const r = await run({ task: 'anis-strategy', n: 4, concurrency: 1, variant: { id: 'backend', params: { model: 'clef-flash' } } }, { sample: async (t, o) => bank.sampleBank(t, o), rerun });
+    expect(seen.filter((b) => b === 'clef-flash')).toHaveLength(4);
+    expect(seen.filter((b) => b === 'jev')).toHaveLength(4);
+    expect(r.ms_pct).toEqual({ baseline: { p50: 300, p90: 300, p95: 300, max: 300 }, variant: { p50: 50, p90: 50, p95: 50, max: 50 } });
+    expect(r.changed).toBe(4);
+  });
   it('thread-history variant adds earlier turns; skipped when the call has none', async () => {
     const { resolveVariant } = await import('../../api/lib/jev-tuning/variants.js');
     const v = resolveVariant({ id: 'thread-history', params: { turns: 2 } });

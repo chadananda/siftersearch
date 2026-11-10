@@ -252,7 +252,7 @@ else if (cmd === 'jev-gates') {   // every Jev decision gate: calls, answer mix,
   else await new Promise((r) => process.stdout.write(`${x.task} · ${x.variant.id} ${JSON.stringify(x.variant.params)} · sampled ${x.sampled}, done ${x.done}, errors ${x.errors}, skipped ${x.skipped}${x.truncated ? `, TRUNCATED (${x.truncated})` : ''}\n`
     + `accuracy vs gold (${x.labelled} labelled): baseline ${x.accuracy.baseline} → variant ${x.accuracy.variant}  (Δ ${x.accuracy.delta})  fixed ${x.fixed}, broken ${x.broken}\n`
     + `changed ${x.changed}: ${Object.entries(x.flips).sort((a, b) => b[1] - a[1]).map(([f, n]) => `${f} ×${n}`).join(' · ') || '–'}\n`
-    + `tokens ${x.avg_tokens.baseline} → ${x.avg_tokens.variant} · ms ${x.avg_ms.baseline} → ${x.avg_ms.variant} · $${x.usd}\n`, r));
+    + `tokens ${x.avg_tokens.baseline} → ${x.avg_tokens.variant} · ms ${x.avg_ms.baseline} → ${x.avg_ms.variant}${x.ms_pct ? ` · p50/p90/p95/max ${Object.values(x.ms_pct.baseline).join('/')} → ${Object.values(x.ms_pct.variant).join('/')}` : ''} · $${x.usd}\n`, r));
 }
 else if (cmd === 'failures') await out(await call('GET', `/ops/failures?hours=${val('--hours') || 24}`));   // failed ops jobs (what the FAILED mails report)
 else if (cmd === 'bio-slugs') {   // mint biography slugs in batches of 25 until none are left

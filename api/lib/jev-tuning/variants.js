@@ -7,6 +7,9 @@ const eachQuestion = (questions, only, fn) => { const q = clone(questions); for 
 
 export const VARIANTS = {
   baseline: { describe: 'unchanged (the control)', apply: ({ state, questions }) => ({ state, questions }) },
+  // same call, another System-1 model (Cloudflare Workers AI Clef): agreement with Jev + latency, before a gate is routed to it
+  backend: { describe: 'the same call on another backend. params: {model: "clef-flash"|"clef"}',
+    apply: ({ state, questions, params }) => ({ state, questions, backend: params.model || 'clef-flash' }) },
   'state-append': { describe: 'add text after the state. params: {text}', apply: ({ state, questions, params }) => ({ state: `${state}\n\n${params.text}`, questions }) },
   'state-prepend': { describe: 'add text before the state. params: {text}', apply: ({ state, questions, params }) => ({ state: `${params.text}\n\n${state}`, questions }) },
   'question-note': { describe: 'append to a question\'s instructions (all questions, or params.question). params: {text, question?}',

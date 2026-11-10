@@ -12,6 +12,8 @@ export const estimateUsd = (avgTokens, n, { extraTokens = 0, baseline = 'rerun' 
 
 /** minConfidence (optional): also counts confidence_drops. deps: { sample(task, opts) → bank rows, rerun(task, state, questions) → {answers, tokens, ms}, history? }. `rows` (e.g. historic bank
  *  rows + a frozen synthetic set, each with src 'historic'|'synthetic') replaces the sample; accuracy is also reported per src. */
+const pct = (xs) => { const s = [...xs].sort((a, b) => a - b), at = (q) => (s.length ? s[Math.min(s.length - 1, Math.floor(q * s.length))] : 0); return { p50: at(0.5), p90: at(0.9), p95: at(0.95), max: s.at(-1) ?? 0 }; };
+
 export async function runExperiment({ task, variant = 'baseline', n = 200, filter = {}, baseline = 'rerun', concurrency = 6, maxUsd = 2, rows: given = null, minConfidence = null }, deps) {
   const v = resolveVariant(variant), rows = given || await deps.sample(task, { n, ...filter });
   const bySrc = {};
@@ -19,12 +21,14 @@ export async function runExperiment({ task, variant = 'baseline', n = 200, filte
   const res = { task, variant: { id: v.id, params: v.params }, baseline_mode: baseline, sampled: rows.length, done: 0, errors: 0, skipped: 0, usd: 0, truncated: null,
     base: { right: 0, wrong: 0, ms: 0, tokens: 0 }, var: { right: 0, wrong: 0, ms: 0, tokens: 0 }, labelled: 0, fixed: 0, broken: 0, confidence_drops: 0, changed: 0, flips: {}, examples: [] };
   let next = 0, stop = false;
+  const msB = [], msV = [];
   const one = async (row) => {
     try {
       const b = baseline === 'stored' ? { answers: row.answers, tokens: 0, ms: row.ms || 0 } : await deps.rerun(task, row.state, row.questions);
       const mod = await v.apply({ state: row.state, questions: row.questions, row, params: v.params, deps });
       if (mod.skipped) { res.skipped++; return; }
-      const w = await deps.rerun(task, mod.state, mod.questions);
+      const w = await deps.rerun(task, mod.state, mod.questions, ...(mod.backend ? [{ backend: mod.backend }] : []));
+      msB.push(b.ms); msV.push(w.ms);
       res.usd += (b.tokens + w.tokens) * JEV_USD_PER_TOKEN; res.done++;
       res.base.ms += b.ms; res.base.tokens += b.tokens; res.var.ms += w.ms; res.var.tokens += w.tokens;
       const cb = chosenOf(b.answers), cv = chosenOf(w.answers), bk = sig(cb), vk = sig(cv);
@@ -58,5 +62,6 @@ export async function runExperiment({ task, variant = 'baseline', n = 200, filte
   const acc = (s) => (res.labelled ? +(s.right / res.labelled).toFixed(3) : null), avg = (x, k) => (res.done ? Math.round(x[k] / res.done) : 0);
   return { ...res, usd: +res.usd.toFixed(6), accuracy: { baseline: acc(res.base), variant: acc(res.var), delta: res.labelled ? +((res.var.right - res.base.right) / res.labelled).toFixed(3) : null },
     avg_tokens: { baseline: avg(res.base, 'tokens'), variant: avg(res.var, 'tokens') }, avg_ms: { baseline: avg(res.base, 'ms'), variant: avg(res.var, 'ms') },
+    ms_pct: { baseline: pct(msB), variant: pct(msV) },
     by_src: Object.fromEntries(Object.entries(bySrc).map(([k, b]) => [k, { ...b, baseline: b.n ? +(b.base_right / b.n).toFixed(3) : null, variant: b.n ? +(b.var_right / b.n).toFixed(3) : null }])) };
 }

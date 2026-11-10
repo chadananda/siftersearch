@@ -342,10 +342,10 @@ export const callsDb = () => db();
 
 /** Re-ask Jev one stored (or variant) state — the tuning harness. NOT a logged call: no row, no shadow. Billed to the
  *  improve group (caller `improve-jev-try:<task>`), capped like the rest of it. → { answers, tokens, ms } */
-export async function rerun(task, state, questions, { timeoutMs = 20000 } = {}) {
+export async function rerun(task, state, questions, { timeoutMs = 20000, backend = null } = {}) {
   const caller = `improve-jev-try:${task}`;
   await assertSpendCap(caller, { provider: 'jev' });
-  const r = await callJev(typeof state === 'string' ? state : JSON.stringify(state), questions, timeoutMs, 2, caller);
+  const r = backend && CLEF.has(backend) ? await callClef(backend, typeof state === 'string' ? state : JSON.stringify(state), questions, timeoutMs, caller) : await callJev(typeof state === 'string' ? state : JSON.stringify(state), questions, timeoutMs, 2, caller);
   return { answers: r.answers, tokens: r.tokens, ms: r.ms };
 }
 
