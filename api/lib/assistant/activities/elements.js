@@ -94,6 +94,10 @@ const retrieval = ({ edges, tool, input, take, into = 'found_passages', rank = f
   },
 });
 // the passage whose editions fetch.edition looks up: the one that holds the quotation, else the traced source, else the first with a paragraph id
+// …plus the rest of the same reference (a whole chapter read by fetch.reference: same work, same reference label), so every verse is aligned
+const REF_ANCHORS_MAX = 60;   // scripture-ref WHOLE_MAX: the rows of one chapter
+const editionAnchors = (u) => { const a = editionAnchor(u); if (!a?.theme) return [];
+  return u.found_passages.filter((x) => x !== a && Number.isFinite(Number(x.id)) && x.theme === a.theme && String(x.document_id) === String(a.document_id)).slice(0, REF_ANCHORS_MAX - 1).map((x) => Number(x.id)); };
 const editionAnchor = (u) => { const ok = u.found_passages.filter((x) => Number.isFinite(Number(x.id))); return ok.find((x) => x.verdict === 'holds') ?? ok.find((x) => x.role === 'source' || x.traced) ?? ok[0] ?? null; };
 // in_named: search INSIDE the work the question names (named_work title, else the first named source id); gated off when none is named
 const namedWork = (u) => (typeof u.named_work === 'string' && u.named_work.trim() ? { work: u.named_work.trim() }
@@ -144,7 +148,7 @@ const E = {
   // translations, aligned by reference (sura:ayah, chapter:verse) else by meaning; never translated. No edition → a record naming the missing language.
   'fetch.edition': { ...retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'edition_lookup', rank: true, params: ['want'], reads: ['found_passages'], thin: () => false,
     gate: (s, u) => !!editionAnchor(u),
-    input: (s, p, u) => ({ paragraph_id: editionAnchor(u).id, want: p.want === 'translations' ? 'translations' : 'original' }), take: (o) => o?.passages || [],
+    input: (s, p, u) => { const more = editionAnchors(u); return { paragraph_id: editionAnchor(u).id, ...(more.length ? { paragraph_ids: more } : {}), want: p.want === 'translations' ? 'translations' : 'original' }; }, take: (o) => o?.passages || [],
     after: (o, u, items) => { if (!items.length && o) merge(u, 'found_records', [{ kind: 'absence', missing_language: o.missing_language ?? null, searched: o.self?.title ?? null, family: (o.family || []).length }]); } }),
   writes: ['found_passages', 'found_records', ...OUT] },
   // a prayer of ANY tradition (11-09): mode 'named' = the name (named_work) or opening words (incipit / quoted_words) across the tradition's whole scope,

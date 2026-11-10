@@ -448,13 +448,17 @@ const ENTRIES = [
     purpose: 'A passage’s original-language edition, or its existing translations, in any tradition: recorded links, else the same work in another language aligned by verse/section, else by meaning.',
     description: "The SAME passage in the work's other editions (give its ref, e.g. P3): want 'original' = the edition in the language it was written in (the Arabic Qur'án, the Hebrew Bible, the Chinese Tao Te Ching, a Persian tablet), 'translations' = the library's other translations of it, aligned by verse or section number where both editions carry it, else by meaning. Never a new translation. missing_language names the original language the library does not hold.",
     input: { type: 'object', additionalProperties: false, required: ['paragraph_id'], properties: { paragraph_id: PID,
+      paragraph_ids: { type: 'array', items: PID, description: 'More passages of the same reference (the rest of a chapter), each aligned the same way' },
       want: { type: 'string', enum: ['original', 'translations'], default: 'original', description: 'original = its original-language edition; translations = its other translations' } } },
     output: { type: 'object', required: ['passages'], properties: { passages: { type: 'array', items: PASSAGE }, self: { type: ['object', 'null'], additionalProperties: true },
       family: { type: 'array', items: { type: 'object', additionalProperties: true } }, missing_language: nul('string') } },
     example: { input: { paragraph_id: 1201, want: 'original' }, output: { passages: [{ ...P_EX, id: 88, language: 'ar', text: 'بسم الله الرحمن الرحيم', role: 'original' }], self: { id: 12, title: 'The Qur’an (Pickthall)', language: 'en', religion: 'Islam' }, family: [{ id: 40, title: 'القرآن', language: 'ar', basis: 'author' }], missing_language: null } },
     async run(a, ctx = {}) {
       const ed = ctx?.deps?.editionsOf || (await import('./editions.js')).editionsOf;
-      const r = await ed(Number(a.paragraph_id), { want: a.want || 'original' }, ctx?.deps?.editions || {});
+      const ids = [...new Set([a.paragraph_id, ...(a.paragraph_ids || [])].map(Number).filter(Number.isFinite))];
+      const all = await Promise.all(ids.map((id) => ed(id, { want: a.want || 'original' }, ctx?.deps?.editions || {})));   // one reference's verses, in order
+      const r = { ...all[0], passages: all.flatMap((x) => x.passages || []) };
+      if (r.passages.length) r.missing_language = null;
       return { passages: dedupePassages((r.passages || []).map((x) => ({ ...toPassage(x), role: x.role, aligned_by: x.aligned_by, exact: x.exact, ...(x.ref ? { ref: x.ref } : {}) }))), self: r.self ?? null, family: r.family || [], missing_language: r.missing_language ?? null };
     } },
   // quotation_candidates: the sourcehunt engine with NO model — phrase + keyword layers, holds() on the wording, links; the decision is a tree node (judge.passages)

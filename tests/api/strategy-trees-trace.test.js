@@ -202,11 +202,46 @@ describe('original@2', () => {
     const SURA = { id: 7, text: 'In the name of God, the Compassionate, the Merciful', title: 'The Quran (Rodwell), Sura I.', religion: 'Islam', authority: 'scripture', document_id: 21104 };
     const fs = vi.fn(async () => ({ passages: [SURA] }));
     const ed = vi.fn(async (i) => ({ passages: i.want === 'original' ? [{ id: 9001, text: 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ', language: 'ar', role: 'original', religion: 'Islam' }] : [] }));
-    const s = await run('original', 'Show me the Arabic of the opening chapter of the Qur\'an beside an English translation.', { tools: { fused_search: fs, edition_lookup: ed },
-      choice: { units: { named_work: 'Qur\'an', topic: 'the opening chapter' } } });
-    expect(path(s).slice(0, 3)).toEqual(['o1', 'o1w', 'o3']);
-    expect(fs.mock.calls[0][0]).toMatchObject({ query: 'the opening chapter' }); expect(ed.mock.calls[0][0]).toMatchObject({ paragraph_id: 7, want: 'original' });
+    const s = await run('original', 'Show me the Arabic of the Throne Verse of the Qur\'an beside an English translation.', { tools: { fused_search: fs, edition_lookup: ed },
+      choice: { units: { named_work: 'Qur\'an', topic: 'the Throne Verse' } } });
+    expect(path(s).slice(0, 4)).toEqual(['o1', 'o1r', 'o1w', 'o3']);   // no chapter reference: o1r is skipped
+    expect(fs.mock.calls[0][0]).toMatchObject({ query: 'the Throne Verse' }); expect(ed.mock.calls[0][0]).toMatchObject({ paragraph_id: 7, want: 'original' });
     expect(s.units.found_passages.some((p) => p.language === 'ar')).toBe(true);
+  });
+});
+
+describe('original@2: a scripture chapter named by order or name (round 5)', () => {
+  const PICK = 21207, ARABIC = 21380;
+  const PDOC = { id: PICK, title: 'The Meaning of the Glorious Qur’án (Pickthall)', author: 'Unknown', religion: 'Islam', language: 'en', paragraph_count: 6347 };
+  const ADOC = { id: ARABIC, title: "The Qur'an (Arabic)", author: 'Muhammad', religion: 'Islam', language: 'ar', paragraph_count: 6350 };
+  const P_ROWS = [[2, 'In the name of Allah, the Beneficent, the Merciful.'], [3, 'Praise be to Allah, Lord of the Worlds, The Beneficent, the Merciful.'],
+    [4, 'Owner of the Day of Judgment, Thee (alone) we worship; Thee (alone) we ask for help.'], [5, 'Show us the straight path, The path of those whom Thou hast favoured.']].map(([i, t]) => ({ id: 500 + i, doc_id: PICK, paragraph_index: i, text: t }));
+  const A_ROWS = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => ({ id: 900 + i, doc_id: ARABIC, paragraph_index: i, text: i ? `آية ${i}` : 'Surah 1', blocktype: i ? 'paragraph' : 'heading2' }));
+  const deps = { resolveLinks: async () => new Map(), workFamily: async () => ({ self: { id: PICK, language: 'en', religion: 'Islam' }, members: [] }),   // Pickthall: author "Unknown" → no family
+    headingStarts: async () => [], phrases: async () => ({ hits: [] }),
+    paragraphsByIds: async (ids) => P_ROWS.filter((r) => ids.includes(r.id)),
+    paragraphsInRange: async (doc, a, b) => (doc === ARABIC ? A_ROWS : P_ROWS).filter((r) => r.paragraph_index >= a && r.paragraph_index <= b),
+    listDocs: async (q) => ({ docs: q.ids ? [PDOC, ADOC].filter((d) => q.ids.includes(d.id)) : [PDOC, ADOC].filter((d) => d.title.includes(q.title) && (!q.language || d.language === q.language)) }) };
+  it('editionsOf: a known Qur’án verse layout aligns exactly by verse table with no work family (Pickthall’s merged row 1:2–3 → Arabic 1:2 and 1:3)', async () => {
+    const r = await editionsOf(503, { want: 'original' }, deps);
+    expect(r.passages.map((x) => [x.id, x.ref, x.aligned_by, x.exact, x.language])).toEqual([[902, '1:2–3', 'reference', true, 'ar'], [903, '1:2–3', 'reference', true, 'ar']]);
+    expect(r.missing_language).toBeNull();
+    expect((await editionsOf(502, { want: 'original' }, deps)).passages.map((x) => x.id)).toEqual([901]);   // the basmala row = 1:1, never the heading
+    expect((await editionsOf(503, { want: 'translations' }, deps)).passages).toEqual([]);   // the Arabic is the original, not a translation
+  });
+  it('edition_lookup aligns every verse of the reference given as paragraph_ids, in order', async () => {
+    const r = await tools.run('edition_lookup', { paragraph_id: 502, paragraph_ids: [503, 504, 505], want: 'original' }, { deps: { editions: deps } });
+    expect(r.passages.map((x) => x.id)).toEqual([901, 902, 903, 904, 905, 906, 907]); expect(r.missing_language).toBeNull();
+  });
+  it('no anchor → o1r reads the chapter by reference → o3 gets every verse of it (round 5: o1w anchored on a translator’s footnote → "no Arabic edition")', async () => {
+    const theme = 'Qur’án 1', ref = vi.fn(async () => ({ passages: P_ROWS.map((r) => ({ ...r, document_id: PICK, title: PDOC.title, religion: 'Islam', theme })) }));
+    const ed = vi.fn(async (i) => ({ passages: i.want === 'original' ? [{ id: 901, text: 'آية 1', language: 'ar', role: 'original', religion: 'Islam' }] : [] }));
+    const fs = vi.fn(NONE);
+    const s = await run('original', 'Show me the Arabic of the opening chapter of the Qur\'an beside an English translation.', { tools: { reference: ref, fused_search: fs, edition_lookup: ed },
+      choice: { units: { named_work: 'Qur\'an', topic: 'the opening chapter' } } });
+    expect(s.units.scripture_reference).toMatchObject({ kind: 'quran', sura: 1, verse: null });
+    expect(path(s).slice(0, 3)).toEqual(['o1', 'o1r', 'o3']); expect(fs).not.toHaveBeenCalled();
+    expect(ed.mock.calls[0][0]).toMatchObject({ paragraph_id: 502, paragraph_ids: [503, 504, 505], want: 'original' });
   });
 });
 

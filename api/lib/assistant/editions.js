@@ -4,6 +4,7 @@
 // (cross-lingual phrase vectors inside the member edition). Deps injected (tests); defaults are the live repos and layer.
 import { headingNumber } from './lookup.js';
 import { verseSpan } from './scripture-ref.js';
+import { QURAN_LAYOUTS, layoutTotal, quranIndex, quranVerseAt } from './numbering.js';
 
 const LANG = { ar: 'Arabic', fa: 'Persian', he: 'Hebrew', grc: 'Greek', el: 'Greek', sa: 'Sanskrit', pi: 'Pali', zh: 'Chinese', pa: 'Punjabi', ae: 'Avestan', en: 'English', fr: 'French', de: 'German', es: 'Spanish', ur: 'Urdu', tr: 'Turkish', ru: 'Russian', ja: 'Japanese', bo: 'Tibetan' };
 /** A stored language value ('en', 'En', 'Eng', 'Arabic') → its lower-case code where known; the raw value lower-cased otherwise. Pure. */
@@ -52,10 +53,33 @@ export async function alignByMeaning(src, member, d) {
   return row ? { rows: [row], by: 'meaning', exact: false, score: top.score ?? null } : null;
 }
 
+// by VERSE TABLE (11-10): a Qur’án edition whose verse layout numbering.js knows (checked by title, language and paragraph_count) → the same
+// verses in the other known-layout editions, exact. Its authorless editions have no work family (Pickthall: author "Unknown"), so this needs none.
+const QURAN_DOC_FIELDS = ['id', 'title', 'author', 'religion', 'collection', 'language', 'paragraph_count'];
+const layoutOf = (doc) => QURAN_LAYOUTS.find((L) => String(doc?.title || '').toLowerCase().includes(L.title.toLowerCase()) && /qur|koran/i.test(doc.title)
+  && langCode(doc.language) === L.language && Number(doc.paragraph_count) === layoutTotal(L)) || null;
+export async function alignByVerseTable(src, want, d) {
+  if (!d.listDocs) return [];
+  const self = (await d.listDocs({ ids: [Number(src.doc_id)], fields: QURAN_DOC_FIELDS, limit: 1, count: false }).catch(() => ({ docs: [] })))?.docs?.[0];
+  const L = layoutOf(self), v = L ? quranVerseAt(L, Number(src.paragraph_index)) : null;
+  if (!v || (v.from === 0 && v.sura !== 1)) return [];   // front matter, a heading, or a basmala row (the Arabic edition has none of its own)
+  const orig = ORIGINAL_LANGS.Islam, out = [];
+  for (const M of QURAN_LAYOUTS.filter((x) => x !== L && (want === 'original' ? orig.includes(x.language) : !orig.includes(x.language)))) {
+    const { docs = [] } = await d.listDocs({ title: M.title, language: M.language, fields: QURAN_DOC_FIELDS, limit: 20, count: false }).catch(() => ({ docs: [] }));
+    const m = docs.filter((x) => layoutOf(x) === M).sort((a, b) => a.id - b.id)[0];
+    const a = m ? quranIndex(M, v.sura, Math.max(v.from, 1)) : null, b = m ? quranIndex(M, v.sura, v.to || 1) : null;
+    if (a == null || b == null) continue;
+    const rows = (await d.paragraphsInRange(m.id, a, b).catch(() => [])).filter(text0);
+    const how = { by: 'reference', exact: true, ref: `${v.sura}:${Math.max(v.from, 1)}${v.to > Math.max(v.from, 1) ? `–${v.to}` : ''}` };
+    out.push(...rows.map((r) => asPassage({ ...r, doc_id: r.doc_id ?? m.id }, { ...m, basis: 'verse table' }, want === 'original' ? 'original' : 'translation', how)));
+  }
+  return out;
+}
+
 const NEED = ['resolveLinks', 'workFamily', 'headingStarts', 'paragraphsInRange', 'paragraphsByIds', 'phrases'];
 const defaults = async () => {
   const [plinks, al, pr, layers] = await Promise.all([import('../passage-links.js'), import('../repos/alignment-repo.js'), import('../paragraphs-repo.js'), import('../search/qdrant-layers.js')]);
-  return { resolveLinks: plinks.resolveLinks, workFamily: al.workFamily, headingStarts: pr.headingStarts, paragraphsInRange: pr.paragraphsInRange, paragraphsByIds: pr.paragraphsByIds, phrases: layers.searchPhrases };
+  return { listDocs: (await import('../docs-repo.js')).listDocs, resolveLinks: plinks.resolveLinks, workFamily: al.workFamily, headingStarts: pr.headingStarts, paragraphsInRange: pr.paragraphsInRange, paragraphsByIds: pr.paragraphsByIds, phrases: layers.searchPhrases };
 };
 const asPassage = (row, m, role, how) => ({ id: row.id, document_id: row.doc_id ?? m.id, paragraph_index: row.paragraph_index ?? null, text: row.text, title: m.title, author: m.author,
   religion: m.religion ?? null, collection: m.collection ?? null, language: langCode(m.language), role, aligned_by: how.by, exact: !!how.exact,
@@ -75,6 +99,8 @@ export async function editionsOf(paragraphId, { want = 'original', limit = 3 } =
     push({ id: p.id, document_id: p.documentId ?? p.doc_id ?? null, text: p.text, title: p.document?.title ?? p.title ?? null, author: p.document?.author ?? p.author ?? null,
       religion: p.document?.religion ?? p.religion ?? null, language: langCode(p.language || p.document?.language), role, aligned_by: 'link', exact: true, basis: 'recorded link' });
   }
+  // 1b. a known verse table (the Qur’án editions): exact, no work family needed
+  for (const p of await alignByVerseTable(src, want, d).catch(() => [])) push(p);
   // 2–3. the work family: each other-language member aligned by reference, else by meaning
   const fam = await d.workFamily(src.doc_id).catch(() => ({ self: null, members: [] }));
   const selfLang = langCode(fam.self?.language), origId = Number(fam.self?.original_doc_id) || null;

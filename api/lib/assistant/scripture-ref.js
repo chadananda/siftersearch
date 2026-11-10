@@ -35,9 +35,28 @@ const fold = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-
 export const roman = (n) => { const t = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
   let s = ''; for (const [v, r] of t) while (n >= v) { s += r; n -= v; } return s; };
 
-/** "John 3:16", "1 Cor. 13:4-7", "Qur’án 2:255", "Sura 24", "Bhagavad Gita 2:47", "Gita chapter 2" → a reference, or null. Pure. */
+// a chapter named by ORDER or NAME, not number ("the opening chapter of the Qur'an", "the first chapter of Genesis", "al-Fatiha") → its number,
+// so it resolves like "Qur'an 1" (reference resolution after Jev's decision, never intent)
+const ORDINAL = { opening: 1, first: 1, second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10, eleventh: 11, twelfth: 12 };
+const SURA_NAMES = { fatiha: 1, fatihah: 1, fatihat: 1, baqara: 2, baqarah: 2, nur: 24, yasin: 36, rahman: 55, kahf: 18, maryam: 19, yusuf: 12, ikhlas: 112, falaq: 113, nas: 114, mulk: 67, waqia: 56, waqiah: 56 };
+const ORD_RE = new RegExp(`\\b(?:the\\s+)?(${Object.keys(ORDINAL).join('|')}|last)\\s+(?:chapter|s[uú]rah?|book)\\s+(?:of|in)\\s+(?:the\\s+)?(?:holy\\s+|noble\\s+)?((?:[123]\\s*)?[a-z]+(?:\\s+[a-z]+)?)`, 'i');
+const SURA_RE = new RegExp(`\\b(?:s[uú]rat?h?\\s+)?(?:al|an|ar|ya)?[-\\s]?(${Object.keys(SURA_NAMES).join('|')})\\b`, 'i');
+function numberedChapter(t) {
+  const o = ORD_RE.exec(t);
+  if (o) {
+    const book = o[2].replace(/\s+(?:beside|with|and|in|next|alongside|together)$/i, '').trim();
+    const quran = /^(?:qur[a']?an|koran)\b/i.test(book);
+    const n = o[1].toLowerCase() === 'last' ? (quran ? 114 : null) : ORDINAL[o[1].toLowerCase()];
+    if (n) return t.replace(o[0], ` ${quran ? 'Quran' : book} ${quran ? '' : 'chapter '}${n} `);
+  }
+  const m = SURA_RE.exec(t);
+  return m && (/s[uú]ra|al[-\s]|qur|koran/i.test(t)) ? t.replace(m[0], ` Quran ${SURA_NAMES[m[1].toLowerCase()]} `) : t;
+}
+
+/** "John 3:16", "1 Cor. 13:4-7", "Qur’án 2:255", "Sura 24", "Bhagavad Gita 2:47", "Gita chapter 2", "the opening chapter of the Qur'an",
+ *  "al-Fatiha", "the first chapter of Genesis" → a reference, or null. Pure. */
 export function parseScriptureRef(text) {
-  const t = String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[“”"‘’']/g, '').trim();   // Qur’án → Quran, Gītā → Gita
+  const t = numberedChapter(String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[“”"‘’']/g, '').trim());   // Qur’án → Quran, Gītā → Gita
   const q = /\b(?:qur['’]?[aā]n|quran|koran|s[uūú]rah?|surih)\s*(?:chapter\s*)?(\d{1,3})(?:\s*[:.]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?)?/i.exec(t);
   if (q) return { kind: 'quran', sura: +q[1], verse: q[2] ? +q[2] : null, verseEnd: q[3] ? +q[3] : null, label: `Qur’án ${q[1]}${q[2] ? `:${q[2]}${q[3] ? `–${q[3]}` : ''}` : ''}` };
   const g = /\b(?:bhagavad[\s-]*g[iī]t[aā]|g[iī]t[aā])\s*(?:chapter|ch\.?)?\s*(\d{1,2})(?:\s*[:.]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?)?/i.exec(t);

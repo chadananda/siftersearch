@@ -12,7 +12,13 @@ export const QURAN_VERSES = Object.freeze([7, 286, 200, 176, 120, 165, 206, 75, 
  *  (1:2–3, 1:4–5, 1:6–7); every later sūra = a basmala paragraph (none for sūra 9) then ONE paragraph per verse. */
 export const PICKTHALL = Object.freeze({ title: 'Pickthall', front: 2, fatiha: Object.freeze({ 1: 0, 2: 1, 3: 1, 4: 2, 5: 2, 6: 3, 7: 3 }), fatihaRows: 4, noBasmala: Object.freeze([9]) });
 
-const rowsOf = (L, s) => (s === 1 ? L.fatihaRows : QURAN_VERSES[s - 1] + (L.noBasmala.includes(s) ? 0 : 1));
+/** The Arabic Qur’án as ingested (docs "The Qur'an (Arabic)" / "(Arabic, Simple Text)", verified 11-10 via the documents API): no front
+ *  matter; every sūra = a "Surah N" heading row then ONE paragraph per verse (the basmala is not a row of its own) — 114 + 6236 = 6350. */
+export const QURAN_ARABIC = Object.freeze({ title: 'Qur', language: 'ar', front: 0, headingRow: true, fatiha: null, noBasmala: Object.freeze([]) });
+/** The verse-numbered Qur’án editions an edition lookup can align exactly (each checked against its paragraph_count at run time). */
+export const QURAN_LAYOUTS = Object.freeze([Object.freeze({ ...PICKTHALL, language: 'en' }), QURAN_ARABIC]);
+
+const rowsOf = (L, s) => (L.headingRow ? 1 + QURAN_VERSES[s - 1] : s === 1 ? L.fatihaRows : QURAN_VERSES[s - 1] + (L.noBasmala.includes(s) ? 0 : 1));
 /** The paragraph count the layout predicts (6347 for Pickthall). */
 export const layoutTotal = (L) => L.front + QURAN_VERSES.reduce((n, _, i) => n + rowsOf(L, i + 1), 0);
 
@@ -21,14 +27,35 @@ export function quranIndex(L, sura, verse) {
   if (!(sura >= 1 && sura <= 114) || verse == null || verse < 0 || verse > QURAN_VERSES[sura - 1]) return null;
   let i = L.front;
   for (let s = 1; s < sura; s++) i += rowsOf(L, s);
+  if (L.headingRow) return i + Math.max(1, verse);   // the heading row, then verse v at +v (verse 0 = the first verse: no basmala row)
   if (sura === 1) return i + L.fatiha[Math.max(1, verse)];
   const basmala = L.noBasmala.includes(sura) ? 0 : 1;
   if (verse === 0) return basmala ? i : null;
   return i + basmala + verse - 1;
 }
 
-/** A Qur’án reference → the paragraph range to read: a verse (or span), else the sūra's opening (basmala + 3 verses). */
+/** paragraph_index in the layout → { sura, from, to } (the verses that row holds; 0 = the basmala), or null for front matter / a heading row. Pure. */
+export function quranVerseAt(L, index) {
+  let i = L.front;
+  if (!(index >= i)) return null;
+  for (let s = 1; s <= 114; s++) {
+    const n = rowsOf(L, s);
+    if (index < i + n) {
+      const k = index - i;
+      if (L.headingRow) return k === 0 ? null : { sura: s, from: k, to: k };
+      if (s === 1) { const vs = Object.entries(L.fatiha).filter(([, r]) => r === k).map(([v]) => +v); return { sura: 1, from: vs[0] === 1 && k === 0 ? 1 : Math.min(...vs), to: Math.max(...vs) }; }
+      const b = L.noBasmala.includes(s) ? 0 : 1;
+      return k < b ? { sura: s, from: 0, to: 0 } : { sura: s, from: k - b + 1, to: k - b + 1 };
+    }
+    i += n;
+  }
+  return null;
+}
+
+const WHOLE_SURA = 60;   // a short sūra asked for whole is read whole (al-Fātiḥa, 7 verses); a long one opens (scripture-ref WHOLE_MAX)
+/** A Qur’án reference → the paragraph range to read: a verse (or span), else the whole sūra when short, else its opening (basmala + 3 verses). */
 export function quranRange(L, { sura, verse = null, verseEnd = null }) {
+  if (verse == null && (QURAN_VERSES[sura - 1] ?? Infinity) <= WHOLE_SURA) return quranRange(L, { sura, verse: 0, verseEnd: QURAN_VERSES[sura - 1] });
   if (verse == null) { const a = quranIndex(L, sura, 0) ?? quranIndex(L, sura, 1); const b = quranIndex(L, sura, Math.min(3, QURAN_VERSES[sura - 1] ?? 0)); return a == null || b == null ? null : [a, b]; }
   const a = quranIndex(L, sura, verse), b = quranIndex(L, sura, verseEnd ?? verse);
   return a == null || b == null || b < a ? null : [a, b];

@@ -8,7 +8,7 @@ import { prayerShelf, splitPrayers, isAttribution, isHeadingRow } from '../../ap
 import { currentGuidance, dateOf, newestFirst } from '../../api/lib/assistant/guidance.js';
 import { scriptureReference, parseScriptureRef, verseRows, roman, REFERENCE_HOW } from '../../api/lib/assistant/scripture-ref.js';
 import { anisRespond } from '../../api/lib/assistant/respond.js';
-import { PICKTHALL, layoutTotal, quranIndex, quranRange } from '../../api/lib/assistant/numbering.js';
+import { PICKTHALL, QURAN_ARABIC, layoutTotal, quranIndex, quranRange, quranVerseAt } from '../../api/lib/assistant/numbering.js';
 
 const msgs = [{ role: 'user', content: 'How do the Qur’án and the Gospel each speak of forgiveness?' }];
 const jev = (answers) => async (url, init) => { jev.last = JSON.parse(init.body); return { ok: true, json: async () => ({ answers }) }; };
@@ -244,6 +244,12 @@ describe('scripture reference', () => {
     expect(parseScriptureRef('Qur’án 2:255')).toMatchObject({ kind: 'quran', sura: 2, verse: 255 });
     expect(parseScriptureRef('Surah 24')).toMatchObject({ kind: 'quran', sura: 24 });
     expect(parseScriptureRef('Bhagavad Gita 2:47')).toMatchObject({ kind: 'gita', chapter: 2, verse: 47 });
+    // a chapter by order or name resolves like its number (round 5: "the opening chapter of the Qur'an" was no reference)
+    expect(parseScriptureRef('the Arabic of the opening chapter of the Qur’an beside an English translation')).toMatchObject({ kind: 'quran', sura: 1, verse: null });
+    expect(parseScriptureRef('read me al-Fatiha')).toMatchObject({ kind: 'quran', sura: 1 }); expect(parseScriptureRef('Surat al-Ikhlas')).toMatchObject({ kind: 'quran', sura: 112 });
+    expect(parseScriptureRef('the first chapter of Genesis')).toMatchObject({ kind: 'bible', book: 'Genesis', chapter: 1 });
+    expect(parseScriptureRef('the second chapter of the Bhagavad Gita')).toMatchObject({ kind: 'gita', chapter: 2 });
+    expect(parseScriptureRef('who was Yusuf')).toBeNull(); expect(parseScriptureRef('the first book of the Kitáb-i-Íqán')).toBeNull();
     expect(parseScriptureRef('Gleanings 27')).toBeNull(); expect(parseScriptureRef('tell me about love')).toBeNull();
     expect(roman(24)).toBe('XXIV');
   });
@@ -294,6 +300,9 @@ describe('Qur’án by the verse table (launch gate 11-03: 2:255 gave Ṭálút 
     expect([[2, 255], [2, 1], [2, 286], [3, 1], [9, 1], [24, 35], [112, 1], [114, 6], [1, 1], [1, 7]].map(([a, b]) => quranIndex(PICKTHALL, a, b))).toEqual([261, 7, 292, 294, 1241, 2846, 6330, 6346, 2, 5]);
     expect(quranIndex(PICKTHALL, 2, 287)).toBeNull(); expect(quranRange(PICKTHALL, { sura: 2, verse: 255, verseEnd: 256 })).toEqual([261, 262]);
     expect(quranRange(PICKTHALL, { sura: 2 })).toEqual([6, 9]);
+    expect(quranRange(PICKTHALL, { sura: 1 })).toEqual([2, 5]); expect(quranRange(PICKTHALL, { sura: 112 })).toEqual([6329, 6333]);   // a short sūra asked whole is read whole
+    expect(layoutTotal(QURAN_ARABIC)).toBe(6350); expect(quranRange(QURAN_ARABIC, { sura: 1 })).toEqual([1, 7]); expect(quranIndex(QURAN_ARABIC, 2, 255)).toBe(263);
+    expect(quranVerseAt(PICKTHALL, 3)).toEqual({ sura: 1, from: 2, to: 3 }); expect(quranVerseAt(QURAN_ARABIC, 8)).toBeNull(); expect(quranVerseAt(QURAN_ARABIC, 263)).toEqual({ sura: 2, from: 255, to: 255 });
   });
   const editions = (n) => async (a) => { editions.asked = a; return { docs: [{ id: 21206, title: 'The Holy Qur’án (Yusuf Ali)', paragraph_count: 6403 }, { id: 21207, title: 'The Meaning of the Glorious Qur’án (Pickthall)', author: 'Pickthall', religion: 'Islam', paragraph_count: n }] }; };
   it('the exact verse from Pickthall, heading rows dropped, linked, not labelled approximate', async () => {
