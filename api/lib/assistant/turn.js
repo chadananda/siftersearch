@@ -269,7 +269,12 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   const u = strat?.units || {};
   const bookFn = d.bookPick ?? (deps ? null : bookFastPath);
   const bookGate = bookFn && !strat?.refersBack && route.action === 'research' && engine === undefined && research === undefined && !variants && !llm;
-  const bookOn = bookGate && (strategyOf(strat) === 'book' || lkIntent === 'book');
+  // Unmatched + a lookup call that says book at ANY confidence (or no strategy; 11-10 "Matthew": the Haiku backup's book sat under 0.6, so the card
+  // came only after Unmatched + the planner, 16.5 s) → the pick runs first; its "none" option keeps the call Jev's
+  const weakBook = bookGate && strategyOf(strat) == null && tri?.lookup?.choice === 'book' && lkIntent !== 'book';
+  const bookOn = bookGate && (strategyOf(strat) === 'book' || lkIntent === 'book' || weakBook);
+  if (weakBook) decisions.record('book:early', { by: 'code', saw: { strategy: 'unmatched', lookup: tri.lookup }, chosen: 'book pick before Unmatched', reason: 'the lookup call said book' });
+  let held = null;   // the pick's near miss (book-pick.js onHeld), confirmed by a later Jev book call
   // IN-WORK FIND (Chad 11-10, 'search for "private property" in God Passes By' got "I can't run a literal search from here"):
   // Jev's lookup says in_work (the triage call — it still answers when the strategy call times out, so the request is never lost)
   // → the work by the one book finder (his named_work when the strategy answered, else the message) → in_work_search → a
@@ -288,7 +293,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   // his phrase may BE a library title — the same one pick, with "make it new" as an option; code only checks the title is near-exact
   const probe = bookGate && !bookOn ? PROBE_ALT[strategyOf(strat)] : null;
   if (bookOn || probe) {
-    const found = await timed('book', () => bookFn({ messages, names: [u.named_work, ...(probe ? [u.topic] : [])].filter(Boolean), by: u.named_person ?? null, profile, decisions, ...(probe ? { alt: probe } : {}) }),
+    const found = await timed('book', () => bookFn({ messages, names: [u.named_work, ...(probe ? [u.topic] : [])].filter(Boolean), by: u.named_person ?? null, profile, decisions, ...(probe ? { alt: probe } : { onHeld: (f) => { held = f; } }) }),
       (r) => (r ? { kind: r.kind, via: r.via } : null)).catch(() => null);
     if (found?.kind === 'work') return bookAnswer(found.work, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
     if (found?.kind === 'section') return sectionCard(found, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
@@ -371,7 +376,9 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     jobP?.then((j) => { if (j?.researchId && streaming) narrate(onEvent, channel, 'deep_report.queued'); }).catch(() => {});
     // research / llm / variants: a caller's override (the /draft battery compares the researcher, writers and templates before they go live)
     // an Unmatched turn its recheck or planner routes to `book` ("Matthew") gets the same finder + pick → the card (strategies.js handoff)
-    const unmatchedBook = bookGate && !bookOn ? (choice) => bookFn({ messages, names: [choice?.units?.named_work ?? u.named_work].filter(Boolean), by: u.named_person ?? null, profile, decisions }) : null;
+    // …and when the book path already ran, its held near miss is what a recheck/planner `book` confirms (no second pick)
+    const unmatchedBook = bookGate && !bookOn ? (choice) => bookFn({ messages, names: [choice?.units?.named_work ?? u.named_work].filter(Boolean), by: u.named_person ?? null, profile, decisions })
+      : bookOn && held ? async () => { const { confidence, ...f } = held; return { ...f, via: `held:${f.via} ${confidence}` }; } : null;
     const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { scope, ...(unmatchedBook ? { book: unmatchedBook } : {}), turnId: ex?.conversationId != null ? `${ex.conversationId}:${ex.round}` : null, stance: triageSummary?.stance ?? null,
       kind: route.kind, guarded: route.action === 'guarded', channel, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, outcome: tri?.outcome ?? null, depth: triageSummary?.depth ?? null, query: (strat?.refersBack ? lastTopic(stateBefore, messages) : null) ?? resolved?.query ?? null, card: card?.text ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), ...(lkIntent ? { lookupIntent: lkIntent } : {}), strategy: strat, decisions, state: stateBefore, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
     streaming = false;
@@ -380,7 +387,9 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     // the form pass on EVERY reply path (agent, craft, sourcehunt, strategies): a closing search offer dropped, brackets in link
     // text made parens (writer residuals 11-05: titles like "Book of Common Prayer [King's Chapel]" broke their links)
     // and (11-10, absolute) a sentence saying Anís can't search is removed — counted in path.form for forensics' search-denial class
-    const formed = typeof r.reply === 'string' ? formPass(r.reply) : null;
+    // (battery 11-10) and every link's label names what it opens — checked against the turn's own sources
+    const sources = [...(r.citations || []), ...(r.retrieved || [])].map((x) => ({ title: x?.title, url: x?.url ?? x?.source_url ?? null }));
+    const formed = typeof r.reply === 'string' ? formPass(r.reply, { sources }) : null;
     let reply = formed ? formed.text : r.reply;
     // Output check: a reply that abandons the persona or leaks instructions is replaced (the widget reconciles its
     // streamed text to the final reply; email sends only this).

@@ -299,3 +299,35 @@ describe('11-10 misses: copies of one text are one option; the extracted title r
     expect(r.reply).toBe('CARD 20992'); expect(j.fetchImpl).toHaveBeenCalledTimes(1);
   });
 });
+
+// battery round 3 (11-10): "main book of the Hindus" — the pick's near miss (0.57) was lost when the Unmatched recheck said book 0.6;
+// "Matthew" — the backup's lookup said book under 0.6, so the card waited for Unmatched + the planner (16.5 s)
+describe('book path: near miss held, weak lookup book runs first (battery round 3)', () => {
+  const BOOK = { strategy: { choice: 'book', confidence: 0.6 }, sides: [] };
+  const triWith = (lookup) => ({ malicious: 0.01, complete: 0.99, stop_request: 0, stance: { choice: 'curious' }, kind: { choice: 'research', confidence: 0.9 }, outcome: { choice: 'search', confidence: 0.9 }, lookup, features: { first: true, turn: 1, words: 1, short: true } });
+  const strat = { strategy: { choice: 'unmatched', confidence: 0.85 }, sides: [], sources: {}, decisions: [], units: {} };
+  const rig = (tri, j, respond) => ({ titleOnly: async () => null, triage: async () => tri, strategy: async () => strat, state: { load: async () => emptyState(), append: async () => {} },
+    bookPick: (a) => bookFastPath({ ...a, deps: { fetchImpl: j.fetchImpl, find, extract: vi.fn(async () => []) } }),
+    titleAnswer: async (w) => ({ reply: `CARD ${w.doc.id}`, citations: [] }), lookup: async () => null, respond,
+    open: async () => ({ conversationId: 'c', round: 1 }), close: async () => {}, fail: async () => {}, card: async () => null, outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {} });
+
+  it('bookFastPath: a candidate picked under the floor → null, and onHeld gets that candidate', async () => {
+    const j = jev({ choice: 'c1', confidence: 0.57 });
+    let held = null;
+    const r = await bookFastPath({ messages: user('Matthew'), onHeld: (f) => { held = f; }, deps: { fetchImpl: j.fetchImpl, find, extract: vi.fn(async () => []) } });
+    expect(r).toBeNull();
+    expect(held).toMatchObject({ kind: 'work', work: { doc: { id: 20992 } }, confidence: 0.57 });
+  });
+  it('turn: the book path ran, its pick fell short; the Unmatched recheck says book → the held card, no second pick, no research', async () => {
+    const j = jev({ choice: 'c1', confidence: 0.57 });
+    const respond = vi.fn(async ({ direction }) => { const out = await runStrategy(BOOK, { book: direction.book, decisions: direction.decisions }); return out?.handoff ? { handoff: out.handoff } : { reply: 'researched', citations: [], retrieved: [], plan: {}, timings: {} }; });
+    const r = await anisTurn({ messages: user('Matthew'), participant: { id: 's', authed: true }, clientKey: 's', onEvent: () => {}, deps: rig(triWith({ choice: 'book', confidence: 0.9 }), j, respond) });
+    expect(r.reply).toBe('CARD 20992'); expect(j.fetchImpl).toHaveBeenCalledTimes(1); expect(respond).toHaveBeenCalledTimes(1);
+  });
+  it('turn: Unmatched + a lookup book under 0.6 → the pick runs BEFORE respond → the card, respond never called', async () => {
+    const j = jev({ choice: 'c1', confidence: 0.9 });
+    const respond = vi.fn(async () => ({ reply: 'researched', citations: [], retrieved: [], plan: {}, timings: {} }));
+    const r = await anisTurn({ messages: user('Matthew'), participant: { id: 's', authed: true }, clientKey: 's', onEvent: () => {}, deps: rig(triWith({ choice: 'book', confidence: 0.4, by: 'haiku' }), j, respond) });
+    expect(r.reply).toBe('CARD 20992'); expect(respond).not.toHaveBeenCalled();
+  });
+});

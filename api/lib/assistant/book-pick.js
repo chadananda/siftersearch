@@ -95,7 +95,7 @@ export async function extractTitles(messages, { complete = null } = {}) {
  * names: Jev's named_work (else the bare message, resolved by code); by: a byline Jev read as a person (author / compiler).
  * LLM calls: one Jev pick; a second pick + one Haiku only when nothing fit.
  */
-export async function bookFastPath({ messages, names = [], by = null, profile = {}, decisions = NO_LOG, alt = null, deps = {} }) {
+export async function bookFastPath({ messages, names = [], by = null, profile = {}, decisions = NO_LOG, alt = null, onHeld = null, deps = {} }) {
   const text = [...(messages || [])].reverse().find((m) => m.role === 'user')?.content || '';
   const pick = deps.pickBook || pickBook, find = deps.find || bookCandidates, onJev = (info) => decisions.record('jev:timeout', timeoutDecision(info));
   const round = async (msg, also, via) => {
@@ -110,7 +110,14 @@ export async function bookFastPath({ messages, names = [], by = null, profile = 
     const hit = p?.choice && !['none', 'new'].includes(p.choice) && (p.confidence ?? 0) >= MIN_CONFIDENCE ? cands.find((c) => c.key === p.choice) : null;
     decisions.record('book:pick', { by: 'jev', saw: { candidates: cands.map((c) => `${c.key} ${c.label}`) }, options: [...cands.map((c) => c.key), ...(alt ? ['new'] : []), 'none'], probabilities: jevProbabilities(p),
       chosen: hit ? hit.key : p?.choice === 'new' ? 'new' : 'none', reason: !p ? 'no answer (see jev:timeout)' : hit ? null : p.choice === 'new' ? alt : p.choice === 'none' ? 'nothing fits' : 'low confidence', ms: p?.ms ?? null });
+    // a NEAR MISS (Jev's top pick is a candidate, under the floor) is held for the turn: a later Jev call that also says book
+    // (the Unmatched recheck, 11-10 "main book of the Hindus": pick 0.57, recheck book 0.6) confirms it → the card, not research
+    const near = !hit && !alt && p?.choice && !['none', 'new'].includes(p.choice) ? cands.find((c) => c.key === p.choice) : null;
+    if (near && onHeld) onHeld({ ...found1(near, cands, via), confidence: p.confidence ?? 0 });
     if (!hit) return null;
+    return found1(hit, cands, via);
+  };
+  const found1 = (hit, cands, via) => {
     if (hit.kind === 'section') return { kind: 'section', sec: hit.sec, doc: null, via };
     // other copies of the SAME work only (a short name also finds unrelated titles: "Gleanings" → Gleanings among the Sheaves)
     const copies = hit.members.filter((c) => c.kind === 'work' && c.doc.id !== hit.doc.id).map((c) => c.doc);   // the option's own copies

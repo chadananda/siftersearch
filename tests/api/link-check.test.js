@@ -1,0 +1,36 @@
+// Battery round 3 (11-10, "main book of the Hindus"): links whose label is a bare URL, or names a source the link does not open,
+// never reach the reader (lint.js checkLinks, run by formPass at every reply's exit). Pure.
+import { describe, it, expect } from 'vitest';
+import { checkLinks, slugAgrees, formPass } from '../../api/lib/assistant/lint.js';
+
+const GITA = 'https://oceanlibrary.com/bhagavad-gita/?paraId=para_116';
+const SOURCES = [
+  { title: 'The Bhagavad-Gita', url: GITA },
+  { title: 'The Mahabharata of Krishna-Dwaipayana Vyasa Vol. 3', url: 'https://oceanlibrary.com/hymns-of-atharva-veda' },
+];
+const LIVE = `Yes, including [*The Bhagavad-Gita*](https://oceanlibrary.com/bhagavad-gita) [${GITA}](${GITA}) and portions of [*The Mahabharata of Krishna-Dwaipayana Vyasa Vol. 3*](https://www.gutenberg.org/ebooks/15476) [https://oceanlibrary.com/hymns-of-atharva-veda](https://oceanlibrary.com/hymns-of-atharva-veda).`;
+
+describe('checkLinks (battery round 3: hindus)', () => {
+  it('the live reply: no bare-URL label, no Mahabharata link to gutenberg or the Atharva-Veda', () => {
+    const { text, fixed } = checkLinks(LIVE, SOURCES);
+    expect(text).toBe('Yes, including [*The Bhagavad-Gita*](https://oceanlibrary.com/bhagavad-gita) and portions of *The Mahabharata of Krishna-Dwaipayana Vyasa Vol. 3*.');
+    expect(fixed).toBe(3);
+  });
+  it('a bare-URL label standing alone gets its source\'s title, else the host', () => {
+    expect(checkLinks(`See [${GITA}](${GITA}).`, SOURCES).text).toBe(`See [*The Bhagavad-Gita*](${GITA}).`);
+    expect(checkLinks('See [https://example.org/x](https://example.org/x).', []).text).toBe('See [example.org](https://example.org/x).');
+  });
+  it('a title linked to another book is relinked to its source; quotation labels and unknown titles are untouched', () => {
+    expect(checkLinks('[*The Bhagavad-Gita*](https://oceanlibrary.com/rig-veda)', SOURCES).text).toBe(`[*The Bhagavad-Gita*](${GITA})`);
+    const q = '[*"I am OM!"*](https://oceanlibrary.com/rig-veda) and [*Some Other Book*](https://x.org/y)';
+    expect(checkLinks(q, SOURCES)).toEqual({ text: q, fixed: 0 });
+  });
+  it('slugAgrees: an OceanLibrary slug must share a word with the title; other hosts pass', () => {
+    expect(slugAgrees('https://oceanlibrary.com/hymns-of-atharva-veda', 'The Mahabharata Vol. 3')).toBe(false);
+    expect(slugAgrees('https://oceanlibrary.com/kitab-i-iqan/?paraId=p1', 'The Kitáb-i-Íqán')).toBe(true);
+    expect(slugAgrees('https://www.gutenberg.org/ebooks/1', 'Anything')).toBe(true);
+  });
+  it('formPass runs it with the turn\'s sources', () => {
+    expect(formPass(LIVE, { sources: SOURCES }).repairs.links).toBe(3);
+  });
+});

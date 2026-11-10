@@ -159,9 +159,60 @@ export function mixedScript(text) {
  *  link's text made parens. By form only — it never decides what the reply says. Pure. */
 export function finalForm(text) { return formPass(text).text; }
 /** finalForm with what it repaired, for the turn's path (forensics counts form.search_denial as a WRITER defect). Pure. */
-export function formPass(text) {
-  const den = dropSearchDenial(text), def = dropDeflection(den.text), off = dropSearchOffer(def.text);
-  return { text: safeLinkText(off.text), repairs: { search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}) } };
+export function formPass(text, { sources = [] } = {}) {
+  const den = dropSearchDenial(text), def = dropDeflection(den.text), off = dropSearchOffer(def.text), lk = checkLinks(off.text, sources);
+  return { text: safeLinkText(lk.text), repairs: { search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}) } };
+}
+
+// THE LINK CHECK — BLOCKING (battery 11-10 "main book of the Hindus": `[*Bhagavad-Gita*](…) [https://…](https://…)`, a Mahabharata
+// title linked to gutenberg.org, another to …/hymns-of-atharva-veda). At the exit a link's label must name what it opens:
+//  · a label that IS a URL: dropped when it trails another link (a duplicate), else labelled with its source's title or its host;
+//  · a label that names a cited source's title: its link must open that source — else it is relinked to the source's own link,
+//    or left an unlinked title when that link is itself untrustworthy (an OceanLibrary book slug sharing no word with the title).
+// Quotation labels ([*"…"*](url)) are narrowQuoteLinks' business, never touched here. sources: [{ title, url }]. Pure.
+const MD_LINK = /([ \t]*)\[([^\[\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g;
+const foldT = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[‘’ʼʻ`']/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const SLUG_STOP = new Set(['the', 'and', 'of', 'a', 'an', 'in', 'on', 'en', 'vol', 'part']);
+const words = (s) => foldT(s).split(' ').filter((w) => w.length > 2 && !SLUG_STOP.has(w));
+const bareLabel = (label) => label.replace(/[*_\s]/g, '');
+const isUrlLabel = (label) => /^(?:https?:\/\/|www\.)\S+$/i.test(bareLabel(label));
+const bookOf = (url) => { try { const u = new URL(url); return `${u.host.replace(/^www\./, '')}/${u.pathname.split('/').filter(Boolean)[0] || ''}`; } catch { return null; } };
+/** An OceanLibrary link whose book slug shares no word with the title it is said to open is not that book; other hosts pass. */
+export function slugAgrees(url, title) {
+  let u; try { u = new URL(url); } catch { return false; }
+  if (!/(^|\.)oceanlibrary\.com$/.test(u.host)) return true;
+  const slug = words((u.pathname.split('/').filter(Boolean)[0] || '').replace(/[-_]/g, ' ')), t = words(title);
+  if (slug.length < 2 || t.length < 1) return true;
+  return slug.some((w) => t.some((x) => x.startsWith(w.slice(0, 4)) || w.startsWith(x.slice(0, 4))));
+}
+export function checkLinks(text, sources = []) {
+  const src = String(text || ''), byTitle = new Map(), byUrl = new Map();
+  for (const s of sources || []) {
+    if (!s?.title) continue;
+    if (!byTitle.has(foldT(s.title))) byTitle.set(foldT(s.title), s);
+    if (s.url) byUrl.set(s.url, s);
+  }
+  let fixed = 0;
+  const out = src.replace(MD_LINK, (m, ws, label, url, off, all) => {
+    if (isUrlLabel(label)) {
+      fixed += 1;
+      if (/\]\([^)\s]+\)[*_]*$/.test(all.slice(Math.max(0, off - 600), off))) return '';   // trails another link: a duplicate, gone with its space
+      const s = byUrl.get(url);
+      let host = ''; try { host = new URL(url).host.replace(/^www\./, ''); } catch { /* unparsable: 'link' */ }
+      return `${ws}[${s ? `*${s.title}*` : host || 'link'}](${url})`;
+    }
+    if (/^[*_\s]*["“]/.test(label)) return m;
+    const s = byTitle.get(foldT(label.replace(/[*_]/g, '')));
+    if (!s) return m;
+    const good = !!s.url && slugAgrees(s.url, s.title);
+    // the source's own link is sound: the label must open that book
+    if (good) { if (bookOf(url) === bookOf(s.url)) return m; fixed += 1; return `${ws}[${label}](${s.url})`; }
+    // the source's link is not its book: keep only an OceanLibrary link of the right name, else the title stands unlinked
+    if (/(^|\.)oceanlibrary\.com\//.test(url.replace(/^https?:\/\//, '')) && bookOf(url) !== bookOf(s.url || '') && slugAgrees(url, s.title)) return m;
+    fixed += 1;
+    return `${ws}${label}`;
+  });
+  return { text: fixed ? out : src, fixed };
 }
 
 // THE SEARCH DENIAL — BLOCKING, ABSOLUTE (Chad 11-10: '"I cannot search from here" is never correct'). Anywhere in the reply, a
