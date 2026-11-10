@@ -158,26 +158,28 @@ const ENTRIES = [
       }
       return { passages, query_used: query, relaxed: passages.some((p) => p.tier && p.tier !== 'strict') ? dropped : [] };
     } },
-  // every place ONE work (or a section of it: from/to) has the words — literal, accent-folded, reading order, each with its place + link;
-  // no literal hit → the closest in meaning inside that work, labelled mode 'meaning' (Chad 11-10: 'search for "private property" in God Passes By')
-  { name: 'in_work_search', label: 'In-Work Search', kind: 'tool', outputName: 'Passage[]', cost: C(true, 200),   // embed: only the meaning fallback
-    description: 'Find every place in one work where given words occur: all its paragraphs holding the words (literal, accents folded), in reading order, each with its place (#n) and link. No literal hit → the passages closest in meaning inside that work, labelled.',
-    purpose: 'Answers "search for X in <work>" / "where does <work> mention X": the complete list for that one work, not a ranked sample from the library.',
-    input: { type: 'object', additionalProperties: false, required: ['query', 'work_id'], properties: { query: str('The words to find, as written (a phrase or a word)'),
-      work_id: { type: 'integer', minimum: 1, description: 'The work (document id), resolved by the book finder' },
-      from: { type: 'integer', minimum: 0, description: 'A section: first paragraph_index' }, to: { type: 'integer', minimum: 0, description: 'A section: last paragraph_index' },
-      literal: { type: 'boolean', default: true, description: 'false = skip the literal pass, meaning search inside the work only' }, limit: LIMIT(200, 1000) } },
-    output: { type: 'object', required: ['work', 'mode', 'total', 'passages'], properties: { work: { type: 'object', properties: { id: { type: 'integer' }, title: nul('string'), author: nul('string') } },
-      query: { type: 'string' }, mode: { type: 'string', enum: ['literal', 'meaning', 'none'], description: 'literal = the exact words; meaning = no literal hit, closest in meaning; none = neither' },
-      total: { type: 'integer', description: 'Every literal occurrence in the work (passages may list fewer: limit)' }, passages: { type: 'array', items: PASSAGE } } },
-    llmOmit: ['limit'],
-    example: { input: { query: 'private property', work_id: 21310 }, output: { work: { id: 21310, title: 'God Passes By', author: 'Shoghi Effendi' }, query: 'private property', mode: 'literal', total: 1,
-      passages: [{ ...P_EX, id: 868, document_id: 21310, paragraph_index: 867, title: 'God Passes By', author: 'Shoghi Effendi', place: '#868', found_by: ['in_work'],
+  // THE find-quote tool (Chad 11-10: "'Find quote' is the tool, with filters for religion, author(s) and book(s)"): the words, literal first,
+  // meaning fallback; a book in context is just works:[id] (the whole book, reading order). Pure search; the strategy shapes the answer.
+  { name: 'quote_search', label: 'Quote Search', kind: 'tool', outputName: 'Passage[]', cost: C(true, 200),   // embed: only the meaning fallback
+    description: 'Find the passage(s) that hold given words. Literal first (accents/case folded), then closest in meaning. Narrow with religions, authors and works (any of each list; all kinds must hold). With works given, EVERY paragraph of those works holding the words, in reading order.',
+    purpose: 'Answers "find the passage that says X", "where does <author/tradition> say X", "search for X in <work>": one search type, filters from the strategy and context.',
+    input: { type: 'object', additionalProperties: false, required: ['query'], properties: { query: str('The words to find, as written (a phrase or a word)'),
+      mode: { type: 'string', enum: ['literal', 'meaning', 'auto'], default: 'auto', description: 'literal = exact words only; meaning = closest in meaning only; auto = literal, then meaning when none' },
+      religions: { type: 'array', items: { type: 'string' }, description: "Traditions, any of: Baha'i, Islam, Christianity…" },
+      authors: { type: 'array', items: { type: 'string' }, description: 'Authors, any of (a name as written)' },
+      works: { type: 'array', items: { type: ['integer', 'string'] }, description: 'Works, any of: document ids or titles' },
+      from: { type: 'integer', minimum: 0, description: 'A section of the work: first paragraph_index' }, to: { type: 'integer', minimum: 0, description: 'A section: last paragraph_index' },
+      limit: LIMIT(20, 1000) } },
+    output: { type: 'object', required: ['total', 'passages', 'mode_used'], properties: { total: { type: 'integer', description: 'Every literal occurrence (passages may list fewer: limit)' },
+      passages: { type: 'array', items: PASSAGE }, mode_used: { type: 'string', enum: ['literal', 'meaning', 'none'] },
+      works: { type: 'array', items: { type: 'object', properties: { id: { type: 'integer' }, title: nul('string'), author: nul('string') } }, description: 'The works searched (when works were given)' } } },
+    llmOmit: ['limit', 'from', 'to'],
+    example: { input: { query: 'private property', works: [21310] }, output: { total: 1, mode_used: 'literal', works: [{ id: 21310, title: 'God Passes By', author: 'Shoghi Effendi' }],
+      passages: [{ ...P_EX, id: 868, document_id: 21310, doc_id: 21310, para_id: 868, work: 'God Passes By', paragraph_index: 867, title: 'God Passes By', author: 'Shoghi Effendi', place: '#868', found_by: ['in_work'],
         text: '… on the institution of private property …', excerpt: '… on the institution of **private property** …' }] } },
     async run(a, ctx = {}) {
-      const { inWorkSearch } = await import('./find-in-work.js');
-      const meaning = async (q, id) => (await run('fused_search', { query: q, limit: 8, filters: { documentId: id }, layers: ['phrase', 'hype'] }, ctx)).passages;
-      return inWorkSearch(a, ctx, meaning);
+      const { quoteSearch } = await import('./quote-search.js');
+      return quoteSearch(a, ctx, (x) => run('fused_search', x, ctx));
     } },
   // ONE call for a comparison: the same query held to each side's filters, per-side results deduped; the understanding judge runs once at tree level
   { name: 'compare_search', label: 'Compare Search', kind: 'tool', outputName: 'Side[]', cost: C(true, 400),

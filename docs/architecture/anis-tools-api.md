@@ -40,6 +40,7 @@ Anís searches the library with a set of named tools. Each kind of search, and e
 | hype_search | HyPE Search | tool | Passage[] | — | Question search (HyPE): paragraphs that answer a question like the query. |
 | combined_search | Combined Search | tool | Passage[] | search_library, planned_search | The planned library search: a planner reads the query (and the conversation), sets the scope, and fuses every layer. |
 | fused_search | Fused Search | tool | Passage[] | — | Every layer fused on the query as written: no planner, no LLM, no relaxing. |
+| quote_search | Quote Search | tool | Passage[] | — | Find the passage(s) holding given words: literal first, then meaning; filters religions / authors / works (any of each, all kinds AND). A book in context = works:[id]. |
 | biography_search | Biography Search | tool | Person[] | people_search | People search: who did, met or wrote something, each person with the cited evidence. |
 | document_search | Document Search | tool | Work[] | find_work | A work in the library by its title, any spelling: the best match first, then close others. |
 | web_search | Web Search | tool | WebAnswer | — | The open web, for what a library of texts cannot hold; never scripture. |

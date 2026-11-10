@@ -3,7 +3,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { anisTurn, focusWork, workPatch } from '../../api/lib/assistant/turn.js';
 import { jevBackup, backupQuestions, readBackup } from '../../api/lib/assistant/jev-backup.js';
-import { findInWorkAnswer, inWorkSearch } from '../../api/lib/assistant/find-in-work.js';
+import { findInWorkAnswer } from '../../api/lib/assistant/find-in-work.js';
+import { quoteSearch } from '../../api/lib/assistant/quote-search.js';
 import { emptyState, applyPatch } from '../../api/lib/assistant/units.js';
 import { LOOKUP_KINDS } from '../../api/lib/assistant/triage.js';
 import { jevTimeoutStats, anisJevTimeoutsReport } from '../../api/lib/ops/anis-jev-timeouts.js';
@@ -34,7 +35,7 @@ const turn = ({ backup, state = stateAfterCard, triageOk = null } = {}) => {
     jevBackup: async (a) => { calls.backup.push(a); return backup; },
     bookPick: async () => { calls.book++; return null; },
     lookup: vi.fn(async () => null),
-    findInWork: async (a) => { calls.find.push(a); return findInWorkAnswer({ ...a, search: (x) => inWorkSearch(x, { deps: searchDeps }) }); },
+    findInWork: async (a) => { calls.find.push(a); return findInWorkAnswer({ ...a, search: (x) => quoteSearch(x, { deps: searchDeps }) }); },
     respond: async () => { calls.respond++; return { reply: 'researched', citations: [], retrieved: [], plan: { shape: 'topic' }, timings: {} }; },
     open: async () => ({ conversationId: 'c', round: 1 }), close: async (x) => { closed.push(x); }, fail: async () => {}, card: async () => null, outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {} };
   return { calls, closed, d, run: () => anisTurn({ messages: [...THREAD], participant: { id: 's', authed: true }, clientKey: 's', onEvent: () => {}, deps: d }) };

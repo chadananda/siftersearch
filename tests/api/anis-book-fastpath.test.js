@@ -240,11 +240,11 @@ describe('11-10 misses: copies of one text are one option; the extracted title r
     expect(g.map((c) => c.label)).toEqual([labelOf({ kind: 'work', doc: DOCS[0] }), labelOf({ kind: 'section', sec: SECS[0] })]);
   });
   it('the in-work find resolves the Dhammapada through the same pick and searches it', async () => {
-    const j = splitJev(/^“(The )?Dhammapada/), search = vi.fn(async (a) => ({ work: { id: a.work_id, title: 'The Dhammapada' }, query: a.query, mode: 'phrase', total: 1,
-      passages: [{ id: 1, document_id: a.work_id, paragraph_index: 5, text: 'Hatred ceases by love', title: 'The Dhammapada', url: null }] }));
+    const j = splitJev(/^“(The )?Dhammapada/), search = vi.fn(async (a) => ({ works: [{ id: a.works[0], title: 'The Dhammapada' }], mode_used: 'phrase', total: 1,
+      passages: [{ id: 1, document_id: a.works[0], paragraph_index: 5, text: 'Hatred ceases by love', title: 'The Dhammapada', url: null }] }));
     const got = await findInWorkAnswer({ messages: user('find "hatred ceases" in the Dhammapada'), names: ['Dhammapada'],
       deps: { bookDeps: { fetchImpl: j.fetchImpl, find: dhFind, extract: vi.fn(async () => []) } }, search });
-    expect(search).toHaveBeenCalledWith(expect.objectContaining({ work_id: 5001, query: 'hatred ceases' }));
+    expect(search).toHaveBeenCalledWith(expect.objectContaining({ works: [5001], query: 'hatred ceases' }));
     expect(got?.reply).toBeTruthy();
   });
   it('"the main book of the Hindus": the second pick is TOLD the titles Haiku resolved, and the Gita copies are one option (live: none 0.39)', async () => {

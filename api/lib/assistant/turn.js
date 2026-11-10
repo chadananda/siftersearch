@@ -7,7 +7,7 @@ import { assertSpendCap, isSpendCap, TEST_BILL_TO } from '../spend-caps.js';
 import { loadReaderCard } from './reader-card.js';
 import { resolveQuery } from './short-turn.js';
 import { openExchange, closeExchange, failExchange } from './exchange-log.js';
-import { findInWorkAnswer } from './find-in-work.js';
+import { findInWorkAnswer, findPassageAnswer } from './find-in-work.js';
 import { triageMessage, routeTriage, outputBreaksPersona, T } from './triage.js';
 import { cannedReply } from './canned.js';
 import { strikes as liveStrikes, tarpitResponse } from './strikes.js';
@@ -174,7 +174,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   };
   // the in-work find's list (find-in-work.js inWorkReply: built by code, no writer), links upgraded to OceanLibrary ranges like any reply
   const inWorkAnswer = async (got, ex, extra = {}) => {
-    const r = got.result, plan = { shape: 'work', work: got.work.id, ...(got.section ? { section: got.section.title } : {}), find: r.query, mode: r.mode };
+    const r = got.result, plan = { shape: got.work ? 'work' : 'passage', ...(got.work ? { work: got.work.id } : {}), ...(got.section ? { section: got.section.title } : {}), find: r.query, mode: r.mode };
     const citations = r.passages.map((p) => ({ id: p.id, title: p.title, author: p.author, document_id: p.document_id, paragraph_index: p.paragraph_index, place: p.place ?? null, url: p.url ?? null, text: p.text }));
     onEvent({ type: 'sources', sources: citations, plan, ms: Date.now() - t0 });
     onEvent({ type: 'stage', stage: 'craft' });
@@ -183,11 +183,11 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const up = d.upgradeLinks ?? (deps ? null : async (x) => (await import('../ocean-links.js')).upgradeOceanLinks(x));
     const reply = (up ? await Promise.resolve().then(() => up(got.reply)).catch(() => got.reply) : got.reply) || got.reply;
     onEvent({ type: 'text', content: reply });
-    const path = { gate: 'lookup', route: 'in_work', work: got.work.id, ...(got.section ? { section: { title: got.section.title, start_index: got.section.start_index } } : {}),
+    const path = { gate: 'lookup', route: got.work ? 'in_work' : 'find_passage', ...(got.work ? { work: got.work.id } : {}), ...(got.section ? { section: { title: got.section.title, start_index: got.section.start_index } } : {}),
       find: r.query, mode: r.mode, total: r.total, ...extra, meta: turnMeta({ status: 'answered', meter, ms: Date.now() - t0 }),
       timeline: timelineOf(timeline, t0), llm: meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null })) };
     if (ex) await d.close({ ...ex, reply, status: 'answered', path, channel: channel.id }).catch(() => {});
-    await rememberWork(ex, 'in_work', { id: got.work.id, title: got.work.title ?? r.work?.title ?? null });
+    if (got.work) await rememberWork(ex, 'in_work', { id: got.work.id, title: got.work.title ?? r.work?.title ?? null });
     return { reply, status: 'answered', citations, retrieved: [], plan, conversationId: ex?.conversationId ?? null, timings: { total_ms: Date.now() - t0 } };
   };
   if (titled) {
@@ -256,12 +256,12 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && outcome === 'search' && outcomeC >= T.outcome) Object.assign(route, { action: 'research', overridden: route.kind, by: 'outcome' });
   if (route.action === 'research' && outcome === 'ask_back' && outcomeC >= T.askBack) Object.assign(route, { action: 'canned', kind: 'unclear', overridden: 'research', by: 'outcome' });
   // Jev's own confident call that this fetches something exact outranks his "unclear" (a bare "Gleanings 1" reads as unclear to the message-kind question)
-  if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && ['book', 'quote', 'in_work', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.8) Object.assign(route, { action: 'research', overridden: route.kind });
+  if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && ['book', 'quote', 'in_work', 'find_passage', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.8) Object.assign(route, { action: 'research', overridden: route.kind });
   // Jev's refers_back (strategy call, read with the history): a message pointing at the previous reply is never 'unclear' and never a literal quote lookup
   if (strat?.refersBack && route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind)) Object.assign(route, { action: 'research', overridden: route.kind, by: 'refers_back' });
   // "search it for X": refers back to the book in focus, or to the work Jev names from the history — that IS the in-work find
   const focusFind = tri?.lookup?.choice === 'in_work' && (!!focus || !!strat?.units?.named_work);
-  const lkIntent = lookupOn && (!strat?.refersBack || focusFind) && route.action === 'research' && ['book', 'quote', 'in_work', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
+  const lkIntent = lookupOn && (!strat?.refersBack || focusFind) && route.action === 'research' && ['book', 'quote', 'in_work', 'find_passage', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
   // THE BOOK FAST PATH (Chad 11-10): Jev chose the book strategy (or his lookup says book) → code gathers title + section candidates for
   // the name he gave (his named_work; a person he named beside it is the byline: author or compiler) → ONE typed Jev pick → the card.
   // Nothing fits → one Haiku names the work, then candidates + Jev again; still nothing → the research below. A topic or person
@@ -289,6 +289,16 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       deps: { ...(finder ? { bookFastPath: finder } : {}) }, ...(useFocus ? { focus } : {}) }), (r) => (r ? { work: r.work?.id, mode: r.result?.mode, total: r.result?.total } : null)).catch(() => null);
     if (got?.reply) return inWorkAnswer(got, ex, { gate: 'lookup', strategy_timed_out: !strat || strat.by === 'haiku', ...(jevFallback ? { jev_fallback: jevFallback } : {}), ...(useFocus ? { via: 'focus' } : {}), decisions: decisions.list() });
   }
+  // FIND A PASSAGE (Chad 11-10: "Find quote is the tool; the strategy and context provide the filters"): Jev's lookup says find_passage (the passage
+  // that says X, no book named) → quote_search held to Jev's units: the religions he scoped (this turn / conversation, never a host default),
+  // the person he named as the author, a work he named → a code-built list. No words resolved → research as before.
+  const passageFn = d.findPassage ?? (deps ? null : findPassageAnswer);
+  if (passageFn && lkIntent === 'find_passage' && !strat?.refersBack && engine === undefined && research === undefined && !variants && !llm) {
+    const explicit = ['turn', 'conversation'].includes(scopeR.units.scope_source) ? scopeR.units.religions_specified : null;
+    const got = await timed('find_passage', () => passageFn({ messages, religions: Array.isArray(explicit) ? explicit : [], authors: [u.named_person].filter(Boolean), works: [u.named_work].filter(Boolean),
+      topic: u.topic ?? null, decisions }), (r) => (r ? { mode: r.result?.mode, total: r.result?.total } : null)).catch(() => null);
+    if (got?.reply) return inWorkAnswer(got, ex, { gate: 'lookup', ...(jevFallback ? { jev_fallback: jevFallback } : {}), decisions: decisions.list() });
+  }
   // PROBE (Chad 11-10, "Deepening Compilation" built a compilation): Jev chose to MAKE something (a compilation) or to talk, but
   // his phrase may BE a library title — the same one pick, with "make it new" as an option; code only checks the title is near-exact
   const probe = bookGate && !bookOn ? PROBE_ALT[strategyOf(strat)] : null;
@@ -298,7 +308,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     if (found?.kind === 'work') return bookAnswer(found.work, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
     if (found?.kind === 'section') return sectionCard(found, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
   }
-  const lk = lkIntent && lkIntent !== 'in_work' ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent, profile, decisions, onJev: (info) => decisions.record('jev:timeout', timeoutDecision(info)) }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
+  const lk = lkIntent && lkIntent !== 'in_work' && lkIntent !== 'find_passage' ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent, profile, decisions, onJev: (info) => decisions.record('jev:timeout', timeoutDecision(info)) }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
   // a SHORT turn Jev read as a search ("more", "and the Báb?", "in Persian") gets its self-contained query from the history
   // and the card (short-turn.js) — respond.js searches those words, not the bare message
   const resolved = route.action === 'research' && outcome === 'search' && tri?.features?.short && !tri.features.first && d.resolve
