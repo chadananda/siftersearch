@@ -33,33 +33,8 @@ Anís searches the library with a set of named tools. Each kind of search, and e
 
 ## Tools
 
-The contract tools (`REGISTRY`), as of 11-10. The live list, with call counts and timings, is `GET /api/v1/tools` and /docs/anis-tools.
-
-| Name | Label | Output | Purpose |
-|---|---|---|---|
-| literal_search | Literal Search (BM25) | Passage[] | BM25 keyword search over whole paragraphs: the exact words, folded for accents and spelling. |
-| phrase_search | Phrase Search | Passage[] | Phrase-vector search: paragraphs holding a phrase like the query, in any wording. |
-| hype_search | HyPE Search | Passage[] | Question search (HyPE): paragraphs that answer a question like the query. |
-| fused_search | Fused Search | Passage[] | The one typed search: every layer (or the ones you pick) fused on the query as written, filtered, deduped across layers/copies/editions. |
-| quote_search | Quote Search | Passage[] | Answers "find the passage that says X", "where does <author/tradition> say X", "search for X in <work>": one search type, filters from the strategy and context. |
-| compare_search | Compare Search | Side[] | Replaces a per-side search loop: one merged query per side, returned side by side (a side with no hits is an empty side, not an error). |
-| reference_lookup | Reference Lookup | Reference | Chapter-and-verse to the passage, deterministically; no passage and ref null when the text is not a reference or the book is not in the library. |
-| badi_calendar | Badí‘ Calendar | BadiDate | Calendar arithmetic only. Holy-day names are not returned (the table is not verified here); Naw-Rúz is flagged. |
-| prayer_lookup | Prayer Lookup | Prayers | A name or incipit → literal and phrase search (and meaning, for a name) across the tradition’s whole scope; a need → meaning search (hype + phrase) in the tradition plus inside its prayer works. Headings, titles and prayer works only rank (with the tradition’s own authority, core first); they never decide. Deterministic. |
-| whole_lookup | Whole Prayer Lookup | Whole prayer | Extends one paragraph to the whole prayer or devotional unit holding it: an attribution-closed run, a short section, else the contiguous paragraphs that address God. Never for a copyrighted book. |
-| originals_search | Originals Search | Passage[] | The fast engine held to the doctrinal writers and the Arabic/Persian language group: the originals an English search ranks out. |
-| biography_search | Biography Search | Person[] | People search: who did, met or wrote something, each person with the cited evidence (deterministic: the evidence index, no model). |
-| document_search | Document Search | Work[] | A work in the library by its title, any spelling: the best match first, then close others. |
-| original_lookup | Original Lookup | Passage[] | The Arabic/Persian original of an English passage, then the authorised translations linked to it. |
-| translation_lookup | Translation Lookup | Passage[] | Existing English translations of an Arabic/Persian text: the library’s copy of the original and the translations linked to it. |
-| links_lookup | Links Lookup | PassageLinks | A paragraph’s recorded links: its original, its translations, the sources it quotes and the works quoting it. |
-| context_lookup | Context Lookup | Context | The paragraphs before and after one paragraph of a document (none for a copyrighted book). |
-| rendering_lookup | Rendering Lookup (CTAI) | Renderings | How Shoghi Effendi (or another translator) rendered an Arabic/Persian word or root (the CTAI concordance), with counts and paired passages. |
-| work_notes_lookup | Work Notes Lookup | WorkNotes | Verified quotations on a core work’s significance, best authority first. |
-| author_lookup | Author Lookup | Authors | The library’s author strings for a person’s name (Augustine → Augustine of Hippo, Saint Augustine). |
-| source_trace | Source Trace | Passage[] | The primary passages a signpost (a House letter, a scholar, a compilation) quotes or rests on. |
-| edition_lookup | Edition Lookup | Editions | A passage’s original-language edition, or its existing translations, in any tradition: recorded links, else the same work in another language aligned by verse/section, else by meaning. |
-| quotation_candidates | Quotation Candidates | Passage[] | Where a quotation may come from: the passage holding its words (source), the original tablet, works quoting it — each with a containment score; deterministic, no model. |
+The tool list is data, not documentation: read it live from `GET /api/v1/tools` (contract tools) or `GET /api/v1/anis/tools`
+(with 7-day calls, errors and timings), rendered at /docs/anis-tools. Do not copy it into this file.
 
 `PROCESS` holds the rest, callable through `run()` but not routes or contract tools: `web_search` (it calls an LLM), and the **internal** strategies (`internal: true`) `comparison`, `understanding`, `prayer`, `guidance`, `reference`, `compilation` and `deep_report`. The answer pipeline runs those once Jev has chosen them.
 
