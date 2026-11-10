@@ -378,7 +378,7 @@
           <span class="roundel" aria-hidden="true"><svg viewBox="0 0 512 512"><path fill="currentColor" d={OCEAN_D}/></svg></span>
           <span class="titles">
             <span class="title">{cfg.name}</span>
-            <span class="subtitle">Ocean guide</span>
+            <span class="subtitle">Ocean companion</span>
           </span>
           <span class="hbtns">
             <button class="icon profile" aria-label={connectedEmail ? `Account: ${connectedEmail}` : 'Connect for email summaries'} aria-expanded={profileOpen} onclick={profileClick} title={connectedEmail ? connectedEmail : 'Connect'}>
@@ -443,6 +443,7 @@
                       </div>
                     </div>
                   {/if}
+                  {#if !(m.book?.sufficient && m.role === 'assistant')}
                   <div class="bubble" class:lit={m.lit}>
                     {#if m.role === 'assistant'}
                       {#if m.pending && !m.content}
@@ -457,6 +458,7 @@
                       {/if}
                     {:else}{m.content}{/if}
                   </div>
+                  {/if}
                   {#if m.citations?.length}
                     <div class="cites">
                       {#each m.citations.slice(0, 4) as c, ci}
@@ -504,7 +506,6 @@
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 11.2 20.2 3.4c.8-.4 1.6.5 1.2 1.3l-7.8 16.8c-.4.8-1.6.7-1.9-.2l-2-6.6a1 1 0 0 0-.7-.7l-6.6-2c-.9-.3-.9-1.5 0-1.9z" transform="rotate(3 12 12)"/></svg>
           </button>
         </footer>
-        <div class="brand"><a href="https://oceanlibrary.com" target="_blank" rel="noopener">Ocean</a></div>
       </section>
     {:else}
       <button class="bubble-btn" aria-label="Open {cfg.name} chat" aria-expanded="false" onclick={togglePanel}>
@@ -757,9 +758,6 @@
   .send:active:not(:disabled) { transform: scale(.92); }
   .send:disabled { opacity: .38; cursor: default; }
 
-  .brand { text-align: center; font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; padding: 2px 0 8px; }
-  .brand a { color: #a3987f; text-decoration: none; }
-  .brand a:hover { color: var(--gold); }
 
   /* ── Dark: deep ink, warm text, lifted links, same gold. ── */
   @media (prefers-color-scheme: dark) {
@@ -780,8 +778,7 @@
     textarea::placeholder { color: #6c7686; }
     .body { scrollbar-color: rgba(140,150,170,.35) transparent; }
     .body::-webkit-scrollbar-thumb { background: rgba(140,150,170,.3); }
-    .brand a { color: #6c7686; }
-  }
+    }
 
   /* ── Small screens: the panel becomes a full sheet. ── */
   @media (max-width: 640px) {

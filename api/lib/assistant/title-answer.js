@@ -59,7 +59,7 @@ export async function titleAnswer(work, { onEvent = () => {}, links = null, summ
   const [wl, sum] = await Promise.all([(links || (async (xs) => (await import('../hit-links.js')).workLinks(xs)))(all).catch(() => null), summary(d).catch(() => null)]);
   const urlOf = (x) => wl?.get?.(x.id) ?? workUrl(x);
   // cover_url absolute: widgets embed anywhere, and images live on the site, never the api host.
-  const book = { id: d.id, title: d.title, author: d.author || null, year: d.year ?? null, url: urlOf(d) || null, cover_url: d.cover_url ? (/^https?:/.test(d.cover_url) ? d.cover_url : `${SITE}${d.cover_url}`) : null, description: sum || null, encumbered: d.encumbered === 1 };
+  const book = { id: d.id, title: d.title, author: d.author || null, year: d.year ?? null, url: urlOf(d) || null, cover_url: d.cover_url ? (/^https?:/.test(d.cover_url) ? d.cover_url : `${SITE}${d.cover_url}`) : null, description: sum || null, encumbered: d.encumbered === 1, sufficient: true };   // the card IS the answer where a card can show (widget); text stays for history and other channels
   onEvent({ type: 'book', book });
   const lead = workLead(work, urlOf), offer = workOffer(work);
   const reply = [sum, lead, offer].filter(Boolean).join('\n\n');

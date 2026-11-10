@@ -3,6 +3,7 @@
 // "Dawnbreakers" ≡ The Dawn-Breakers, "Book of Certitude" ≡ the Kitáb-i-Íqán's subtitle). No search, no model. Before this,
 // such turns went to passage search and the reply quoted works that MENTION the book and sent readers to "a digital catalog".
 // Pure: workRequest / titleCandidates / workReply. findWork takes the index + listDocs injected (tests) or loads them lazily.
+import { readFileSync } from 'fs';
 import { workUrl } from '../source-links.js';
 import { isCoreLiterature } from '../rights/canonical.js';
 import { getAuthority, doctrinalTier } from '../authority.js';
@@ -70,8 +71,17 @@ const lib = async () => Promise.all([import('../dewey/title-index.js'), import('
 /** The question → { doc, others } — the library's best copy of the work asked for — or null. */
 /** coreOnly (respond.js, unless Jev's lookup intent is 'book'): a bare title opens only a CORE work (Chad 11-03: "the earth is but
  *  one country" opened Hugh Adamson's book of that name); an explicit request for a book still resolves every book. */
+// the other names a work is known by (config/work-names.json: "Book of Certitude", "Lord of Books" → the Kitáb-i-Íqán): data, not rules
+let NAMES = null;
+const nameMap = (list) => new Map(list.flatMap((w) => w.names.map((n) => [foldTitle(n), w.title])));
+const loadNames = () => { try { return JSON.parse(readFileSync(new URL('../../../config/work-names.json', import.meta.url), 'utf8')).works; } catch { return []; } };
+export function workName(text, list = null) {
+  const map = list ? nameMap(list) : (NAMES ??= nameMap(loadNames()));
+  return map.get(foldTitle(String(text || '').replace(/[?.!]+$/, ''))) ?? null;
+}
+
 export async function findWork(text, { named = null, index = null, match = null, listDocs = null, coreOnly = false } = {}) {
-  if (workRequest(text)) return findTitled(titleCandidates(text, named), { index, match, listDocs });
+  if (workRequest(text)) { const c = titleCandidates(text, named); return findTitled([...c, ...c.map((x) => workName(x)).filter(Boolean)], { index, match, listDocs }); }
   // a bare title IS a request for the book (Chad 11-01: "Dawnbreakers" and "Seven Valleys" got unsourced summaries, no link):
   // only the book's WHOLE title ("Dawnbreakers" = The Dawn-Breakers), or a phrase of 2+ words naming a work by a Central
   // Figure or Shoghi Effendi ("Book of Certitude"): "Justice", "Love", "world peace" stay topic searches (checked against
@@ -79,6 +89,9 @@ export async function findWork(text, { named = null, index = null, match = null,
   const bare = bareTitle(text);
   if (!bare) return null;
   const { authorMatch: am } = await import('../dewey/title-index.js');
+  // a listed name opens its book (core or not: the list is the curation)
+  const known = workName(bare);
+  if (known) { const k = await findTitled([known], { index, match, listDocs, min: 0.95, prefix: true, byline: true, authorMatch: am }); if ((k?.doc.paragraph_count || 0) >= 20) return k; }
   const w = await findTitled([bare], { index, match, listDocs, min: 0.95, prefix: false, byline: true, authorMatch: am });
   const sq = (t) => foldTitle(t).replace(/ /g, '');
   // the whole title, or one whole part of it: "The Book of Certitude (Kitáb-i-Íqán)" is named by either half

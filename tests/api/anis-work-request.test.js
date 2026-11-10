@@ -180,6 +180,26 @@ describe('a bare title opens only a CORE book unless Jev decided the reader want
   });
 });
 
+describe('other names of a work (config/work-names.json) open it as a bare title (Chad 11-10: Iqan, Kitab Iqan, Book of Certitude, Lord of Books)', () => {
+  // the titles as production holds them: no subtitle on the Íqán, and an edition whose title carries "Most Holy Book"
+  const rows = [
+    { id: 20810, title: 'The Kitáb-i-Íqán', author: "Bahá'u'lláh", religion: "Bahá'í", collection: 'Core Tablets', source_site: 'oceanlibrary.com', language: 'en', paragraph_count: 290 },
+    { id: 21307, title: 'The Kitáb-i-Aqdas', author: "Bahá'u'lláh", religion: "Bahá'í", collection: 'Core Tablets', source_site: 'oceanlibrary.com', language: 'en', paragraph_count: 500 },
+    { id: 15766, title: 'The Most Holy Book: Parallel Translation of the Kitáb-i-Aqdas', author: 'A. Translator', religion: "Bahá'í", collection: 'Study', language: 'en', paragraph_count: 400 },
+    { id: 2, title: 'The Dawn-Breakers', author: 'Nabíl-i-Zarandí', religion: "Bahá'í", collection: 'Core Publications', book_authority: 5, source_site: 'oceanlibrary.com', language: 'en', paragraph_count: 2400 },
+  ];
+  const o = { index: buildIndex(rows), match: matchTitle, listDocs: async ({ ids }) => ({ docs: rows.filter((r) => ids.includes(r.id)) }), coreOnly: true };
+  for (const q of ['Iqan', 'Kitab Iqan', 'Kitáb-i-Íqán', 'Book of Certitude', 'The Book of Certitude', 'Lord of Books'])
+    it(`"${q}" → the Kitáb-i-Íqán`, async () => expect((await findWork(q, o))?.doc.id).toBe(20810));
+  it('"Most Holy Book" → the Kitáb-i-Aqdas, not an edition whose title merely carries the phrase', async () => expect((await findWork('Most Holy Book', o))?.doc.id).toBe(21307));
+  it('a listed name opens a non-core book too ("Dawnbreakers", "Nabíl’s Narrative")', async () => {
+    expect((await findWork('Dawnbreakers', o))?.doc.id).toBe(2);
+    expect((await findWork('Nabíl’s Narrative', o))?.doc.id).toBe(2);
+  });
+  it('an explicit request uses the names too', async () => expect((await findWork('where can I read the Book of Certitude?', o))?.doc.id).toBe(20810));
+  it('an unlisted topic word stays a search', async () => expect(await findWork('Certitude', o)).toBeNull());
+});
+
 describe('respond: findWork is core-only unless Jev\'s lookup intent is book', () => {
   const run = async (direction) => {
     const { anisRespond } = await import('../../api/lib/assistant/respond.js');

@@ -1,0 +1,16 @@
+{
+  "_doc": "Other names a work is known by → the title phrase the library's title index resolves. Data, not code: add a line, no deploy logic. Read by api/lib/assistant/work-request.js (workName). A listed name opens the book even when it is not core literature: the list is the curation.",
+  "works": [
+    { "title": "Kitáb-i-Íqán", "names": ["Iqan", "Íqán", "Kitab Iqan", "Kitab-i-Iqan", "Book of Certitude", "The Book of Certitude", "Lord of Books", "Siyyid-i-Kutub", "Sayyid al-Kutub"] },
+    { "title": "Aqdas", "names": ["Kitab-i-Aqdas", "Kitab Aqdas", "Most Holy Book", "The Most Holy Book", "Kitab al-Aqdas"] },
+    { "title": "The Dawn-Breakers", "names": ["Dawn-Breakers", "Dawn Breakers", "Dawnbreakers", "Nabil's Narrative", "Nabíl’s Narrative", "Nabil's History"] },
+    { "title": "The Hidden Words", "names": ["Kalimat-i-Maknunih", "Kalimat-i-Maknunah", "Hidden Words"] },
+    { "title": "Seven Valleys", "names": ["Haft Vadi", "Haft-Vadi", "The Seven Valleys"] },
+    { "title": "Epistle to the Son of the Wolf", "names": ["Lawh-i-Ibn-i-Dhib", "Epistle to the Son of the Wolf"] },
+    { "title": "Some Answered Questions", "names": ["Mufavadat", "Table Talks", "SAQ"] },
+    { "title": "The Secret of Divine Civilization", "names": ["Secret of Divine Civilization", "Risaliy-i-Madaniyyih", "The Mysterious Forces of Civilization", "Mysterious Forces of Civilization"] },
+    { "title": "Gems of Divine Mysteries", "names": ["Javahiru'l-Asrar", "Javahir al-Asrar"] },
+    { "title": "God Passes By", "names": ["GPB"] },
+    { "title": "Gleanings", "names": ["Gleanings from the Writings", "Gleanings from the Writings of Bahá'u'lláh"] }
+  ]
+}
