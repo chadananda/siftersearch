@@ -82,10 +82,13 @@ export function seedStrategies(db, seed = { TEMPLATES, STEPS, STRATEGIES: seedRo
     // prayer@2) and INSERT OR IGNORE silently kept those. A tree is re-seeded only when its graph changed (no seed-trees row with this graph).
     const treeDone = db.prepare("SELECT 1 FROM strategies WHERE id = ? AND created_by = 'seed-trees' AND graph_json = ? LIMIT 1");
     const maxV = db.prepare('SELECT MAX(version) AS v FROM strategies WHERE id = ?');
+    const retireOthers = db.prepare("UPDATE strategies SET status = 'retired' WHERE id = ? AND status = 'active' AND version != ?");
     const versionOf = (s) => (s.created_by !== 'seed-trees' ? s.version : treeDone.get(s.id, JSON.stringify(s.graph)) ? null : Math.max(s.version, (maxV.get(s.id)?.v ?? 0) + 1));
     for (const s1 of seed.STRATEGIES) { const s0 = s1.created_by === 'seed-trees' ? { ...s1, graph: pinSteps(s1.graph) } : s1; const v = versionOf(s0); if (v == null) continue; const s = { ...s0, version: v };
       n += str.run(s.id, s.version, s.name, s.description ?? null, JSON.stringify(s.exemplars || []), JSON.stringify(s.graph),
-      s.status || 'active', s.parent_version ?? null, at, s.created_by || 'seed').changes; }
+      s.status || 'active', s.parent_version ?? null, at, s.created_by || 'seed').changes;
+      // an edited starter tree replaces the live version (the older one is retired, restorable by rollback)
+      if (s.created_by === 'seed-trees' && (s.status || 'active') === 'active') retireOthers.run(s.id, s.version); }
     for (const x of specs) n += spc.run(x.name, specVersion, x.kind, x.sort, JSON.stringify(x.spec), at, 'seed').changes;
     if (n) bumpRev(db);
     return n;

@@ -344,11 +344,11 @@ describe('seeded rows and the ratchet', () => {
       expect(n, `${id} has ${n} node(s)`).toBeGreaterThan(1); expect(n, id).toBeLessThanOrEqual(64);
     }
   });
-  it('the six trees: a candidate v2 above the active one-node v1 (rollback), nodes kinded with reads/writes, synthesis edges marked', () => {
+  it('the starter trees: an active v2 above the one-node v1 (seeding retires v1, rollback restores it), nodes kinded with reads/writes, synthesis edges marked', () => {
     expect(TREE_IDS.sort()).toEqual(['claim_check', 'comparison', 'compilation', 'guidance', 'history_fact', 'prayer', 'reference', 'timeline', 'understanding']);
     for (const id of TREE_IDS.filter(HAS_V1)) {
       const v1 = STRATEGIES.find((s) => s.id === id && s.version === 1), v2 = STRATEGIES.find((s) => s.id === id && s.version === 2);
-      expect(v1.status).toBe('active'); expect(Object.keys(v1.graph.nodes).length).toBe(1); expect(v2).toMatchObject({ status: 'candidate', parent_version: 1 });
+      expect(v1.status).toBe('active'); expect(Object.keys(v1.graph.nodes).length).toBe(1); expect(v2).toMatchObject({ status: 'active', parent_version: 1 });
       const steps = new Map(STEPS.map((x) => [`${x.id}@${x.version}`, x]));
       for (const [nid, n] of Object.entries(v2.graph.nodes)) {
         expect(['decide', 'process', 'tool', 'synthesize'], `${id}.${nid}`).toContain(n.kind); expect(Array.isArray(n.reads) && Array.isArray(n.writes), `${id}.${nid}`).toBe(true); expect(steps.has(`${n.step}@${n.step_version}`)).toBe(true);

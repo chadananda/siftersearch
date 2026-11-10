@@ -173,6 +173,7 @@ export const STRATEGIES = [
   // v2 of the six executors as element trees (strategy-trees-seed.js): CANDIDATES — the promotion gate on tower decides; v1 (one node) stays active for rollback
   GENERAL_STRATEGY,   // the planner's safety net: no description, so never a Jev option
 ];
-export const TREE_STRATEGIES = [...TREE_IDS.map((id) => ({ ...strategy(id, id, TREE_GRAPHS[id], 2, TREE_DESCRIPTIONS[id]), status: 'candidate', created_by: 'seed-trees' })),
-  ...LOOKUP_TREE_IDS.map((id) => ({ ...strategy(id, id, LOOKUP_TREE_GRAPHS[id], 2, TREE_DESCRIPTIONS[id]), status: 'candidate', created_by: 'seed-trees' }))];   // quote_trace, term, original: v2 trees above the v1 lookup graphs
+// starter trees seed ACTIVE (Chad 11-09: "we need to start somewhere"); improvements after that go through candidates
+export const TREE_STRATEGIES = [...TREE_IDS.map((id) => ({ ...strategy(id, id, TREE_GRAPHS[id], 2, TREE_DESCRIPTIONS[id]), status: 'active', created_by: 'seed-trees' })),
+  ...LOOKUP_TREE_IDS.map((id) => ({ ...strategy(id, id, LOOKUP_TREE_GRAPHS[id], 2, TREE_DESCRIPTIONS[id]), status: 'active', created_by: 'seed-trees' }))];   // quote_trace, term, original: v2 trees above the v1 lookup graphs
 export const END_NODE = END;
