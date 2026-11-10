@@ -2414,6 +2414,1444 @@
     "google"
    ],
    "held_out": true
+  },
+  {
+   "id": "bahai-c001",
+   "q": "What do the Bahá'í Writings say about love?",
+   "topic": "love",
+   "kind": "writings",
+   "prefixes": 4,
+   "score": 19.9,
+   "searches": [
+    "bahai quotes on love",
+    "bahai quotes about love",
+    "bahai writings on love",
+    "abdul baha on love"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c002",
+   "q": "What do the Bahá'í Writings say about life after death?",
+   "topic": "life after death",
+   "kind": "writings",
+   "prefixes": 4,
+   "score": 19.8,
+   "searches": [
+    "bahai quotes on life after death",
+    "bahai quotes about life after death",
+    "bahai teachings on life after death",
+    "abdul baha on life after death"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c003",
+   "q": "What do the Bahá'í Writings say about death?",
+   "topic": "death",
+   "kind": "writings",
+   "prefixes": 4,
+   "score": 17.4,
+   "searches": [
+    "bahai quotes on death",
+    "bahai quotes about death",
+    "bahai writings on death",
+    "bahai view on death"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c004",
+   "q": "What do the Bahá'í Writings say about iran?",
+   "topic": "iran",
+   "kind": "writings",
+   "prefixes": 4,
+   "score": 16.3,
+   "searches": [
+    "bahai quotes on iran",
+    "bahai quotes about iran",
+    "bahai writings on iran",
+    "abdul baha on iran"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c005",
+   "q": "What do the Bahá'í Writings say about happiness?",
+   "topic": "happiness",
+   "kind": "writings",
+   "prefixes": 4,
+   "score": 16,
+   "searches": [
+    "bahai quotes on happiness",
+    "bahai quotes about happiness",
+    "bahai writings on happiness",
+    "abdul baha on happiness"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c006",
+   "q": "What do the Bahá'í Writings say about politics?",
+   "topic": "politics",
+   "kind": "writings",
+   "prefixes": 4,
+   "score": 16,
+   "searches": [
+    "bahai quotes on politics",
+    "bahai writings on politics",
+    "bahai view on politics",
+    "shoghi effendi on politics"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c007",
+   "q": "What do the Bahá'í Writings say about women?",
+   "topic": "women",
+   "kind": "writings",
+   "prefixes": 4,
+   "score": 16,
+   "searches": [
+    "bahai quotes on women",
+    "bahai quotes about women",
+    "bahai writings on women",
+    "abdul baha on women"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c008",
+   "q": "What do the Bahá'í Writings say about service?",
+   "topic": "service",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 14.4,
+   "searches": [
+    "bahai quotes on service",
+    "bahai quotes about service",
+    "bahai writings on service"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c009",
+   "q": "What do the Bahá'í Writings say about unity?",
+   "topic": "unity",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 14.3,
+   "searches": [
+    "bahai quotes on unity",
+    "bahai quotes about unity",
+    "bahai writings on unity"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c010",
+   "q": "What do the Bahá'í Writings say about hope?",
+   "topic": "hope",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 13.7,
+   "searches": [
+    "bahai quotes on hope",
+    "bahai quotes about hope",
+    "bahai writings on hope"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c011",
+   "q": "What do the Bahá'í Writings say about marriage?",
+   "topic": "marriage",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 13.6,
+   "searches": [
+    "bahai quotes on marriage",
+    "bahai view on marriage",
+    "abdul baha on marriage"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c012",
+   "q": "What do the Bahá'í Writings say about justice?",
+   "topic": "justice",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 12.4,
+   "searches": [
+    "bahai quotes on justice",
+    "bahai quotes about justice",
+    "bahai writings on justice"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c013",
+   "q": "What do the Bahá'í Writings say about jesus?",
+   "topic": "jesus",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 12.4,
+   "searches": [
+    "bahai quotes on jesus",
+    "bahai writings on jesus",
+    "bahai view on jesus"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c014",
+   "q": "Is there a Bahá'í prayer for departed?",
+   "topic": "departed",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 12.2,
+   "searches": [
+    "bahai prayer for the departed",
+    "bahai prayer for departed",
+    "bahai prayers for the departed",
+    "bahai prayers for departed"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c015",
+   "q": "What do the Bahá'í Writings say about nature?",
+   "topic": "nature",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 12.1,
+   "searches": [
+    "bahai quotes on nature",
+    "bahai quotes about nature",
+    "bahai writings on nature"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c016",
+   "q": "What do the Bahá'í Writings say about meditation?",
+   "topic": "meditation",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 12,
+   "searches": [
+    "bahai quotes on meditation",
+    "bahai writings on meditation",
+    "abdul baha on meditation"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c017",
+   "q": "What do the Bahá'í Writings say about youth?",
+   "topic": "youth",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 12,
+   "searches": [
+    "bahai quotes on youth",
+    "bahai quotes about youth",
+    "bahai writings on youth"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c018",
+   "q": "What do the Bahá'í Writings say about beauty?",
+   "topic": "beauty",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 11.9,
+   "searches": [
+    "bahai quotes on beauty",
+    "bahai quotes about beauty",
+    "bahai writings on beauty"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c019",
+   "q": "What do the Bahá'í Writings say about education?",
+   "topic": "education",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 11.9,
+   "searches": [
+    "bahai quotes on education",
+    "bahai quotes about education",
+    "bahai writings on education"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c020",
+   "q": "What do the Bahá'í Writings say about kindness?",
+   "topic": "kindness",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 11.8,
+   "searches": [
+    "bahai quotes on kindness",
+    "bahai quotes about kindness",
+    "bahai writings on kindness"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c021",
+   "q": "What do the Bahá'í Writings say about joy?",
+   "topic": "joy",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 11.7,
+   "searches": [
+    "bahai quotes on joy",
+    "bahai quotes about joy",
+    "bahai writings on joy"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c022",
+   "q": "What do the Bahá'í Writings say about teaching?",
+   "topic": "teaching",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 11.7,
+   "searches": [
+    "bahai quotes on teaching",
+    "bahai quotes about teaching",
+    "bahai writings on teaching"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c023",
+   "q": "What do the Bahá'í Writings say about war?",
+   "topic": "war",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 11.7,
+   "searches": [
+    "bahai quotes on war",
+    "bahai quotes about war",
+    "bahai writings on war"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c024",
+   "q": "What do the Bahá'í Writings say about family?",
+   "topic": "family",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 11.6,
+   "searches": [
+    "bahai quotes on family",
+    "bahai quotes about family",
+    "bahai writings on family"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c025",
+   "q": "What do the Bahá'í Writings say about patience?",
+   "topic": "patience",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 11.6,
+   "searches": [
+    "bahai quotes on patience",
+    "bahai quotes about patience",
+    "bahai writings on patience"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c026",
+   "q": "What do the Bahá'í Writings say about fasting?",
+   "topic": "fasting",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 11.4,
+   "searches": [
+    "bahai quotes on fasting",
+    "bahai quotes about fasting",
+    "bahai writings on fasting"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c027",
+   "q": "What do the Bahá'í Writings say about prayer?",
+   "topic": "prayer",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 11.4,
+   "searches": [
+    "bahai quotes on prayer",
+    "bahai quotes about prayer",
+    "bahai writings on prayer"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c028",
+   "q": "What do the Bahá'í Writings say about light?",
+   "topic": "light",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 11.3,
+   "searches": [
+    "bahai quotes on light",
+    "bahai quotes about light",
+    "bahai writings on light"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c029",
+   "q": "What do the Bahá'í Writings say about mothers?",
+   "topic": "mothers",
+   "kind": "writings",
+   "prefixes": 3,
+   "score": 11.1,
+   "searches": [
+    "bahai quotes on mothers",
+    "bahai quotes about mothers",
+    "bahai writings on mothers"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c030",
+   "q": "Is there a Bahá'í prayer for healing?",
+   "topic": "healing",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 9.7,
+   "searches": [
+    "bahai prayer for healing",
+    "bahai prayers for healing"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c031",
+   "q": "Is there a Bahá'í prayer for protection?",
+   "topic": "protection",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 9.5,
+   "searches": [
+    "bahai prayer for protection",
+    "bahai prayers for protection"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c032",
+   "q": "What do the Bahá'í Writings say about israel?",
+   "topic": "israel",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 9.4,
+   "searches": [
+    "bahai view on israel",
+    "shoghi effendi on israel"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c033",
+   "q": "What do the Bahá'í Writings say about homosexuality?",
+   "topic": "homosexuality",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 9.1,
+   "searches": [
+    "bahai writings on homosexuality",
+    "shoghi effendi on homosexuality"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c034",
+   "q": "Is there a Bahá'í prayer for peace?",
+   "topic": "peace",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 9,
+   "searches": [
+    "bahai prayer for peace",
+    "bahai prayers for peace"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c035",
+   "q": "What do the Bahá'í Writings say about friendship?",
+   "topic": "friendship",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 8.9,
+   "searches": [
+    "bahai quotes on friendship",
+    "bahai quotes about friendship"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c036",
+   "q": "What do the Bahá'í Writings say about abortion?",
+   "topic": "abortion",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 8.9,
+   "searches": [
+    "bahai writings on abortion",
+    "bahai view on abortion"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c037",
+   "q": "What do the Bahá'í Writings say about ai?",
+   "topic": "ai",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 8.8,
+   "searches": [
+    "bahai view on ai",
+    "universal house of justice on ai"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c038",
+   "q": "What do the Bahá'í Writings say about race unity?",
+   "topic": "race unity",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 8.6,
+   "searches": [
+    "bahai quotes on race unity",
+    "bahai writings on race unity"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c039",
+   "q": "What do the Bahá'í Writings say about evolution?",
+   "topic": "evolution",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 8.6,
+   "searches": [
+    "bahai writings on evolution",
+    "bahai view on evolution"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c040",
+   "q": "Is there a Bahá'í prayer for children?",
+   "topic": "children",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 8.6,
+   "searches": [
+    "bahai prayer for children",
+    "bahai prayers for children"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c041",
+   "q": "Is there a Bahá'í prayer for assistance?",
+   "topic": "assistance",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 8.5,
+   "searches": [
+    "bahai prayer for assistance",
+    "bahai prayers for assistance"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c042",
+   "q": "What do the Bahá'í Writings say about detachment?",
+   "topic": "detachment",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 8.2,
+   "searches": [
+    "bahai quotes on detachment",
+    "bahai writings on detachment"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c043",
+   "q": "What do the Bahá'í Writings say about consultation?",
+   "topic": "consultation",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 8.1,
+   "searches": [
+    "bahai quotes on consultation",
+    "bahai quotes about consultation"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c044",
+   "q": "What do the Bahá'í Writings say about life?",
+   "topic": "life",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 8.1,
+   "searches": [
+    "bahai quotes on life",
+    "bahai quotes about life"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c045",
+   "q": "Is there a Bahá'í prayer for spiritual growth?",
+   "topic": "spiritual growth",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 8.1,
+   "searches": [
+    "bahai prayer for spiritual growth",
+    "bahai prayers for spiritual growth"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c046",
+   "q": "What do the Bahá'í Writings say about knowledge?",
+   "topic": "knowledge",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 8,
+   "searches": [
+    "bahai quotes on knowledge",
+    "bahai writings on knowledge"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c047",
+   "q": "What do the Bahá'í Writings say about gratitude?",
+   "topic": "gratitude",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 8,
+   "searches": [
+    "bahai quotes about gratitude",
+    "bahai writings on gratitude"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c048",
+   "q": "Is there a Bahá'í prayer for travel?",
+   "topic": "travel",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 8,
+   "searches": [
+    "bahai prayer for travel",
+    "bahai prayers for travel"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c049",
+   "q": "Is there a Bahá'í prayer for expectant mothers?",
+   "topic": "expectant mothers",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 8,
+   "searches": [
+    "bahai prayer for expectant mothers",
+    "bahai prayers for expectant mothers"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c050",
+   "q": "Is there a Bahá'í prayer for meetings?",
+   "topic": "meetings",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 8,
+   "searches": [
+    "bahai prayer for meetings",
+    "bahai prayers for meetings"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c051",
+   "q": "Is there a Bahá'í prayer for ridvan?",
+   "topic": "ridvan",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 8,
+   "searches": [
+    "bahai prayer for ridvan",
+    "bahai prayers for ridvan"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c052",
+   "q": "What do the Bahá'í Writings say about backbiting?",
+   "topic": "backbiting",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.9,
+   "searches": [
+    "bahai quotes on backbiting",
+    "bahai writings on backbiting"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c053",
+   "q": "What do the Bahá'í Writings say about naw ruz?",
+   "topic": "naw ruz",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.9,
+   "searches": [
+    "bahai quotes on naw ruz",
+    "bahai writings on naw ruz"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c054",
+   "q": "What do the Bahá'í Writings say about suffering?",
+   "topic": "suffering",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.9,
+   "searches": [
+    "bahai quotes on suffering",
+    "bahai writings on suffering"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c055",
+   "q": "Is there a Bahá'í prayer for forgiveness?",
+   "topic": "forgiveness",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 7.9,
+   "searches": [
+    "bahai prayer for forgiveness",
+    "bahai prayers for forgiveness"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c056",
+   "q": "Is there a Bahá'í prayer for guidance?",
+   "topic": "guidance",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 7.9,
+   "searches": [
+    "bahai prayer for guidance",
+    "bahai prayers for guidance"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c057",
+   "q": "Is there a Bahá'í prayer for work?",
+   "topic": "work",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 7.9,
+   "searches": [
+    "bahai prayer for work",
+    "bahai prayers for work"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c058",
+   "q": "What do the Bahá'í Writings say about perfection?",
+   "topic": "perfection",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.8,
+   "searches": [
+    "bahai quotes on perfection",
+    "bahai writings on perfection"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c059",
+   "q": "What do the Bahá'í Writings say about teachers?",
+   "topic": "teachers",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.8,
+   "searches": [
+    "bahai quotes on teachers",
+    "bahai quotes about teachers"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c060",
+   "q": "Is there a Bahá'í prayer for infants?",
+   "topic": "infants",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 7.8,
+   "searches": [
+    "bahai prayer for infants",
+    "bahai prayers for infants"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c061",
+   "q": "Is there a Bahá'í prayer for strength?",
+   "topic": "strength",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 7.8,
+   "searches": [
+    "bahai prayer for strength",
+    "bahai prayers for strength"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c062",
+   "q": "What do the Bahá'í Writings say about anger?",
+   "topic": "anger",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.7,
+   "searches": [
+    "bahai quotes on anger",
+    "bahai writings on anger"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c063",
+   "q": "What do the Bahá'í Writings say about community?",
+   "topic": "community",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.7,
+   "searches": [
+    "bahai quotes on community",
+    "bahai quotes about community"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c064",
+   "q": "What do the Bahá'í Writings say about trust in god?",
+   "topic": "trust in god",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.7,
+   "searches": [
+    "bahai quotes on trust in god",
+    "bahai writings on trust in god"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c065",
+   "q": "Is there a Bahá'í prayer for comfort?",
+   "topic": "comfort",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 7.7,
+   "searches": [
+    "bahai prayer for comfort",
+    "bahai prayers for comfort"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c066",
+   "q": "What do the Bahá'í Writings say about grief?",
+   "topic": "grief",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.6,
+   "searches": [
+    "bahai quotes on grief",
+    "bahai writings on grief"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c067",
+   "q": "Is there a Bahá'í prayer for making decisions?",
+   "topic": "making decisions",
+   "kind": "prayer",
+   "prefixes": 1,
+   "score": 7.6,
+   "searches": [
+    "bahai prayer for making decisions"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c068",
+   "q": "Is there a Bahá'í prayer for parents?",
+   "topic": "parents",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 7.6,
+   "searches": [
+    "bahai prayer for parents",
+    "bahai prayers for parents"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c069",
+   "q": "What do the Bahá'í Writings say about courage?",
+   "topic": "courage",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.5,
+   "searches": [
+    "bahai quotes on courage",
+    "bahai writings on courage"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c070",
+   "q": "Is there a Bahá'í prayer for feast?",
+   "topic": "feast",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 7.5,
+   "searches": [
+    "bahai prayer for feast",
+    "bahai prayers for feast"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c071",
+   "q": "Is there a Bahá'í prayer for husbands?",
+   "topic": "husbands",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 7.5,
+   "searches": [
+    "bahai prayer for husbands",
+    "bahai prayers for husbands"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c072",
+   "q": "What do the Bahá'í Writings say about animals?",
+   "topic": "animals",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.4,
+   "searches": [
+    "bahai quotes on animals",
+    "bahai writings on animals"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c073",
+   "q": "What do the Bahá'í Writings say about soul?",
+   "topic": "soul",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.4,
+   "searches": [
+    "bahai quotes on the soul",
+    "bahai writings on the soul"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c074",
+   "q": "Is there a Bahá'í prayer for exams?",
+   "topic": "exams",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 7.4,
+   "searches": [
+    "bahai prayer for exams",
+    "bahai prayers for exams"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c075",
+   "q": "Is there a Bahá'í prayer for election?",
+   "topic": "election",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 7.4,
+   "searches": [
+    "bahai prayer for election",
+    "bahai prayers for election"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c076",
+   "q": "What do the Bahá'í Writings say about chastity?",
+   "topic": "chastity",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.3,
+   "searches": [
+    "bahai quotes on chastity",
+    "bahai writings on chastity"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c077",
+   "q": "What do the Bahá'í Writings say about dreams?",
+   "topic": "dreams",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.3,
+   "searches": [
+    "bahai quotes on dreams",
+    "bahai writings on dreams"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c078",
+   "q": "What do the Bahá'í Writings say about faith?",
+   "topic": "faith",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.3,
+   "searches": [
+    "bahai quotes on faith",
+    "bahai writings on faith"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c079",
+   "q": "What do the Bahá'í Writings say about steadfastness?",
+   "topic": "steadfastness",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.3,
+   "searches": [
+    "bahai quotes on steadfastness",
+    "bahai writings on steadfastness"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c080",
+   "q": "Is there a Bahá'í prayer for fathers?",
+   "topic": "fathers",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 7.3,
+   "searches": [
+    "bahai prayer for fathers",
+    "bahai prayers for fathers"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c081",
+   "q": "What do the Bahá'í Writings say about health?",
+   "topic": "health",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.2,
+   "searches": [
+    "bahai quotes on health",
+    "bahai writings on health"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c082",
+   "q": "What do the Bahá'í Writings say about will?",
+   "topic": "will",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.2,
+   "searches": [
+    "bahai quotes on will",
+    "bahai writings on will"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c083",
+   "q": "Is there a Bahá'í prayer for morning?",
+   "topic": "morning",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 7.2,
+   "searches": [
+    "bahai prayer for morning",
+    "bahai prayers for morning"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c084",
+   "q": "What do the Bahá'í Writings say about mental health?",
+   "topic": "mental health",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.1,
+   "searches": [
+    "bahai quotes on mental health",
+    "bahai writings on mental health"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c085",
+   "q": "What do the Bahá'í Writings say about truthfulness?",
+   "topic": "truthfulness",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7.1,
+   "searches": [
+    "bahai quotes on truthfulness",
+    "bahai writings on truthfulness"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c086",
+   "q": "Is there a Bahá'í prayer for departed women?",
+   "topic": "departed women",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 7.1,
+   "searches": [
+    "bahai prayer for departed women",
+    "bahai prayers for departed women"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c087",
+   "q": "Is there a Bahá'í prayer for difficulties?",
+   "topic": "difficulties",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 7.1,
+   "searches": [
+    "bahai prayer for difficulties",
+    "bahai prayers for difficulties"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c088",
+   "q": "What do the Bahá'í Writings say about depression?",
+   "topic": "depression",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7,
+   "searches": [
+    "bahai quotes on depression",
+    "bahai writings on depression"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c089",
+   "q": "What do the Bahá'í Writings say about motherhood?",
+   "topic": "motherhood",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7,
+   "searches": [
+    "bahai quotes on motherhood",
+    "bahai writings on motherhood"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c090",
+   "q": "What do the Bahá'í Writings say about mercy?",
+   "topic": "mercy",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 7,
+   "searches": [
+    "bahai quotes on mercy",
+    "bahai writings on mercy"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c091",
+   "q": "Is there a Bahá'í prayer for safety?",
+   "topic": "safety",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 7,
+   "searches": [
+    "bahai prayer for safety",
+    "bahai prayers for safety"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c092",
+   "q": "What do the Bahá'í Writings say about power?",
+   "topic": "power",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 6.9,
+   "searches": [
+    "bahai quotes on power",
+    "bahai writings on power"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c093",
+   "q": "What do the Bahá'í Writings say about fear?",
+   "topic": "fear",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 6.8,
+   "searches": [
+    "bahai quotes on fear",
+    "bahai writings on fear"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c094",
+   "q": "What do the Bahá'í Writings say about speech?",
+   "topic": "speech",
+   "kind": "writings",
+   "prefixes": 2,
+   "score": 6.8,
+   "searches": [
+    "bahai quotes on speech",
+    "bahai writings on speech"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c095",
+   "q": "Is there a Bahá'í prayer for martyrs?",
+   "topic": "martyrs",
+   "kind": "prayer",
+   "prefixes": 2,
+   "score": 6.6,
+   "searches": [
+    "bahai prayer for martyrs",
+    "bahai prayers for martyrs"
+   ],
+   "held_out": true,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c096",
+   "q": "What do the Bahá'í Writings say about divine philosophy?",
+   "topic": "divine philosophy",
+   "kind": "writings",
+   "prefixes": 1,
+   "score": 5.8,
+   "searches": [
+    "abdul baha on divine philosophy"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c097",
+   "q": "What do the Bahá'í Writings say about grave?",
+   "topic": "grave",
+   "kind": "writings",
+   "prefixes": 1,
+   "score": 5.7,
+   "searches": [
+    "hidden words on a grave"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c098",
+   "q": "What do the Bahá'í Writings say about future of iran?",
+   "topic": "future of iran",
+   "kind": "writings",
+   "prefixes": 1,
+   "score": 5.2,
+   "searches": [
+    "bahai writings on future of iran",
+    "bahai writings on the future of iran"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c099",
+   "q": "Is there a Bahá'í prayer for dead?",
+   "topic": "dead",
+   "kind": "prayer",
+   "prefixes": 1,
+   "score": 5,
+   "searches": [
+    "bahai prayer for the dead",
+    "bahai prayer for dead"
+   ],
+   "held_out": false,
+   "list": "community"
+  },
+  {
+   "id": "bahai-c100",
+   "q": "What do the Bahá'í Writings say about equality of men and women?",
+   "topic": "equality of men and women",
+   "kind": "writings",
+   "prefixes": 1,
+   "score": 4.9,
+   "searches": [
+    "bahai quotes on equality of men and women"
+   ],
+   "held_out": true,
+   "list": "community"
   }
- ]
+ ],
+ "community": {
+  "harvested": "2026-11-10",
+  "candidates": 308,
+  "method": "insider-prefix autocomplete (community.mjs)"
+ }
 }
