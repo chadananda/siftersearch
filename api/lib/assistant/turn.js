@@ -16,7 +16,7 @@ import { narrate } from './narrate.js';
 import { turnMeta } from './turn-meta.js';
 import { progressText } from './progress.js';
 import { chooseStrategy, strategyOf } from './strategy-choice.js';
-import { titleOnly, titleAnswer } from './title-answer.js';
+import { titleOnly, titleAnswer, namedWork } from './title-answer.js';
 import { timeoutDecision, jevTimeoutsOf } from './jev-call.js';   // W3: Jev chooses the strategy from context
 import { restate, understoodText, tarpitPhrase } from './understanding.js';   // W3: the "what I understood" line
 import { decisionLog } from './decision-log.js';
@@ -118,18 +118,22 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   // Code resolves only: the whole message must equal a book's title in the title index. Anything more goes to Jev as usual.
   const titleFn = d.titleOnly ?? (deps ? null : titleOnly);
   const titled = titleFn && engine === undefined && research === undefined && !variants && !llm ? await titleFn(text).catch(() => null) : null;
+  // the book card answer (one book event, description, link, offer): the bare-title gate below and Jev's book strategy on a named-work-only turn
+  const bookAnswer = async (work, ex, extra = {}) => {
+    onEvent({ type: 'sources', sources: [], plan: { shape: 'work', work: work.doc.id }, ms: Date.now() - t0 });
+    onEvent({ type: 'stage', stage: 'craft' });
+    const { reply, citations } = await (d.titleAnswer ?? titleAnswer)(work, { onEvent });
+    onEvent({ type: 'sources', sources: citations, plan: { shape: 'work', work: work.doc.id }, ms: Date.now() - t0 });
+    const path = { gate: 'title', route: 'title', strategy: 'book', work: work.doc.id, ...extra, meta: turnMeta({ status: 'answered', meter, ms: Date.now() - t0 }),
+      timeline: timelineOf(timeline, t0), llm: meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null })) };
+    if (ex) await d.close({ ...ex, reply, status: 'answered', path, channel: channel.id }).catch(() => {});
+    return { reply, status: 'answered', citations, retrieved: [], plan: { shape: 'work', work: work.doc.id }, conversationId: ex?.conversationId ?? null,
+      timings: { total_ms: Date.now() - t0 } };
+  };
   if (titled) {
     const ex = await d.open(logArgs).catch(() => null);
     if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
-    onEvent({ type: 'sources', sources: [], plan: { shape: 'work', work: titled.doc.id }, ms: Date.now() - t0 });
-    onEvent({ type: 'stage', stage: 'craft' });
-    const { reply, citations } = await (d.titleAnswer ?? titleAnswer)(titled, { onEvent });
-    onEvent({ type: 'sources', sources: citations, plan: { shape: 'work', work: titled.doc.id }, ms: Date.now() - t0 });
-    const path = { gate: 'title', route: 'title', strategy: 'book', work: titled.doc.id, meta: turnMeta({ status: 'answered', meter, ms: Date.now() - t0 }),
-      timeline: timelineOf(timeline, t0), llm: meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null })) };
-    if (ex) await d.close({ ...ex, reply, status: 'answered', path, channel: channel.id }).catch(() => {});
-    return { reply, status: 'answered', citations, retrieved: [], plan: { shape: 'work', work: titled.doc.id }, conversationId: ex?.conversationId ?? null,
-      timings: { total_ms: Date.now() - t0 } };
+    return bookAnswer(titled, ex);
   }
 
   // Write it down before trying — in parallel with triage, so logging adds no latency.
@@ -182,6 +186,14 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   if (strat?.refersBack && route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind)) Object.assign(route, { action: 'research', overridden: route.kind, by: 'refers_back' });
   const lkIntent = lookupOn && !strat?.refersBack && route.action === 'research' && ['book', 'quote', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
   const lk = lkIntent ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent, profile, decisions, onJev: (info) => decisions.record('jev:timeout', timeoutDecision(info)) }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
+  // Jev chose the BOOK strategy and named only a work (no person, no topic): the same card answer, code resolving the name he gave
+  // (11-09: "The Dawn-Breakers" took 3 s with no card, "“Gleanings”" opened talks titled after it)
+  const u = strat?.units || {};
+  if (strategyOf(strat) === 'book' && u.named_work && !u.named_person && !u.topic && !strat.refersBack && route.action === 'research'
+    && engine === undefined && research === undefined && !variants && !llm) {
+    const named = await (d.namedWork ?? (deps ? async () => null : namedWork))(u.named_work).catch(() => null);
+    if (named) return bookAnswer(named, ex, { gate: 'strategy', decisions: decisions.list() });
+  }
   // a SHORT turn Jev read as a search ("more", "and the Báb?", "in Persian") gets its self-contained query from the history
   // and the card (short-turn.js) — respond.js searches those words, not the bare message
   const resolved = route.action === 'research' && outcome === 'search' && tri?.features?.short && !tri.features.first && d.resolve

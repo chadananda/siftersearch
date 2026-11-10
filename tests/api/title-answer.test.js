@@ -3,8 +3,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 process.env.ANIS_WORK_SUMMARIES = join(tmpdir(), `work-summaries-${process.pid}.json`);
-import { titleOnly, titleAnswer, workSummary } from '../../api/lib/assistant/title-answer.js';
+import { titleOnly, titleAnswer, workSummary, namedWork } from '../../api/lib/assistant/title-answer.js';
 import { anisTurn } from '../../api/lib/assistant/turn.js';
+import { emptyState } from '../../api/lib/assistant/units.js';
+import { makeStrikes } from '../../api/lib/assistant/strikes.js';
 
 const GPB = { doc: { id: 21310, title: 'God Passes By', author: 'Shoghi Effendi', religion: "Baha'i", paragraph_count: 900 }, others: [] };
 
@@ -46,5 +48,29 @@ describe('title-answer', () => {
         triage, strategy, open: async () => ({ conversationId: 'c', round: 0 }), close: async () => {}, strikes: { inTarpit: () => false } } });
     expect(r.reply).toBe('LINK'); expect(r.plan.work).toBe(21310);
     expect(triage).not.toHaveBeenCalled(); expect(strategy).not.toHaveBeenCalled();
+  });
+  const jevTurn = (strat, named) => {
+    const calls = { respond: 0, named: [] }, tri = { malicious: 0.01, complete: 0.99, stop_request: 0, stance: { choice: 'curious' }, kind: { choice: 'research', confidence: 0.9 },
+      outcome: { choice: 'search', confidence: 0.9 }, features: { first: true, turn: 0, words: 1, short: true } };
+    const deps = { titleOnly: async () => null, triage: async () => tri, strategy: async () => strat, state: { load: async () => emptyState(), append: async () => {} },
+      namedWork: async (n) => { calls.named.push(n); return named; }, titleAnswer: async (w) => ({ reply: `CARD ${w.doc.id}`, citations: [] }),
+      respond: async () => { calls.respond++; return { reply: 'researched', citations: [], retrieved: [], plan: { shape: 'topic' }, timings: {} }; },
+      open: async () => ({ conversationId: 'c', round: 0 }), close: async () => {}, fail: async () => {}, card: async () => null, outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {} };
+    return { calls, run: () => anisTurn({ messages: [{ role: 'user', content: 'Gleanings' }], participant: { id: 's', authed: true }, clientKey: 's', onEvent: () => {}, deps }) };
+  };
+  it('Jev\'s book strategy with only a named work → the card answer, no research', async () => {
+    const h = jevTurn({ strategy: { choice: 'book', confidence: 0.9 }, sides: [], sources: {}, decisions: [], units: { named_work: 'Gleanings' } }, GPB);
+    const r = await h.run();
+    expect(r.reply).toBe('CARD 21310'); expect(h.calls.named).toEqual(['Gleanings']); expect(h.calls.respond).toBe(0);
+  });
+  it('a named person or topic beside the work, or no copy found → the strategy runs as before', async () => {
+    for (const [units, named] of [[{ named_work: 'Gleanings', topic: 'justice' }, GPB], [{ named_work: 'Gleanings' }, null]]) {
+      const h = jevTurn({ strategy: { choice: 'book', confidence: 0.9 }, sides: [], sources: {}, decisions: [], units }, named);
+      expect((await h.run()).reply).toBe('researched');
+    }
+  });
+  it('namedWork: only a real book (20+ paragraphs)', async () => {
+    expect(await namedWork('Gleanings', { find: async () => GPB })).toBe(GPB);
+    expect(await namedWork('X', { find: async () => ({ doc: { id: 1, paragraph_count: 3 } }) })).toBeNull();
   });
 });

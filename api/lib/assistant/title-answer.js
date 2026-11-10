@@ -8,7 +8,7 @@
 import { readFileSync, writeFileSync, mkdirSync, renameSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { bareTitle, findWork, workLead, workOffer } from './work-request.js';
+import { bareTitle, findWork, findTitled, workLead, workOffer } from './work-request.js';
 import { modelFor } from '../model-roles.js';
 import { workUrl } from '../source-links.js';
 
@@ -65,4 +65,12 @@ export async function titleAnswer(work, { onEvent = () => {}, links = null, summ
   onEvent({ type: 'text', content: reply });
   const citations = all.map((x) => ({ title: x.title, author: x.author, url: urlOf(x) ?? null, religion: x.religion, document_id: x.id, paragraph_index: null, text: '' }));
   return { reply, citations, book };
+}
+
+/** Jev named ONLY a work (strategy book, units.named_work alone) → the library's copy of it, or null. Code resolves the name Jev gave
+ *  (any author: Jev already said it is a book; a short name opens the title it begins, "Gleanings" → Gleanings from the Writings…). */
+export async function namedWork(name, { find = findTitled } = {}) {
+  if (!name || String(name).length > 120) return null;
+  const w = await find([String(name).trim()]);
+  return w?.doc && (w.doc.paragraph_count ?? 0) >= 20 ? w : null;
 }
