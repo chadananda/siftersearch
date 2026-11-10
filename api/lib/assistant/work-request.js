@@ -54,7 +54,8 @@ const DERIVED = /\b(?:study guide|guide|notes|interview|commentary|reflections?|
 const AUTHORS = /bah[aá].?u.?ll[aá]h|abdu.?l.?bah[aá]|\bthe b[aá]b\b|shoghi effendi/i;
 // the fullest text by its own author: size first (an excerpt is not the book), the canonical author, the canonical site, English
 const workRank = (d, asked) => Math.log10((d.paragraph_count || 0) + 1) + (AUTHORS.test(d.author || '') ? 1 : 0)
-  + (d.source_site === 'oceanlibrary.com' ? 0.5 : 0) + (/^en/i.test(d.language || 'en') ? 0.5 : 0)
+  // the canonical reader and the reader's language outweigh size (11-09: "The Hidden Words" opened the Persian edition on oceanoflights)
+  + (d.source_site === 'oceanlibrary.com' ? 1.5 : 0) + (/^en/i.test(d.language || 'en') ? 1 : 0)
   - (derived(d.title, asked) ? 2 : 0)
   // the work itself — its tradition's scripture/primary text — outranks a study whose title merely contains the name (11-09: "Gita" → Gita and Gospel)
   + (d.religion && doctrinalTier(d) === 'core' ? 3 : 0);
@@ -77,7 +78,10 @@ export async function findWork(text, { named = null, index = null, match = null,
   if (!bare) return null;
   const w = await findTitled([bare], { index, match, listDocs, min: 0.95, prefix: false });
   const sq = (t) => foldTitle(t).replace(/ /g, '');
-  const whole = w && sq(w.doc.title) === sq(bare) && (bare.includes(' ') || foldTitle(w.doc.title).includes(' '));
+  // the whole title, or one whole part of it: "The Book of Certitude (Kitáb-i-Íqán)" is named by either half
+  const parts = (t) => [t, ...String(t || '').split(/\s*[:()\[\]—]\s*/)].map((x) => String(x || '').trim()).filter(Boolean);
+  const hitPart = w && parts(w.doc.title).find((p) => sq(p) === sq(bare));
+  const whole = !!hitPart && (bare.includes(' ') || bare.includes('-') || foldTitle(w.doc.title).includes(' '));
   // and a BOOK: a word that happens to title a leaflet or a one-paragraph tablet ("True Seeker", "Spiritual Assemblies") is a topic
   const central = AUTHORS.test(w?.doc.author || '');
   const book = (w?.doc.paragraph_count || 0) >= (central ? 20 : 150);
@@ -126,7 +130,8 @@ export async function findTitled(cands, { index = null, match = null, listDocs =
   const seen = new Set([sorted[0].title]);
   // other copies worth offering: not a foreword / introduction stub split off a book (11-01 live: GPB's "also holds" listed two)
   const stub = (d) => /\b(?:foreword|introduction|preface|afterword|glossary|notes|index|bibliography)\b/i.test(d.title) || (d.paragraph_count ?? 99) < 20;
-  const others = sorted.slice(1).filter((d) => !stub(d) && !seen.has(d.title) && seen.add(d.title)).slice(0, 2);
+  // …and not a work ABOUT the book ("God Passes By: Outline and cross-reference of chapters")
+  const others = sorted.slice(1).filter((d) => !stub(d) && !derived(d.title, asked) && !seen.has(d.title) && seen.add(d.title)).slice(0, 2);
   return { doc: sorted[0], others };
 }
 

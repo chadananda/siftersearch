@@ -28,7 +28,7 @@ export async function workSummary(doc, { read = null, complete = null } = {}) {
   if (hit) return hit;
   const rows = await (read || (async (id) => (await import('../paragraphs-repo.js')).paragraphsInRange(id, 0, 60, { limit: 60 })))(doc.id).catch(() => []);
   let opening = '';
-  for (const r of rows || []) { if (opening.length > 6000) break; const t = String(r.text || '').trim(); if (t) opening += `${t}\n`; }
+  for (const r of rows || []) { if (opening.length > 3000) break; const t = String(r.text || '').trim(); if (t) opening += `${t}\n`; }
   if (!opening) return null;
   const call = complete || (async (msgs) => (await import('../ai.js')).chatCompletion(msgs, { ...modelFor('anis-work-summary'), temperature: 0, maxTokens: 220, thinking: false, caller: 'anis-work-summary' }));
   const out = await call([{ role: 'user', content: PROMPT(doc, opening) }]).catch(() => null);
