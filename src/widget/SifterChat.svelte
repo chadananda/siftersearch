@@ -436,10 +436,10 @@
                         </a>
                       {/if}
                       <div class="book-meta">
+                        {#if m.book.url}<a class="book-read" href={m.book.url} target="_blank" rel="noopener">Read</a>{/if}
                         <a class="book-title" href={m.book.url} target="_blank" rel="noopener">{m.book.title}</a>
                         {#if m.book.author || m.book.year}<div class="book-by">{[m.book.author, m.book.year].filter(Boolean).join(' · ')}</div>{/if}
                         {#if m.book.description}<p class="book-desc">{m.book.description}</p>{/if}
-                        {#if m.book.url}<a class="book-read" href={m.book.url} target="_blank" rel="noopener">Read the book</a>{/if}
                       </div>
                     </div>
                   {/if}
@@ -653,13 +653,15 @@
     border: 1px solid #e9e2d2; border-left: 3px solid var(--gold); border-radius: 12px; }
   .book-cover { flex: 0 0 auto; display: block; line-height: 0; }
   .book-cover img { width: 88px; height: auto; border-radius: 4px; box-shadow: 0 2px 8px rgba(60, 40, 10, .18); }
-  .book-meta { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .book-meta { min-width: 0; flex: 1 1 auto; }
+  .book-title, .book-by { display: block; }
+  .book-by { margin-top: 2px; }
   .book-title { font-family: var(--serif); font-style: italic; font-size: 1.12em; line-height: 1.25; color: #2a2620; text-decoration: none; }
   .book-title:hover { color: var(--accent-deep); text-decoration: underline; }
   .book-by { font-size: .85em; color: #6b6253; }
-  .book-desc { margin: 2px 0 0; font-size: .9em; line-height: 1.45; display: -webkit-box; color: #3d372d; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
-  .book-read { align-self: flex-start; margin-top: 6px; padding: 5px 12px; border-radius: 999px; font-size: .85em; text-decoration: none;
-    color: #fff; background: var(--accent); }
+  .book-desc { margin: 6px 0 0; font-size: .9em; line-height: 1.45; display: -webkit-box; color: #3d372d; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+  .book-read { float: right; margin: 0 0 6px 10px; padding: 4px 12px; border-radius: 999px; font-size: .82em; line-height: 1.4;
+    text-decoration: none; color: #fff; background: var(--accent); }
   .book-read:hover { background: var(--accent-deep); }
   @media (min-width: 480px) { .book-cover img { width: 112px; } }
   .msg.user .bubblewrap { max-width: 78%; }
