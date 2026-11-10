@@ -110,6 +110,8 @@ export function check(c, r) {
   if (c.ms && r.ms > c.ms) f.push(`slow ${r.ms} ms > ${c.ms}`);
   return f;
 }
+// the test spend cap's canned reply is not an answer: SKIP, never a pass (11-10: 5 "passes" were this line)
+export const isCapReply = (r) => /reached today.s limit/i.test(r?.text || '');
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const only = arg('only')?.split(','), conc = Number(arg('concurrency') || 3);
@@ -119,10 +121,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   res.sort((a, b) => cases.indexOf(a.c) - cases.indexOf(b.c));
   for (const { c, r, f } of res) {
     const first = Math.min(...['book', 'chunk', 'text'].map((k) => r.at[k] ?? Infinity));
+    if (isCapReply(r)) { console.log(`SKIP ${c.id.padEnd(16)} test spend cap reached: canned reply, not an answer`); continue; }
     console.log(`${f.length ? 'FAIL' : 'ok  '} ${c.id.padEnd(16)} total ${String(r.ms).padStart(6)} ms  first ${String(Number.isFinite(first) ? first : '-').padStart(6)}${r.book ? `  card ${r.book.title.slice(0, 40)}` : ''}${f.length ? `\n      ${f.join('\n      ')}` : ''}`);
   }
-  const n = res.filter((x) => !x.f.length).length;
-  console.log(`\n${n}/${res.length} pass`);
+  const capped = res.filter((x) => isCapReply(x.r)).length, n = res.filter((x) => !x.f.length && !isCapReply(x.r)).length;
+  console.log(`\n${n}/${res.length - capped} pass${capped ? ` (${capped} skipped: test spend cap)` : ''}`);
   mkdirSync('tmp', { recursive: true });
   const file = `tmp/anis-live-battery-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
   writeFileSync(file, JSON.stringify(res.map(({ c, r, f }) => ({ id: c.id, q: c.q, fails: f, cid: r.cid ?? null, meta: r.complete, ms: r.ms, at: r.at, book: r.book, text: r.text, cites: r.citations.map((x) => x.title) })), null, 1));
