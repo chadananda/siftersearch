@@ -23,6 +23,35 @@ import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 const JEV_URL = 'https://api.typesafe.ai/v1/systemone';
+
+// Jev's own connection pool. Node's default fetch drops an idle socket after 4 s, so each turn paid a fresh TCP + TLS
+// handshake to Jev before the request even left (0.3–0.9 s from tower, 11-09; a reused socket answers in ~0.15 s).
+// This pool keeps sockets JEV_KEEPALIVE_MS, and while the process is using Jev a light HEAD keeps one warm.
+// A stubbed globalThis.fetch (tests) is always honoured; no undici → plain fetch.
+const NATIVE_FETCH = globalThis.fetch;
+const JEV_KEEPALIVE_MS = Number(process.env.JEV_KEEPALIVE_MS) || 300_000;
+let pooled = null, lastJevUse = 0, warmTimer = null;
+const pooledP = import('undici').then(({ Agent, fetch }) => {
+  const dispatcher = new Agent({ keepAliveTimeout: JEV_KEEPALIVE_MS, keepAliveMaxTimeout: JEV_KEEPALIVE_MS, connections: 16 });
+  pooled = (url, init) => fetch(url, { ...init, dispatcher });
+}).catch(() => {});
+function keepWarm() {
+  lastJevUse = Date.now();
+  if (warmTimer || process.env.JEV_KEEP_WARM === '0') return;
+  warmTimer = setInterval(() => {
+    if (Date.now() - lastJevUse > 30 * 60_000) { clearInterval(warmTimer); warmTimer = null; return; }   // idle half an hour → let it go
+    pooled?.(new URL(JEV_URL).origin, { method: 'HEAD', signal: AbortSignal.timeout(5000) }).then((r) => r.body?.cancel?.()).catch(() => {});
+  }, 45_000);
+  warmTimer.unref?.();
+}
+/** fetch for Jev: the warm pool unless fetch is stubbed. */
+export async function jevHttpFetch(url, init) {
+  if (globalThis.fetch !== NATIVE_FETCH || globalThis.fetch?.mock) return globalThis.fetch(url, init);   // replaced or a vi.fn stub
+  await pooledP;
+  if (!pooled) return globalThis.fetch(url, init);
+  keepWarm();
+  return pooled(url, init);
+}
 const DIR = process.env.SYSTEMONE_DIR || '/tank/sifter/systemone';
 const LAYA_URL = process.env.LAYA_URL || 'http://100.106.130.68:8791/v1/systemone';
 
@@ -106,7 +135,7 @@ const layaToken = () => process.env.LAYA_TOKEN
 
 async function post(url, token, body, timeoutMs) {
   const t0 = Date.now();
-  const r = await fetch(url, { method: 'POST', signal: AbortSignal.timeout(timeoutMs),
+  const r = await (url.includes('typesafe') ? jevHttpFetch : fetch)(url, { method: 'POST', signal: AbortSignal.timeout(timeoutMs),
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   if (!r.ok) {
     const text = (await r.text()).slice(0, 300);
@@ -275,7 +304,7 @@ export function record(task, state, questions, { answers, ms = null, model = nul
 
 /** A drop-in `fetch` for modules that call Jev directly: identical behaviour and timing for the caller; on a successful
  *  response, a COPY of the answer is logged under `task` with the request's state + questions (record() → Clef shadows). */
-export const jevFetch = (task, base = (...a) => globalThis.fetch(...a)) => async (url, init = {}) => {
+export const jevFetch = (task, base = jevHttpFetch) => async (url, init = {}) => {
   const t0 = Date.now();
   if (currentAIContext().jevEnrich) init = await enrichInit(task, init);   // absent (every call but an enriched step's) = untouched
   const res = await base(url, init);
