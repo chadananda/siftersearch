@@ -250,6 +250,13 @@ export async function runStrategy(choice, ctx) {
   // a lookup strategy (book, quote_trace, term, original, about) with a v1 lookup graph runs over the whole turn (graph.js gatherByGraph), not as an executor here
   // (its tree, quote_trace@2 etc., IS an executor):
   // an Unmatched recheck that lands on one has nothing to execute, so the researcher answers and the gap is already recorded
+  // …except the book: the turn hands its book finder in (ctx.book, turn.js) so an Unmatched turn rechecked or planned as `book` ("Matthew",
+  // 11-10 live: 20–37 s of research) still ends in the card → a HANDOFF the gather returns as is, and turn.js answers with the card
+  if (name === 'book' && ctx.book) {
+    const found = await ctx.book(choice).catch(() => null);
+    log.record('book:handoff', { by: 'code', options: ['card', 'ordinary path'], chosen: found ? 'card' : 'ordinary path', reason: found ? `${found.kind} via ${found.via}` : 'the book finder found nothing' });
+    if (found) return { handoff: { kind: 'book', found } };
+  }
   if (LOOKUP_STRATEGIES.has(name) && (!strategyGraphOn() || runsOverTurn(name))) { log.record(`${name}:fallthrough`, { by: 'code', chosen: 'ordinary path', reason: 'a lookup strategy runs as the turn gather, not as an executor' }); return null; }
   // the executors are registry strategies (tools.js): comparison, understanding, prayer, guidance, reference, compilation — run by the
   // strategy's graph (activities/graph.js; ANIS_STRATEGY_GRAPH=0 → the registry tool directly, the Phase-1 rollback)

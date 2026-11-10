@@ -658,7 +658,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
   const runStrat = (choice) => withStrategyPin(direction, () => {
     narrate(onEvent, direction.channel, `strategy.${strategyOf(choice)}.start`);
     return timed('strategy', () => runStrategy(choice, { messages, question, plan, query: searchQueryFor(messages), distil: distilQuery, search: d.search,
-      profile, scope: direction.scope || null, state: direction.state || null, onEvent, decisions: direction.decisions, deps: d, channel: direction.channel || null,
+      profile, scope: direction.scope || null, state: direction.state || null, onEvent, decisions: direction.decisions, deps: d, channel: direction.channel || null, ...(direction.book ? { book: direction.book } : {}),
       // a live chat's strategy gets the same in-book step as its researcher (coordinator 11-03: goth questions route to understanding)
       // and the source Jev named (plan.drawFrom → researcher namedSource), resolved beside the strategy's own search
       // (a comparison's per-side books, named by Jev in the strategy call, use the same source tools)
@@ -669,6 +669,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
   // and the direction then names it, so every gate below treats the turn as strategy-chosen; any failure leaves the researcher
   const unmatchedFn = researchWant && isUnmatched(direction.strategy) ? (d.unmatched || (deps ? null : resolveUnmatched)) : null;
   const pre = unmatchedFn ? await unmatchedFn({ direction, messages, question, onEvent, run: runStrat }).catch((err) => { console.warn('anis unmatched failed', err?.message); return null; }) : null;
+  if (pre?.out?.handoff) return { handoff: pre.out.handoff };   // the book card (strategies.js runStrategy): turn.js answers it
   // route record (Chad 11-09): one pure entry, every turn logged with its kind/source; a matched turn costs no gate call and no Opus call
   try { const mr = unmatchedFn ? null : matchRoute({ strategy: direction.strategy }); if (mr) direction.decisions?.record?.('route', { by: 'code', saw: question, chosen: mr.name, reason: `route: ${mr.kind} ${mr.source}` }); } catch { /* a log never fails a turn */ }
   // planner on: a query is answered ONLY by a strategy (matched, planned now, or the stored general_research tree) and a non-query is conversational: the free research agent is no fallback

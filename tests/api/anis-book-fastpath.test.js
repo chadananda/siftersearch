@@ -5,7 +5,11 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 process.env.ANIS_WORK_SUMMARIES = join(tmpdir(), `work-summaries-fast-${process.pid}.json`);
-import { bookFastPath, extractTitles, strongTitle, labelOf } from '../../api/lib/assistant/book-pick.js';
+import { bookFastPath, extractTitles, strongTitle, labelOf, groupCopies } from '../../api/lib/assistant/book-pick.js';
+import { findInWorkAnswer } from '../../api/lib/assistant/find-in-work.js';
+import { runStrategy } from '../../api/lib/assistant/strategies.js';
+import { anisRespond } from '../../api/lib/assistant/respond.js';
+import { decisionLog } from '../../api/lib/assistant/decision-log.js';
 import { buildBookIndex, lexicalSearch, lexicalRetriever, bookCandidates } from '../../api/lib/assistant/book-finder.js';
 import { titleAnswer, sectionAnswer } from '../../api/lib/assistant/title-answer.js';
 import { anisTurn } from '../../api/lib/assistant/turn.js';
@@ -192,5 +196,106 @@ describe('turn: book strategy and the compilation probe', () => {
   it('…Jev: a new compilation → the compilation strategy runs as before', async () => {
     const h = turn('compilation', { topic: 'Deepening Compilation' }, user('Deepening Compilation'), { choice: 'new', confidence: 0.9 });
     expect((await h.run()).reply).toBe('researched'); expect(h.calls.respond).toBe(1); expect(h.j.fetchImpl).toHaveBeenCalledTimes(1);
+  });
+});
+
+// 11-10 live battery: three book-path misses
+// The live candidate rows (anis-trace conv_10228d20…:0 and the "main book of the Hindus" turn): several copies of ONE text
+const DH_DOCS = [
+  { id: 5001, title: 'The Dhammapada', author: 'Siddhartha Buddha', religion: 'Buddhist', collection: 'Pali Canon', paragraph_count: 414 },
+  { id: 5002, title: 'Dhammapada (tr. Buddharakkhita)', author: 'tr. Acharya Buddharakkhita', religion: 'Buddhist', collection: 'Practice and Meditation', paragraph_count: 193 },
+  { id: 5003, title: 'Dhammapada (tr. F. Max Mueller)', author: 'tr. F. Max Mueller', religion: 'Buddhist', collection: 'Pali Canon', paragraph_count: 452 },
+  { id: 5004, title: "The Buddha's Path of Virtue (Dhammapada tr. Wagiswara and Saunders)", author: 'tr. K.J. Saunders', religion: 'Buddhist', collection: 'Pali Canon', paragraph_count: 643 },
+  { id: 6001, title: 'The Bhagavad-Gita', author: 'Vyāsa', religion: 'Hindu', collection: 'Scripture', paragraph_count: 262 },
+  { id: 6002, title: 'Bhagavad Gita (Song Celestial, tr. Edwin Arnold)', author: 'tr. Edwin Arnold', religion: 'Hindu', collection: 'Scripture', paragraph_count: 333 },
+  { id: 6003, title: 'The Mahabharata', author: 'Vyāsa', religion: 'Hindu', collection: 'Scripture', paragraph_count: 9000 },
+];
+const DH_SECS = [
+  { section_id: 7001, doc_id: 7000, book: 'Sacred Books of the East (Selected Translations)', author: 'Various, ed. Epiphanius Wilson', title: 'The Dhammapada', start_index: 10, end_index: 479, paragraphs: 469, first_para_id: 1 },
+  { section_id: 7101, doc_id: 7100, book: 'Sacred Books of the East - Selections', author: 'Epiphanius Wilson', title: 'The Dhammapada', start_index: 20, end_index: 489, paragraphs: 469, first_para_id: 2 },
+];
+const dhIndex = buildBookIndex({ docs: DH_DOCS, sections: DH_SECS, aliases: [] });
+const dhFind = (msg, o = {}) => bookCandidates(msg, { ...o, retrievers: [lexicalRetriever(dhIndex)] });
+// Jev as he behaved live: his belief in "the Dhammapada" is SHARED by every option that is a copy of it (0.8 split over five
+// copies = 0.16 each, below the 0.6 floor → "none"); one option per text keeps it whole
+const splitJev = (re) => { const calls = []; const fetchImpl = vi.fn(async (url, init) => { const q = JSON.parse(init.body).questions.book; calls.push(q);
+  const hits = Object.entries(q.criteria).filter(([k, v]) => k !== 'none' && re.test(v));
+  const choice = hits[0]?.[0] ?? 'none', confidence = hits.length ? 0.8 / hits.length : 0.9;
+  return { ok: true, json: async () => ({ answers: { book: { choice, confidence } } }) }; }); return { fetchImpl, calls }; };
+
+describe('11-10 misses: copies of one text are one option; the extracted title reaches Jev; an Unmatched book turn gets the card', () => {
+  it('Dhammapada: five copies → ONE option listing each copy → Jev\'s pick holds → the card (live: "none" at 0.16, twice)', async () => {
+    const j = splitJev(/^“(The )?Dhammapada/), extract = vi.fn(async () => ['Dhammapada (Pali)']);
+    const r = await bookFastPath({ messages: user('find "hatred ceases" in the Dhammapada'), names: ['Dhammapada'], deps: { fetchImpl: j.fetchImpl, find: dhFind, extract } });
+    const opts = Object.entries(j.calls[0].criteria).filter(([k]) => k !== 'none');
+    expect(opts.filter(([, v]) => /^“(The )?Dhammapada/.test(v))).toHaveLength(1);
+    expect(opts.find(([, v]) => /^“(The )?Dhammapada/.test(v))[1]).toMatch(/^“The Dhammapada” — one text, 5 copies or translations in the library: (?=.*tr\. F\. Max Mueller)(?=.*a section of “Sacred Books of the East)/);
+    expect(j.calls[0].instructions).toMatch(/find words or a passage in it/);
+    expect(j.fetchImpl).toHaveBeenCalledTimes(1); expect(extract).not.toHaveBeenCalled();
+    expect(r.kind).toBe('work'); expect(r.work.doc.id).toBe(5001);
+    expect(r.work.others.map((d) => d.id)).toEqual([5002, 5003]);   // the other translations, offered beside it
+  });
+  it('a single candidate keeps its own label; a section and a work of different texts stay apart', () => {
+    const g = groupCopies([{ kind: 'work', doc: DOCS[0] }, { kind: 'section', sec: SECS[0] }]);
+    expect(g.map((c) => c.label)).toEqual([labelOf({ kind: 'work', doc: DOCS[0] }), labelOf({ kind: 'section', sec: SECS[0] })]);
+  });
+  it('the in-work find resolves the Dhammapada through the same pick and searches it', async () => {
+    const j = splitJev(/^“(The )?Dhammapada/), search = vi.fn(async (a) => ({ work: { id: a.work_id, title: 'The Dhammapada' }, query: a.query, mode: 'phrase', total: 1,
+      passages: [{ id: 1, document_id: a.work_id, paragraph_index: 5, text: 'Hatred ceases by love', title: 'The Dhammapada', url: null }] }));
+    const got = await findInWorkAnswer({ messages: user('find "hatred ceases" in the Dhammapada'), names: ['Dhammapada'],
+      deps: { bookDeps: { fetchImpl: j.fetchImpl, find: dhFind, extract: vi.fn(async () => []) } }, search });
+    expect(search).toHaveBeenCalledWith(expect.objectContaining({ work_id: 5001, query: 'hatred ceases' }));
+    expect(got?.reply).toBeTruthy();
+  });
+  it('"the main book of the Hindus": the second pick is TOLD the titles Haiku resolved, and the Gita copies are one option (live: none 0.39)', async () => {
+    const calls = [], fetchImpl = vi.fn(async (url, init) => { const q = JSON.parse(init.body).questions.book; calls.push(q);
+      const gita = Object.entries(q.criteria).find(([, v]) => /^“The Bhagavad-Gita” — one text/.test(v))?.[0];
+      const told = /identified as “The Bhagavad Gita”/.test(q.instructions);
+      return { ok: true, json: async () => ({ answers: { book: gita && told ? { choice: gita, confidence: 0.85 } : { choice: 'none', confidence: 0.6 } } }) }; });
+    const extract = vi.fn(async () => ['The Bhagavad Gita', 'Mahabharata']);
+    const r = await bookFastPath({ messages: user('Do you have access to the main book of the Hindus?'), deps: { fetchImpl, find: dhFind, extract } });
+    expect(extract).toHaveBeenCalledTimes(1);
+    expect(calls.at(-1).instructions).toMatch(/identified as “The Bhagavad Gita” or “Mahabharata”/);
+    expect(calls.slice(0, -1).every((c) => !/identified as/.test(c.instructions))).toBe(true);   // the first pick (if any) is not told
+    expect(r).toMatchObject({ kind: 'work', via: 'extracted', work: { doc: { id: 6001 } } });
+    expect(r.work.others.map((d) => d.id)).toEqual([6002]);
+  });
+
+  // "Matthew" (live conv_3a368638…:0): Jev → Unmatched; the planner routed it to book (setting_of), whose executor fell through
+  // ("a lookup strategy runs as the turn gather") → 20–37 s of research, no card
+  const BOOK = { strategy: { choice: 'book', confidence: 0.6 }, sides: [] };
+  it('runStrategy(book) with the turn\'s finder → a handoff carrying the card; without one (or nothing found) → null as before', async () => {
+    const found = { kind: 'work', work: { doc: DOCS[6], others: [] }, via: 'named' }, log = decisionLog();
+    expect(await runStrategy(BOOK, { book: async () => found, decisions: log })).toEqual({ handoff: { kind: 'book', found } });
+    expect(log.list().find((x) => x.point === 'book:handoff')?.chosen).toBe('card');
+    expect(await runStrategy(BOOK, { book: async () => null, decisions: decisionLog() })).toBeNull();
+    expect(await runStrategy(BOOK, { decisions: decisionLog() })).toBeNull();
+  });
+  for (const graph of [true, false]) it(`anisRespond (${graph ? 'strategy graph' : 'legacy cascade'}): an Unmatched turn rechecked as book returns the handoff, no research`, async () => {
+    const saved = process.env.ANIS_STRATEGY_GRAPH;
+    if (graph) delete process.env.ANIS_STRATEGY_GRAPH; else process.env.ANIS_STRATEGY_GRAPH = '0';
+    try {
+      const found = { kind: 'work', work: { doc: DOCS[6], others: [] }, via: 'named' }, research = vi.fn(async () => ({ passages: [], ms: 1 }));
+      const d = { search: vi.fn(async () => ({ passages: [] })), plan: async () => ({ shape: 'fact' }), phrases: async () => null, prewarm: async () => null, findWork: async () => null,
+        research, unmatched: async ({ direction, run }) => { direction.strategy = BOOK; return { via: 'setting_of', name: 'book', out: await run(BOOK) }; } };
+      const book = vi.fn(async () => found);
+      const r = await anisRespond({ messages: user('Matthew'), profile: {}, deps: d,
+        direction: { channel: 'site-chat', decisions: decisionLog(), research: true, strategy: { strategy: { choice: 'other', confidence: 0.85 }, sides: [] }, book } });
+      expect(r.handoff).toEqual({ kind: 'book', found }); expect(book).toHaveBeenCalledTimes(1);
+      expect(research).not.toHaveBeenCalled(); expect(d.search).not.toHaveBeenCalled();
+    } finally { if (saved === undefined) delete process.env.ANIS_STRATEGY_GRAPH; else process.env.ANIS_STRATEGY_GRAPH = saved; }
+  });
+  it('turn: "Matthew" with Jev\'s Unmatched → respond hands back the book → the card (one Jev pick, no research reply)', async () => {
+    const tri = { malicious: 0.01, complete: 0.99, stop_request: 0, stance: { choice: 'curious' }, kind: { choice: 'research', confidence: 0.9 }, outcome: { choice: 'search', confidence: 0.9 }, features: { first: true, turn: 1, words: 1, short: true } };
+    const j = jev({ choice: 'c1', confidence: 0.9 });
+    const strat = { strategy: { choice: 'unmatched', confidence: 0.85 }, sides: [], sources: {}, decisions: [], units: {} };
+    const deps = { titleOnly: async () => null, triage: async () => tri, strategy: async () => strat, state: { load: async () => emptyState(), append: async () => {} },
+      bookPick: (a) => bookFastPath({ ...a, deps: { fetchImpl: j.fetchImpl, find, extract: vi.fn(async () => []) } }),
+      titleAnswer: async (w) => ({ reply: `CARD ${w.doc.id}`, citations: [] }),
+      // respond's Unmatched recheck lands on book: the executor runs with the finder turn.js handed in
+      respond: async ({ direction }) => { const out = await runStrategy(BOOK, { book: direction.book, decisions: direction.decisions }); return out?.handoff ? { handoff: out.handoff } : { reply: 'researched', citations: [], retrieved: [], plan: {}, timings: {} }; },
+      open: async () => ({ conversationId: 'c', round: 1 }), close: async () => {}, fail: async () => {}, card: async () => null, outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {} };
+    const r = await anisTurn({ messages: user('Matthew'), participant: { id: 's', authed: true }, clientKey: 's', onEvent: () => {}, deps });
+    expect(r.reply).toBe('CARD 20992'); expect(j.fetchImpl).toHaveBeenCalledTimes(1);
   });
 });

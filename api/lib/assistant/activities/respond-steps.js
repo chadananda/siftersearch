@@ -101,7 +101,7 @@ const runStrat = (s, choice) => {
   return withStrategyPin(direction, () => {
     narrate(onEvent, direction.channel, `strategy.${strategyOf(choice)}.start`);
     return timed('strategy', () => runStrategy(choice, { messages, question, plan: p, query: searchQueryFor(messages), distil: distilQuery, search: d.search,
-      profile, scope: direction.scope || null, state: direction.state || null, onEvent, decisions: direction.decisions, deps: d, channel: direction.channel || null,
+      profile, scope: direction.scope || null, state: direction.state || null, onEvent, decisions: direction.decisions, deps: d, channel: direction.channel || null, ...(direction.book ? { book: direction.book } : {}),
       ...(live ? { inBooks: live.inBooks, searchIn: (d.researchTools || libraryTools({ search: d.search })).searchIn, sourceTools: d.researchTools || libraryTools({ search: d.search }) } : {}),
       ...(live && p?.drawFrom?.name ? { drawFrom: p.drawFrom.name } : {}) }));
   });
@@ -127,7 +127,12 @@ const research = (s) => {
   try { const mr = unmatchedFn ? null : matchRoute({ strategy: direction.strategy }); if (mr) direction.decisions?.record?.('route', { by: 'code', saw: question, chosen: mr.name, reason: `route: ${mr.kind} ${mr.source}` }); } catch { /* a log never fails a turn */ }
   if (!unmatchedFn) return go();
   return unmatchedFn({ direction, messages, question, onEvent, run: (choice) => runStrat(s, choice) }).catch((err) => { console.warn('anis unmatched failed', err?.message); return null; })
-    .then((pre) => { s.pre = pre; return go(); });
+    .then((pre) => {
+      s.pre = pre;
+      // the book card (strategies.js runStrategy): the gather ends with the handoff, turn.js answers it; the steps left take the free path
+      if (pre?.out?.handoff) { s.done = { handoff: pre.out.handoff }; s.conversational = true; return 'skip'; }
+      return go();
+    });
 };
 
 const readQuestion = (s) => {

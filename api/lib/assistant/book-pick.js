@@ -25,6 +25,30 @@ export function labelOf(c) {
   return `${q(d.title)}${d.author ? ` — ${d.author}` : ''}${kind ? ` (${kind})` : ''}${d.paragraph_count ? `, ${d.paragraph_count} paragraphs` : ''}`;
 }
 
+// the text a candidate IS, its translator and edition set aside: "Dhammapada (tr. F. Max Mueller)" = "The Dhammapada"
+const coreTitle = (c) => fold(String(c.kind === 'section' ? c.sec.title : c.doc.title).replace(/\([^)]*\)/g, ' '));
+const authorOf = (c) => String((c.kind === 'section' ? c.sec.author : c.doc.author) || '');
+// the catalogue marks a translator or editor ("tr. F. Max Mueller", "Various, ed. Epiphanius Wilson"): another copy of the text, not another text
+const edition = (a) => /\b(?:tr|ed|transl|trans)\.|\btranslat|\bedited\b|^various\b/i.test(a);
+// two candidates are COPIES of one text: the same title, and the same author, a translator/editor's copy, or two anthologies' sections of it.
+// A talk or study that merely shares the title (Hooper Dunbar's talk "The Dispensation of Bahá'u'lláh") has its own author: never a copy.
+const copies = (a, b) => coreTitle(a) === coreTitle(b) && (fold(authorOf(a)) === fold(authorOf(b)) || edition(authorOf(a)) || edition(authorOf(b)) || (a.kind === 'section' && b.kind === 'section'));
+
+/**
+ * Copies and translations of ONE text become ONE option (live 11-10: five Dhammapadas split Jev's choice, none reached the confidence
+ * floor, so "none"). A group's label names the text once and lists each copy's label. → [{ key, label, kind, members, ... }] Pure.
+ */
+export function groupCopies(cands) {
+  const groups = [];
+  for (const c of cands) { const g = groups.find((m) => m.some((x) => copies(x, c))); if (g) g.push(c); else groups.push([c]); }
+  return groups.map((members, i) => {
+    const lead = members.find((m) => m.kind === 'work') || members[0];
+    const label = members.length === 1 ? labelOf(lead)
+      : `${q(lead.kind === 'section' ? lead.sec.title : lead.doc.title)} — one text, ${members.length} copies or translations in the library: ${members.map(labelOf).join('; ')}`;
+    return { ...lead, members, key: `c${i + 1}`, label };
+  });
+}
+
 /** A phrase that IS a work's title, or the title plus words at one end ("Deepening Compilation" ~ "Deepening"). Pure. */
 export function strongTitle(phrase, title) {
   const a = fold(phrase), b = fold(title);
@@ -33,7 +57,7 @@ export function strongTitle(phrase, title) {
 }
 
 /** Jev's one typed choice over the candidates. → { choice, confidence, distribution, ms } | null (no key / timeout / failure). */
-export async function pickBook(messages, cands, { profile = {}, fetchImpl = jevFetch('anis-book-pick'), apiKey = process.env.TYPESAFE_API_KEY, onJev = null, alt = null, ...limits } = {}) {
+export async function pickBook(messages, cands, { profile = {}, fetchImpl = jevFetch('anis-book-pick'), apiKey = process.env.TYPESAFE_API_KEY, onJev = null, alt = null, resolved = null, ...limits } = {}) {
   if (!apiKey || !cands.length) return null;
   // probe mode: the reader may want something NEW (a compilation built on the topic) rather than an existing work — Jev weighs both
   const criteria = { ...Object.fromEntries(cands.map((c) => [c.key, c.label])), ...(alt ? { new: alt } : {}), none: alt ? 'none of these' : 'none of these is the book or text the reader asks for' };
@@ -41,7 +65,9 @@ export async function pickBook(messages, cands, { profile = {}, fetchImpl = jevF
   const call = await jevCall('book', async (signal) => {
     const res = await fetchImpl(ENDPOINT, { method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: modelFor('anis-book-pick').model, state: stateOf(messages, { profile }),
-        questions: { book: { type: 'choice', instructions: (alt ? 'The reader may be asking for an EXISTING work in the library, or for something new to be made. ' : '') + 'The reader asks for a particular book or text (a work, or one part of a larger work such as a letter, chapter or book of scripture). Which of these library items is it? Each is labelled by its title, author or compiler, and tradition; a section names the work it is part of. A study, talk or commentary ABOUT the text is not the text. Rank them.', criteria } } }),
+        questions: { book: { type: 'choice', instructions: (alt ? 'The reader may be asking for an EXISTING work in the library, or for something new to be made. ' : '') + 'The reader asks for a particular book or text (a work, or one part of a larger work such as a letter, chapter or book of scripture) — to get it, open it, or find words or a passage in it. '
+          + (resolved?.length ? `The reader's description was identified as ${resolved.map(q).join(' or ')}; the item matching that title is the one asked for. ` : '')
+          + 'Which of these library items is it? Each is labelled by its title, author or compiler, and tradition; a section names the work it is part of; one option may list several copies or translations of the same text. A study, talk or commentary ABOUT the text is not the text. Rank them.', criteria } } }),
       signal });
     return res.ok ? (await res.json()).answers?.book ?? null : null;
   }, { ...JEV_LIMITS.book, ...limits, onJev });
@@ -74,20 +100,21 @@ export async function bookFastPath({ messages, names = [], by = null, profile = 
   const pick = deps.pickBook || pickBook, find = deps.find || bookCandidates, onJev = (info) => decisions.record('jev:timeout', timeoutDecision(info));
   const round = async (msg, also, via) => {
     const found = await find(msg, { also });
-    const all = (found?.cands || []).map((c, i) => ({ ...c, key: `c${i + 1}`, label: labelOf(c) }));
+    const all = groupCopies(found?.cands || []);
     // probe mode asks Jev only when a phrase IS (or holds at one end) a library work's title — a near-exact title, not a shared word
     // (Jev's phrases only — the whole message holds a one-word title too easily: "what is justice" ⊃ "Justice")
     const cands = alt ? (all.some((c) => c.kind === 'work' && named.some((n) => strongTitle(n, c.doc.title))) ? all : []) : all;
     decisions.record('book:candidates', { by: 'code', saw: { message: msg, also, by, via, ms: found?.ms ?? null, ...(alt ? { probe: alt } : {}) }, chosen: `${cands.length} candidates`, reason: cands.map((c) => `${c.key} ${c.label}`).join('; ') || null });
     if (!cands.length) return null;
-    const p = await pick(messages, cands, { profile, onJev, ...(alt ? { alt } : {}), ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
+    const p = await pick(messages, cands, { profile, onJev, ...(alt ? { alt } : {}), ...(via === 'extracted' ? { resolved: msg.split('\n') } : {}), ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
     const hit = p?.choice && !['none', 'new'].includes(p.choice) && (p.confidence ?? 0) >= MIN_CONFIDENCE ? cands.find((c) => c.key === p.choice) : null;
     decisions.record('book:pick', { by: 'jev', saw: { candidates: cands.map((c) => `${c.key} ${c.label}`) }, options: [...cands.map((c) => c.key), ...(alt ? ['new'] : []), 'none'], probabilities: jevProbabilities(p),
       chosen: hit ? hit.key : p?.choice === 'new' ? 'new' : 'none', reason: !p ? 'no answer (see jev:timeout)' : hit ? null : p.choice === 'new' ? alt : p.choice === 'none' ? 'nothing fits' : 'low confidence', ms: p?.ms ?? null });
     if (!hit) return null;
     if (hit.kind === 'section') return { kind: 'section', sec: hit.sec, doc: null, via };
     // other copies of the SAME work only (a short name also finds unrelated titles: "Gleanings" → Gleanings among the Sheaves)
-    const same = cands.filter((c) => c.kind === 'work' && c.doc.id !== hit.doc.id && (fold(c.doc.title).includes(fold(hit.doc.title)) || fold(hit.doc.title).includes(fold(c.doc.title)))).map((c) => c.doc);
+    const copies = hit.members.filter((c) => c.kind === 'work' && c.doc.id !== hit.doc.id).map((c) => c.doc);   // the option's own copies
+    const same = [...copies, ...cands.filter((c) => c.kind === 'work' && c.doc.id !== hit.doc.id && (fold(c.doc.title).includes(fold(hit.doc.title)) || fold(hit.doc.title).includes(fold(c.doc.title)))).map((c) => c.doc)];
     return { kind: 'work', work: { doc: hit.doc, others: otherCopies([hit.doc, ...same], hit.doc.title) }, via };
   };
   // the message itself (the finder scores all of it), plus Jev's named work and the byline he read, when the message lacks them
