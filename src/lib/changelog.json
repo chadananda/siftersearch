@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-10T16:39:28.718Z",
+  "generated": "2026-11-10T16:41:03.178Z",
   "entries": [
     {
       "hash": "c87dfda93",
@@ -1259,20 +1259,6 @@
       "date": "2026-10-24",
       "type": "Fixed",
       "description": "A pod whose worker stopped is replaced (it idled itself out and then took jobs for an hour: nothing completed); the pod's terminate call sends a User-Agent (urllib's got 403); per-talk cycle timings recorded",
-      "scope": "media"
-    },
-    {
-      "hash": "274d4ae36",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "R2 fills are parallel multipart (4 x 8 MB ranged parts); POST /_media/ensure (internal key) fills one file now and says if present, incl. <slug>/src/original.<ext>; backfill orders the remaster queue (grade E,D,C,B) first",
-      "scope": "media"
-    },
-    {
-      "hash": "a0e7eeb8a",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "The reaper no longer kills pods for a quiet GPU (transfers dominate: the GPU works ~1 min in 7) - last resort at 60 min",
       "scope": "media"
     }
   ],
@@ -2564,20 +2550,6 @@
         "date": "2026-10-24",
         "type": "Fixed",
         "description": "A pod whose worker stopped is replaced (it idled itself out and then took jobs for an hour: nothing completed); the pod's terminate call sends a User-Agent (urllib's got 403); per-talk cycle timings recorded",
-        "scope": "media"
-      },
-      {
-        "hash": "274d4ae36",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "R2 fills are parallel multipart (4 x 8 MB ranged parts); POST /_media/ensure (internal key) fills one file now and says if present, incl. <slug>/src/original.<ext>; backfill orders the remaster queue (grade E,D,C,B) first",
-        "scope": "media"
-      },
-      {
-        "hash": "a0e7eeb8a",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "The reaper no longer kills pods for a quiet GPU (transfers dominate: the GPU works ~1 min in 7) - last resort at 60 min",
         "scope": "media"
       }
     ]
