@@ -1,6 +1,34 @@
 {
-  "generated": "2026-11-10T02:20:03.390Z",
+  "generated": "2026-11-10T16:34:25.885Z",
   "entries": [
+    {
+      "hash": "c87dfda93",
+      "date": "2026-11-10",
+      "type": "Test",
+      "description": "Conversation summary carries link text without the [linked] marker",
+      "scope": null
+    },
+    {
+      "hash": "b6aa828d0",
+      "date": "2026-11-10",
+      "type": "Other",
+      "description": "Always talk to the public site (Google sign-in rejects the api tunnel origin); loader never browser-cached",
+      "scope": null
+    },
+    {
+      "hash": "676236f3d",
+      "date": "2026-11-09",
+      "type": "Other",
+      "description": "One kept-alive connection pool (no fresh TCP+TLS per turn)",
+      "scope": null
+    },
+    {
+      "hash": "c522d2fb3",
+      "date": "2026-11-09",
+      "type": "Test",
+      "description": "NamedWork returns a filtered copy of the work",
+      "scope": null
+    },
     {
       "hash": "1b07a30c7",
       "date": "2026-11-09",
@@ -1260,220 +1288,40 @@
       "type": "New",
       "description": "Dewey-discard ops job (delete the stored copy of a received upload, decline the item)",
       "scope": "dewey"
-    },
-    {
-      "hash": "9f74319a3",
-      "date": "2026-10-24",
-      "type": "Chore",
-      "description": "Deploy 2.187.821 (Dewey uploads, multi-GB)",
-      "scope": null
-    },
-    {
-      "hash": "dd5fdc9b2",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Uploads scale for multi-GB files: 64 MB parts from 2 GB, adaptive 1-6 parallel parts, speed and ETA",
-      "scope": "dewey"
-    },
-    {
-      "hash": "154994024",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Heartbeat pump independent of tick length; pod env for self-termination; skip the raw generative copy when the worker finished the whole job",
-      "scope": "media"
-    },
-    {
-      "hash": "e5739d821",
-      "date": "2026-10-24",
-      "type": "Chore",
-      "description": "Deploy 2.187.820 (Dewey uploads)",
-      "scope": null
-    },
-    {
-      "hash": "abdd9d1a2",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Resumable multi-file uploads straight to R2 (edge multipart, up to 50 GB per file)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "16f229496",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Healthy pods were reaped (lastOk went stale during long uploads); realign retried on CPU when the pod GPU places nothing; current job code shipped over the image's copy",
-      "scope": "media"
-    },
-    {
-      "hash": "65958ea4e",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Boot deadline 15 min for the 23 GB image (cold pull 5-12 min); a run that ended on 'pods failed to start' restarts clean",
-      "scope": "media"
-    },
-    {
-      "hash": "f7affce79",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "The lane reorders its queue: fresh talks before post work",
-      "scope": "media"
-    },
-    {
-      "hash": "247d67066",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Post orders go behind fresh talks (they ship the 300 MB restored copy back up tower's slow uplink)",
-      "scope": "media"
-    },
-    {
-      "hash": "4f3c7fe17",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Chad's lighter sketch actually published (take l3, sketch-15e13421…); darker one recorded as fallback",
-      "scope": "media"
-    },
-    {
-      "hash": "1dc517b84",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Chad's sketch redrawn with a lighter touch (mean luminance 202 → 229.5, likeness 0.58); the darker first drawing kept as fallback",
-      "scope": "media"
-    },
-    {
-      "hash": "ccd47446f",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Retitle jones-01-thursday → 'Early Days Teaching in Bucharest' (talk_identities decisions may carry a title; media-talk-identities writes meta + row, re-renders; slug kept) + Chad's own sketch portrait (supplied photo = identity anchor, likeness 0.54, style A)",
-      "scope": "media"
-    },
-    {
-      "hash": "7212b118d",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "RunPod calls time out (30 s) and retry — a call that never answered froze the cloud lane for 10+ min",
-      "scope": "media"
-    },
-    {
-      "hash": "66cc219b7",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Restore the cloud lane (a // comment swallowed it from MEDIA_LANES; the backfill was idle) + a test that fails if it goes again",
-      "scope": "media"
-    },
-    {
-      "hash": "90067aff7",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Backfill-r2 moves on after a 150 s timeout (a talk being re-processed)",
-      "scope": "media"
-    },
-    {
-      "hash": "a40fc4b1b",
-      "date": "2026-10-24",
-      "type": "Chore",
-      "description": "Deploy version",
-      "scope": null
-    },
-    {
-      "hash": "e28f1d6bf",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Cards in view start the audio fill; original warms on toggle hover; spinner-only for short waits; backfill defaults to the restored (main) copy",
-      "scope": "media"
-    },
-    {
-      "hash": "249cb51b8",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Work orders and light jobs get their own lane (they sat behind 209 queued remaster runs); a worker result always queues tower's take",
-      "scope": "media"
-    },
-    {
-      "hash": "8e566512d",
-      "date": "2026-10-24",
-      "type": "Docs",
-      "description": "LICENSES for the public worker image",
-      "scope": "media"
-    },
-    {
-      "hash": "58155b5a5",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Backfill-r2 reads the index from tower's gateway and retries connects",
-      "scope": "media"
-    },
-    {
-      "hash": "aac4b9339",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Backfill-r2 — resumable, throttled, newest-first copy of every talk's web audio into R2 via the idempotent warm endpoint",
-      "scope": "media"
-    },
-    {
-      "hash": "2d0228a49",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Version pill sits at the exact midpoint between the timestamp and Speed (equal gaps, measured 304.8/304.8 px desktop, 12/12 px at 400 px)",
-      "scope": "media"
-    },
-    {
-      "hash": "d29b815a1",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Version switch is a bare tiny pill (no label/box/caption) centred in the player's existing row, exactly the Speed select's height (23 px), no growth of the play box; Orig",
-      "scope": "media"
-    },
-    {
-      "hash": "26b7033fa",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Tower placement — rule in CLAUDE.md, bulk slice (CPU 25 %, low weight, memory cap) for the media + indexer services, ratchet test with plan+date per legacy file, system-check on heavy media cores on tower",
-      "scope": "ops"
-    },
-    {
-      "hash": "ded969ae3",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Version switch redesigned (own \"Listen to\" group + caption, Speed separate, 44px targets, compact in the sticky bar); hover/focus/touch on a talk link prefetches the page and warms its audio at the edge",
-      "scope": "media"
-    },
-    {
-      "hash": "1048b6939",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Web audio is R2-first — a miss answers 202 + Retry-After and never streams from the tower; page load warms both copies (POST /_media/warm: idempotent, KV-locked, one-time tower→R2 copy); publish warms too; player shows \"Preparing the audio…\"",
-      "scope": "media"
-    },
-    {
-      "hash": "64877f0f6",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Bump USER_DB_CURRENT_VERSION to 11 so the allowlist migration runs",
-      "scope": "dewey"
-    },
-    {
-      "hash": "a1d59deed",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Audio preload=metadata; Original",
-      "scope": "media"
-    },
-    {
-      "hash": "5d8229efc",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Publishing a talk purges its edge-cached page + API entry (worker POST /_edge/purge, keyed) so a newly restored talk shows the Original",
-      "scope": "media"
-    },
-    {
-      "hash": "3ca57b07c",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Work orders for the running cloud lane — post (finish results tower holds on a worker) and cleanup (held talks); backfill relief for tower's queue",
-      "scope": "media"
     }
   ],
   "grouped": {
+    "2026-11-10": [
+      {
+        "hash": "c87dfda93",
+        "date": "2026-11-10",
+        "type": "Test",
+        "description": "Conversation summary carries link text without the [linked] marker",
+        "scope": null
+      },
+      {
+        "hash": "b6aa828d0",
+        "date": "2026-11-10",
+        "type": "Other",
+        "description": "Always talk to the public site (Google sign-in rejects the api tunnel origin); loader never browser-cached",
+        "scope": null
+      }
+    ],
     "2026-11-09": [
+      {
+        "hash": "676236f3d",
+        "date": "2026-11-09",
+        "type": "Other",
+        "description": "One kept-alive connection pool (no fresh TCP+TLS per turn)",
+        "scope": null
+      },
+      {
+        "hash": "c522d2fb3",
+        "date": "2026-11-09",
+        "type": "Test",
+        "description": "NamedWork returns a filtered copy of the work",
+        "scope": null
+      },
       {
         "hash": "1b07a30c7",
         "date": "2026-11-09",
@@ -2759,216 +2607,6 @@
         "type": "New",
         "description": "Dewey-discard ops job (delete the stored copy of a received upload, decline the item)",
         "scope": "dewey"
-      },
-      {
-        "hash": "9f74319a3",
-        "date": "2026-10-24",
-        "type": "Chore",
-        "description": "Deploy 2.187.821 (Dewey uploads, multi-GB)",
-        "scope": null
-      },
-      {
-        "hash": "dd5fdc9b2",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Uploads scale for multi-GB files: 64 MB parts from 2 GB, adaptive 1-6 parallel parts, speed and ETA",
-        "scope": "dewey"
-      },
-      {
-        "hash": "154994024",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Heartbeat pump independent of tick length; pod env for self-termination; skip the raw generative copy when the worker finished the whole job",
-        "scope": "media"
-      },
-      {
-        "hash": "e5739d821",
-        "date": "2026-10-24",
-        "type": "Chore",
-        "description": "Deploy 2.187.820 (Dewey uploads)",
-        "scope": null
-      },
-      {
-        "hash": "abdd9d1a2",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Resumable multi-file uploads straight to R2 (edge multipart, up to 50 GB per file)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "16f229496",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Healthy pods were reaped (lastOk went stale during long uploads); realign retried on CPU when the pod GPU places nothing; current job code shipped over the image's copy",
-        "scope": "media"
-      },
-      {
-        "hash": "65958ea4e",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Boot deadline 15 min for the 23 GB image (cold pull 5-12 min); a run that ended on 'pods failed to start' restarts clean",
-        "scope": "media"
-      },
-      {
-        "hash": "f7affce79",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "The lane reorders its queue: fresh talks before post work",
-        "scope": "media"
-      },
-      {
-        "hash": "247d67066",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Post orders go behind fresh talks (they ship the 300 MB restored copy back up tower's slow uplink)",
-        "scope": "media"
-      },
-      {
-        "hash": "4f3c7fe17",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Chad's lighter sketch actually published (take l3, sketch-15e13421…); darker one recorded as fallback",
-        "scope": "media"
-      },
-      {
-        "hash": "1dc517b84",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Chad's sketch redrawn with a lighter touch (mean luminance 202 → 229.5, likeness 0.58); the darker first drawing kept as fallback",
-        "scope": "media"
-      },
-      {
-        "hash": "ccd47446f",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Retitle jones-01-thursday → 'Early Days Teaching in Bucharest' (talk_identities decisions may carry a title; media-talk-identities writes meta + row, re-renders; slug kept) + Chad's own sketch portrait (supplied photo = identity anchor, likeness 0.54, style A)",
-        "scope": "media"
-      },
-      {
-        "hash": "7212b118d",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "RunPod calls time out (30 s) and retry — a call that never answered froze the cloud lane for 10+ min",
-        "scope": "media"
-      },
-      {
-        "hash": "66cc219b7",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Restore the cloud lane (a // comment swallowed it from MEDIA_LANES; the backfill was idle) + a test that fails if it goes again",
-        "scope": "media"
-      },
-      {
-        "hash": "90067aff7",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Backfill-r2 moves on after a 150 s timeout (a talk being re-processed)",
-        "scope": "media"
-      },
-      {
-        "hash": "a40fc4b1b",
-        "date": "2026-10-24",
-        "type": "Chore",
-        "description": "Deploy version",
-        "scope": null
-      },
-      {
-        "hash": "e28f1d6bf",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Cards in view start the audio fill; original warms on toggle hover; spinner-only for short waits; backfill defaults to the restored (main) copy",
-        "scope": "media"
-      },
-      {
-        "hash": "249cb51b8",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Work orders and light jobs get their own lane (they sat behind 209 queued remaster runs); a worker result always queues tower's take",
-        "scope": "media"
-      },
-      {
-        "hash": "8e566512d",
-        "date": "2026-10-24",
-        "type": "Docs",
-        "description": "LICENSES for the public worker image",
-        "scope": "media"
-      },
-      {
-        "hash": "58155b5a5",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Backfill-r2 reads the index from tower's gateway and retries connects",
-        "scope": "media"
-      },
-      {
-        "hash": "aac4b9339",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Backfill-r2 — resumable, throttled, newest-first copy of every talk's web audio into R2 via the idempotent warm endpoint",
-        "scope": "media"
-      },
-      {
-        "hash": "2d0228a49",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Version pill sits at the exact midpoint between the timestamp and Speed (equal gaps, measured 304.8/304.8 px desktop, 12/12 px at 400 px)",
-        "scope": "media"
-      },
-      {
-        "hash": "d29b815a1",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Version switch is a bare tiny pill (no label/box/caption) centred in the player's existing row, exactly the Speed select's height (23 px), no growth of the play box; Orig",
-        "scope": "media"
-      },
-      {
-        "hash": "26b7033fa",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Tower placement — rule in CLAUDE.md, bulk slice (CPU 25 %, low weight, memory cap) for the media + indexer services, ratchet test with plan+date per legacy file, system-check on heavy media cores on tower",
-        "scope": "ops"
-      },
-      {
-        "hash": "ded969ae3",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Version switch redesigned (own \"Listen to\" group + caption, Speed separate, 44px targets, compact in the sticky bar); hover/focus/touch on a talk link prefetches the page and warms its audio at the edge",
-        "scope": "media"
-      },
-      {
-        "hash": "1048b6939",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Web audio is R2-first — a miss answers 202 + Retry-After and never streams from the tower; page load warms both copies (POST /_media/warm: idempotent, KV-locked, one-time tower→R2 copy); publish warms too; player shows \"Preparing the audio…\"",
-        "scope": "media"
-      },
-      {
-        "hash": "64877f0f6",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Bump USER_DB_CURRENT_VERSION to 11 so the allowlist migration runs",
-        "scope": "dewey"
-      },
-      {
-        "hash": "a1d59deed",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Audio preload=metadata; Original",
-        "scope": "media"
-      },
-      {
-        "hash": "5d8229efc",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Publishing a talk purges its edge-cached page + API entry (worker POST /_edge/purge, keyed) so a newly restored talk shows the Original",
-        "scope": "media"
-      },
-      {
-        "hash": "3ca57b07c",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Work orders for the running cloud lane — post (finish results tower holds on a worker) and cleanup (held talks); backfill relief for tower's queue",
-        "scope": "media"
       }
     ]
   }

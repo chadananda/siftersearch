@@ -3,6 +3,7 @@
 // no literal hit → the passages closest in MEANING inside that work, labelled as such. Code only, no LLM.
 // Deps (ctx.deps, else the repos): paragraphTexts, paragraphsByIds, withLinks, getDoc. The turn path: findInWorkAnswer.
 import { toPassage } from './tool-kit.js';
+import { SITE } from '../source-links.js';
 
 /** Fold for matching: accents off, curly/odd apostrophes → ', lower case, every other non-letter → one space. Pure. */
 export const foldText = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘`ʻʼ]/g, "'").toLowerCase()
@@ -61,7 +62,7 @@ export async function inWorkSearch({ work_id, query, from = null, to = null, lit
   const lo = from ?? 0, hi = to ?? 1e9;
   const getDoc = await repo(ctx, 'getDoc', '../docs-repo.js');
   const doc = await Promise.resolve(getDoc(id)).catch(() => null);
-  const work = { id, title: doc?.title ?? null, author: doc?.author ?? null };
+  const work = { id, title: doc?.title ?? null, author: doc?.author ?? null, cover_url: doc?.cover_url ?? null };
   const link = async (ps) => { try { return await (await repo(ctx, 'withLinks', '../hit-links.js'))(ps); } catch { return ps; } };
   let mode = 'none', hits = [];
   if (literal !== false) {
@@ -116,6 +117,15 @@ export function inWorkReply(r, { section = null } = {}) {
   return `I searched all of ${title} for ${q}: the words are not in it, and no passage in it comes close in meaning.`;
 }
 
+/** The passage card(s) for the chat widget: exactly ONE literal hit → [{work_id,title,author,cover_url,url,place,excerpt,phrase}] (excerpt keeps
+ *  the **phrase** marks; the client splits on them, never injects HTML); several hits or a meaning match → none (the text list stays). Pure. */
+export function passageCards(r, { cover = null } = {}) {
+  if (r?.mode !== 'literal' || r.total !== 1 || r.passages?.length !== 1) return [];
+  const p = r.passages[0], c = cover ?? r.work?.cover_url ?? null;
+  return [{ work_id: r.work.id, title: r.work.title ?? null, author: p.author ?? r.work.author ?? null, cover_url: c ? (/^https?:/.test(c) ? c : `${SITE}${c}`) : null,
+    url: p.url ?? null, place: p.place ?? null, excerpt: p.excerpt, phrase: r.query }];
+}
+
 /** The words to find, resolved by code from what Jev's lookup named: the quoted span(s) that are not the work's title, else Jev's topic. Pure. */
 export function wordsToFind({ quoted = [], topic = null, titles = [] } = {}) {
   const t = titles.filter(Boolean).map(foldText);
@@ -145,5 +155,5 @@ export async function findInWorkAnswer({ messages, names = [], by = null, topic 
   const r = await run({ work_id: Number(doc.id), query: words, ...(sec ? { from: sec.start_index, to: sec.end_index ?? sec.start_index } : {}) });
   if (!r) return null;
   if (!r.work?.title) r.work = { ...(r.work || {}), title: doc.title };
-  return { result: r, reply: inWorkReply(r, { section: sec?.title ?? null }), work: doc, section: sec };
+  return { result: r, reply: inWorkReply(r, { section: sec?.title ?? null }), cards: passageCards(r, { cover: doc.cover_url ?? null }), work: doc, section: sec };
 }

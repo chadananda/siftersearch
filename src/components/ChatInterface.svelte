@@ -7,6 +7,9 @@
   import { search, session, documents, chat, triggerServerUpdate, authenticatedFetch, admin } from '../lib/api.js';
   import ReligionIcon from './ReligionIcon.svelte';
   import BookCard from './chat/BookCard.svelte';
+  import PassageCard from './chat/PassageCard.svelte';
+  // the passage card shows the quote + citation: drop the reply's leading blockquote, keep anything else
+  const withoutQuote = (text) => String(text || '').replace(/^(?:>.*(?:\n|$))+\s*/, '');
   // the book card already shows the description: the reply's first paragraph (the same words) is not shown twice
   const withoutBookLead = (text, book) => { const d = String(book?.description || '').trim(); const t = String(text || ''); return d && t.startsWith(d) ? t.slice(d.length).replace(/^\s+/, '') : t; };
   import { toCurlyQuotes } from '../lib/text-utils.js';
@@ -1322,6 +1325,8 @@
           researchMessages = researchMessages.map((m, i) => i === assistantIdx ? { ...m, progress: event.text } : m);
         } else if (event.type === 'book' && event.book) {
           researchMessages = researchMessages.map((m, i) => i === assistantIdx ? { ...m, book: event.book } : m);
+        } else if (event.type === 'passage' && event.passage) {
+          researchMessages = researchMessages.map((m, i) => i === assistantIdx ? { ...m, passages: [...(m.passages || []), event.passage] } : m);
         } else if (event.type === 'citations') {
           pendingCitations = event.citations || [];
           researchMessages = researchMessages.map((m, i) =>
@@ -2035,12 +2040,13 @@
                   </div>
                 {/if}
                 {#if msg.book}<BookCard book={msg.book} />{/if}
+                {#each msg.passages || [] as passage}<PassageCard {passage} />{/each}
                 <!-- Assistant response -->
                 <div class="research-bubble research-bubble-assistant {msg.error ? 'error' : ''}">
                   {#if msg.isStreaming && !msg.content}
                     <span class="research-typing"><span></span><span></span><span></span></span>
                   {:else}
-                    <div class="research-msg-text prose">{@html formatResearchText(msg.book ? withoutBookLead(msg.content, msg.book) : msg.content)}{#if msg.isStreaming}<span class="streaming-cursor"></span>{/if}</div>
+                    <div class="research-msg-text prose">{@html formatResearchText(msg.book ? withoutBookLead(msg.content, msg.book) : msg.passages?.length ? withoutQuote(msg.content) : msg.content)}{#if msg.isStreaming}<span class="streaming-cursor"></span>{/if}</div>
                     {#if !msg.isStreaming && msg.content && !msg.error}
                       <button class="copy-btn" title="Copy response" onclick={(e) => {
                         const suffix = '\n\n— Anís, Ocean AI Research Assistant\n   siftersearch.com';

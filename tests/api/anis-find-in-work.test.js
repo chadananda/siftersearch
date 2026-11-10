@@ -1,7 +1,7 @@
 // 'search for "private property" in God Passes By' (live 11-10, conv_920ec4b7:11 — the reply said "I can't run a literal text search
 // of the book from here"): Jev's lookup in_work → the work → in_work_search → every place, linked, by code. No Anthropic spend.
 import { describe, it, expect, vi } from 'vitest';
-import { inWorkSearch, inWorkReply, findInWorkAnswer, wordsToFind, holdsWords, excerptOf } from '../../api/lib/assistant/find-in-work.js';
+import { inWorkSearch, inWorkReply, findInWorkAnswer, wordsToFind, holdsWords, excerptOf, passageCards } from '../../api/lib/assistant/find-in-work.js';
 import { run, REGISTRY } from '../../api/lib/assistant/tools.js';
 import { anisTurn } from '../../api/lib/assistant/turn.js';
 import { emptyState } from '../../api/lib/assistant/units.js';
@@ -91,6 +91,16 @@ describe('the words and the work are resolved by code; the intent is Jev\'s', ()
     expect(search).toHaveBeenCalledWith({ work_id: 21310, query: 'private property' });
     expect(got.reply).toContain(URL868);
   });
+  it('one literal hit → one passage card (cover absolute, phrase, place, link); several hits or meaning → none', async () => {
+    const search = async (a) => inWorkSearch(a, { deps: deps({ getDoc: async () => ({ ...GPB, cover_url: '/covers/gpb.jpg' }) }) });
+    const bookFastPath = async () => ({ kind: 'work', work: { doc: GPB, others: [] }, via: 'named' });
+    const got = await findInWorkAnswer({ messages: [{ role: 'user', content: LIVE }], deps: { bookFastPath }, search });
+    expect(got.cards).toHaveLength(1);
+    expect(got.cards[0]).toMatchObject({ work_id: 21310, title: 'God Passes By', author: 'Shoghi Effendi', place: '#868', url: URL868, phrase: 'private property', cover_url: expect.stringMatching(/^https?:\/\/.+\/covers\/gpb\.jpg$/) });
+    expect(got.cards[0].excerpt).toContain('**private property**');
+    expect(passageCards({ mode: 'literal', total: 2, passages: [{}, {}], work: GPB })).toEqual([]);
+    expect(passageCards({ mode: 'meaning', total: 1, passages: [{}], work: GPB })).toEqual([]);
+  });
   it('a section the book finder picked → only its paragraph range', async () => {
     const search = vi.fn(async () => ({ work: GPB, query: 'x', mode: 'none', total: 0, passages: [] }));
     const bookFastPath = async () => ({ kind: 'section', sec: { doc_id: 21310, title: 'Chapter V', start_index: 100, end_index: 180, book: 'God Passes By', author: 'Shoghi Effendi' }, doc: null });
@@ -101,7 +111,7 @@ describe('the words and the work are resolved by code; the intent is Jev\'s', ()
 
 describe('the turn: Jev\'s lookup in_work routes to the find, even when the strategy call timed out', () => {
   const turn = ({ strat = null, lookup = { choice: 'in_work', confidence: 0.9 } } = {}) => {
-    const calls = { respond: 0, find: [] }, closed = [];
+    const calls = { respond: 0, find: [] }, closed = [], events = [];
     const tri = { malicious: 0.01, complete: 0.99, stop_request: 0, stance: { choice: 'curious' }, kind: { choice: 'research', confidence: 0.9 }, lookup,
       outcome: { choice: 'search', confidence: 0.9 }, features: { first: true, turn: 0, words: 9, short: false } };
     const d = { titleOnly: async () => null, triage: async () => tri, strategy: async () => strat, state: { load: async () => emptyState(), append: async () => {} },
@@ -109,7 +119,7 @@ describe('the turn: Jev\'s lookup in_work routes to the find, even when the stra
       findInWork: async (a) => { calls.find.push(a); return findInWorkAnswer({ ...a, deps: { bookFastPath: async () => ({ kind: 'work', work: { doc: GPB, others: [] } }) }, search: (x) => inWorkSearch(x, { deps: deps() }) }); },
       respond: async () => { calls.respond++; return { reply: 'researched', citations: [], retrieved: [], plan: { shape: 'topic' }, timings: {} }; },
       open: async () => ({ conversationId: 'c', round: 0 }), close: async (x) => { closed.push(x); }, fail: async () => {}, card: async () => null, outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {} };
-    return { calls, closed, d, run: () => anisTurn({ messages: [{ role: 'user', content: LIVE }], participant: { id: 's', authed: true }, clientKey: 's', onEvent: () => {}, deps: d }) };
+    return { calls, closed, events, d, run: () => anisTurn({ messages: [{ role: 'user', content: LIVE }], participant: { id: 's', authed: true }, clientKey: 's', onEvent: (e) => events.push(e), deps: d }) };
   };
   it('strategy timed out (null) → still the in-work list, no research, no writer', async () => {
     const h = turn();
@@ -117,6 +127,10 @@ describe('the turn: Jev\'s lookup in_work routes to the find, even when the stra
     expect(h.calls.respond).toBe(0);
     expect(r.reply).toMatch(/^> “…?.*\*\*private property\*\*.*”\n>\n> — Shoghi Effendi, \[\*God Passes By\*/);
     expect(r.reply).toContain(URL868);
+    const types = h.events.map((e) => e.type);
+    expect(types.indexOf('passage')).toBeGreaterThanOrEqual(0);
+    expect(types.indexOf('passage')).toBeLessThan(types.indexOf('text'));
+    expect(h.events.find((e) => e.type === 'passage').passage).toMatchObject({ work_id: 21310, place: '#868', url: URL868, phrase: 'private property' });
     expect(h.closed[0].path).toMatchObject({ route: 'in_work', work: 21310, find: 'private property', mode: 'literal', total: 1, strategy_timed_out: true });
     expect(h.d.lookup).not.toHaveBeenCalled();
   });

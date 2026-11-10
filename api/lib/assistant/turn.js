@@ -178,6 +178,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const citations = r.passages.map((p) => ({ id: p.id, title: p.title, author: p.author, document_id: p.document_id, paragraph_index: p.paragraph_index, place: p.place ?? null, url: p.url ?? null, text: p.text }));
     onEvent({ type: 'sources', sources: citations, plan, ms: Date.now() - t0 });
     onEvent({ type: 'stage', stage: 'craft' });
+    // one found passage = a card (cover, the passage with the phrase marked, the whole card a link), before the text; the text stays for other channels
+    for (const passage of got.cards || []) onEvent({ type: 'passage', passage });
     const up = d.upgradeLinks ?? (deps ? null : async (x) => (await import('../ocean-links.js')).upgradeOceanLinks(x));
     const reply = (up ? await Promise.resolve().then(() => up(got.reply)).catch(() => got.reply) : got.reply) || got.reply;
     onEvent({ type: 'text', content: reply });
