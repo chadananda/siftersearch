@@ -185,13 +185,16 @@ export function otherCopies(sorted, asked) {
   return sorted.slice(1).filter((d) => !stub(d) && !derived(d.title, asked) && !seen.has(d.title) && seen.add(d.title)).slice(0, 2);
 }
 
+const NO_AUTHOR = /^(?:unknown|anonymous|n\/?a|none|various|-+|\?+)$/i;
 /** The reply's first lines: the work, linked (and other copies). Pure. */
 export function workLead({ doc, others = [] }, urlOf = workUrl) {
-  const url = urlOf(doc), by = doc.author ? ` by ${doc.author}` : '';
+  // the title link is the read link — no second link to the same page (battery 11-10 "hindus"); an author the library
+  // does not know ("Unknown", "Anonymous") is not a byline
+  const url = urlOf(doc), by = doc.author && !NO_AUTHOR.test(String(doc.author).trim()) ? ` by ${doc.author}` : '';
   const ln = (d, t = `*${d.title}*`) => (urlOf(d) ? `[${t}](${urlOf(d)})` : t);   // the online publisher when there is one, else our library reader (workUrl's fallback)
   const lines = [doc.encumbered === 1
-    ? `${ln(doc)}${by} is in the library. It is still under copyright, so the opening pages are open to read here${url ? `: ${ln(doc, `read the opening of *${doc.title}*`)}` : '.'}.`
-    : `${ln(doc)}${by} is here in the library${url ? `, the full text: ${ln(doc, `read *${doc.title}*`)}` : ''}.`];
+    ? `${ln(doc)}${by} is in the library. It is still under copyright, so only the opening pages are open to read${url ? ' at that link' : ''}.`
+    : `${ln(doc)}${by} is here in the library${url ? ', the full text at that link' : ''}.`];
   if (others.length) lines.push(`The library also holds ${others.map((o) => ln(o)).join(' and ')}.`);
   return lines.join('\n\n').replace(/\.\./g, '.');
 }

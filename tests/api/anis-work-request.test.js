@@ -230,3 +230,13 @@ describe('the work itself outranks a study whose title contains its name (11-09 
     expect(w.doc.id).toBe(91);
   });
 });
+
+describe('workLead (battery 11-10 "hindus")', () => {
+  it('no "by Unknown" byline and no second read link to the page the title already opens', async () => {
+    const { workLead } = await import('../../api/lib/assistant/work-request.js');
+    const lead = workLead({ doc: { id: 1, title: 'Rig Veda. Book 1', author: 'Unknown' } }, () => 'https://oceanlibrary.com/rig-veda-book-1');
+    expect(lead).not.toMatch(/Unknown/);
+    expect(lead.match(/\]\(https:\/\/oceanlibrary\.com\/rig-veda-book-1\)/g)).toHaveLength(1);
+    expect(workLead({ doc: { id: 2, title: 'Paris Talks', author: '‘Abdu’l-Bahá' } }, () => 'https://oceanlibrary.com/paris-talks_abdul-baha')).toMatch(/by ‘Abdu’l-Bahá/);
+  });
+});

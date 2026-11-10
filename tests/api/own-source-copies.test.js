@@ -50,3 +50,23 @@ describe('own source: a writer quoting his own other work, and a poor copy (batt
     expect(r.swapped).toEqual([]);
   });
 });
+
+describe('own source: the last-resort source gives way (battery round 4 timeline)', () => {
+  const SE = 'Shoghi Effendi';
+  const W = 'On 23 May 1844 the Báb proclaimed His twofold mission as an independent Manifestation of God and Herald of One greater than Himself.';
+  const upl = toPassage({ id: 4601, document_id: 800, paragraph_index: 4601, title: 'Uncompiled Published Letters', author: SE, book_author: SE, religion: B,
+    source_url: 'https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_4601', text: W });
+  const wob = { id: 31, document_id: 900, paragraph_index: 31, title: 'The World Order of Bahá’u’lláh', author: SE, book_author: SE, religion: B,
+    source_url: 'https://oceanlibrary.com/world-order-of-bahaullah/?paraId=para_31', text: `${W} His Dispensation opened.` };
+  it('an Uncompiled Published Letters passage → the same words in a published work of the writer; the letters kept as context', async () => {
+    const asked = [];
+    const r = await preferOwnWork([upl], { search: async (span, f) => { asked.push(f); return [upl, wob]; }, shape: toPassage });
+    expect(r.passages.map((p) => p.id)).toEqual([31, 4601]);
+    expect(r.swapped[0]).toMatchObject({ kind: 'published', writer: SE });
+    expect(asked[0].author).toBe(SE);
+  });
+  it('no published work holds the words → the letters stay', async () => {
+    const r = await preferOwnWork([upl], { search: async () => [upl], shape: toPassage });
+    expect(r.passages.map((p) => p.id)).toEqual([4601]);
+  });
+});
