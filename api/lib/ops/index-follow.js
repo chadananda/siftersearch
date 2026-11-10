@@ -88,7 +88,8 @@ export async function followPass({ env = process.env, now = new Date(), dir = un
   for (const [field, f] of Object.entries(FOLLOW)) {
     if ((await reports.pendingRuns(f.job)).some((r) => r.params?.follow)) { res[field] = { waiting: true }; continue; }   // one follow run in flight per field
     const last = await reports.latest(f.job).catch(() => null);   // today's cap already reached: wait for tomorrow's key, don't respawn a run that stops at once
-    if (last?.params?.budgetKey === dailyKey(field, now) && last?.result?.last?.phase === 'stopped') { res[field] = { capReached: true }; continue; }
+    // (a stop for a full RAM tier is not a cap: the run queued a fold, and the next pass sends the rest — Chad 11-10)
+    if (last?.params?.budgetKey === dailyKey(field, now) && last?.result?.last?.phase === 'stopped' && !/^hot RAM disk/.test(String(last?.result?.last?.reason || ''))) { res[field] = { capReached: true }; continue; }
     const marks = loadMarks(field, dir);
     const { due, seed } = followCandidates(await cov.layerRowsWithData(f.layer), marks || {});
     // re-read before writing: a follow run in this same process may have marked docs during the ledger read; its marks win

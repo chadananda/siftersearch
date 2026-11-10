@@ -32,7 +32,9 @@ export const LAYERS = ['text', 'embedding', 'keyword', 'phrase', 'sections', 're
 const QD = () => process.env.QDRANT_URL || 'http://127.0.0.1:6333';
 
 /** Points in a Qdrant collection for one document (exact count on the doc_id payload index). null when unreachable.
- *  `phrases` also counts its phase-0 hot copy (QDRANT_HOT_URL; storage plan §6.6): absent there = 0, unreachable = null. */
+ *  `phrases` (and `hype` when QDRANT_HOT_HYPE is set) also count their hot copy in the RAM write tier (QDRANT_HOT_URL; Chad
+ *  11-10): absent there = 0, unreachable = null. A point mid-fold (copied to main, not yet deleted from hot) counts twice for
+ *  minutes — the fold deletes it right after verifying. */
 export async function qdrantCount(collection, docId, { fetchImpl = fetch } = {}) {
   const one = async (base, coll) => {
     try {
@@ -46,7 +48,8 @@ export async function qdrantCount(collection, docId, { fetchImpl = fetch } = {})
     } catch { return null; }
   };
   const main = await one(QD(), collection);
-  const hot = collection === 'phrases' && process.env.QDRANT_HOT_URL ? await one(process.env.QDRANT_HOT_URL, process.env.QDRANT_HOT_PHRASES || 'phrases_hot') : 0;
+  const hotColl = collection === 'phrases' ? (process.env.QDRANT_HOT_PHRASES || 'phrases_hot') : collection === 'hype' ? process.env.QDRANT_HOT_HYPE : null;
+  const hot = hotColl && process.env.QDRANT_HOT_URL ? await one(process.env.QDRANT_HOT_URL, hotColl) : 0;
   return main == null || hot == null ? null : main + hot;
 }
 

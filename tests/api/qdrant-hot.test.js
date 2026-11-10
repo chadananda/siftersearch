@@ -1,6 +1,7 @@
-// Phase 0 hot layer (storage plan §6.6, Chad 10-21): new phrase points go to `phrases_hot` on the RAM-disk Qdrant; search
-// merges main + hot and degrades to main; writes to `phrases` are mirrored; coverage counts both; after a qdrant-hot loss the
-// indexer re-sends exactly the lost points from its stored vectors (crash test against a fake Qdrant).
+// RAM write tier (storage plan §6.6; permanent since Chad 11-10): new phrase points go to `phrases_hot` and HyPE points to
+// `hype_hot` on the RAM-disk Qdrant; search merges main + hot and degrades to main; writes are mirrored; coverage counts both;
+// after a qdrant-hot loss the indexer re-sends exactly the lost points from its stored vectors, and marks points the fold
+// already moved to main as main (crash test against a fake Qdrant).
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { createServer } from 'http';
 import { spawn } from 'child_process';
@@ -17,13 +18,15 @@ const ROOT = join(import.meta.dirname, '..', '..');
 const MAIN = 'http://main.test', HOT = 'http://hot.test';
 const json = (result, status = 200) => ({ ok: status < 400, status, json: async () => ({ result }), text: async () => JSON.stringify({ result }) });
 
-beforeEach(() => { process.env.QDRANT_URL = MAIN; process.env.QDRANT_HOT_URL = HOT; delete process.env.QDRANT_HOT_PHRASES; });
-afterEach(() => { vi.unstubAllGlobals(); delete process.env.QDRANT_HOT_URL; delete process.env.QDRANT_URL; });
+beforeEach(() => { process.env.QDRANT_URL = MAIN; process.env.QDRANT_HOT_URL = HOT; delete process.env.QDRANT_HOT_PHRASES; process.env.QDRANT_HOT_HYPE = 'hype_hot'; });
+afterEach(() => { vi.unstubAllGlobals(); delete process.env.QDRANT_HOT_URL; delete process.env.QDRANT_URL; delete process.env.QDRANT_HOT_HYPE; });
 
 describe('hot layer: pure merge', () => {
-  it('maps only phrases paths to the hot collection', () => {
+  it('maps phrases and hype paths to their hot collections, nothing else', () => {
     expect(hotPath('/collections/phrases/points/query')).toBe('/collections/phrases_hot/points/query');
-    expect(hotPath('/collections/hype/points/query')).toBeNull();
+    expect(hotPath('/collections/hype/points/query')).toBe('/collections/hype_hot/points/query');
+    delete process.env.QDRANT_HOT_HYPE;
+    expect(hotPath('/collections/hype/points/query')).toBeNull();   // hype not layered unless QDRANT_HOT_HYPE names it
     expect(hotPath('/collections/phrases_kw/points')).toBeNull();
   });
   it('merges points by score, one per id, hot copy wins', () => {
@@ -68,26 +71,36 @@ describe('hot layer: search and writes', () => {
     expect(seen).toContain(`${HOT}/collections/phrases_hot/points/delete?wait=false`);
     seen.length = 0;
     await qdrantRequest('/collections/hype/points/delete?wait=false', { filter: {} });
-    expect(seen).toEqual([`${MAIN}/collections/hype/points/delete?wait=false`]);
+    expect(seen).toEqual([`${MAIN}/collections/hype/points/delete?wait=false`, `${HOT}/collections/hype_hot/points/delete?wait=false`]);
+    seen.length = 0;
+    await qdrantRequest('/collections/concepts/points/delete?wait=false', { filter: {} });
+    expect(seen).toEqual([`${MAIN}/collections/concepts/points/delete?wait=false`]);
   });
-  it('coverage counts phrases in main + hot; hot absent = 0, hot unreachable = unknown', async () => {
+  it('coverage counts phrases and hype in main + hot; hot absent = 0, hot unreachable = unknown', async () => {
     const f = (hot) => async (url) => (url.startsWith(HOT) ? hot() : json({ count: 10 }));
     expect(await qdrantCount('phrases', 5, { fetchImpl: f(() => json({ count: 3 })) })).toBe(13);
     expect(await qdrantCount('phrases', 5, { fetchImpl: f(() => json(null, 404)) })).toBe(10);
     expect(await qdrantCount('phrases', 5, { fetchImpl: f(() => { throw new Error('down'); }) })).toBeNull();
+    expect(await qdrantCount('hype', 5, { fetchImpl: f(() => json({ count: 2 })) })).toBe(12);
+    delete process.env.QDRANT_HOT_HYPE;
     expect(await qdrantCount('hype', 5, { fetchImpl: f(() => { throw new Error('never asked'); }) })).toBe(10);
   });
 });
 
 describe('hot layer: indexer jobs', () => {
-  it('phrase builds go to hot; hype/concepts stay on main; reconcile is spend-free', () => {
+  it('phrase and hype builds go to hot; concepts stay on main; reconcile is spend-free', () => {
     expect(indexerArgs({ docs: [1], maxUsd: 1 })).toEqual(expect.arrayContaining(['--hot-url', HOT, '--hot-collection', 'phrases_hot']));
-    expect(indexerArgs({ docs: [1], maxUsd: 1, field: 'hype' })).not.toContain('--hot-url');
+    expect(indexerArgs({ docs: [1], maxUsd: 1, field: 'hype' })).toEqual(expect.arrayContaining(['--hot-url', HOT, '--hot-collection', 'hype_hot']));
+    expect(hotArgs({ QDRANT_HOT_URL: HOT }, 'hype')).toEqual([]);   // hype stays on main unless QDRANT_HOT_HYPE is set
+    expect(hotArgs({ QDRANT_HOT_URL: HOT, QDRANT_HOT_HYPE: 'hype_hot' }, 'concepts')).toEqual([]);
     expect(hotArgs({})).toEqual([]);
     expect(reconcileArgs({ QDRANT_HOT_URL: HOT })).toEqual(['scripts/phrase-index/indexer.mjs', '--qdrant', '--reconcile-hot', '--hot-url', HOT, '--hot-collection', 'phrases_hot']);
+    expect(reconcileArgs({ QDRANT_HOT_URL: HOT, QDRANT_HOT_HYPE: 'hype_hot' }, 'hype')).toEqual(expect.arrayContaining(['--field', 'hype', '--reconcile-hot', '--hot-collection', 'hype_hot']));
     expect(() => reconcileArgs({})).toThrow(/QDRANT_HOT_URL/);
-    expect(INDEX_REPORTS['phrase-hot-reconcile']).toBeTypeOf('function');
-    expect(INDEX_LANES.index).toEqual(expect.arrayContaining(['phrase-index', 'phrase-hot-reconcile']));
+    expect(() => reconcileArgs({ QDRANT_HOT_URL: HOT }, 'hype')).toThrow(/no hot collection/);
+    for (const r of ['phrase-hot-reconcile', 'hype-hot-reconcile', 'phrase-hot-fold', 'hype-hot-fold']) expect(INDEX_REPORTS[r]).toBeTypeOf('function');
+    expect(INDEX_LANES.index).toEqual(expect.arrayContaining(['phrase-index', 'phrase-hot-reconcile', 'phrase-hot-fold']));
+    expect(INDEX_LANES.index2).toEqual(expect.arrayContaining(['hype-hot-reconcile', 'hype-hot-fold']));
   });
 });
 
@@ -102,7 +115,7 @@ function fakeQdrant() {
       calls.push(`${req.method} ${req.url}`);
       const send = (result) => { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ result, status: 'ok' })); };
       const m = req.url.match(/^\/collections\/([^/?]+)(\/[^?]*)?/);
-      const store = m?.[1] === 'phrases_hot' ? hot : main;
+      const store = /_hot$/.test(m?.[1] || '') ? hot : main;
       if (m?.[2] === '/exists') return send({ exists: true });
       if (req.method === 'PUT' && m?.[2] === '/points') { for (const p of b.points) store.set(p.id, p); return send({ status: 'completed' }); }
       if (req.method === 'POST' && m?.[2] === '/points') return send(b.ids.filter((id) => store.has(id)).map((id) => ({ id })));
@@ -124,6 +137,10 @@ function seedStore(dir, n) {
     db.prepare('INSERT INTO units (point_id, paragraph_id, doc_id, k, start, "end", key) VALUES (?, ?, ?, 0, 0, 1, ?)').run(1000 * (i + 1), i + 1, 1, `k${i}`);
   }
   db.close();
+  // a docs table for the indexer's withheld-docs read (--db): hermetic, no data/sifter.db needed
+  const docs = new Database(join(dir, 'sifter.db'));
+  docs.exec('CREATE TABLE docs (id INTEGER PRIMARY KEY, duplicate_of INTEGER, source_site TEXT, title TEXT, filename TEXT, file_path TEXT)');
+  docs.close();
   return f;
 }
 const run = (args) => new Promise((resolve) => {
@@ -133,13 +150,13 @@ const run = (args) => new Promise((resolve) => {
 });
 
 describe('hot layer: crash recovery (indexer against a fake Qdrant)', () => {
-  it('sends new points to hot only (marked 2); after a hot loss, reconcile re-sends exactly the lost ones', async () => {
+  it('sends new points to hot only (marked 2); after a hot loss, reconcile re-sends exactly the lost ones and re-marks folded ones', async () => {
     const q = await fakeQdrant();
     try {
       const dir = mkdtempSync(join(tmpdir(), 'hot-'));
       const store = seedStore(dir, 5);
       // no RAM disk here: an absent --hot-path disables the capacity guard (tested separately below)
-      const base = ['--store', store, '--ledger', join(dir, 'spend.db'), '--qdrant-url', q.url, '--hot-url', q.url, '--hot-path', join(dir, 'no-ram-disk')];
+      const base = ['--store', store, '--db', join(dir, 'sifter.db'), '--ledger', join(dir, 'spend.db'), '--qdrant-url', q.url, '--hot-url', q.url, '--hot-path', join(dir, 'no-ram-disk')];
       const a = await run(['--qdrant', ...base]);
       expect(a.code).toBe(0);
       expect(q.hot.size).toBe(5);
@@ -147,13 +164,17 @@ describe('hot layer: crash recovery (indexer against a fake Qdrant)', () => {
       const db = new Database(store, { readonly: true });
       expect(db.prepare('SELECT COUNT(*) n FROM units WHERE upserted = 2').get().n).toBe(5);
       db.close();
-      // crash: the RAM disk loses the two points written after its last snapshot
+      // a fold moved 1000 to main (and deleted it from hot); then a crash loses the two points written after the last snapshot
+      q.main.set(1000, q.hot.get(1000)); q.hot.delete(1000);
       q.hot.delete(4000); q.hot.delete(5000);
       const b = await run(['--qdrant', '--reconcile-hot', ...base]);
       expect(b.code).toBe(0);
-      expect(b.lines.find((l) => l.phase === 'reconcile-hot')).toMatchObject({ checked: 5, missing: 2 });
+      expect(b.lines.find((l) => l.phase === 'reconcile-hot')).toMatchObject({ checked: 5, missing: 2, folded: 1 });
       expect(b.lines.find((l) => l.phase === 'upsert-done')).toMatchObject({ sent: 2 });
-      expect([...q.hot.keys()].sort()).toEqual([1000, 2000, 3000, 4000, 5000]);
+      expect([...q.hot.keys()].sort()).toEqual([2000, 3000, 4000, 5000]);   // the folded point is NOT re-sent to hot
+      const db2 = new Database(store, { readonly: true });
+      expect(db2.prepare('SELECT upserted FROM units WHERE point_id = 1000').get().upserted).toBe(1);
+      db2.close();
     } finally { q.server.close(); }
   }, 60000);
   it('stops cleanly (no upsert) when the RAM disk is nearly full', async () => {
@@ -161,7 +182,7 @@ describe('hot layer: crash recovery (indexer against a fake Qdrant)', () => {
     try {
       const dir = mkdtempSync(join(tmpdir(), 'hot-'));
       const store = seedStore(dir, 2);
-      const r = await run(['--qdrant', '--store', store, '--ledger', join(dir, 'spend.db'), '--qdrant-url', q.url, '--hot-url', q.url, '--hot-path', dir, '--hot-min-free-gb', '1000000']);
+      const r = await run(['--qdrant', '--store', store, '--db', join(dir, 'sifter.db'), '--ledger', join(dir, 'spend.db'), '--qdrant-url', q.url, '--hot-url', q.url, '--hot-path', dir, '--hot-min-free-gb', '1000000']);
       expect(r.lines.find((l) => l.phase === 'stopped')?.reason).toMatch(/hot RAM disk/);
       expect(q.hot.size).toBe(0);
     } finally { q.server.close(); }

@@ -134,6 +134,11 @@ describe('followPass (indexer loop)', () => {
     const tomorrow = await followPass({ env: {}, now: new Date('2026-11-05T01:00:00Z'), dir, deps: { coverage: cov, reports: fakeReports({ latest: stopped }) } });
     expect(tomorrow.hype.queued).toBe(1);
   });
+  it('a stop for a full RAM tier is not a cap: the next pass sends the rest (Chad 11-10)', async () => {
+    const full = { name: 'hype-index', params: { budgetKey: 'follow-hype-2026-11-04' }, result: { last: { phase: 'stopped', reason: 'hot RAM disk full: fold into main before indexing more' } } };
+    const r = await followPass({ env: {}, now: NOW, dir, deps: { coverage: cov, reports: fakeReports({ latest: full }) } });
+    expect(r.hype.capReached).toBeUndefined();
+  });
   it('off when INDEX_FOLLOW_USD_DAY=0', async () => {
     expect(await followPass({ env: { INDEX_FOLLOW_USD_DAY: '0' }, dir, deps: { coverage: cov, reports: fakeReports() } })).toEqual({ off: true });
   });

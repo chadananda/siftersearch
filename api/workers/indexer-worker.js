@@ -88,12 +88,35 @@ async function indexFollowLoop() {
   }
 }
 
-// Phase 0 hot layer (storage plan §6.6): after any restart — of this service, of qdrant-hot, or of tower — re-send whatever
-// phrase points the RAM disk lost since its last snapshot. Cheap when nothing is missing (id lookups); the queue dedupes it.
-if (process.env.QDRANT_HOT_URL) {
-  await (await import('../lib/repos/ops-report-repo.js')).enqueue('phrase-hot-reconcile', null, 'indexer-start')
-    .catch((err) => logger.warn({ err: err.message }, 'phrase-hot-reconcile: enqueue failed'));
+// RAM write tier (Chad 11-10): after any restart — of this service, of qdrant-hot, or of tower — re-send whatever points the
+// RAM disk lost since its last snapshot (units the fold moved to main are re-marked, not re-sent). Cheap when nothing is
+// missing (id lookups); the queue dedupes it. qdrant-hot restarting alone is caught by the fold loop (its startup time).
+const queueReconciles = async (by) => {
+  const { enqueue } = await import('../lib/repos/ops-report-repo.js');
+  await enqueue('phrase-hot-reconcile', null, by).catch((err) => logger.warn({ err: err.message }, 'phrase-hot-reconcile: enqueue failed'));
+  if (process.env.QDRANT_HOT_HYPE) await enqueue('hype-hot-reconcile', null, by).catch((err) => logger.warn({ err: err.message }, 'hype-hot-reconcile: enqueue failed'));
+};
+if (process.env.QDRANT_HOT_URL) await queueReconciles('indexer-start');
+
+// The fold loop: every 10 min, the RAM tier's fill against the capacity the box has NOW (free tmpfs, MemAvailable) →
+// phrase-hot-fold / hype-hot-fold (ops/qdrant-hot-fold.js hotFoldPass). Quiet hours preferred; over 2/3 folds at once.
+async function hotFoldLoop() {
+  if (!process.env.QDRANT_HOT_URL) return;
+  const { hotFoldPass } = await import('../lib/ops/qdrant-hot-fold.js');
+  let startup = null;
+  await nap(180_000);
+  while (!isDraining()) {
+    const r = await hotFoldPass().catch((err) => ({ error: err.message }));
+    if (r?.error) logger.warn({ err: r.error }, 'hot-fold loop: pass failed');
+    else if (r?.queued?.length) logActivity('index', `RAM tier ${r.data_gb}/${r.capacity_gb} GB (${Math.round(r.fill * 100)}%) → ${r.queued.join(' + ')} queued (${r.verdict})`);
+    // qdrant-hot restarted on its own (restored from a snapshot) → reconcile what it lost
+    const s = await fetch(`${process.env.QDRANT_HOT_URL}/telemetry`, { headers: { 'api-key': process.env.QDRANT_KEY || '' }, signal: AbortSignal.timeout(5000) })
+      .then((x) => (x.ok ? x.json() : null)).then((j) => j?.result?.app?.startup ?? null).catch(() => null);
+    if (s && startup && s !== startup) { logActivity('index', 'qdrant-hot restarted → hot reconcile queued'); await queueReconciles('qdrant-hot-restart'); }
+    if (s) startup = s;
+    await nap(600_000);
+  }
 }
 
 await runService({ name: process.env.name || 'siftersearch-indexer', registry: INDEX_REPORTS, lanes: INDEX_LANES, laneWorkers: LANE_WORKERS,
-  loops: [rollingCoverage, keywordLoop, indexFollowLoop] });
+  loops: [rollingCoverage, keywordLoop, indexFollowLoop, hotFoldLoop] });

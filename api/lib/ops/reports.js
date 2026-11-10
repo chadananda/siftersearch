@@ -76,8 +76,11 @@ import { strategyGaps } from '../assistant/admin-threads.js';
 import { reingestCarryJob, carryVerifyReport, carryRepairJob } from './carry-job.js';
 import { translationAudit, originalAudit, workFamilyCoverage } from '../repos/alignment-repo.js';
 import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
+import { driveWearReport } from './drive-wear.js';
 
 export const REPORTS = {
+  /** SMART writes/day per NVMe/SSD vs the previous sample + percentage_used; queues the weekly-email item. params: { store } */
+  'drive-wear': (params) => driveWearReport(params),
   'media-biography-audit': mediaBiographyAudit,
   'media-worker-audit': mediaWorkerAudit,
   'media-greetings': mediaGreetingsJob,
@@ -437,7 +440,7 @@ export const LANES = { hype: ['hype-program'],   // days of batch waiting: its o
   books: ['book-hunt'],   // an hour of polite catalogue lookups must not hold up intake or the quick lane
   authorship: ['paragraph-authors'],
   linking: ['source-links-build'],   // hours of hunting must not hold up the quick lane or intake   // hours of classification must not hold up intake or the quick lane   // hours of polite searching and downloading must not hold up intake or OCR
-  quick: ['pipeline-snapshot', 'doc-overlap', 'spend', 'spend-by-model', 'languages', 'ctai-audit', 'work-families', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'write-stats', 'triggers', 'table-schema', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
+  quick: ['drive-wear', 'pipeline-snapshot', 'doc-overlap', 'spend', 'spend-by-model', 'languages', 'ctai-audit', 'work-families', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'write-stats', 'triggers', 'table-schema', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
 export const HEAVY = new Set(LANES.heavy);
 // the media pipeline runs in its OWN service (siftersearch-media, OPS_ONLY): hours of transcription never share a drain with these lanes
 export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade', 'media-short', 'media-shorts-moments', 'media-portraits-extend', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-relink', 'media-safe-listening', 'media-speaker-merge', 'media-talk-identities', 'media-remaster', 'media-remaster-revert', 'media-cloud-remaster', 'media-cloud-order', 'media-quiet-repair', 'media-light-backfill', 'media-preview', 'media-remaster-quality', 'media-remaster-review-pack', 'media-remaster-decide', 'media-remaster-rejudge', 'media-trim-audit'];

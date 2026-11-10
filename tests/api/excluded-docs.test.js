@@ -43,9 +43,9 @@ describe('computeExclusion', () => {
 });
 
 describe('docPointCounts', () => {
-  afterEach(() => { vi.unstubAllGlobals(); delete process.env.QDRANT_HOT_URL; });
+  afterEach(() => { vi.unstubAllGlobals(); delete process.env.QDRANT_HOT_URL; delete process.env.QDRANT_HOT_HYPE; });
   it('facets doc_id in every searched collection + hot; a missing hot collection is empty', async () => {
-    process.env.QDRANT_HOT_URL = 'http://hot:6335';
+    process.env.QDRANT_HOT_URL = 'http://hot:6335'; process.env.QDRANT_HOT_HYPE = 'hype_hot';
     const fetch = vi.fn(async (url, init) => {
       if (url.startsWith('http://hot')) return { ok: false, status: 404, text: async () => 'nf' };
       const body = JSON.parse(init.body);
@@ -55,9 +55,10 @@ describe('docPointCounts', () => {
     vi.stubGlobal('fetch', fetch);
     const { docPointCounts } = await import('../../api/lib/search/qdrant-layers.js');
     const r = await docPointCounts([7, 9, 7]);
-    expect(Object.keys(r)).toEqual(['phrases', 'hype', 'concepts', 'paragraphs_kw', 'phrases_hot']);
+    expect(Object.keys(r)).toEqual(['phrases', 'hype', 'concepts', 'paragraphs_kw', 'phrases_hot', 'hype_hot']);
     expect(r.phrases.get(7)).toBe(12);
     expect(r.phrases_hot.size).toBe(0);
+    expect(r.hype_hot.size).toBe(0);
     expect(fetch.mock.calls.map(([u]) => u.replace(/^http:\/\/[^/]+/, ''))).toContain('/collections/concepts/facet');
   });
 });

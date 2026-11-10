@@ -13,13 +13,26 @@ import { assertSpendCap } from '../spend-caps.js';
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 const QD = () => process.env.QDRANT_URL || 'http://127.0.0.1:6333';
-// PHASE 0 HOT LAYER (planning/storage-wear-ram-plan.md §6.6, Chad 10-21): until the MP44 arrives, NEW phrase points go to
-// `phrases_hot` in a second Qdrant (qdrant-hot, storage on the /srv/qram RAM disk) while `phrases` on /fast stays frozen.
-// Search reads both and merges; writes to `phrases` (deletes, payload stamps) are mirrored to the hot copy. Unset = off.
+// RAM WRITE TIER (Chad 11-10: "It was meant for longevity and speed. We have ECC RAM and lots of it plus UPS-backed shutdown"):
+// NEW points go to a hot copy in a second Qdrant (qdrant-hot, storage on the /srv/qram RAM disk) — `phrases_hot` and, when
+// QDRANT_HOT_HYPE is set, `hype_hot` — and are folded into main in bulk by qdrant-hot-fold (api/lib/ops/qdrant-hot-fold.js),
+// so the MP44 takes one large sequential write instead of endless small-segment merges. Search reads both and merges;
+// writes to a layered collection (deletes, payload stamps) are mirrored to its hot copy. QDRANT_HOT_URL unset = off.
 export const hotUrl = () => process.env.QDRANT_HOT_URL || '';
 export const HOT_PHRASES = () => process.env.QDRANT_HOT_PHRASES || 'phrases_hot';
-/** A `/collections/phrases/…` path → the same path on the hot collection; anything else → null. Pure. */
-export const hotPath = (path) => (/^\/collections\/phrases\//.test(path) ? path.replace(/^\/collections\/phrases\//, `/collections/${HOT_PHRASES()}/`) : null);
+export const HOT_HYPE = () => process.env.QDRANT_HOT_HYPE || '';
+/** Main collections that may have a hot copy. */
+export const LAYERED = Object.freeze(['phrases', 'hype']);
+/** A main collection → its hot collection name, or null (not layered / hype not enabled). Pure over env. */
+export const hotCollection = (c) => (c === 'phrases' ? HOT_PHRASES() : c === 'hype' ? (HOT_HYPE() || null) : null);
+/** [[main, hot]] for every enabled hot copy ([] when the hot tier is off). */
+export const hotCollections = () => (hotUrl() ? LAYERED.map((c) => [c, hotCollection(c)]).filter(([, h]) => h) : []);
+/** A `/collections/<layered>/…` path → the same path on its hot collection; anything else → null. Pure. */
+export const hotPath = (path) => {
+  const m = /^\/collections\/(phrases|hype)\//.exec(path);
+  const h = m && hotCollection(m[1]);
+  return h ? path.replace(/^\/collections\/(phrases|hype)\//, `/collections/${h}/`) : null;
+};
 /** Main + hot points as one list: best score first, one per point id (the hot copy is newer, so it wins a tie). Pure. */
 export function mergePoints(main = [], hot = []) {
   const byId = new Map();
@@ -34,7 +47,7 @@ export function mergeGroups(main = [], hot = [], limit = Infinity) {
   return [...best.values()].sort((a, b) => b.hits[0].score - a.hits[0].score).slice(0, limit);
 }
 let hotWarnedAt = 0;
-const hotFailed = (err) => { if (Date.now() - hotWarnedAt > 300000) { hotWarnedAt = Date.now(); console.warn(`qdrant-hot unavailable — phrases from main only: ${err.message}`); } };
+const hotFailed = (err) => { if (Date.now() - hotWarnedAt > 300000) { hotWarnedAt = Date.now(); console.warn(`qdrant-hot unavailable — layered collections from main only: ${err.message}`); } };
 const MODEL = 'gemini-embedding-2', DIMS = 3072;
 
 // Query vectors, LRU per process (11-03): the same text always embeds to the same vector, so hours of TTL lose nothing;
@@ -214,7 +227,7 @@ async function qdrant(path, body, timeoutMs = 2500, base = QD()) {
   return j.result;
 }
 
-/** The collections passage search queries (main Qdrant); `phrases` also has its hot copy (phase 0). */
+/** The collections passage search queries (main Qdrant); `phrases` (and `hype` when enabled) also have a hot copy. */
 export const SEARCHED_COLLECTIONS = Object.freeze(['phrases', 'hype', 'concepts', 'paragraphs_kw']);
 
 /** Points per doc for `docIds` in every searched collection (+ the hot phrases copy) — Qdrant facet on the indexed doc_id,
@@ -233,13 +246,14 @@ export async function docPointCounts(docIds, { timeoutMs = 30000, chunk = 1000 }
   };
   const out = {};
   for (const c of SEARCHED_COLLECTIONS) out[c] = await facet(c, QD());
-  if (hotUrl()) {
-    try { out[HOT_PHRASES()] = await facet(HOT_PHRASES(), hotUrl()); } catch (err) { if (!/ 404 /.test(err.message)) throw err; out[HOT_PHRASES()] = new Map(); }
+  for (const [, h] of hotCollections()) {
+    try { out[h] = await facet(h, hotUrl()); } catch (err) { if (!/ 404 /.test(err.message)) throw err; out[h] = new Map(); }
   }
   return out;
 }
 
-/** Optimizer threads PATCH body for a searched collection — validated, pure. threads null = Qdrant's auto (all cores). */
+/** Optimizer threads PATCH body for a searched collection — validated, pure. threads null = Qdrant's auto (all cores).
+ *  (0 = paused is deliberately refused here: only the hot fold pauses, crash-safe, in api/lib/ops/qdrant-hot-fold.js.) */
 export function optimizerThreadsPatch(collection, threads) {
   if (!SEARCHED_COLLECTIONS.includes(collection)) throw new Error(`not a searched collection: ${collection}`);
   if (threads !== null && !(Number.isInteger(threads) && threads >= 1 && threads <= 64)) throw new Error('threads must be 1-64 or null (auto)');
@@ -276,21 +290,21 @@ export async function qdrantHealth(timeoutMs = 3000) {
       const j = r.ok ? (await r.json()).result : null;
       out[c] = j ? { status: j.status, points: j.points_count, unindexed: Math.max(0, (j.points_count || 0) - (j.indexed_vectors_count || 0)) } : { status: `http ${r.status}` };
     }
-    // phase 0 hot layer: informational — search degrades to main without it, so it never fails health
+    // the RAM write tier: informational — search degrades to main without it, so it never fails health
     let hot;
-    if (hotUrl()) {
-      hot = await fetch(`${hotUrl()}/collections/${HOT_PHRASES()}`, { headers: qdrantHeaders(false), signal: AbortSignal.timeout(timeoutMs) })
+    for (const [, h] of hotCollections()) {
+      (hot ||= {})[h] = await fetch(`${hotUrl()}/collections/${h}`, { headers: qdrantHeaders(false), signal: AbortSignal.timeout(timeoutMs) })
         .then(async (r) => (r.ok ? (({ status, points_count: points, indexed_vectors_count: ix }) => ({ status, points, unindexed: Math.max(0, (points || 0) - (ix || 0)) }))((await r.json()).result) : { status: `http ${r.status}` }))
         .catch((err) => ({ status: 'unreachable', error: err.message }));
     }
-    return { status: Object.values(out).every((x) => x.status === 'green' || x.status === 'yellow') ? 'ok' : 'error', collections: out, ...(hot ? { hot: { [HOT_PHRASES()]: hot } } : {}) };
+    return { status: Object.values(out).every((x) => x.status === 'green' || x.status === 'yellow') ? 'ok' : 'error', collections: out, ...(hot ? { hot } : {}) };
   } catch (err) {
     return { status: 'error', error: err.message };
   }
 }
 
 /** Raw request for the index writer (deletes by filter from the outbox) — the only Qdrant WRITE path at runtime. A write to
- *  `phrases` is mirrored to the hot copy (phase 0) so deletes and payload stamps reach the new points too; a hot failure is
+ *  a layered collection is mirrored to its hot copy so deletes and payload stamps reach the new points too; a hot failure is
  *  logged, never fails the main write (a missing hot collection is a 404 — nothing there to change). */
 export async function qdrantRequest(path, body, timeoutMs = 15000) {
   const hp = hotUrl() ? hotPath(path) : null;
@@ -300,9 +314,9 @@ export async function qdrantRequest(path, body, timeoutMs = 15000) {
   return main.value;
 }
 
-/** A `phrases` query against main and (phase 0) hot, merged. Main failing fails the layer as before; hot failing or slow
- *  degrades to main only. */
-async function queryPhrasesCollection(path, body, timeoutMs, { groups = false, limit } = {}) {
+/** A query on a layered collection (phrases, hype) against main and its hot copy, merged. Main failing fails the layer as
+ *  before; hot failing or slow degrades to main only. */
+async function queryLayered(path, body, timeoutMs, { groups = false, limit } = {}) {
   const hp = hotUrl() ? hotPath(path) : null;
   const [main, hot] = await Promise.allSettled([qdrant(path, body, timeoutMs), hp ? qdrant(hp, body, timeoutMs, hotUrl()) : null]);
   if (main.status === 'rejected') throw main.reason;
@@ -344,10 +358,10 @@ export async function searchPhrases(query, { limit = 30, filters, timeoutMs, par
   const vector = await geminiQueryVector(query);
   const payload = ['paragraph_id', 'doc_id', 'start', 'end', ...RANK_PAYLOAD];
   const filter = toQdrantFilter(filters);
-  const plain = (n) => queryPhrasesCollection('/collections/phrases/points/query', {
+  const plain = (n) => queryLayered('/collections/phrases/points/query', {
     query: vector, using: 'literal', limit: n, with_payload: payload, params: searchParams(params), filter,
   }, timeoutMs);
-  const best = await bestPerParagraphQuery(plain, () => queryPhrasesCollection('/collections/phrases/points/query/groups', {
+  const best = await bestPerParagraphQuery(plain, () => queryLayered('/collections/phrases/points/query/groups', {
     query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: payload, params: searchParams(params), filter,
   }, timeoutMs, { groups: true, limit }), limit);
   return { hits: best.map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, span: { start: p.payload.start, end: p.payload.end }, ...rankFields(p.payload) })) };
@@ -357,7 +371,7 @@ export async function searchPhrases(query, { limit = 30, filters, timeoutMs, par
  *  what SourceHunt highlights in an Arabic/Persian original. */
 export async function searchPhraseSpans(query, paragraphId, { limit = 8, timeoutMs } = {}) {
   const vector = await geminiQueryVector(query);
-  const res = await queryPhrasesCollection('/collections/phrases/points/query', {
+  const res = await queryLayered('/collections/phrases/points/query', {
     query: vector, using: 'literal', limit, with_payload: ['start', 'end'], params: searchParams(SEARCH_PARAMS.phrase),
     filter: { must: [{ key: 'paragraph_id', match: { value: Number(paragraphId) } }] },
   }, timeoutMs);
@@ -371,8 +385,8 @@ export async function searchPhraseSpans(query, paragraphId, { limit = 8, timeout
 export async function searchHypeQdrant(query, { limit = 30, filters, timeoutMs, params = SEARCH_PARAMS.hype } = {}) {
   const vector = await geminiQueryVector(query);
   const body = { query: vector, using: 'literal', with_payload: ['paragraph_id', 'doc_id', 'k', ...RANK_PAYLOAD], params: searchParams(params), filter: toQdrantFilter(filters) };
-  const best = await bestPerParagraphQuery((n) => qdrant('/collections/hype/points/query', { ...body, limit: n }, timeoutMs),
-    () => qdrant('/collections/hype/points/query/groups', { ...body, group_by: 'paragraph_id', group_size: 1, limit }, timeoutMs), limit);
+  const best = await bestPerParagraphQuery((n) => queryLayered('/collections/hype/points/query', { ...body, limit: n }, timeoutMs),
+    () => queryLayered('/collections/hype/points/query/groups', { ...body, group_by: 'paragraph_id', group_size: 1, limit }, timeoutMs, { groups: true, limit }), limit);
   return { hits: best.map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, thesis: p.payload.k === 999, ...rankFields(p.payload) })) };
 }
 

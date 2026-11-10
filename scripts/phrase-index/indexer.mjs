@@ -34,7 +34,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { unitsOf, unitChange, vecKey, packF16, unpackF16, arabicShare, paragraphLang, estTokens } from '../../api/lib/phrase-vectors.js';
 import { faShare } from '../../api/lib/arabic-script.js';
-import { dirBytes, hotVerdict } from './hot-space.mjs';
+import { dirBytes, hotVerdict, parseMemAvailable } from './hot-space.mjs';
 import { boilerplateTexts, keepSiteParagraph } from '../../api/lib/site-boilerplate.js';
 import { paragraphAuthor } from '../../api/lib/authorship/effective.js';
 import { doctrinalTier } from '../../api/lib/authority.js';
@@ -302,24 +302,32 @@ const hotUsed = () => { try { const f = statfsSync(HOT_PATH); return (f.blocks -
 /** Room to keep free: at least --hot-min-free-gb, and at least what is stored — a snapshot's temp files live on the RAM
  *  disk too (Qdrant's snapshot restore cannot cross filesystems), so the data must never fill more than half of it. */
 const hotNeedFree = (used, minFree) => Math.max(minFree, used);
+/** The box's MemAvailable (tmpfs pages are RAM; null off Linux). */
+const memAvail = () => { try { return parseMemAvailable(readFileSync('/proc/meminfo', 'utf8')); } catch { return null; } };
 
-/** After a qdrant-hot loss: units marked as sent to hot (upserted = 2) but absent there go back to 0, so the next upsert
- *  re-sends them from the stored vectors (no Gemini spend). */
+/** After a qdrant-hot loss: units marked as sent to hot (upserted = 2) but absent there either were FOLDED into main
+ *  (qdrant-hot-fold deletes them from hot after verifying) — re-marked 1 — or were lost with the RAM disk (crash between
+ *  flushes) — back to 0, so the next upsert re-sends them from the stored vectors (no Gemini spend). */
 async function reconcileHot() {
   const page = store.prepare('SELECT point_id FROM units WHERE upserted = 2 AND point_id > ? ORDER BY point_id LIMIT 1000');
-  const reset = store.prepare('UPDATE units SET upserted = 0 WHERE point_id = ?');
-  let after = -1, checked = 0, missing = 0;
+  const setMark = store.prepare('UPDATE units SET upserted = ? WHERE point_id = ?');
+  let after = -1, checked = 0, missing = 0, folded = 0;
+  const ids = async (url, coll, list) => new Set(((await qd('POST', `/collections/${coll}/points`, { ids: list, with_payload: false, with_vector: false }, url)).result || []).map((p) => Number(p.id)));
   for (;;) {
     const rows = page.all(after); if (!rows.length) break;
     after = rows[rows.length - 1].point_id;
-    const got = await qd('POST', `/collections/${HOT_COLL}/points`, { ids: rows.map((r) => r.point_id), with_payload: false, with_vector: false }, HOT);
-    const have = new Set((got.result || []).map((p) => Number(p.id)));
-    const miss = rows.filter((r) => !have.has(Number(r.point_id)));
-    if (miss.length) store.transaction(() => miss.forEach((r) => reset.run(r.point_id)))();
-    checked += rows.length; missing += miss.length;
+    const inHot = await ids(HOT, HOT_COLL, rows.map((r) => r.point_id));
+    const away = rows.filter((r) => !inHot.has(Number(r.point_id)));
+    if (away.length) {
+      const inMain = await ids(QD, COLL, away.map((r) => r.point_id));
+      const fold = away.filter((r) => inMain.has(Number(r.point_id))), lost = away.filter((r) => !inMain.has(Number(r.point_id)));
+      store.transaction(() => { fold.forEach((r) => setMark.run(1, r.point_id)); lost.forEach((r) => setMark.run(0, r.point_id)); })();
+      folded += fold.length; missing += lost.length;
+    }
+    checked += rows.length;
   }
-  log({ phase: 'reconcile-hot', checked, missing });
-  return { checked, missing };
+  log({ phase: 'reconcile-hot', checked, missing, folded });
+  return { checked, missing, folded };
 }
 
 const page = store.prepare(`SELECT u.*, v.v FROM units u JOIN vec v ON v.key = u.key WHERE u.upserted = 0 LIMIT 256`);
@@ -350,8 +358,10 @@ async function upsert() {
         note({ phase: 'waiting', reason: 'qdrant-hot snapshot in progress' });
         await new Promise((r) => setTimeout(r, 15_000));
       }
-      const free = hotFree(), need = hotNeedFree(hotUsed(), HOT_MIN_FREE);
-      if (free != null && free < need) { stopped = `hot RAM disk ${HOT_PATH} has ${(free / 1e9).toFixed(1)} GB free (< ${(need / 1e9).toFixed(1)} GB: min ${HOT_MIN_FREE / 1e9} GB and room for a snapshot): fold into main or enlarge before indexing more`; break; }
+      const free = hotFree(), need = hotNeedFree(hotUsed(), HOT_MIN_FREE), mem = memAvail();
+      // the ops job reads this reason (starts 'hot RAM disk'): it queues a fold and continues the run after — never a stall
+      if (free != null && free < need) { stopped = `hot RAM disk ${HOT_PATH} has ${(free / 1e9).toFixed(1)} GB free (< ${(need / 1e9).toFixed(1)} GB: min ${HOT_MIN_FREE / 1e9} GB and room for a snapshot): fold into main before indexing more`; break; }
+      if (free != null && mem != null && mem < HOT_MIN_FREE) { stopped = `hot RAM disk ${HOT_PATH}: the box has ${(mem / 1e9).toFixed(1)} GB MemAvailable (< ${HOT_MIN_FREE / 1e9} GB): fold into main before indexing more`; break; }
     }
     let t1 = Date.now();
     let rows = page.all(); if (!rows.length) break;

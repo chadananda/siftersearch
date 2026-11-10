@@ -70,7 +70,7 @@ const clip = (s, n) => (s.length > n ? `${s.slice(0, n).trimEnd()} …` : s);
 export const SOURCE_LABELS = Object.freeze({
   'system-checks': 'Health warnings during the week', host: 'Host resources (disk and memory warnings)', 'anis-audit': 'Anís answers that need a look',
   grounding: 'Grounding progress', ingest: 'Ingest progress', 'stall-guard': 'Grounding stall guard', segmentation: 'Approvals: Arabic segmentation over the cap',
-  dewey: 'Dewey spend', ups: 'UPS',
+  dewey: 'Dewey spend', ups: 'UPS', 'drive-wear': 'Drive wear (NVMe/SSD writes per day)',
 });
 const ITEMS_PER_SOURCE = 25;
 

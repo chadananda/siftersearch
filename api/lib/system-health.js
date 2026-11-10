@@ -74,7 +74,7 @@ export function parseSmart(dev, json, nvme = false) {
     const duw = Number(json.data_units_written ?? 0);
     return { dev, healthy: Number(json.critical_warning ?? 0) === 0, temp_c: json.temperature != null ? Math.round(Number(json.temperature) - 273) : null,
       life_left_pct: json.percent_used != null ? 100 - Number(json.percent_used) : json.percentage_used != null ? 100 - Number(json.percentage_used) : null,
-      written_tb: +((duw * 512000) / 1e12).toFixed(1), media_errors: Number(json.media_errors ?? 0), power_on_hours: Number(json.power_on_hours ?? 0) };
+      written_tb: +((duw * 512000) / 1e12).toFixed(1), written_bytes: duw * 512000, media_errors: Number(json.media_errors ?? 0), power_on_hours: Number(json.power_on_hours ?? 0) };
   }
   const attrs = Object.fromEntries((json.ata_smart_attributes?.table || []).map((a) => [a.name, a]));
   const raw = (n) => attrs[n]?.raw?.value ?? null;
@@ -82,11 +82,12 @@ export function parseSmart(dev, json, nvme = false) {
   const gib = raw('Lifetime_Writes_GiB'), lbas = raw('Total_LBAs_Written');
   return { dev, healthy: json.smart_status?.passed !== false, temp_c: json.temperature?.current ?? null, life_left_pct: life,
     written_tb: gib != null ? +((gib * 1.073741824) / 1000).toFixed(1) : lbas != null ? +((lbas * 512) / 1e12).toFixed(1) : null,
+    written_bytes: gib != null ? gib * 1073741824 : lbas != null ? lbas * 512 : null,
     reallocated: raw('Reallocated_Sector_Ct'), pending: raw('Current_Pending_Sector'), power_on_hours: json.power_on_time?.hours ?? null };
 }
 
 /** SMART for every known drive (sudo -n: the reports worker has passwordless sudo for these two read-only tools). */
-function drives() {
+export function drives() {
   const out = [];
   for (const dev of Object.keys(DEVICES)) {
     if (DEVICES[dev].kind === 'ram') continue;
