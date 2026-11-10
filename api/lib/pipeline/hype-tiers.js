@@ -10,6 +10,8 @@ import { HYPE_VERSION } from '../rag/enrich/retrieval.js';
 
 export const TIER_ORDER = ['core', 'gray', 'history', 'rest'];
 export const PASSES = ['primary', 'copy'];
+/** Within every tier, Bahá'í docs first, then every other tradition (Chad 11-10: "Bahá'í core first"). Order, never a filter. */
+export const FAITHS = ['bahai', 'other'];
 export const SLICE_TARGET = 1500, SLICE_OVER = 4000;   // retrieval.js: a ¶ over 4000 chars goes out as ~1500-char slices
 const DOC_FIELDS = ['id', 'title', 'author', 'religion', 'collection', 'scope'];
 const isBahai = (d) => /^bah/i.test(String(d.religion || '').trim());
@@ -29,22 +31,24 @@ export const requestsFor = (len) => (len > SLICE_OVER ? Math.ceil(len / SLICE_TA
 /** Next paragraphs to plan for (tier, pass), in doc-id order from `after`. → { docs:[{docId, ids}], paragraphs, cursor, exhausted }
  *  cursor = the last doc id such that every doc up to it has nothing pending in this tier (safe to start the next scan after it:
  *  docs just submitted stay behind it until they settle). skip = docs the planner refused (gated) — they never block the cursor. */
-export async function selectTier({ tier, pass = 'primary', limit = 10000, after = 0, skip = new Set(), version = HYPE_VERSION }, deps = {}) {
+export async function selectTier({ tier, pass = 'primary', faith = null, limit = 10000, after = 0, skip = new Set(), version = HYPE_VERSION }, deps = {}) {
   const { docs: docsOf = listDocs, paras = hypeParagraphs } = deps;
   const out = { docs: [], paragraphs: 0, cursor: after, exhausted: false };
+  // faith 'bahai' | 'other' (Chad 11-10: the Bahá'í core first): docs of the other faith are not this phase's work, so they never hold the cursor
+  const ours = (d) => isCopy(d) === (pass === 'copy') && (!faith || (faith === 'bahai') === isBahai(d));
   let clean = true;
   for (let afterId = after; ;) {
     const page = (await docsOf({ scope: 'live', afterId, fields: DOC_FIELDS, limit: 1000, count: false })).docs || [];
     if (!page.length) { out.exhausted = true; return out; }
     afterId = page[page.length - 1].id;
-    const mine = page.filter((d) => isCopy(d) === (pass === 'copy'));
+    const mine = page.filter(ours);
     const bah = mine.filter(isBahai), rest = mine.filter((d) => !isBahai(d));
     const rows = [...(bah.length ? await paras(bah.map((d) => d.id), version, { authors: true, pendingOnly: true }) : []),
       ...(rest.length ? await paras(rest.map((d) => d.id), version, { pendingOnly: true }) : [])];
     const byDoc = new Map();
     for (const r of rows) (byDoc.get(r.doc_id) || byDoc.set(r.doc_id, []).get(r.doc_id)).push(r);
     for (const d of page) {
-      if (isCopy(d) !== (pass === 'copy')) { if (clean) out.cursor = d.id; continue; }
+      if (!ours(d)) { if (clean) out.cursor = d.id; continue; }
       const ids = skip.has(d.id) ? [] : (byDoc.get(d.id) || []).filter((r) => paraTier(d, r.authors) === tier).map((r) => r.id);
       if (!ids.length) { if (clean) out.cursor = d.id; continue; }
       clean = false;

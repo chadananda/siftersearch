@@ -50,6 +50,14 @@ describe('selectTier', () => {
     const c = await selectTier({ tier: 'core', pass: 'copy', limit: 100 }, l);
     expect(c.docs).toEqual([{ docId: 15, ids: [151] }]);
   });
+  it('faith: the Bahá\'í phase takes only Bahá\'í docs and the other phase the rest; the other faith never holds the cursor', async () => {
+    const l = lib(DOCS, ROWS);
+    const b = await selectTier({ tier: 'core', pass: 'primary', faith: 'bahai', limit: 100 }, l);
+    expect(b.docs).toEqual([{ docId: 10, ids: [101] }, { docId: 13, ids: [132] }]);
+    const o = await selectTier({ tier: 'core', pass: 'primary', faith: 'other', limit: 100 }, l);
+    expect(o.docs).toEqual([{ docId: 11, ids: [111, 112] }]);
+    expect(o.cursor).toBe(10);   // doc 10 is Bahá'í: not this phase's work, so the scan moves past it
+  });
   it('the rest of the mixed book comes in a later tier', async () => {
     const l = lib(DOCS, ROWS);
     expect((await selectTier({ tier: 'rest', limit: 100 }, l)).docs).toEqual([{ docId: 10, ids: [102] }, { docId: 14, ids: [141] }]);

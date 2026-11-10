@@ -634,9 +634,12 @@ export function buildUser(p, facts = null, slice = null, concepts = null) {
   // questions without it means guessing which discussion the passage belongs to.
   const headingBlock = p.heading ? `\n\nUNDER THE HEADING: ${p.heading}` : '';
   const pairBlock = partnerBlock(p);
-  if (!slice) return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${p.voice ? `\n${p.voice}` : ''}${headingBlock}${factBlock}${conceptBlock}\n\nPARAGRAPH [${p.pid}]:\n${p.text}${pairBlock}`;
+  // Questions a linked source (translation partner, quoted source, question bank) already attached are KEPT (commitHype); show them so the writer asks only what they miss.
+  let asked = []; if (String(p.hypModel || '').startsWith('linked:')) { try { const v = JSON.parse(p.hyp || '[]'); asked = (Array.isArray(v) ? v : v?.questions || []).filter((q) => typeof q === 'string').slice(0, 40); } catch { /* legacy text */ } }
+  const askedBlock = asked.length ? `\n\nALREADY ASKED of this passage (kept as they are) — do not write a question that asks the same thing in other words; write only the asks these miss:\n${asked.map((q) => `- ${q}`).join('\n')}` : '';
+  if (!slice) return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${p.voice ? `\n${p.voice}` : ''}${headingBlock}${factBlock}${conceptBlock}${askedBlock}\n\nPARAGRAPH [${p.pid}]:\n${p.text}${pairBlock}`;
   const thesisNote = slice.part === 1
     ? 'Include the "thesis" for the WHOLE paragraph.'
     : 'Set "thesis" to "" — it was written with part 1.';
-  return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${p.voice ? `\n${p.voice}` : ''}${headingBlock}${factBlock}${conceptBlock}\n\nFULL PARAGRAPH [${p.pid}] (for context only):\n${p.text}${pairBlock}\n\nFOCUS (part ${slice.part}/${slice.parts}) — write questions ONLY for what these sentences state (facts covered by other parts are handled there). ${thesisNote}\nFOCUS SENTENCES:\n${slice.focus}`;
+  return `CONTEXT (disambiguation — for resolving references only): ${p.context || '(none)'}${p.voice ? `\n${p.voice}` : ''}${headingBlock}${factBlock}${conceptBlock}${askedBlock}\n\nFULL PARAGRAPH [${p.pid}] (for context only):\n${p.text}${pairBlock}\n\nFOCUS (part ${slice.part}/${slice.parts}) — write questions ONLY for what these sentences state (facts covered by other parts are handled there). ${thesisNote}\nFOCUS SENTENCES:\n${slice.focus}`;
 }

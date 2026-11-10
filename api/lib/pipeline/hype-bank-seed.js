@@ -78,6 +78,7 @@ export async function planPairs({ bankId, religion, questions, perQuestion, judg
 }
 
 /** One check request per paragraph (all its bank questions at once) → [{ custom_id, system, user, maxTokens }] + the index map. */
+export const attachedOf = (json) => { let v; try { v = JSON.parse(json || '[]'); } catch { v = []; } return (Array.isArray(v) ? v : v?.questions || []).filter((q) => typeof q === 'string').slice(0, 40); };   // 40 = hype-seed-repo CEILING
 export function checkRequests(pairs, rows) {
   const byPara = new Map(), text = new Map(rows.map((r) => [Number(r.id), r]));
   for (const p of pairs) { const a = byPara.get(p.paraId) || []; a.push(p); byPara.set(p.paraId, a); }
@@ -85,12 +86,12 @@ export function checkRequests(pairs, rows) {
   for (const [paraId, ps] of byPara) {
     const r = text.get(paraId);
     if (!r?.text) { missing.push(...ps); continue; }
-    reqs.push({ custom_id: `d${ps[0].docId}_p${paraId}`, system: RUBRIC, user: judgeUser(r.text, r.original_text, ps.map((p) => p.question)), maxTokens: 2000 });
+    reqs.push({ custom_id: `d${ps[0].docId}_p${paraId}`, system: RUBRIC, user: judgeUser(r.text, r.original_text, ps.map((p) => p.question), attachedOf(r.hyp_questions)), maxTokens: 2000 });
   }
   return { reqs, byPara, missing };
 }
 
-/** A check batch's results → verdict per pair: answered === true → 'seeded', else 'rejected'. Unparsed ¶ stay unjudged (retried next run). */
+/** A check batch's results → verdict per pair: answered && distinct → 'seeded'; answered but same as an attached/earlier question → 'duplicate'; else 'rejected'. Unparsed ¶ stay unjudged (retried next run). */
 export async function collectVerdicts(c, bid, byPara) {
   const out = [], unparsed = [];
   for await (const x of c.results(bid)) {
@@ -99,7 +100,11 @@ export async function collectVerdicts(c, bid, byPara) {
     const ps = byPara.get(paraId); if (!ps) continue;
     const v = x.ok ? parseJudge(x.text) : null;
     if (!v || v.unparsed != null || !Array.isArray(v.questions)) { unparsed.push(paraId); continue; }
-    ps.forEach((p, i) => { const g = v.questions.find((q) => Number(q.i) === i); out.push({ ...p, verdict: g?.answered === true ? 'seeded' : 'rejected', why: g?.why || (g ? null : 'not graded') }); });
+    // ps is in bank (score) order, so when two bank questions ask the same thing the judge names the earlier one and only the later becomes 'duplicate'
+    ps.forEach((p, i) => {
+      const g = v.questions.find((q) => Number(q.i) === i), dup = g?.answered === true && g.distinct === false;
+      out.push({ ...p, verdict: g?.answered !== true ? 'rejected' : dup ? 'duplicate' : 'seeded', why: dup ? `same as: ${g.same_as || '?'}` : g?.why || (g ? null : 'not graded') });
+    });
   }
   return { verdicts: out, unparsed };
 }
@@ -118,7 +123,7 @@ export async function hypeBankSeedJob(params = {}, deps = {}) {
   const checks = new Set(pairs.map((p) => p.paraId)).size, estUsd = r2(checks * EST_USD_PER_CHECK);
   const plan = { ...head, pairs: pairs.length, checks, estUsd, estFormula: `checks (one per paragraph, all its bank questions) x $${EST_USD_PER_CHECK}`, noHits: noHits.length };
   if (dry || dryRun) return { dryRun: true, ...plan, planned: pairs.map(({ bankId: b, q, paraId, docId, tier, title }) => ({ bankId: b, q, paraId, docId, tier, title })), noHitIds: noHits.map((x) => x.bankId) };
-  if (!pairs.length) return { ...plan, status: 'complete', seeded: 0, rejected: 0, note: 'nothing to judge (all pairs judged at this version, or no core/gray hits)' };
+  if (!pairs.length) return { ...plan, status: 'complete', seeded: 0, rejected: 0, duplicates: 0, note: 'nothing to judge (all pairs judged at this version, or no core/gray hits)' };
 
   return withAIContext({ billTo: BUDGET_KEY, stage: 'hype-judge', caller: BUDGET_KEY }, async () => {
     const c = await d.checks();
@@ -131,7 +136,7 @@ export async function hypeBankSeedJob(params = {}, deps = {}) {
       if (room.usd < estUsd) return { ...plan, status: 'budget', binding: room.binding, roomUsd: r2(room.usd) };   // quiet stop: the next run tries again
       const built = checkRequests(pairs, await d.rows([...new Set(pairs.map((p) => p.paraId))]));
       byPara = built.byPara;
-      if (!built.reqs.length) return { ...plan, status: 'complete', seeded: 0, rejected: 0, missingText: built.missing.length };
+      if (!built.reqs.length) return { ...plan, status: 'complete', seeded: 0, rejected: 0, duplicates: 0, missingText: built.missing.length };
       bid = await c.create(built.reqs, { model: JUDGE_MODEL });
       await d.log('hype', `hype-bank-seed ${bankId}: ${built.reqs.length} checks submitted (${pairs.length} question×¶ pairs) · est $${estUsd}`);
     } else byPara = checkRequests(pairs, pairs.map((p) => ({ id: p.paraId, text: '-' }))).byPara;   // resume: only the pair map is needed
@@ -145,9 +150,9 @@ export async function hypeBankSeedJob(params = {}, deps = {}) {
     const saved = await d.repo.saveBankSeeds(verdicts, { tradition: bankId, version: HYPE_VERSION });
     const docIds = [...new Set(verdicts.filter((v) => v.verdict === 'seeded').map((v) => v.docId))];
     if (docIds.length) try { await d.follow(docIds); } catch { /* the follow pass picks the docs up from the ledger */ }
-    const seeded = verdicts.filter((v) => v.verdict === 'seeded').length;
-    await d.log('hype', `hype-bank-seed ${bankId}: ${seeded} seeded, ${verdicts.length - seeded} rejected, ${unparsed.length} unparsed · ${docIds.length} docs to the hype index`);
-    return { ...plan, status: 'complete', checkBatch: bid, seeded, rejected: verdicts.length - seeded, unparsed: unparsed.length, merged: saved.merged, indexedDocs: docIds.length };
+    const seeded = verdicts.filter((v) => v.verdict === 'seeded').length, duplicates = verdicts.filter((v) => v.verdict === 'duplicate').length, rejected = verdicts.length - seeded - duplicates;
+    await d.log('hype', `hype-bank-seed ${bankId}: ${seeded} seeded, ${duplicates} duplicate, ${rejected} rejected, ${unparsed.length} unparsed · ${docIds.length} docs to the hype index`);
+    return { ...plan, status: 'complete', checkBatch: bid, seeded, rejected, duplicates, unparsed: unparsed.length, merged: saved.merged, indexedDocs: docIds.length };
   });
 }
 

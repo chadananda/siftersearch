@@ -149,7 +149,7 @@ describe('hypeProgramJob: run', () => {
     const led = store.ledger();
     expect(led.map((e) => [e.id, e.tier, e.requests])).toEqual([['b1', 'core', 3], ['b2', 'core', 2]]);
     expect(led[0].rates).toMatchObject({ sent: 3, questionsPerPara: 2 });
-    expect(w.logs.some((l) => /core\/primary · 3 ¶/.test(l))).toBe(true);
+    expect(w.logs.some((l) => /core\/bahai\/primary · 3 ¶/.test(l))).toBe(true);
   });
   it('never exceeds the round size implied by the budget room', async () => {
     const { w, deps } = fakeWorld({ select: [docsOf(2)] });
@@ -188,7 +188,7 @@ describe('hypeProgramJob: run', () => {
     const r = await hypeProgramJob({ tier: 'core', maxUsd: 5 }, deps);
     expect(r.status).toBe('complete');
     expect(w.submits).toHaveLength(1);
-    expect(store.cursors()['core:primary:dis'].skip).not.toContain(1);
+    expect(store.cursors()['core:bahai:primary:dis'].skip).not.toContain(1);
   });
   it('the job maxUsd caps what this run may spend (spend since the run began)', async () => {
     let month = 100;
@@ -206,7 +206,7 @@ describe('hypeProgramJob: run', () => {
     const r = await hypeProgramJob({ tier: 'core', maxUsd: 5 }, deps);
     expect(r.status).toBe('complete');
     expect(r.unplannable).toBeGreaterThan(0);
-    expect(store.cursors()['core:primary:dis'].skip).toContain(1);
+    expect(store.cursors()['core:bahai:primary:dis'].skip).toContain(1);
   });
   it('yields (resumable) when the service drains while batches are pending', async () => {
     const { deps } = fakeWorld({ select: [docsOf(3)] });

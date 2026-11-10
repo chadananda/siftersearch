@@ -191,3 +191,21 @@ describe('program hooks (idsByDoc, tag, measure, onBatchDone)', () => {
     expect(sum.errors.length).toBe(2);
   });
 });
+
+// The writer sees the questions a linked source (bank seeds) already attached, so it asks only what they miss (11-10).
+describe('buildUser — ALREADY ASKED block', async () => {
+  const { buildUser } = await import('../../api/lib/rag/enrich/retrieval.js');
+  const base = { pid: 'p1', text: 'Paragraph text.', context: 'ctx' };
+  it('linked: stamp + prior questions → listed (array or {questions}), in whole and slice prompts', () => {
+    const arr = buildUser({ ...base, hypModel: 'linked:hype-v15', hyp: JSON.stringify(['Who is the Báb?', 'What is the soul?']) });
+    expect(arr).toContain('ALREADY ASKED');
+    expect(arr).toContain('- Who is the Báb?\n- What is the soul?');
+    expect(buildUser({ ...base, hypModel: 'linked:x', hyp: JSON.stringify({ questions: ['Q one?'] }) }, null, { part: 1, parts: 2, focus: 'f' })).toContain('- Q one?');
+  });
+  it('a non-linked stamp, no prior questions, or legacy text → no block', () => {
+    expect(buildUser({ ...base, hypModel: 'hype-v15', hyp: JSON.stringify(['Q?']) })).not.toContain('ALREADY ASKED');
+    expect(buildUser({ ...base, hypModel: 'linked:x', hyp: '[]' })).not.toContain('ALREADY ASKED');
+    expect(buildUser({ ...base, hypModel: 'linked:x', hyp: 'not json' })).not.toContain('ALREADY ASKED');
+    expect(buildUser(base)).not.toContain('ALREADY ASKED');
+  });
+});

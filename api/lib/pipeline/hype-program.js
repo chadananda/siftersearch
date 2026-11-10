@@ -4,7 +4,7 @@
 // A spent ceiling ends the run QUIETLY (status 'budget'); a quality pause ends it as phase 'stopped' (the act-now mail). Deps all injectable.
 import { withAIContext } from '../ai-context.js';
 import { HYPE_VERSION } from '../rag/enrich/retrieval.js';
-import { TIER_ORDER, PASSES, selectTier, countTiers } from './hype-tiers.js';
+import { TIER_ORDER, PASSES, FAITHS, selectTier, countTiers } from './hype-tiers.js';
 import { createStore, measureDoc, sumAcc, rates, gradeSummary, compare, DEFAULT_MIN_SAMPLE, GRADE_KEYS } from './hype-ledger.js';
 import { RUBRIC, JUDGE_MODEL, judgeUser } from './hype-rubric.js';
 import { parseJudge } from './hype-judge.js';
@@ -200,9 +200,9 @@ export async function hypeProgramJob(params = {}, deps = {}) {
       if (n < 1) return { ...sum, status: room.usd < EST_USD_PER_REQUEST ? 'budget' : 'limit', binding: room.binding, budget: { ...room, room: undefined } };   // quiet stop: by design, no phase 'stopped'
       sum.rounds++;
       let sent = false, progressed = false, refused = false;
-      for (const pass of PASSES) {
-        const key = `${tier}:${pass}:${noDisambig ? 'nd' : 'dis'}`, cur = d.store.cursors()[key] || { after: 0, skip: [] }, skip = new Set(cur.skip);
-        const sel = await d.select({ tier, pass, limit: n, after: cur.after, skip });
+      for (const [faith, pass] of FAITHS.flatMap((f) => PASSES.map((p) => [f, p]))) {
+        const key = `${tier}:${faith}:${pass}:${noDisambig ? 'nd' : 'dis'}`, cur = d.store.cursors()[key] || { after: 0, skip: [] }, skip = new Set(cur.skip);
+        const sel = await d.select({ tier, pass, faith, limit: n, after: cur.after, skip });
         const save = (extra = []) => d.store.setCursor(key, { after: sel.cursor, skip: [...skip, ...extra] });
         if (!sel.paragraphs) { save(); progressed ||= sel.cursor !== cur.after; continue; }
         const sub = await hb.submit(sel.docs.map((x) => x.docId), { limit: n, noDisambig, upgrade, idsByDoc: Object.fromEntries(sel.docs.map((x) => [x.docId, x.ids])), tag: { tier, pass } });
@@ -211,8 +211,8 @@ export async function hypeProgramJob(params = {}, deps = {}) {
         sum.gated += sub.gated.length; sum.spendRefused += sub.spendRefused.length; save(bad);
         if (sub.spendRefused.length && !sub.paragraphs) refused = true;
         sum.paragraphs += sub.paragraphs; sum.requests += sub.requests; sum.batches += sub.batches.length;
-        if (!sub.paragraphs && !bad.length && !sub.spendRefused.length) { sum.unplannable += sel.docs.length; save(sel.docs.map((x) => x.docId)); sent = true; await d.log('hype', `${tier}/${pass} · ${sel.docs.length} docs yielded nothing to plan (capped or already copied) — skipped`); break; }   // never re-select what the planner will not send
-        if (sub.paragraphs || bad.length) { sent = true; await d.log('hype', `${tier}/${pass} · ${sub.paragraphs} ¶ in ${sub.batches.length} batch(es) · ${sub.requests} requests · est $${r2(sub.requests * EST_USD_PER_REQUEST)}${bad.length ? ` · ${bad.length} docs skipped` : ''}`); break; }
+        if (!sub.paragraphs && !bad.length && !sub.spendRefused.length) { sum.unplannable += sel.docs.length; save(sel.docs.map((x) => x.docId)); sent = true; await d.log('hype', `${tier}/${faith}/${pass} · ${sel.docs.length} docs yielded nothing to plan (capped or already copied) — skipped`); break; }   // never re-select what the planner will not send
+        if (sub.paragraphs || bad.length) { sent = true; await d.log('hype', `${tier}/${faith}/${pass} · ${sub.paragraphs} ¶ in ${sub.batches.length} batch(es) · ${sub.requests} requests · est $${r2(sub.requests * EST_USD_PER_REQUEST)}${bad.length ? ` · ${bad.length} docs skipped` : ''}`); break; }
       }
       if (!sent && refused) { if (await d.draining()) return { ...sum, yielded: true, resume: { ...params } }; await d.sleep(Math.min(pollMs, WAIT_CHUNK_MS)); continue; }   // the gate said not now: re-read the budget and try again
       if (!sent) {

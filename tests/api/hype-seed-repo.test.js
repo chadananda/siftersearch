@@ -43,6 +43,13 @@ describe('hype-seed-repo', () => {
     const c = await repo.seedCounts();
     expect(c.find((x) => x.verdict === 'seeded')).toMatchObject({ tradition: 'bahai', n: 2, paragraphs: 2 });
   });
+  it('duplicate verdicts are recorded (never paid twice) but never merged, nor reapplied', async () => {
+    const r = await repo.saveBankSeeds([{ bankId: 'bahai-009', question: 'Who is the soul?', paraId: 1, docId: 7, verdict: 'duplicate', why: 'same as: What is the soul?' }], { tradition: 'bahai', version: V });
+    expect(r).toEqual({ merged: 0, recorded: 1 });
+    expect(JSON.parse(get(1).hyp_questions)).toEqual(['What is the soul?']);
+    expect((await repo.judgedPairs('bahai', V)).has('bahai-009|1')).toBe(true);
+    expect((await repo.reapplySeeds('bahai', V)).merged).toBe(0);
+  });
   it('reapplySeeds puts seeded questions back after a regeneration replaced them (free), not rejected ones', async () => {
     await repo.saveBankSeeds([{ bankId: 'bahai-001', question: 'Who was the Báb?', paraId: 1, docId: 7, verdict: 'seeded' },
       { bankId: 'bahai-003', question: 'What is fasting?', paraId: 1, docId: 7, verdict: 'rejected' }], { tradition: 'bahai', version: V });

@@ -130,6 +130,32 @@ describe('hypeBankSeedJob', () => {
   });
 });
 
+describe('hype-bank-seed — semantic dedupe (11-10)', () => {
+  it('the paragraph\'s attached questions go into the check text (array or {questions}); none → no block', async () => {
+    const shared = () => [{ id: 300, doc_id: 3, religion: "Baha'i", tier: 'gray' }];
+    const a = world({ questions: Q(2), hits: shared });
+    a.deps.rows = async (ids) => ids.map((id) => ({ id, text: 't', original_text: null, hyp_questions: JSON.stringify({ questions: ['Who is the Báb?', 'What is the soul?'] }) }));
+    await hypeBankSeedJob({ tradition: 'bahai' }, a.deps);
+    const u = a.w.created[0].reqs[0].user;
+    expect(u).toContain('ALREADY ATTACHED');
+    expect(u).toContain('- Who is the Báb?\n- What is the soul?');
+    expect(u.indexOf('ALREADY ATTACHED')).toBeLessThan(u.indexOf('QUESTIONS:'));
+    const b = world({ questions: Q(2), hits: shared });
+    await hypeBankSeedJob({ tradition: 'bahai' }, b.deps);
+    expect(b.w.created[0].reqs[0].user).not.toContain('ALREADY ATTACHED');
+  });
+  it('answered but distinct:false → duplicate (why = same as); the earlier bank question stays seeded; counts reported', async () => {
+    const shared = () => [{ id: 300, doc_id: 3, religion: "Baha'i", tier: 'gray' }];
+    const judge = () => ({ questions: [{ i: 0, answered: true, distinct: true }, { i: 1, answered: true, distinct: false, same_as: 'Question number 1?' }, { i: 2, answered: false }] });
+    const { w, deps } = world({ questions: Q(3), hits: shared, judge });
+    const r = await hypeBankSeedJob({ tradition: 'bahai' }, deps);
+    expect(w.saved[0].pairs.map((p) => p.verdict)).toEqual(['seeded', 'duplicate', 'rejected']);
+    expect(w.saved[0].pairs[1].why).toBe('same as: Question number 1?');
+    expect(r).toMatchObject({ seeded: 1, duplicates: 1, rejected: 1 });
+    expect(w.followed).toEqual([3]);
+  });
+});
+
 describe('hype-bank-seed — every phrasing searched (11-10)', () => {
   it('searches the question and each variant, interleaving ranks, up to perQuestion confirmed paragraphs', async () => {
     const questions = [{ id: 'bahai-001', q: 'what is bahai faith', variants: ['what do bahai believe', 'what is bahai faith'], held_out: false }];
