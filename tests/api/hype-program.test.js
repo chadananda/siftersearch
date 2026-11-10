@@ -25,10 +25,12 @@ describe('budgetRoom', () => {
     expect(budgetRoom({ ...base, inflightUsd: 30 }).usd).toBeCloseTo(3.33, 1);
     expect(budgetRoom({ ...base, spentToday: 40 }).usd).toBe(0);
   });
-  it('monthlyUsd reads HYPE_PROGRAM_USD_MONTH; unset or junk is 0 (fail closed)', () => {
-    expect(monthlyUsd({ HYPE_PROGRAM_USD_MONTH: '1000' })).toBe(1000);
-    expect(monthlyUsd({})).toBe(0);
+  it('monthlyUsd reads HYPE_PROGRAM_USD_MONTH; unset = 1000 (Chad 11-09); 0 or junk = spend nothing', () => {
+    expect(monthlyUsd({ HYPE_PROGRAM_USD_MONTH: '500' })).toBe(500);
+    expect(monthlyUsd({})).toBe(1000);
+    expect(monthlyUsd({ HYPE_PROGRAM_USD_MONTH: '' })).toBe(1000);
     expect(monthlyUsd({ HYPE_PROGRAM_USD_MONTH: 'abc' })).toBe(0);
+    expect(monthlyUsd({ HYPE_PROGRAM_USD_MONTH: '0' })).toBe(0);
   });
 });
 
@@ -81,13 +83,15 @@ describe('hypeProgramJob: guards', () => {
     expect((await hypeProgramJob({ tier: 'core' }, deps)).error).toMatch(/maxUsd/);
     expect((await hypeProgramJob({ tier: 'nope', maxUsd: 5 }, deps)).error).toMatch(/tier must be/);
   });
-  it('without HYPE_PROGRAM_USD_MONTH it spends nothing and says why (no phase stopped)', async () => {
+  it('with HYPE_PROGRAM_USD_MONTH=0 it spends nothing and says why (no phase stopped); unset runs on the 1000 default', async () => {
     const { w, deps } = fakeWorld({ select: [docsOf(5)] });
-    deps.env = {};
+    deps.env = { HYPE_PROGRAM_USD_MONTH: '0' };
     const r = await hypeProgramJob({ tier: 'core', maxUsd: 5 }, deps);
     expect(r).toMatchObject({ status: 'budget' });
     expect(r.phase).toBeUndefined();
     expect(w.submits).toHaveLength(0);
+    const u = fakeWorld({ select: [docsOf(2)] }); u.deps.env = {};
+    expect((await hypeProgramJob({ tier: 'core', maxUsd: 5 }, u.deps)).status).toBe('complete');
   });
 });
 
@@ -141,11 +145,32 @@ describe('hypeProgramJob: run', () => {
     expect(JSON.stringify(r)).not.toContain('"phase":"stopped"');
     expect(w.submits).toHaveLength(0);
   });
-  it('holds to the daily pace: month/30 spent today ends the run for today', async () => {
-    const { w, deps } = fakeWorld({ select: [docsOf(5)], spend: { month: 100, today: 34 } });
+  it('the day\'s pace spent: waits for the next UTC day (logs once, sleeps toward midnight) and continues when today resets', async () => {
+    let today = 34;
+    const { w, deps } = fakeWorld({ select: [docsOf(5)], spend: { month: 100 } });
+    deps.spend = { month: async () => 100, today: async () => today };
+    const sleeps = []; deps.sleep = async (ms) => { sleeps.push(ms); if (sleeps.length === 2) today = 0; };   // the UTC day turns during the second wait
+    deps.now = () => Date.parse('2026-11-09T23:50:00Z');
     const r = await hypeProgramJob({ tier: 'core', maxUsd: 500 }, deps);
-    expect(r).toMatchObject({ status: 'budget', binding: 'day' });
-    expect(w.submits).toHaveLength(0);
+    expect(r.status).toBe('complete');
+    expect(sleeps.slice(0, 2)).toEqual([601000, 601000]);   // 10 min + 1 s to midnight, under the 15 min look-again chunk
+    expect(w.logs.filter((l) => /waiting for the next UTC day/.test(l))).toHaveLength(1);
+    expect(w.submits).toHaveLength(1);
+  });
+  it('waiting for the day yields (resumable) when the service drains, and still stops at the month ceiling or a pause', async () => {
+    const a = fakeWorld({ select: [docsOf(5)] }); a.deps.spend = { month: async () => 100, today: async () => 34 }; a.deps.draining = async () => true;
+    expect(await hypeProgramJob({ tier: 'core', maxUsd: 500 }, a.deps)).toMatchObject({ yielded: true });
+    const b = fakeWorld({ select: [docsOf(5)] }); b.deps.spend = { month: async () => 1000, today: async () => 10 };
+    expect(await hypeProgramJob({ tier: 'core', maxUsd: 500 }, b.deps)).toMatchObject({ status: 'budget', binding: 'month' });
+  });
+  it('a gate refusal is a wait, not a verdict: refused docs are not skipped and are re-sent when the gate opens', async () => {
+    const { w, deps } = fakeWorld({ select: [docsOf(3), docsOf(3)] });
+    const sub = deps.makeHb; let first = true;
+    deps.makeHb = async (o) => { const hb = await sub(o); const s0 = hb.submit; hb.submit = async (...a) => { if (first) { first = false; return { batches: [], paragraphs: 0, requests: 0, gated: [], spendRefused: [1], over_budget: false, docs: 0 }; } return s0(...a); }; return hb; };
+    const r = await hypeProgramJob({ tier: 'core', maxUsd: 5 }, deps);
+    expect(r.status).toBe('complete');
+    expect(w.submits).toHaveLength(1);
+    expect(store.cursors()['core:primary:dis'].skip).not.toContain(1);
   });
   it('the job maxUsd caps what this run may spend (spend since the run began)', async () => {
     let month = 100;

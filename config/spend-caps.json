@@ -6,6 +6,12 @@
   ],
   "rules": [
     {
+      "group": "hype-program",
+      "exact": [
+        "hype-program"
+      ]
+    },
+    {
       "group": "improve",
       "prefix": [
         "improve-"
@@ -88,6 +94,18 @@
       }
     ]
   },
+  "monthly": {
+    "_note": "Groups bounded by a MONTHLY ceiling instead of a daily cap (Chad 11-09: HyPE program at most $1000/month for everything HyPE). Daily pace = usd / pace_days; env overrides usd. Group has no entry in caps, so no daily dollar cap applies.",
+    "hype-program": {
+      "env": "HYPE_PROGRAM_USD_MONTH",
+      "usd": 1000,
+      "pace_days": 30
+    }
+  },
+  "provider_exempt": [
+    "hype-program"
+  ],
+  "_provider_exempt": "Groups whose spend does NOT count toward the provider-wide caps and which those caps never refuse (their own monthly ceiling governs), so readers and other background work keep the full anthropic allowance. Rules for these groups must use `exact` callers only.",
   "env_alias": {
     "improve": "IMPROVE_DAILY_USD"
   },

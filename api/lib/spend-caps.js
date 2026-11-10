@@ -91,12 +91,22 @@ export async function spendByProvider({ now = Date.now(), deps = {} } = {}) {
   const day = dayOf(now);
   if (pcache && pcache.day === day && now - pcache.at < TTL_MS) return pcache.sums;
   pinflight ||= (async () => {
-    try { pcache = { day, at: now, sums: await (deps.byProvider || dailySpendByProvider)(deps.rollup) }; }
+    try { pcache = { day, at: now, sums: await (deps.byProvider || dailySpendByProvider)(deps.rollup, exemptCallers(deps.cfg || CONFIG)) }; }
     catch (err) { logger.warn({ err: err.message }, 'spend caps: could not read today\'s provider spend — not blocking'); pcache ||= { day, at: now, sums: {} }; pcache.at = now; }
     finally { pinflight = null; }
     return pcache.sums;
   })();
   return pinflight;
+}
+
+/** Callers of the provider-exempt groups (their rules' exact names). Pure. */
+export const exemptCallers = (cfg = CONFIG) => (cfg.provider_exempt || []).flatMap((g) => cfg.rules.filter((r) => r.group === g).flatMap((r) => r.exact || []));
+
+/** A monthly-ceiling group's limits → { month, day } USD (env wins; unset = the config default), or null when the group has none. Pure. */
+export function monthlyFor(group, cfg = CONFIG, env = process.env) {
+  const m = cfg.monthly?.[group]; if (!m) return null;
+  const e = m.env && env[m.env], month = e != null && e !== '' && Number.isFinite(Number(e)) ? Number(e) : m.usd;
+  return { month, day: month / (m.pace_days || 30) };
 }
 
 /** Each group's spend today against its cap. → [{ group, spent_usd, cap_usd, remaining_usd, blocking }] */
@@ -145,6 +155,16 @@ export async function assertSpendCap(caller, { provider = null, now = Date.now()
       throw new SpendCapError({ group, spent, cap, caller, retryAfterMs: waitMs(now) });
     }
   }
+  // a monthly-ceiling group (hype-program): the day's pace (month/30) and the calendar month, never alarmed — it simply waits (the job waits for the next UTC day)
+  const mon = monthlyFor(group, cfg);
+  if (mon) {
+    const spentDay = (await spendByGroup({ now, deps }))[group] || 0;
+    if (spentDay >= mon.day) throw new SpendCapError({ group, spent: spentDay, cap: mon.day, caller, retryAfterMs: waitMs(now) });
+    const month = await (deps.monthByCaller || (async () => (await import('./repos/ai-usage-repo.js')).monthSpendByCaller()))().catch(() => ({}));
+    const spentMonth = Object.entries(month).reduce((n, [c, v]) => n + (groupOf(c, cfg) === group ? v : 0), 0);
+    if (spentMonth >= mon.month) throw new SpendCapError({ group, spent: spentMonth, cap: mon.month, caller, retryAfterMs: waitMs(now) });
+  }
+  if ((cfg.provider_exempt || []).includes(group)) return;   // never counted in, never refused by, the provider-wide caps
   const pcap = provider && providerCapFor(provider, day, cfg);   // the provider-wide cap: background groups stop first, live replies keep the rest
   if (!pcap) return;
   const limit = (cfg.providers?.interactive || []).includes(group) ? pcap.usd : pcap.background_usd;

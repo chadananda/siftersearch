@@ -10,9 +10,11 @@ import { createStore, measureDoc, sumAcc, rates, gradeSummary, compare, DEFAULT_
 export const BUDGET_KEY = 'hype-program';
 export const EST_USD_PER_REQUEST = 0.00018;   // measured 10-28: 38,275 batch requests = $6.94 (Haiku 5.5, Message Batches, 50% off)
 export const EST_FORMULA = 'est $ = requests x $0.18 per 1000 (measured 10-28: 38,275 requests = $6.94); requests = pending paragraphs + extra slices for paragraphs over 4000 chars (ceil(chars/1500) each). HyPE batch only: disambiguation, grading and embeddings bill to the same key but are not in this estimate.';
+const WAIT_CHUNK_MS = 15 * 60_000;   // while waiting for the next UTC day, look again (drain / pause) at least this often
 export const DEFAULT_ROUND_PARAS = 10000, DEFAULT_SAMPLE_RATE = 0.01, DEFAULT_MAX_GRADE = 200;
 
-export const monthlyUsd = (env = process.env) => { const v = Number(env.HYPE_PROGRAM_USD_MONTH); return Number.isFinite(v) && v > 0 ? v : 0; };
+export const DEFAULT_MONTH_USD = 1000;   // Chad 11-09: at most $1000/month for everything HyPE; config/spend-caps.json `monthly` carries the same number to the gate
+export const monthlyUsd = (env = process.env) => { const e = env.HYPE_PROGRAM_USD_MONTH; if (e == null || e === '') return DEFAULT_MONTH_USD; const v = Number(e); return Number.isFinite(v) && v > 0 ? v : 0; };   // unset = 1000; junk or 0 = spend nothing
 
 /** How much may still be spent now: the tightest of month ceiling, daily pace (month/30) and the job's own maxUsd — all net of
  *  what is in flight (batch spend is metered at collect, so a submitted batch counts at the estimate until then). */
@@ -27,7 +29,7 @@ const r2 = (n) => Math.round(n * 100) / 100;
 async function defaults(over) {
   const spendRepo = () => import('../repos/ai-usage-repo.js');
   return {
-    env: process.env, store: createStore(), select: selectTier, count: countTiers, sleep: (ms) => new Promise((r) => setTimeout(r, ms)), rand: Math.random,
+    env: process.env, store: createStore(), select: selectTier, count: countTiers, sleep: (ms) => new Promise((r) => setTimeout(r, ms)), rand: Math.random, now: () => Date.now(),
     makeHb: async (o) => (await import('./hype-batch-app.js')).makeHypeBatch(o, BUDGET_KEY),
     spend: { month: async () => (await (await spendRepo()).monthSpendByCaller())[BUDGET_KEY] || 0, today: async () => (await (await spendRepo()).dailySpendByCaller())[BUDGET_KEY] || 0 },
     rows: async (ids) => (await import('../repos/hype-program-repo.js')).hypeRows(ids),
@@ -87,7 +89,7 @@ export async function hypeProgramJob(params = {}, deps = {}) {
   if (!tier) return { status: 'error', error: `tier required (${TIER_ORDER.join(' | ')})` };
   if (!(Number(maxUsd) > 0)) return { status: 'error', error: 'maxUsd required (> 0): this job spends money' };
   const monthUsd = monthlyUsd(d.env);
-  if (!monthUsd) return { status: 'budget', reason: 'HYPE_PROGRAM_USD_MONTH is not set — the program spends nothing without a monthly ceiling' };
+  if (!monthUsd) return { status: 'budget', reason: 'HYPE_PROGRAM_USD_MONTH is 0 or not a number — the program spends nothing without a monthly ceiling' };
   if (resume) d.store.clearPause();
   const sum = { tier, rounds: 0, paragraphs: 0, requests: 0, batches: 0, written: 0, failed: 0, exhausted: 0, gated: 0, spendRefused: 0, unplannable: 0, errors: [] };
   const stopFor = (p) => ({ ...sum, phase: 'stopped', reason: `quality: ${p.reason}`, pausedAt: p.at, batch: p.batch });
@@ -131,9 +133,17 @@ export async function hypeProgramJob(params = {}, deps = {}) {
       const [spentMonth, spentToday] = await Promise.all([d.spend.month(), d.spend.today()]);
       const room = budgetRoom({ monthUsd, spentMonth, spentToday, inflightUsd: inflightUsd(), jobSpent: Math.max(0, spentMonth - spent0), maxUsd: Number(maxUsd) });
       const n = Math.min(roundParas, Math.floor(room.usd / EST_USD_PER_REQUEST), limit - sum.paragraphs);
+      // the day's pace is used up (month still has room): wait for the next UTC day and carry on — month ceiling, job cap and quality pause still end the run
+      if (n < 1 && room.binding === 'day' && room.room.month >= EST_USD_PER_REQUEST && room.room.job >= EST_USD_PER_REQUEST) {
+        if (await d.draining()) return { ...sum, yielded: true, resume: { ...params } };
+        const at = d.now(), ms = Date.parse(`${new Date(at).toISOString().slice(0, 10)}T00:00:00Z`) + 86_400_000 - at;
+        if (!sum.waitingSince) { sum.waitingSince = new Date(at).toISOString(); sum.waits = (sum.waits || 0) + 1; await d.log('hype', `hype-program: today's pace ($${r2(room.pace)}) is spent — waiting for the next UTC day`); }
+        await d.sleep(Math.max(1000, Math.min(ms + 1000, WAIT_CHUNK_MS))); continue;
+      }
+      delete sum.waitingSince;
       if (n < 1) return { ...sum, status: room.usd < EST_USD_PER_REQUEST ? 'budget' : 'limit', binding: room.binding, budget: { ...room, room: undefined } };   // quiet stop: by design, no phase 'stopped'
       sum.rounds++;
-      let sent = false, progressed = false;
+      let sent = false, progressed = false, refused = false;
       for (const pass of PASSES) {
         const key = `${tier}:${pass}:${noDisambig ? 'nd' : 'dis'}`, cur = d.store.cursors()[key] || { after: 0, skip: [] }, skip = new Set(cur.skip);
         const sel = await d.select({ tier, pass, limit: n, after: cur.after, skip });
@@ -141,12 +151,14 @@ export async function hypeProgramJob(params = {}, deps = {}) {
         if (!sel.paragraphs) { save(); progressed ||= sel.cursor !== cur.after; continue; }
         const sub = await hb.submit(sel.docs.map((x) => x.docId), { limit: n, noDisambig, upgrade, idsByDoc: Object.fromEntries(sel.docs.map((x) => [x.docId, x.ids])), tag: { tier, pass } });
         if (sub.over_budget) return { ...sum, status: 'budget', binding: 'anthropic' };
-        const bad = [...sub.gated.map((g) => g.docId), ...sub.spendRefused];
+        const bad = sub.gated.map((g) => g.docId);   // a gate refusal (daily pace / month) is a WAIT, not a verdict on the doc: never added to the skip list
         sum.gated += sub.gated.length; sum.spendRefused += sub.spendRefused.length; save(bad);
+        if (sub.spendRefused.length && !sub.paragraphs) refused = true;
         sum.paragraphs += sub.paragraphs; sum.requests += sub.requests; sum.batches += sub.batches.length;
-        if (!sub.paragraphs && !bad.length) { sum.unplannable += sel.docs.length; save(sel.docs.map((x) => x.docId)); sent = true; await d.log('hype', `${tier}/${pass} · ${sel.docs.length} docs yielded nothing to plan (capped or already copied) — skipped`); break; }   // never re-select what the planner will not send
+        if (!sub.paragraphs && !bad.length && !sub.spendRefused.length) { sum.unplannable += sel.docs.length; save(sel.docs.map((x) => x.docId)); sent = true; await d.log('hype', `${tier}/${pass} · ${sel.docs.length} docs yielded nothing to plan (capped or already copied) — skipped`); break; }   // never re-select what the planner will not send
         if (sub.paragraphs || bad.length) { sent = true; await d.log('hype', `${tier}/${pass} · ${sub.paragraphs} ¶ in ${sub.batches.length} batch(es) · ${sub.requests} requests · est $${r2(sub.requests * EST_USD_PER_REQUEST)}${bad.length ? ` · ${bad.length} docs skipped` : ''}`); break; }
       }
+      if (!sent && refused) { if (await d.draining()) return { ...sum, yielded: true, resume: { ...params } }; await d.sleep(Math.min(pollMs, WAIT_CHUNK_MS)); continue; }   // the gate said not now: re-read the budget and try again
       if (!sent) { if (progressed) continue; return { ...sum, status: 'complete' }; }
     }
   });

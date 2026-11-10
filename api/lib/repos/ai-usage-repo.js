@@ -67,8 +67,9 @@ export async function dailySpendByService(deps) {
 }
 
 /** Today's (UTC) spend per provider (incremental) — the provider-wide caps' input (spend-caps.js). → { [provider]: usd } */
-export async function dailySpendByProvider(deps) {
-  const sums = await rollupSpend('daily-by-provider', { key: `COALESCE(provider, '')`, dayBound: true }, deps);
+export async function dailySpendByProvider(deps, excludeCallers = []) {
+  const ex = excludeCallers.map((c) => `'${String(c).replace(/'/g, "''")}'`).join(',');   // callers whose spend the provider caps ignore (spend-caps provider_exempt)
+  const sums = await rollupSpend(ex ? 'daily-by-provider-excl' : 'daily-by-provider', { key: `COALESCE(provider, '')`, dayBound: true, ...(ex ? { where: `COALESCE(caller, '') NOT IN (${ex})` } : {}) }, deps);
   return Object.fromEntries([...sums].map(([k, v]) => [k, v.usd]));
 }
 

@@ -5,7 +5,7 @@ import { mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 vi.mock('../../api/lib/repos/ai-usage-repo.js', () => ({ dailySpendByCaller: vi.fn(async () => ({})), dailySpendByProvider: vi.fn(async () => ({})) }));
-import { groupOf, capFor, dayOf, assertSpendCap, capStatus, isSpendCap, SpendCapError, waitMs, _reset, providerCapFor, noteCreditOut, TEST_BILL_TO } from '../../api/lib/spend-caps.js';
+import { groupOf, capFor, dayOf, assertSpendCap, capStatus, isSpendCap, SpendCapError, waitMs, _reset, providerCapFor, noteCreditOut, TEST_BILL_TO, monthlyFor, exemptCallers } from '../../api/lib/spend-caps.js';
 import { anisTurn } from '../../api/lib/assistant/turn.js';
 import { withAIContext, currentAIContext } from '../../api/lib/ai-context.js';
 import { SPEND_CAP_REPLY } from '../../api/lib/assistant/limits.js';
@@ -220,5 +220,35 @@ describe('isTestTurn (mail): the battery sender or test:true is a test turn', ()
     expect(isTestTurn({ email: 'reader@gmail.com', test: true })).toBe(true);
     expect(isTestTurn({ email: 'reader@gmail.com' })).toBe(false);
     expect(isTestTurn({ email: 'battery@gmail.com' })).toBe(false);
+  });
+});
+
+describe('the hype-program group (Chad 11-09: at most $1000/month for everything HyPE)', () => {
+  const NOW = Date.parse('2026-11-10T12:00:00Z');   // anthropic $20 / $15 background from 11-10
+  const deps = (day = 0, month = 0, provider = {}) => ({ byCaller: async () => ({ 'hype-program': day }), monthByCaller: async () => ({ 'hype-program': month }), byProvider: async () => provider, alert: { send: async () => { throw new Error('must not alert'); } } });
+  it('is its own group, not "other", with no daily dollar cap; the month is 1000 unless the env says otherwise, pace month/30', () => {
+    expect(groupOf('hype-program')).toBe('hype-program');
+    expect(capFor('hype-program', '2026-11-09')).toBe(Infinity);
+    expect(capFor('other', '2026-11-09')).toBe(10);
+    expect(monthlyFor('hype-program')).toEqual({ month: 1000, day: 1000 / 30 });
+    expect(monthlyFor('hype-program', undefined, { HYPE_PROGRAM_USD_MONTH: '300' })).toEqual({ month: 300, day: 10 });
+    expect(monthlyFor('other')).toBe(null);
+  });
+  it('spends well past the "other" $10/day and the anthropic $15 background cap, up to month/30 a day', async () => {
+    await expect(assertSpendCap('hype-program', { provider: 'anthropic', now: NOW, deps: deps(30, 100, { anthropic: 200 }) })).resolves.toBeUndefined();
+  });
+  it('the day pace (month/30) and the month ceiling refuse, quietly (no alert), and wait for the next UTC day', async () => {
+    _reset(); await expect(assertSpendCap('hype-program', { provider: 'anthropic', now: NOW, deps: deps(33.4, 100) })).rejects.toMatchObject({ code: 'SPEND_CAP', group: 'hype-program' });
+    _reset(); await expect(assertSpendCap('hype-program', { provider: 'anthropic', now: NOW, deps: deps(5, 1000) })).rejects.toMatchObject({ code: 'SPEND_CAP', group: 'hype-program', cap: 1000 });
+  });
+  it('its spend does not count toward the provider caps, and the other groups keep their full allowance', async () => {
+    expect(exemptCallers()).toEqual(['hype-program']);
+    const seen = []; const d = { ...deps(), byProvider: async (r, ex) => { seen.push(ex); return { anthropic: 14 }; } };
+    await expect(assertSpendCap('improve-judge', { provider: 'anthropic', now: NOW, deps: d })).resolves.toBeUndefined();
+    expect(seen[0]).toEqual(['hype-program']);
+    _reset(); await expect(assertSpendCap('segmenter', { provider: 'anthropic', now: NOW, deps: deps(30, 100, { anthropic: 15.5 }) })).rejects.toMatchObject({ group: 'anthropic-total' });
+  });
+  it('billTo hype-program routes a disambiguation or grading call made inside the job to the same group', async () => {
+    await withAIContext({ billTo: 'hype-program' }, async () => { _reset(); await expect(assertSpendCap('corpus-rag', { provider: 'anthropic', now: NOW, deps: deps(40, 100) })).rejects.toMatchObject({ group: 'hype-program' }); });
   });
 });
