@@ -473,12 +473,15 @@
                         </a>
                       {/if}
                       <div class="book-meta">
-                        {#if m.book.url}<a class="book-read" href={m.book.url} target="_blank" rel="noopener">Read</a>{/if}
+                        {#if m.book.url}<a class="book-read" href={m.book.url} target="_blank" rel="noopener" title="Opens in a new tab">Read<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11C5 7 7.5 5 11.5 5M9 2.5 11.5 5 9 7.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr">(opens in a new tab)</span></a>{/if}
                         <a class="book-title" href={m.book.url} target="_blank" rel="noopener">{m.book.title}</a>
                         {#if m.book.author || m.book.year}<div class="book-by">{[m.book.author, m.book.year].filter(Boolean).join(' · ')}</div>{/if}
                         {#if m.book.description}<p class="book-desc">{m.book.description}</p>{/if}
                       </div>
                     </div>
+                  {/if}
+                  {#if m.book?.sufficient && m.book.follow_up && m.role === 'assistant' && m.done}
+                    <div class="bubble follow">{m.book.follow_up}</div>
                   {/if}
                   {#if !(m.book?.sufficient && m.role === 'assistant')}
                   <div class="bubble" class:lit={m.lit}>
@@ -698,6 +701,9 @@
   .book-title:hover { color: var(--accent-deep); text-decoration: underline; }
   .book-by { font-size: .85em; color: #6b6253; }
   .book-desc { margin: 6px 0 0; font-size: .9em; line-height: 1.45; display: -webkit-box; color: #3d372d; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+  .book-read .ext { width: 12px; height: 12px; margin-left: 4px; vertical-align: -1px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .bubble.follow { margin-top: 8px; }
   .book-read { float: right; margin: 0 0 6px 10px; padding: 4px 12px; border-radius: 999px; font-size: .82em; line-height: 1.4;
     text-decoration: none; color: #fff; background: var(--accent); }
   .book-read:hover { background: var(--accent-deep); }

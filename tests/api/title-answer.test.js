@@ -1,4 +1,4 @@
-// A bare book title → the book at once: link first, summary (cached, written once), offer; no Jev (Chad 11-09).
+// A bare book title → the book at once: link first, summary (cached, written once), a follow-up question; no Jev (Chad 11-09).
 import { describe, it, expect, vi } from 'vitest';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -19,13 +19,14 @@ describe('title-answer', () => {
     expect(await titleOnly('What does God Passes By say about the martyrdom of the Báb?', { find })).toBeNull();
     expect(find).not.toHaveBeenCalled();
   });
-  it('summary first, then the book (a card event + the linked line), then the offer', async () => {
+  it('summary first, then the book (a card event + the linked line), then the follow-up question', async () => {
     const ev = [];
     const r = await titleAnswer(GPB, { onEvent: (e) => ev.push(e), links: async () => new Map([[21310, 'https://oceanlibrary.com/god-passes-by_shoghi-effendi']]), summary: async () => 'A history of the first century.' });
     expect(ev[0]).toMatchObject({ type: 'book', book: { id: 21310, title: 'God Passes By', url: 'https://oceanlibrary.com/god-passes-by_shoghi-effendi' } });
     expect(r.reply.indexOf('A history of the first century.')).toBe(0);
     expect(r.reply).toContain('[*God Passes By*](https://oceanlibrary.com/god-passes-by_shoghi-effendi)');
-    expect(r.reply).toContain('read it with you');
+    expect(r.reply).toMatch(/something particular I can help you find in the book, or would you like to discuss it\?$/);
+    expect(ev[0].book.follow_up).toMatch(/discuss it\?$/);
     expect(r.citations[0].document_id).toBe(21310);
   });
   it('the document\'s own description is the summary — no model call', async () => {
