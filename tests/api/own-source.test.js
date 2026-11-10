@@ -40,7 +40,7 @@ describe('own source: a Central Figure quoted in another author\'s book → the 
     expect(calls[0].q).not.toContain('is His counsel');           // the span, not the whole paragraph
     expect(r.passages.map((p) => p.id)).toEqual([1320, 77, 311]);
     expect(r.passages[0]).toMatchObject({ title: 'Gleanings from the Writings of Bahá’u’lláh', book_author: B, source_url: 'https://oceanlibrary.com/gleanings#cxxxii' });
-    expect(r.swapped).toEqual([{ from: 311, to: 1320, writer: B }]);
+    expect(r.swapped).toEqual([{ from: 311, to: 1320, writer: B, kind: 'elsewhere' }]);
     expect(r.searches).toBe(1);
     expect(r.ms).toBeLessThan(OWN_SOURCE_MS);
   });

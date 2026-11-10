@@ -1,6 +1,7 @@
 // Own-source step (Chad's standing rule: the same words in several sources → cite the best published one): a passage whose
 // WRITER is a Central Figure or Shoghi Effendi but whose BOOK is another author's (Shoghi Effendi's The Promised Day Is Come
-// quoting Bahá'u'lláh) is swapped for the same words in the writer's own work. Code only — library metadata (author vs
+// quoting Bahá'u'lláh) is swapped for the same words in the writer's own work; so is a writer quoting his OWN other work (the
+// Hidden Words in Fountain of Wisdom), and a slug-titled scrape gives way to a properly published copy of the same words. Code only — library metadata (author vs
 // book_author) and one LITERAL lookup of the quoted span per such passage (BM25 on Qdrant paragraphs_kw limited to the writer,
 // rows by id, a link for the one winner; no embedding), in parallel, under one wall budget. No LLM, no fuzzy matching.
 // Deps: tools.js literal_search layer, paragraphs-repo paragraphsByIds, hit-links withLinks, lookup.js quoteCandidates/holds
@@ -30,6 +31,15 @@ export function quotedSpan(text) {
   return words(t).length >= MIN_WORDS ? clip(t) : null;
 }
 
+/** Only the spans IN QUOTATION MARKS (5+ words), longest first — no whole-paragraph fallback. Pure. */
+export function quotedOnly(text) {
+  return [...String(text || '').matchAll(/[“"]([^“”"]{10,})[”"]/g)].flatMap((m) => m[1].split(/\s*(?:…|\.\.\.)\s*/))
+    .map((s) => s.trim()).filter((s) => words(s).length >= MIN_WORDS).sort((a, b) => words(b).length - words(a).length).map(clip);
+}
+
+/** A scraped page with no real title ("shoghi-effendi-trans-011-the-dawn-breakers_en", "Page 14"): a POOR COPY of some work. Pure. */
+export const slugTitle = (x) => { const t = String(x || '').trim(); return /^page \d+$/i.test(t) || (!!t && !/\s/.test(t) && /[-_]/.test(t)); };
+
 /** Is the passage a doctrinal writer's words inside ANOTHER author's book? Pure. */
 export function quotedElsewhere(p, doctrinal) {
   const w = canon(p?.author), b = canon(p?.book_author);
@@ -42,7 +52,8 @@ export function quotedElsewhere(p, doctrinal) {
 export async function literalOwnSearch(span, { author } = {}, { limit = OWN_SOURCE_HITS, timeoutMs = OWN_SOURCE_MS, keyword = null, byIds = null } = {}) {
   keyword ??= await (await import('./tools.js')).layerFn('literal_search');
   const paragraphsByIds = byIds || (await import('../paragraphs-repo.js')).paragraphsByIds;
-  const hits = (await keyword(String(span), { limit, filters: { author, writerOnly: true }, timeoutMs }))?.hits || [];
+  // no author (a poor copy's lookup): the same words anywhere in the library
+  const hits = (await keyword(String(span), { limit, filters: author ? { author, writerOnly: true } : {}, timeoutMs }))?.hits || [];
   if (!hits.length) return [];
   const rows = new Map((await paragraphsByIds(hits.map((h) => h.paragraph_id))).map((p) => [Number(p.id), p]));
   return hits.map((h) => rows.get(Number(h.paragraph_id))).filter(Boolean);
@@ -54,6 +65,16 @@ export const linkHits = async (hits) => (await import('../hit-links.js')).withLi
 // book's passage is not traded for a reading aid (w8:db-27: The Dawn-Breakers → "Farewell address … (provisional translation)")
 const ownHolder = (q, writer, span, provisional) => canon(q?.author) === writer && canon(q?.book_author || q?.author) === writer
   && !provisional(q) && holds(q.text, span).exact;
+// the ORIGINAL of words a writer quotes from his own other work (battery 11-10 "justice": the Hidden Words' "The best beloved of
+// all things in My sight is Justice" cited from Fountain of Wisdom): another document of his, holding the words NOT in quotation marks
+const selfOrigin = (q, j, provisional) => ownHolder(q, j.writer, j.span, provisional) && Number(q.document_id) !== Number(j.p.document_id)
+  && !quotedOnly(q.text).some((x) => holds(x, j.span).exact);
+// a better-published COPY of a poor copy's words (battery 11-10 "bab-born": The Dawn-Breakers as a scraped page titled
+// "shoghi-effendi-trans-011-the-dawn-breakers_en", authored "Shoghi Effendi", linked to a #:~:text= page): another document
+// with a real title holding the same words — its title, author and link replace the scrape's
+const betterCopy = (q, j, provisional) => !!q && Number(q.document_id) !== Number(j.p.document_id) && !slugTitle(q.title) && !provisional(q)
+  && holds(q.text, j.span).exact && !quotedOnly(q.text).some((x) => holds(x, j.span).exact);   // a book QUOTING the words is not a copy
+const fits = (q, j, provisional) => (j.kind === 'copy' ? betterCopy(q, j, provisional) : j.kind === 'self' ? selfOrigin(q, j, provisional) : ownHolder(q, j.writer, j.span, provisional));
 
 /**
  * passages → { passages, swapped: [{ from, to, writer }], searches, late, ms }. Each quoted passage's slot goes to the writer's
@@ -69,10 +90,14 @@ export async function preferOwnWork(passages, { search = null, link = null, budg
   const done = (extra = {}) => ({ passages, swapped: [], searches: 0, late: 0, ...extra, ms: Date.now() - t0 });
   if (!Array.isArray(passages) || !passages.length) return done();
   const { DOCTRINAL, isProvisional } = await import('../source-hunt.js');
-  const jobs = passages.map((p, i) => ({ p, i })).filter(({ p }) => quotedElsewhere(p, DOCTRINAL) && !keep?.(p))
-    .map((j) => ({ ...j, writer: canon(j.p.author), span: quotedSpan(j.p.text) })).filter((j) => j.span);
+  // three kinds: 'elsewhere' (a writer quoted in another's book), 'self' (a writer quoting his own other work, in marks),
+  // 'copy' (a passage of a poor copy: a slug-titled scrape)
+  const kindOf = (p) => (keep?.(p) ? null : quotedElsewhere(p, DOCTRINAL) ? 'elsewhere' : slugTitle(p.title) ? 'copy'
+    : DOCTRINAL.has(canon(p.author)) && canon(p.author) === canon(p.book_author || p.author) && quotedOnly(p.text).length ? 'self' : null);
+  const jobs = passages.map((p, i) => ({ p, i, kind: kindOf(p) })).filter((j) => j.kind)
+    .map((j) => ({ ...j, writer: j.kind === 'copy' ? null : canon(j.p.author), span: j.kind === 'self' ? quotedOnly(j.p.text)[0] : j.kind === 'copy' ? (words(j.p.text).length >= MIN_WORDS ? clip(j.p.text) : null) : quotedSpan(j.p.text) })).filter((j) => j.span);
   if (!jobs.length) return done();
-  for (const j of jobs) j.own = passages.find((q) => q !== j.p && ownHolder(q, j.writer, j.span, isProvisional)) || null;
+  for (const j of jobs) j.own = passages.find((q) => q !== j.p && fits(q, j, isProvisional)) || null;
   const need = jobs.filter((j) => !j.own && search);
   let late = 0;
   if (need.length) {
@@ -82,8 +107,9 @@ export async function preferOwnWork(passages, { search = null, link = null, budg
     const deadline = new Promise((r) => { timer = setTimeout(r, left(), LATE); });
     const lookup = async (j) => {
       const hits = await search(j.span, { author: j.writer }, { timeoutMs: left() });
-      const ranked = await quoteCandidates(Array.isArray(hits) ? hits : [], j.span);
-      const hit = ranked.find((h) => ownHolder(h, j.writer, j.span, isProvisional));
+      // a copy is any work (history included), so the search order stands; a writer's words are ranked as quotations (rankOrigins)
+      const ranked = j.kind === 'copy' ? (Array.isArray(hits) ? hits : []) : await quoteCandidates(Array.isArray(hits) ? hits : [], j.span);
+      const hit = ranked.find((h) => fits(h, j, isProvisional));
       if (!hit) return null;
       const [linked] = link ? await link([hit]).catch(() => [hit]) : [hit];
       return shape(linked || hit);
@@ -98,5 +124,5 @@ export async function preferOwnWork(passages, { search = null, link = null, budg
   for (const j of found) { lead[j.i] = j.own; tail.push(j.p); }
   const seen = new Set();
   const out = [...lead, ...tail].filter((p) => { const k = keyOf(p); if (seen.has(k)) return false; seen.add(k); return true; });
-  return { passages: out, swapped: found.map((j) => ({ from: keyOf(j.p), to: keyOf(j.own), writer: j.writer })), searches: need.length, late, ms: Date.now() - t0 };
+  return { passages: out, swapped: found.map((j) => ({ from: keyOf(j.p), to: keyOf(j.own), writer: j.writer, kind: j.kind })), searches: need.length, late, ms: Date.now() - t0 };
 }
