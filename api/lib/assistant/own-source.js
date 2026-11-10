@@ -84,12 +84,16 @@ const fits = (q, j, provisional) => (j.kind === 'copy' ? betterCopy(q, j, provis
  * link (live: linkHits). Search + rank + link of every passage share the budget: later than budgetMs, failed, or no own passage
  * holding the span EXACTLY → the original passage stays. `shape` turns a (linked) hit into the caller's passage shape.
  * `keep(p)` true → never swapped: a passage of the book the reader named is that book's words, not a copy to trade away.
+ * `writers` adds writers to the doctrinal set for this call only.
  */
-export async function preferOwnWork(passages, { search = null, link = null, budgetMs = OWN_SOURCE_MS, shape = (h) => h, keep = null } = {}) {
+export async function preferOwnWork(passages, { search = null, link = null, budgetMs = OWN_SOURCE_MS, shape = (h) => h, keep = null, writers = [] } = {}) {
   const t0 = Date.now();
   const done = (extra = {}) => ({ passages, swapped: [], searches: 0, late: 0, ...extra, ms: Date.now() - t0 });
   if (!Array.isArray(passages) || !passages.length) return done();
-  const { DOCTRINAL, isProvisional } = await import('../source-hunt.js');
+  const { DOCTRINAL: CORE, isProvisional } = await import('../source-hunt.js');
+  // `writers`: more writers whose words, quoted in another's book, go back to their own (guidance.js: the House of Justice's
+  // letters quoted in Lights of Guidance → the published message)
+  const DOCTRINAL = writers.length ? new Set([...CORE, ...writers.map(canon)]) : CORE;
   // three kinds: 'elsewhere' (a writer quoted in another's book), 'self' (a writer quoting his own other work, in marks),
   // 'copy' (a passage of a poor copy: a slug-titled scrape)
   const kindOf = (p) => (keep?.(p) ? null : quotedElsewhere(p, DOCTRINAL) ? 'elsewhere' : slugTitle(p.title) ? 'copy'
@@ -108,7 +112,8 @@ export async function preferOwnWork(passages, { search = null, link = null, budg
     const lookup = async (j) => {
       const hits = await search(j.span, { author: j.writer }, { timeoutMs: left() });
       // a copy is any work (history included), so the search order stands; a writer's words are ranked as quotations (rankOrigins)
-      const ranked = j.kind === 'copy' ? (Array.isArray(hits) ? hits : []) : await quoteCandidates(Array.isArray(hits) ? hits : [], j.span);
+      // (an added writer is not core literature, which quoteCandidates ranks alone: search order too)
+      const ranked = j.kind === 'copy' || !CORE.has(j.writer) ? (Array.isArray(hits) ? hits : []) : await quoteCandidates(Array.isArray(hits) ? hits : [], j.span);
       const hit = ranked.find((h) => fits(h, j, isProvisional));
       if (!hit) return null;
       const [linked] = link ? await link([hit]).catch(() => [hit]) : [hit];
