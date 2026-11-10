@@ -38,9 +38,14 @@ describe('a bare work title is the book (Chad 11-09: "God Passes By" fell to Unm
     expect(r.strategy.choice).toBe('book'); expect(r.strategy.reason).toBe('named-work-only'); expect(r.units.named_work).toBe('God Passes By');
     expect(r.decisions[0].chosen).toBe('book');
   });
-  it('a question with more than the title, or a non-book pick, stays Unmatched', async () => {
+  it('Jev picking Unmatched (or anything below confidence) on a bare title still → book', async () => {
+    for (const pick of [ans('unmatched', 0.9), ans('understanding', 0.4), ans('unmatched', 0.3)]) {
+      const r = await run('“God Passes By”', pick);
+      expect(r.strategy.choice).toBe('book'); expect(r.strategy.reason).toBe('named-work-only');
+    }
+  });
+  it('a question with more than the title, or a below-confidence work kind, stays Unmatched', async () => {
     expect((await run('What does God Passes By say about the Báb’s martyrdom?', ans('book', 0.4))).strategy.choice).toBe('unmatched');
-    expect((await run('“God Passes By”', ans('understanding', 0.4))).strategy.choice).toBe('unmatched');
     expect((await run('“God Passes By”', ans('book', 0.4), ans('work', 0.2))).strategy.choice).toBe('unmatched');
   });
 });

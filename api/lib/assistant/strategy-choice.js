@@ -128,10 +128,13 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
     const subj = choice(a.subject_religion), subjectOn = strategy.choice !== 'comparison' && subj?.choice && subj.choice !== 'none' && SIDES[subj.choice] && (subj.confidence ?? 0) >= min && !jevPatch.patch.scope?.religions_specified && !jevPatch.turnOnly;
     const turnOnly = subjectOn ? { scope: { religions_specified: [subj.choice] } } : jevPatch.turnOnly;
     const units = namedUnits(a, spans, messages.filter((m) => m.role === 'user').at(-1)?.content || '', min);
-    // the message is ONLY a work's name (Jev's own kind answer: a work, nothing else asked): Jev's top pick book/about stands even below
-    // confidence — a bare title is the book (Chad 11-09: "God Passes By" fell to Unmatched, was read as a quotation, ran slow research)
-    if (strategy.reason === 'low-confidence' && ['book', 'about'].includes(strategy.was) && opts[strategy.was] && units.named_work && !units.named_person && !units.topic) {
-      strategy = { ...raw, choice: strategy.was, reason: 'named-work-only' };
+    // the message is ONLY a work's name (Jev's own kind answer: a work, nothing else asked) → the book, never Unmatched: Jev's
+    // below-confidence book/about pick stands, any other pick becomes book (Chad 11-09: "God Passes By" fell to Unmatched, was read as a
+    // quotation and ran slow research — "how could a quoted title of one of the core books not match the book? Even in unmatched fallback")
+    const workOnly = units.named_work && !units.named_person && !units.topic;
+    if (workOnly && isUnmatched(strategy.choice) && (opts.book || opts.about)) {
+      const pick = ['book', 'about'].includes(strategy.was) && opts[strategy.was] ? strategy.was : opts.book ? 'book' : 'about';
+      strategy = { ...raw, choice: pick, was: raw.choice ?? null, reason: 'named-work-only' };
       decisions[0] = { ...decisions[0], chosen: strategy.choice, reason: strategy.reason };
     }
     if (subjectOn) decisions.push({ point: 'subject-religion', by: 'jev', saw: state, options: Object.keys(SIDES), probabilities: jevProbabilities(subj), chosen: subj.choice, reason: 'a hard filter for this turn', ms });
