@@ -32,7 +32,7 @@ export const CASES = [
   { id: 'find-dhammapada', q: 'find "hatred ceases" in the Dhammapada', text: /hatred/i, cite: /dhammapada/i, ms: 8000 },
   { id: 'prayer-healing', q: 'a prayer for healing', ms: 15000 },
   { id: 'prayer-christian', q: 'a Christian prayer for forgiveness', cite: /./, ms: 15000 },
-  { id: 'justice', q: "What does Bahá'u'lláh say about justice?", cite: /./, ms: 30000 },
+  { id: 'justice', q: "What does Bahá'u'lláh say about justice?", cite: /Hidden Words/i, ms: 30000 },   // Chad 11-10: the Hidden Words is the key source for personal justice (inṣáf)
   { id: 'sikh-humility', q: 'What does Sikh scripture say about humility?', cite: /granth|guru|sikh|japji/i, ms: 30000 },
   { id: 'afterlife', q: 'How do the religions view life after death?', cite: /./, ms: 40000 },
   { id: 'tahirih', q: 'Who was Táhirih?', text: /t[aá]hirih/i, ms: 25000 },
