@@ -146,6 +146,12 @@ describe('quote_trace@2', () => {
 });
 
 describe('term@2', () => {
+  it('the term unit comes from the question\'s own marks when Jev names none (round 4: "irfán" — every {{term}} search ran the whole question)', async () => {
+    const fused = vi.fn(async () => ({ passages: [] }));
+    const s = await run('term', 'What does the Arabic word irfán mean?', { tools: { fused_search: fused } });
+    expect(s.units.term).toBe('irfán');
+    expect(fused.mock.calls.slice(0, 3).map(([i]) => i.query)).toEqual(['irfán', 'irfán', 'irfán']);   // t2 ×2 + t3; the absence fallback after them keeps the question
+  });
   const TAO = [{ id: 1, text: 'The sage manages affairs without action (wu wei).', title: 'Tao Te Ching (Legge)', religion: 'Tao', authority: 'scripture', score: 0.9, document_id: 10 },
     { id: 2, text: 'Wu wei, non-action, is the way of heaven.', title: 'Chuang Tzu', religion: 'Tao', authority: 'interpretation', score: 0.8, document_id: 11 }];
   it('"wu wei", Tao scope: Tao core + renderings across parallel translations; no CTAI', async () => {
@@ -191,6 +197,16 @@ describe('original@2', () => {
     const qc = async () => ({ passages: [{ ...EN, role: 'source', score: 1 }] });
     const s = await run('original', 'q', { tools: { quotation_candidates: qc }, judges: { holds: holdsAll }, units: { quoted_words: EN.text, quoted_clean: EN.text } });
     expect(path(s).slice(0, 4)).toEqual(['o1', 'o2', 'o2j', 'o3']);
+  });
+  it('no anchor, no quoted words, a named work → the passage searched inside that work is the anchor → o3 (round 4: the opening chapter of the Qur\'an went to absence)', async () => {
+    const SURA = { id: 7, text: 'In the name of God, the Compassionate, the Merciful', title: 'The Quran (Rodwell), Sura I.', religion: 'Islam', authority: 'scripture', document_id: 21104 };
+    const fs = vi.fn(async () => ({ passages: [SURA] }));
+    const ed = vi.fn(async (i) => ({ passages: i.want === 'original' ? [{ id: 9001, text: 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ', language: 'ar', role: 'original', religion: 'Islam' }] : [] }));
+    const s = await run('original', 'Show me the Arabic of the opening chapter of the Qur\'an beside an English translation.', { tools: { fused_search: fs, edition_lookup: ed },
+      choice: { units: { named_work: 'Qur\'an', topic: 'the opening chapter' } } });
+    expect(path(s).slice(0, 3)).toEqual(['o1', 'o1w', 'o3']);
+    expect(fs.mock.calls[0][0]).toMatchObject({ query: 'the opening chapter' }); expect(ed.mock.calls[0][0]).toMatchObject({ paragraph_id: 7, want: 'original' });
+    expect(s.units.found_passages.some((p) => p.language === 'ar')).toBe(true);
   });
 });
 

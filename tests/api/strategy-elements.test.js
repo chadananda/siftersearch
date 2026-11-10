@@ -204,6 +204,22 @@ describe('decisions', () => {
     expect((await run(['answers', 'contradicts']))[0]).toBe('conflict');
     expect(await run([], 0)).toEqual(['empty', 0]);
   });
+  it('search.compare: the reader\'s quoted words are each side\'s query', async () => {
+    let q = null;
+    const s = mk({ compare_search: async (i) => { q = i.query; return { sides: i.sides.map((sd) => ({ label: sd.label, passages: [P(1)] })) }; } }, { compare_sides: ['Christian', 'Islam'], topic: 'How is the phrase used across the sacred texts?', quoted_words: 'kingdom of heaven' });
+    expect(await ELEMENTS['search.compare'].run(s, {})).toBe('all'); expect(q).toBe('kingdom of heaven');
+  });
+  it('judge.passages: a passage found for one side / heading is judged on its part, and one side answering never drops another side', async () => {
+    const asked = [];
+    const jev = async ({ question, state }) => { asked.push(question); return { choice: /whole request/.test(question) || state.includes('Leviticus') ? 'answers' : 'mentions_only' }; };
+    const s = mk({}, { current_user_question: 'How do the Bible and the Qur\'an each teach forgiveness?', found_passages: [P(1, { side: 'Christian', text: 'Leviticus' }), P(2, { side: 'Islam', text: 'Sura XXIV' })] }, { jev });
+    expect(await ELEMENTS['judge.passages'].run(s, {})).toBe('answers');
+    expect(asked[1]).toMatch(/one side of that answer: "Islam"/);
+    expect(s.units.found_passages.map((x) => x.verdict)).toEqual(['answers', 'answers']);
+    // untagged → the whole question, as before; a side with only mentions keeps them for fill.missing_sides to name
+    const t = mk({}, { found_passages: [P(1, { side: 'A' }), P(2, { side: 'B' })] }, { jev: async ({ state }) => ({ choice: state === 'Passage 1' ? 'answers' : 'mentions_only' }) });
+    await ELEMENTS['judge.passages'].run(t, {}); expect(t.units.found_passages.length).toBe(2);
+  });
 });
 
 describe('rank / shape / plan', () => {

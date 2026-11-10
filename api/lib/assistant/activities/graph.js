@@ -169,6 +169,16 @@ export async function runStrategyGraph(name, choice, ctx) {
   return s.out === undefined && !s.done ? undefined : (s.out ?? null);   // the research agent answered (a tree's $fallback): nothing to execute, the ordinary path has the reply
 }
 
+/** The term a term question names, from structure only (quotes, script, transliteration marks); null when none. Pure. */
+export function termSpan(q) {
+  const t = String(q || ''), quoted = quotedSpan(t, 1);
+  if (quoted && quoted.split(/\s+/).length <= 4) return quoted;
+  const script = t.match(/[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u0900-\u097F\u4E00-\u9FFF]+(?:\s+[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u0900-\u097F\u4E00-\u9FFF]+)*/u);
+  if (script) return script[0];
+  const marked = t.split(/[\s,;:?!.()"“”]+/).filter((w) => /[\p{L}]/u.test(w) && /[\u00C0-\u024F\u1E00-\u1EFF\u02BB\u02BC\u02BE\u02BF]/u.test(w) || /^[‘’ʻʼʾʿ][\p{L}]/u.test(w));
+  return marked.length ? marked.join(' ').replace(/^['’]+|['’]+$/g, '') : null;
+}
+
 /**
  * The units a TREE runs on (units.js buildUnits): the scope the turn resolved through its layers (ctx.scope.units, the turn's highest layer — a default
  * authority_floor stays 'any', as the old executors filtered nothing), the conversation_state, the reader's channel and depth, and the request units the
@@ -188,6 +198,10 @@ export function entryUnits(g, choice, ctx = {}) {
   u.given = ctx.state?.given || [];
   if (g.needs?.includes('scripture_reference')) u.scripture_reference = parseScriptureRef(u.current_user_question);
   if (g.needs?.includes('compare_sides') && !u.compare_sides && Array.isArray(u.religions_specified) && u.religions_specified.length > 1) u.compare_sides = u.religions_specified;
+  // the term asked about (term tree): Jev's span kinds see only capitalised names, so a lowercase transliteration ("irfán") never reached the unit and every
+  // {{term}} search ran the whole question (round 4). Code resolves it from the question's own marks: quotation marks, then a non-Latin-script run, then the
+  // transliterated words (Latin letters with diacritics or ‘ayn/hamza marks); none → the unit stays empty and the slot falls back as before
+  if (g.needs?.includes('term') && !String(u.term ?? '').trim()) u.term = termSpan(u.current_user_question) ?? u.term;
   if (g.needs?.includes('quoted_words') && !String(u.quoted_words ?? '').trim()) u.quoted_words = quotedSpan(u.current_user_question) ?? quotedSpan(u.current_user_question, 2) ?? u.quoted_words;   // the reader's own quotation marks
   // tradition first (review rule 1): the side Jev named is the scope over the site default (11-10: "hatred ceases" in the Dhammapada searched with religion Baha'i)
   if (!g.needs?.includes('compare_sides') && choice?.sides?.length && ['site', 'default', undefined].includes(u.scope_sources?.religions_specified)) u.religions_specified = [...choice.sides];
