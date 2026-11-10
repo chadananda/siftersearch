@@ -771,6 +771,7 @@ async function applyUpdates() {
   }
 
   prevSha = (await run('git rev-parse HEAD')).stdout.trim() || prevSha;
+  let depsInstalled = false;
   // Pull latest
   const pullResult = await run(`git pull ${REMOTE} ${BRANCH}`);
   if (!pullResult.success) {
@@ -810,6 +811,21 @@ async function applyUpdates() {
       return false;
     }
     log('info', `Syntax gate: ${changed.filter((f) => /\.(?:m?js|cjs)$/.test(f)).length} changed JS file(s) parse`);
+    // A new dependency must be installed BEFORE the import gate, or every commit that adds a package is refused (11-10: pdfkit)
+    if (changed.includes('package-lock.json')) {
+      log('info', 'package-lock.json changed — installing dependencies before the import gate...');
+      const npmFirst = await run('npm ci --omit=dev');
+      if (!npmFirst.success) {
+        const head = (await run('git rev-parse HEAD')).stdout.trim();
+        log('error', `Refusing deploy of ${head}: npm ci failed — ${npmFirst.error}`);
+        await run(`git reset --hard ${prevSha}`);
+        await run('npm ci --omit=dev');
+        blockedRemote = head;
+        markDeploy(head, 'refused', `npm ci: ${String(npmFirst.error).slice(0, 300)}`);
+        return false;
+      }
+      depsInstalled = true;
+    }
     // IMPORT gate (10-23 16:08: a pushed file imported a module that was never committed — node --check passes that): every
     // import of a changed file and of its importers resolves, every named import is exported; static, nothing is started
     const imp = importProblems(changed, { root: PROJECT_ROOT });
@@ -819,6 +835,7 @@ async function applyUpdates() {
       const head = (await run('git rev-parse HEAD')).stdout.trim();
       log('error', `Refusing deploy of ${head}: ${broken.length} broken import(s) — ${broken.map((b) => `${b.file}:${b.line} ${b.error}`).join('; ')}`);
       await run(`git reset --hard ${prevSha}`);
+      if (depsInstalled) await run('npm ci --omit=dev');
       blockedRemote = head;
       markDeploy(head, 'refused', `import: ${broken.map((b) => `${b.file}:${b.line} ${b.error}`).join('; ')}`);
       await alertNow('deploy-blocked', 'SifterSearch deploy refused — a module would not load',
@@ -828,9 +845,11 @@ async function applyUpdates() {
     log('info', `Import gate: every import resolves`);
   }
 
-  // Skip npm ci if package-lock.json didn't change
-  const lockChanged = await run(`git diff HEAD~1 --name-only -- package-lock.json`);
-  if (lockChanged.success && lockChanged.stdout.includes('package-lock.json')) {
+  // Skip npm ci if package-lock.json didn't change (or was already installed before the import gate)
+  const lockChanged = await run(`git diff ${prevSha || 'HEAD~1'} HEAD --name-only -- package-lock.json`);
+  if (depsInstalled) {
+    log('info', 'Dependencies already installed before the import gate');
+  } else if (lockChanged.success && lockChanged.stdout.includes('package-lock.json')) {
     log('info', 'package-lock.json changed — installing dependencies...');
     const npmResult = await run('npm ci --omit=dev');
     if (!npmResult.success) {
