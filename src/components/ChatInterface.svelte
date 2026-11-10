@@ -6,6 +6,7 @@
   import { styleQuotes } from '../../api/lib/quote-style.js';
   import { search, session, documents, chat, triggerServerUpdate, authenticatedFetch, admin } from '../lib/api.js';
   import ReligionIcon from './ReligionIcon.svelte';
+  import BookCard from './chat/BookCard.svelte';
   import { toCurlyQuotes } from '../lib/text-utils.js';
 
   // App description - baked in at build time
@@ -1317,6 +1318,8 @@
           researchMessages = researchMessages.map((m, i) => i === assistantIdx ? { ...m, understood: event.text } : m);
         } else if (event.type === 'progress' && event.text) {
           researchMessages = researchMessages.map((m, i) => i === assistantIdx ? { ...m, progress: event.text } : m);
+        } else if (event.type === 'book' && event.book) {
+          researchMessages = researchMessages.map((m, i) => i === assistantIdx ? { ...m, book: event.book } : m);
         } else if (event.type === 'citations') {
           pendingCitations = event.citations || [];
           researchMessages = researchMessages.map((m, i) =>
@@ -2029,6 +2032,7 @@
                     {#if msg.progress}<p>{msg.progress}</p>{/if}
                   </div>
                 {/if}
+                {#if msg.book}<BookCard book={msg.book} />{/if}
                 <!-- Assistant response -->
                 <div class="research-bubble research-bubble-assistant {msg.error ? 'error' : ''}">
                   {#if msg.isStreaming && !msg.content}
