@@ -9,9 +9,27 @@
   // Transcript persists in localStorage per token. Soft WebAudio feedback (synthesized, muteable).
   // token/api from the loader; accent/name/mission are optional per-page overrides (data-* attrs)
   // that tune the widget without touching the DB profile. ONE public domain; the edge worker proxies /api.
+  import { ANIS_SAMPLES, SAMPLES_FOR_EVERYONE } from '../lib/anis-samples.js';
   import { styleQuotes } from '../../api/lib/quote-style.js';
   import { BUILD, tagFor } from './version.js';
-  let { token = '', api = 'https://siftersearch.com', accent = '', name = '', mission = '', opened = '' } = $props();
+  let { token = '', api = 'https://siftersearch.com', accent = '', name = '', mission = '', opened = '', samples = '' } = $props();
+  // "Try a sample" menu (one showcase question per strategy): shown with the samples attribute, or once a page was opened
+  // with ?anis-samples (remembered on this browser; ?anis-samples=0 forgets), or for everyone when SAMPLES_FOR_EVERYONE
+  let showSamples = $state(false);
+  let sampleOpen = $state(false);
+  try {
+    const q = new URLSearchParams(location.search).get('anis-samples');
+    if (q !== null) localStorage.setItem('sifter-chat-samples', q === '0' ? '0' : '1');
+    showSamples = SAMPLES_FOR_EVERYONE || (samples !== '' && samples !== 'false') || localStorage.getItem('sifter-chat-samples') === '1';
+  } catch { showSamples = SAMPLES_FOR_EVERYONE || (samples !== '' && samples !== 'false'); }
+  async function runSample(smp) {
+    sampleOpen = false;
+    for (const q of [...(smp.before || []), smp.q]) {
+      while (busy) await new Promise((r) => setTimeout(r, 300));
+      input = q;
+      await send();
+    }
+  }
 
   // Ocean mark (public/ocean-noback.svg) — one path constant, used for header roundel,
   // launch bubble, message avatars and the watermark. Keeps the widget self-contained.
@@ -531,6 +549,21 @@
             {/if}
           </div>
         </div>
+        {#if showSamples}
+          <div class="sample-menu">
+            <button type="button" class="sample-btn" aria-haspopup="menu" aria-expanded={sampleOpen} disabled={busy} onclick={() => sampleOpen = !sampleOpen}>Try a sample</button>
+            {#if sampleOpen}
+              <div class="sample-list" role="menu" tabindex="-1" onkeydown={(e) => { if (e.key === 'Escape') sampleOpen = false; }}>
+                {#each ANIS_SAMPLES as smp (smp.strategy)}
+                  <button type="button" role="menuitem" class="sample-item" onclick={() => runSample(smp)}>
+                    <span class="sample-label">{smp.label}</span>
+                    <span class="sample-q">{smp.before ? `${smp.before[0]} → ` : ''}{smp.q}</span>
+                  </button>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        {/if}
         <footer>
           <textarea
             rows="1"
@@ -784,6 +817,15 @@
   .error { color: #a33; font-size: 13px; padding: 4px 2px; }
 
   footer { display: flex; gap: 9px; padding: 12px 14px 8px; background: transparent; }
+  .sample-menu { position: relative; padding: 6px 14px 0; }
+  .sample-btn { padding: 3px 10px; font-size: 12px; color: inherit; opacity: .8; background: transparent; border: 1px solid rgba(128,128,128,.4); border-radius: 999px; cursor: pointer; }
+  .sample-btn:hover:not(:disabled) { opacity: 1; border-color: var(--accent, currentColor); }
+  .sample-btn:disabled { opacity: .4; cursor: default; }
+  .sample-list { position: absolute; bottom: calc(100% + 4px); left: 10px; right: 10px; z-index: 30; max-height: 55vh; overflow-y: auto; display: flex; flex-direction: column; background: #fff; color: #1e293b; border: 1px solid rgba(128,128,128,.35); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+  .sample-item { display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 8px 12px; background: transparent; border: 0; border-bottom: 1px solid rgba(128,128,128,.15); color: inherit; cursor: pointer; }
+  .sample-item:hover, .sample-item:focus-visible { background: rgba(128,128,128,.12); outline: none; }
+  .sample-label { font-size: 13px; font-weight: 600; }
+  .sample-q { font-size: 12px; opacity: .75; }
   textarea {
     flex: 1; resize: none; border: 1px solid #ddd5c2; border-radius: 12px;
     padding: 10px 14px; font-size: 16px; line-height: 1.4; outline: none;
@@ -804,6 +846,7 @@
 
   /* ── Dark: deep ink, warm text, lifted links, same gold. ── */
   @media (prefers-color-scheme: dark) {
+    .sample-list { background: #1e293b; color: #e2e8f0; }
     .root { --quote: #dcc4a0; }
     .panel { background: linear-gradient(178deg, #14181e, #0e1217); color: #e9e6dd; }
     .watermark { color: #b9c8dd; opacity: .045; }
