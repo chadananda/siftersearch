@@ -9,7 +9,7 @@ import { parseScriptureRef } from '../scripture-ref.js';
 import { template, fill } from './templates.js';
 import { AUTH_KINDS } from './contract.js';
 import { standingOf, authorityOrder } from '../tradition-authority.js';
-import { TIER_ORDER } from '../source-tier.js';
+import { TIER_ORDER, translationRank } from '../source-tier.js';
 import { judgeHolds, judgeTimeline, judgeDated, termScript, generateList } from '../judges.js';
 import { currentAIContext } from '../../ai-context.js';
 
@@ -489,10 +489,11 @@ E['fill.term_script'] = { kind: 'decision', cls: 'jev', edges: ['filled', 'none'
 
 // ── rank / shape / plan ─────────────────────────────────────────────────────────────────────────────────────────────────
 const ORDER = [...AUTH_KINDS, 'other'];
+const foldText = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\[[^\]]*\]/g, ' ').replace(/[^\p{L}\p{N}]+/gu, ' ').trim().slice(0, 160);   // a copy's opening words, its own markers ([43], [pg 311]) gone
 const yearOf = (x) => Number((String(x.year ?? x.date ?? '').match(/^-?\d{1,4}/) || [])[0]) || 0;   // signed: a BCE year (-563) sorts before a CE one
 const standingRank = (x) => { const i = TIER_ORDER.indexOf(standingOf(x)); return i < 0 ? TIER_ORDER.length : i; };
 export const COMPARE = {
-  standing: () => (a, b) => standingRank(a) - standingRank(b),   // tradition-authority: each passage by its own tradition's tiers (Bahá’í: writings > guardian > compilation > reported > house > secondary)
+  standing: () => (a, b) => standingRank(a) - standingRank(b) || translationRank(a) - translationRank(b),   // tradition-authority: each passage by its own tradition's tiers (Bahá’í: writings > guardian > compilation > reported > house > secondary)
   authority: () => (a, b) => (ORDER.indexOf(kindOf(a) ?? 'other') + 1 || 99) - (ORDER.indexOf(kindOf(b) ?? 'other') + 1 || 99),
   date: () => (a, b) => yearOf(b) - yearOf(a), history: () => (a, b) => yearOf(a) - yearOf(b), score: () => (a, b) => (b.score ?? 0) - (a.score ?? 0),
   length: () => (a, b) => String(a.text ?? '').length - String(b.text ?? '').length, marked: () => (a, b) => (b.marked ? 1 : 0) - (a.marked ? 1 : 0),
@@ -514,6 +515,7 @@ E.rank = { kind: 'transform', cls: 'code', edges: ['done', 'empty'], scope: 'str
     else if (p.skip === 'flag') items = items.map((x) => (given.has(String(x.id)) ? { ...x, given: true } : x));
     items = items.map((x, i) => [x, i]).sort(([a, i], [b, j]) => { for (const c of cmp) { const d = c(a, b); if (d) return d; } return i - j; }).map(([x]) => x);
     items = [...items.filter((x) => !x.out_of_scope), ...items.filter((x) => x.out_of_scope)];   // a widened (out-of-scope) passage never outranks an in-scope one, whatever the keys
+    if (p.dedupe === 'text') { const seen = new Set(); items = items.filter((x) => { const t = foldText(x.text); if (!t) return true; if (seen.has(t)) return false; seen.add(t); return true; }); }   // the same passage in several copies: the best-ranked copy only
     if (p.best && items.length) items = items.filter((x) => flat(x[p.best]) === flat(items[0][p.best]));   // best: only the first-ranked item's value of the field (one edition of the passage, whole)
     const pinned = p.pin ? items.filter((x) => x[p.pin] || x.id === p.pin) : [];
     items = [...pinned, ...items.filter((x) => !pinned.includes(x))];

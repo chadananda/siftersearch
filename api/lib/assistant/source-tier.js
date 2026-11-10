@@ -77,8 +77,22 @@ export function tierGap(p = {}) {
 export const TIER_ORDER = ['writings', 'guardian', 'compilation', 'reported', 'house', 'secondary'];
 const rankOf = (p) => { const t = sourceTier(p); const i = TIER_ORDER.indexOf(t); return i < 0 ? TIER_ORDER.length : i; };
 
-/** Passages in tier order, search rank kept within a tier (stable). Non-Bahá'í passages keep their place after the tiers. Pure. */
-export const byTier = (ps = []) => ps.map((p, i) => [p, i]).sort((a, b) => rankOf(a[0]) - rankOf(b[0]) || a[1] - b[1]).map(([p]) => p);
+// Within one tier, the authorized or published translation before an individual's (feedback citation source order; round 5: a
+// compilation on justice led with Juan Cole's translation of the Manakji tablet). From metadata only: the 'Tablet Translations'
+// shelf, a "(provisional translation)" title, a provisional / personal translation label, or a named translator who is not
+// Shoghi Effendi or an institution. 0 = authorized/published, 1 = an individual's rendering. Pure.
+const OFFICIAL = /shoghi|world cent(?:re|er)|house of justice|research department|committee|publishing trust/i;
+export const translationRank = (p = {}) => {
+  if (!p || !isBahai(p)) return 0;
+  const label = String(p.translation || ''), by = String(p.translator || p.translated_by || '');
+  if (/^tablet translations$/i.test(String(p.collection || '').trim()) || /\(provisional translation\)/i.test(String(p.title ?? p.source_title ?? ''))) return 1;
+  if (/^(?:provisional|translation by)\b/i.test(label) && !OFFICIAL.test(label)) return 1;
+  return by && !OFFICIAL.test(by) ? 1 : 0;
+};
+
+/** Passages in tier order (an authorized translation before an individual's within a tier), search rank kept otherwise (stable).
+ *  Non-Bahá'í passages keep their place after the tiers. Pure. */
+export const byTier = (ps = []) => ps.map((p, i) => [p, i]).sort((a, b) => rankOf(a[0]) - rankOf(b[0]) || translationRank(a[0]) - translationRank(b[0]) || a[1] - b[1]).map(([p]) => p);
 
 /** Is any passage from the authoritative written tier (the Writings or Shoghi Effendi)? */
 export const hasAuthoritative = (ps = []) => ps.some((p) => ['writings', 'guardian'].includes(sourceTier(p)));

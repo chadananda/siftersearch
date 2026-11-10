@@ -339,3 +339,20 @@ describe('A1-style tree compiled from step rows, end to end', () => {
     expect(a.done).toEqual({ reply: 'agent' });
   });
 });
+
+describe('round 5 compilation: an authorized translation before an individual\'s, one copy of a passage', () => {
+  const W = (id, extra) => P(id, { religion: "Bahá'í", author: "Bahá'u'lláh", text: 'O Son of Spirit! The best beloved of all things in My sight is Justice.', ...extra });
+  it('standing ties among Writings break toward the published translation; the same passage in several copies keeps the best-ranked one', () => {
+    const items = [
+      W(1, { collection: 'Tablet Translations', translator: 'Juan Cole', title: 'Tablet to Manakji' }),
+      W(2, { collection: 'Tablet Translations', translator: 'Juan Cole', title: 'Tablet to Manakji (2)', text: 'O SON of spirit — the best beloved of all things in My sight is justice [43].' }),
+      W(3, { collection: "Bahá'u'lláh", title: 'The Hidden Words', text: 'O Son of Spirit! The best beloved of all things in My sight is Justice; turn not away therefrom.' }),
+      W(4, { collection: "Bahá'u'lláh", title: 'Gleanings', text: 'Justice is, in this day, bewailing its plight.' }),
+    ];
+    const s = mk({}, { found_passages: items });
+    expect(ELEMENTS.rank.run(s, { by: ['standing'], dedupe: 'text', k: 5 })).toBe('done');
+    const ids = s.units.found_passages.map((x) => x.id);
+    expect(ids.slice(0, 2)).toEqual([3, 4]);   // authorized texts first
+    expect(ids).toEqual([3, 4, 1]);            // Cole's second copy of the same passage dropped
+  });
+});
