@@ -488,7 +488,7 @@ export function fillTags(text, tags) {
 // Prior turns only (the current question is sent separately), trimmed — context, not a transcript to re-answer.
 export function conversationSummary(messages, persona) {
   // a link's URL is noise here; that it WAS linked is what a follow-up checks ("you didn't link Gleanings")
-  const prior = (messages || []).slice(0, -1).slice(-8).map((m) => ({ ...m, content: stripMarkup(m.content).replace(/\[([^\]]{1,300})\]\((?:https?:)?[^)\s]{1,600}\)/g, '$1 [linked]') }));
+  const prior = (messages || []).slice(0, -1).slice(-8).map((m) => ({ ...m, content: stripMarkup(m.content).replace(/\[([^\]]{1,300})\]\((?:https?:)?[^)\s]{1,600}\)/g, '$1') }));
   // the reply the seeker is answering is kept nearly whole (its claims and links are what a follow-up refers to — r5: the
   // "also quoted in the Aqdas" line at the end of T1 was cut at 400 chars, and T5 asked about it); earlier replies keep
   // enough to CHECK a claim about them (r9: at 400 chars Anís could not see what he had said, so he conceded errors he never

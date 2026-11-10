@@ -99,7 +99,8 @@ export function dropQuibbles(text, { question = '', format = null } = {}) {
 }
 
 /** The researcher's brief markers never reach the reader ("[own]", "(P3)", "[P2, W1]"). Pure. */
-export const dropBriefMarkers = (t) => String(t || '').replace(/\s*\[own\]/gi, '').replace(/\s*\((?:[PW]\d+(?:,\s*)?)+\)/g, '').replace(/\s*\[(?:[PW]\d+(?:,\s*)?)+\]/g, '');
+// "[linked]" / "[linked: …]": the history marker for a prior reply's links, echoed by the writer (11-10, the Deepening reply)
+export const dropBriefMarkers = (t) => String(t || '').replace(/\s*\[own\]/gi, '').replace(/\s*\[linked(?::[^\]\n]{0,200})?\]/gi, '').replace(/\s*\((?:[PW]\d+(?:,\s*)?)+\)/g, '').replace(/\s*\[(?:[PW]\d+(?:,\s*)?)+\]/g, '');
 
 // PILGRIMS' NOTES are never dismissed (Chad 10-23: "stop lecturing about pilgrim notes carrying no authority. It is relative …
 // the pilgrim notes carry more authority than anything else that will ever be written by any scholar or institution in this
