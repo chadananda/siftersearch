@@ -129,3 +129,15 @@ describe('hypeBankSeedJob', () => {
     expect(w.followed).toEqual([7]);
   });
 });
+
+describe('hype-bank-seed — every phrasing searched (11-10)', () => {
+  it('searches the question and each variant, interleaving ranks, up to perQuestion confirmed paragraphs', async () => {
+    const questions = [{ id: 'bahai-001', q: 'what is bahai faith', variants: ['what do bahai believe', 'what is bahai faith'], held_out: false }];
+    const hits = (q) => (q === 'what is bahai faith' ? [{ id: 1, doc_id: 7, religion: "Baha'i", tier: 'core' }, { id: 2, doc_id: 7, religion: "Baha'i", tier: 'core' }]
+      : [{ id: 3, doc_id: 8, religion: "Baha'i", tier: 'gray' }, { id: 1, doc_id: 7, religion: "Baha'i", tier: 'core' }]);
+    const { deps, w } = world({ questions, hits });
+    const r = await hypeBankSeedJob({ tradition: 'bahai', dry: true }, deps);
+    expect(w.searches.map((s) => s.q)).toEqual(['what is bahai faith', 'what do bahai believe']);   // duplicate variant searched once
+    expect(r.planned.map((p) => p.paraId)).toEqual([1, 3, 2]);   // rank 0 of each list, then rank 1, de-duplicated
+  });
+});

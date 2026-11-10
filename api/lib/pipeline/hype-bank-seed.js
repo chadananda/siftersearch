@@ -14,7 +14,7 @@ import { canonicalTradition } from '../assistant/tradition-name.js';
 import { doctrinalTier } from '../authority.js';
 
 export const SEED_TIERS = ['core', 'gray'];
-export const DEFAULT_PER_QUESTION = 3;
+export const DEFAULT_PER_QUESTION = 10;   // keep every confirmed answering ¶ up to this (Chad: "as much as possible" in the doctrinal material)
 const BANK_DIR = path.join(process.cwd(), 'tests', 'quality', 'question-bank');
 const r2 = (n) => Math.round(n * 100) / 100;
 
@@ -52,8 +52,15 @@ async function defaults(over) {
 export async function planPairs({ bankId, religion, questions, perQuestion, judged }, d) {
   const pairs = [], noHits = [];
   for (const q of questions) {
-    let hits = [];
-    try { hits = await d.search(q.q, religion, perQuestion * 4); } catch (e) { noHits.push({ bankId: q.id, error: String(e?.message || e).slice(0, 120) }); continue; }
+    // the question and each of its measured variants are searched; results interleave by rank so every phrasing contributes
+    const phrasings = [q.q, ...(q.variants || [])].filter((x, i, a) => x && a.indexOf(x) === i);
+    const lists = [], errors = [];
+    for (const ph of phrasings) {
+      try { lists.push((await d.search(ph, religion, perQuestion * 4)) || []); } catch (e) { errors.push(String(e?.message || e).slice(0, 120)); }
+    }
+    if (!lists.length) { noHits.push({ bankId: q.id, error: errors[0] }); continue; }
+    const hits = [];
+    for (let r = 0; r < Math.max(...lists.map((l) => l.length)); r++) for (const l of lists) if (l[r]) hits.push(l[r]);
     const picked = [], seen = new Set();
     for (const h of hits || []) {
       const paraId = Number(h.id), docId = Number(h.doc_id ?? h.document_id);
