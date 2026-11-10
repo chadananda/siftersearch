@@ -77,6 +77,7 @@ import { reingestCarryJob, carryVerifyReport, carryRepairJob } from './carry-job
 import { translationAudit, originalAudit, workFamilyCoverage } from '../repos/alignment-repo.js';
 import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
 import { driveWearReport } from './drive-wear.js';
+import { anisJevTimeoutsReport } from './anis-jev-timeouts.js';
 
 export const REPORTS = {
   /** SMART writes/day per NVMe/SSD vs the previous sample + percentage_used; queues the weekly-email item. params: { store } */
@@ -87,6 +88,8 @@ export const REPORTS = {
   'media-person-review': mediaPersonReviewJob,
   'media-person-apply': mediaPersonApplyJob,
   'media-descriptions': mediaDescriptionsJob,
+  /** Anís turns per day whose Jev call timed out, by call and outcome, and what the backup decided (fail-open rate). params: { days } */
+  'anis-jev-timeouts': (params) => anisJevTimeoutsReport(params),
   /** The Anís audits as a ranked strategy work queue (also /admin/anis#threads). params: { days } */
   async 'strategy-gaps'({ days = 30 } = {}) { return { days, ...strategyGaps(auditsSince(days)) }; },
   /** Books search cannot tier (religion missing or a numeric author): rows to fix in the library. params: { scope, limit } */

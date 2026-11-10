@@ -36,3 +36,12 @@ export async function anisRepliesAfter(after = 0, { sinceDays = 30, limit = 100 
     FROM chat_messages m WHERE m.id > ? AND m.role = 'assistant' AND m.status IN ('answered','canned') AND m.created_at >= ?
     ORDER BY m.id LIMIT ?`, [Number(after) || 0, since, Math.min(Math.max(1, Number(limit) || 100), 500)], 'anis-threads:replies-after');
 }
+
+/** Every Anís reply of the last `days` with only its Jev-timeout facts (path.meta.jev_timeouts, path.jev_fallback): the
+ *  anis-jev-timeouts report. Bounded by the window; reads two JSON fields, never the reply text. */
+export async function anisJevTimeoutRows({ days = 7 } = {}) {
+  const since = new Date(Date.now() - Number(days || 7) * 86400000).toISOString().slice(0, 19).replace('T', ' ');
+  return queryAll(`SELECT substr(created_at, 1, 10) AS day, json_extract(path_json, '$.meta.jev_timeouts') AS timeouts,
+      json_extract(path_json, '$.jev_fallback') AS fallback
+    FROM chat_messages WHERE role = 'assistant' AND created_at >= ? LIMIT 200000`, [since], 'anis-threads:jev-timeouts');
+}

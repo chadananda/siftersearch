@@ -20,9 +20,10 @@ import { chooseStrategy, strategyOf } from './strategy-choice.js';
 import { titleOnly, titleAnswer, sectionAnswer } from './title-answer.js';
 import { bookFastPath } from './book-pick.js';
 import { timeoutDecision, jevTimeoutsOf } from './jev-call.js';   // W3: Jev chooses the strategy from context
+import { jevBackup } from './jev-backup.js';   // Jev timed out → one Haiku answers the same typed options (11-10)
 import { restate, understoodText, tarpitPhrase } from './understanding.js';   // W3: the "what I understood" line
 import { decisionLog } from './decision-log.js';
-import { emptyState, applyPatch, resolveScope, conversationLayer, readerLayer, siteLayer, treePatch, lastTopic } from './units.js';   // conversation_state + scope layers
+import { emptyState, applyPatch, resolveScope, conversationLayer, readerLayer, siteLayer, treePatch, lastTopic, sanitizePatch } from './units.js';   // conversation_state + scope layers
 import { openJevTurn, linkJevTurn, jevTurnCalls } from '../systemone.js';   // every Jev call of the turn carries its <thread>:<round> ref
 import { withAIContext, currentAIContext, setAIContext } from '../ai-context.js';
 import { timed, timelineOf } from './timeline.js';
@@ -41,6 +42,21 @@ export function strategyRun(strat, graphRuns = [], shape = null) {
   return { shape, strategy: id, version: ran ? Number(ran.split('@')[1]) : null, graphs,
     jev: strat ? { picked: strat.strategy?.choice ?? null, was: strat.strategy?.was ?? null, refers_back: !!strat.refersBack, sides: strat.sides ?? [], sources: strat.sources ?? {}, units: strat.units ?? {} } : null };
 }
+
+// THE WORK IN FOCUS (11-10, "yes, can you search it for …" after a title card): the work the PREVIOUS turn gave — its thread entry
+// is a book / in_work turn and a title was given at that turn (recorded by workPatch below, from the turn's own path, never from text).
+const WORK_TURNS = ['book', 'in_work'];
+/** conversation_state → { id, title } of the work the last turn gave, or null. Pure. */
+export function focusWork(state = emptyState()) {
+  const e = state?.thread?.at?.(-1);
+  if (!e || !WORK_TURNS.includes(e.strategy)) return null;
+  const g = (state.given || []).filter((x) => x.turn === e.turn && x.kind === 'title').at(-1);
+  const id = Number(g?.ref);
+  return Number.isFinite(id) && id > 0 ? { id, title: e.topic || null } : null;
+}
+/** The code patch a work-giving turn stores (thread entry + the title given). Pure. */
+export const workPatch = ({ turn, strategy, id, title }) => sanitizePatch({ thread: [{ turn, strategy, topic: title || null, found_outcome: 'one' }],
+  given: [{ turn, kind: 'title', ref: String(id) }] }, 'code');
 
 export async function defaultDeps() {   // exported for the strategy dry run (strategy-try.js), which swaps the thread/mail deps out
   const { anisRespond } = await import('./respond.js');
@@ -128,6 +144,9 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   const titleFn = d.titleOnly ?? (deps ? null : titleOnly);
   const titled = titleFn && engine === undefined && research === undefined && !variants && !llm ? await titleFn(text).catch(() => null) : null;
   // the book card answer (one book event, description, link, offer): the bare-title gate below and Jev's book strategy on a named-work-only turn
+  const rememberWork = (ex, strategy, doc) => (ex?.conversationId && d.state?.append && doc?.id
+    ? d.state.append({ conversationId: ex.conversationId, turn: ex.round, by: 'code', patch: workPatch({ turn: ex.round, strategy, id: doc.id, title: doc.title }) }).catch((err) => console.warn(`[conversation-state] work focus not stored: ${err?.message}`))
+    : null);
   const bookAnswer = async (work, ex, extra = {}) => {
     onEvent({ type: 'sources', sources: [], plan: { shape: 'work', work: work.doc.id }, ms: Date.now() - t0 });
     onEvent({ type: 'stage', stage: 'craft' });
@@ -136,6 +155,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const path = { gate: 'title', route: 'title', strategy: 'book', work: work.doc.id, ...extra, meta: turnMeta({ status: 'answered', meter, ms: Date.now() - t0 }),
       timeline: timelineOf(timeline, t0), llm: meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null })) };
     if (ex) await d.close({ ...ex, reply, status: 'answered', path, channel: channel.id }).catch(() => {});
+    await rememberWork(ex, 'book', work.doc);
     return { reply, status: 'answered', citations, retrieved: [], plan: { shape: 'work', work: work.doc.id }, conversationId: ex?.conversationId ?? null,
       timings: { total_ms: Date.now() - t0 } };
   };
@@ -149,6 +169,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const path = { gate: 'title', route: 'title', strategy: 'book', work: plan.work, section: { title: sec.title, start_index: sec.start_index }, ...extra, meta: turnMeta({ status: 'answered', meter, ms: Date.now() - t0 }),
       timeline: timelineOf(timeline, t0), llm: meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null })) };
     if (ex) await d.close({ ...ex, reply, status: 'answered', path, channel: channel.id }).catch(() => {});
+    await rememberWork(ex, 'book', { id: plan.work, title: doc?.title ?? sec.book ?? null });
     return { reply, status: 'answered', citations, retrieved: [], plan, conversationId: ex?.conversationId ?? null, timings: { total_ms: Date.now() - t0 } };
   };
   // the in-work find's list (find-in-work.js inWorkReply: built by code, no writer), links upgraded to OceanLibrary ranges like any reply
@@ -164,6 +185,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       find: r.query, mode: r.mode, total: r.total, ...extra, meta: turnMeta({ status: 'answered', meter, ms: Date.now() - t0 }),
       timeline: timelineOf(timeline, t0), llm: meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null })) };
     if (ex) await d.close({ ...ex, reply, status: 'answered', path, channel: channel.id }).catch(() => {});
+    await rememberWork(ex, 'in_work', { id: got.work.id, title: got.work.title ?? r.work?.title ?? null });
     return { reply, status: 'answered', citations, retrieved: [], plan, conversationId: ex?.conversationId ?? null, timings: { total_ms: Date.now() - t0 } };
   };
   if (titled) {
@@ -196,8 +218,19 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     if (d.state && ex0?.conversationId) stateBefore = await d.state.load(ex0.conversationId).catch(() => emptyState());
     return timed('strategy', () => strategyFn(messages, { profile, onJev, conversationState: stateBefore, turn: ex0?.round ?? null }), (r) => (r ? { choice: r.strategy?.choice, sides: r.sides } : null)).catch(() => null);
   }) : null;
-  const [ex, tri, strat] = await Promise.all([openP, timed('triage', () => d.triage(messages, { card: card?.text ?? null, channel: channel.id, onJev })).catch(() => null), stratP]);
+  let [ex, tri, strat] = await Promise.all([openP, timed('triage', () => d.triage(messages, { card: card?.text ?? null, channel: channel.id, onJev })).catch(() => null), stratP]);
   if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
+  const focus = focusWork(stateBefore);
+  // JEV TIMED OUT (11-10): a turn whose triage and/or strategy call ran out of time is not failed open to research — ONE Haiku call
+  // answers the same typed options with the history and the work in focus (jev-backup.js). Jev's own limits are unchanged.
+  const lost = (call) => jevTimeouts.some((i) => i.call === call && i.value == null);
+  const needTri = !tri && lost('triage'), needStrat = strategyOn && !strat && lost('strategy');
+  const backupFn = d.jevBackup ?? (deps ? null : jevBackup);
+  const backup = backupFn && (needTri || needStrat)
+    ? await timed('triage-backup', () => backupFn({ messages, card: card?.text ?? null, focus, triage: needTri, strategy: needStrat }), (r) => (r ? { lookup: r.tri?.lookup?.choice, strategy: r.strategy?.strategy?.choice } : null)).catch(() => null)
+    : null;
+  if (backup?.tri && needTri) tri = backup.tri;
+  if (backup?.strategy && needStrat) strat = backup.strategy;
   const route = routeTriage(tri);
   // every search this turn makes is traced with its thread + turn (search_trace.thread_id / turn_id = "<thread>:<round>")
   if (ex?.conversationId) setAIContext({ trace: { ...(currentAIContext().trace || {}), thread: ex.conversationId, turn: `${ex.conversationId}:${ex.round}`,
@@ -210,6 +243,10 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   let codePatch = null;
   const decisions = decisionLog(strat?.decisions || []);   // every strategy decision of the turn (inputs, options, probabilities, branch) → path.decisions
   for (const info of jevTimeouts) decisions.record('jev:timeout', timeoutDecision(info));
+  const jevFallback = needTri || needStrat ? { calls: [needTri && 'triage', needStrat && 'strategy'].filter(Boolean), by: backup ? 'haiku' : 'fail open',
+    lookup: backup?.tri?.lookup?.choice ?? null, strategy: backup?.strategy?.strategy?.choice ?? null, ms: backup?.ms ?? null } : null;
+  if (jevFallback) decisions.record('jev:fallback', { by: backup ? 'llm' : 'code', saw: jevFallback.calls.join('+'), options: ['haiku', 'fail open'], chosen: jevFallback.by,
+    reason: backup ? JSON.stringify({ kind: backup.tri?.kind?.choice ?? null, lookup: jevFallback.lookup, outcome: backup.tri?.outcome?.choice ?? null, strategy: jevFallback.strategy }) : 'backup gave no answer', ms: jevFallback.ms });
   // Jev's OUTCOME field — the turn read with the history and the card — decides what a short or odd message is; its words
   // never do (Chad 11-03). A search behind an "unclear" / "cut off" verdict is researched ("race unity", a bare name, a
   // pasted passage); a turn even the context cannot resolve is asked back (the 'unclear' canned reply).
@@ -220,7 +257,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && ['book', 'quote', 'in_work', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.8) Object.assign(route, { action: 'research', overridden: route.kind });
   // Jev's refers_back (strategy call, read with the history): a message pointing at the previous reply is never 'unclear' and never a literal quote lookup
   if (strat?.refersBack && route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind)) Object.assign(route, { action: 'research', overridden: route.kind, by: 'refers_back' });
-  const lkIntent = lookupOn && !strat?.refersBack && route.action === 'research' && ['book', 'quote', 'in_work', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
+  const focusFind = tri?.lookup?.choice === 'in_work' && !!focus;   // "search it for X": refers back to the book in focus — that IS the in-work find
+  const lkIntent = lookupOn && (!strat?.refersBack || focusFind) && route.action === 'research' && ['book', 'quote', 'in_work', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
   // THE BOOK FAST PATH (Chad 11-10): Jev chose the book strategy (or his lookup says book) → code gathers title + section candidates for
   // the name he gave (his named_work; a person he named beside it is the byline: author or compiler) → ONE typed Jev pick → the card.
   // Nothing fits → one Haiku names the work, then candidates + Jev again; still nothing → the research below. A topic or person
@@ -234,10 +272,14 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   // → the work by the one book finder (his named_work when the strategy answered, else the message) → in_work_search → a
   // code-built list (count line, each place linked, the words bold). No writer. No work or no words resolved → research as before.
   const inWorkFn = d.findInWork ?? (deps ? null : findInWorkAnswer);
-  if (inWorkFn && lkIntent === 'in_work' && !strat?.refersBack && engine === undefined && research === undefined && !variants && !llm) {
+  if (inWorkFn && lkIntent === 'in_work' && (!strat?.refersBack || focusFind) && engine === undefined && research === undefined && !variants && !llm) {
+    // no work named this turn + a work in focus → that work, no book finder (code resolves; the in_work intent is Jev's or the backup's)
+    const useFocus = focus && !u.named_work;
+    if (useFocus) decisions.record('in-work:focus', { by: 'code', saw: { named_work: null, focus }, chosen: focus.id, reason: 'no work named this turn: the work the previous turn gave' });
+    const finder = useFocus ? async () => ({ kind: 'work', work: { doc: { id: focus.id, title: focus.title } }, via: 'focus' }) : bookFn;
     const got = await timed('in_work', () => inWorkFn({ messages, names: [u.named_work].filter(Boolean), by: u.named_person ?? null, topic: u.topic ?? null, profile, decisions,
-      deps: { ...(bookFn ? { bookFastPath: bookFn } : {}) } }), (r) => (r ? { work: r.work?.id, mode: r.result?.mode, total: r.result?.total } : null)).catch(() => null);
-    if (got?.reply) return inWorkAnswer(got, ex, { gate: 'lookup', strategy_timed_out: !strat, decisions: decisions.list() });
+      deps: { ...(finder ? { bookFastPath: finder } : {}) }, ...(useFocus ? { focus } : {}) }), (r) => (r ? { work: r.work?.id, mode: r.result?.mode, total: r.result?.total } : null)).catch(() => null);
+    if (got?.reply) return inWorkAnswer(got, ex, { gate: 'lookup', strategy_timed_out: !strat || strat.by === 'haiku', ...(jevFallback ? { jev_fallback: jevFallback } : {}), ...(useFocus ? { via: 'focus' } : {}), decisions: decisions.list() });
   }
   // PROBE (Chad 11-10, "Deepening Compilation" built a compilation): Jev chose to MAKE something (a compilation) or to talk, but
   // his phrase may BE a library title — the same one pick, with "make it new" as an option; code only checks the title is near-exact
@@ -268,6 +310,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   const finish = async (reply, status, extra = {}) => {
     turnDone = true;
     const path = { gate: route.action, kind: route.kind, triage: triageSummary, channel: channel.id, stop: route.stop,
+      ...(jevFallback ? { jev_fallback: jevFallback } : {}),
       strategy: strat ? { choice: strat.strategy?.choice ?? null, sides: strat.sides ?? [], ...(strat.sources && Object.keys(strat.sources).length ? { sources: strat.sources } : {}), ms: strat.ms ?? null } : null, understood: understood?.phrase ?? null, decisions: decisions.list(), ...extra };
     path.meta = turnMeta({ status, path, meter, ms: Date.now() - t0 });
     // what changed in the conversation_state this turn, and who changed it (the trace / admin view)
