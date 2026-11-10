@@ -5,7 +5,7 @@ import { mkdtempSync, readFileSync, writeFileSync, existsSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { classify, canon, qdrantHotFoldJob, hotFoldPass, foldable, loadState, saveState } from '../../api/lib/ops/qdrant-hot-fold.js';
-import { afterHotFull, markFoldWanted, isHotFull, HOT_RETRY_MAX } from '../../api/lib/ops/phrase-index-job.js';
+import { afterHotFull, followUps, markFoldWanted, isHotFull, HOT_RETRY_MAX } from '../../api/lib/ops/phrase-index-job.js';
 import { driveWear, toSample, driveWearReport } from '../../api/lib/ops/drive-wear.js';
 import { REPORTS, LANES } from '../../api/lib/ops/reports.js';
 import { SOURCE_LABELS } from '../../api/lib/ops/maintenance.js';
@@ -188,6 +188,15 @@ describe('indexer hot-full → fold, never a stall', () => {
     expect(r.continued).toBe(false);
     expect(logs[0]).toMatch(/still full/);
     expect(await afterHotFull({}, { phase: 'done' }, async () => { throw new Error('no'); })).toBeNull();
+  });
+  it('the continuation is queued BEFORE the job resolves (a draining service exits on resolve — 11-10 lost two tier runs)', async () => {
+    const q = [];
+    const slow = (n, p) => new Promise((r) => setTimeout(() => { q.push([n, p]); r(); }, 20));
+    await followUps({ tier: 'core', maxUsd: 5 }, full(), null, { enqueue: slow, log: async () => {}, wantedFile: join(tmp(), 'w.json') });
+    expect(q).toEqual([['phrase-hot-fold', {}], ['phrase-index', { tier: 'core', maxUsd: 5, hotRetry: 0 }]]);
+    const pre = [];
+    await followUps({ tier: 'core' }, full(), ['prebuilt'], { enqueue: async (n) => pre.push(n) });
+    expect(pre).toEqual([]);
   });
   it('a big finished run marks a quiet-hours fold; a docs run or an off tier does not', () => {
     const f = join(tmp(), 'w.json'), env = { QDRANT_HOT_URL: HOT };

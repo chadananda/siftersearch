@@ -89,6 +89,17 @@ export async function remeasureAfter({ docs = null, scanOnly = false } = {}, enq
   return true;
 }
 
+/** A finished run's follow-ups (re-measure, fold + continue on a full RAM tier, fold wish), AWAITED before the job resolves:
+ *  a draining service exits the moment its jobs resolve, and a fire-and-forget enqueue died with it (11-10: the core and
+ *  supplemental tier runs stopped hot-full and were never continued). */
+export async function followUps(params, last, prebuilt = null, deps = {}) {
+  const { enqueue = null, log = async (m) => (await import('../repos/activity-repo.js')).logActivity('index', m) } = deps;
+  await remeasureAfter(params, enqueue).catch(() => {});
+  if (prebuilt) return;
+  await afterHotFull(params, last, enqueue, log).catch((err) => console.warn(`hot-full follow-up failed: ${err.message}`));
+  try { markFoldWanted(params, last, deps.wantedFile); } catch { /* best effort: the fold loop still folds by fill */ }
+}
+
 export function phraseIndexJob(params = {}, prebuilt = null) {
   const docsFile = !prebuilt && params.docs?.length > DOCS_ARGV_MAX ? docsFileFor(params.docs) : null;
   const args = prebuilt || indexerArgs({ ...params, docsFile });
@@ -110,15 +121,9 @@ export function phraseIndexJob(params = {}, prebuilt = null) {
       tail = (tail + buf).slice(-2000);
     };
     child.stdout.on('data', take); child.stderr.on('data', (buf) => { tail = (tail + buf).slice(-2000); });   // stderr = progress/wait notes: tail only, never `last`
-    child.on('exit', (code) => {
+    child.on('exit', async (code) => {
       if (docsFile) rmSync(docsFile, { force: true });
-      if (code === 0) {
-        remeasureAfter(params).catch(() => {});
-        if (!prebuilt) {
-          afterHotFull(params, last, null, async (m) => (await import('../repos/activity-repo.js')).logActivity('index', m)).catch((err) => console.warn(`hot-full follow-up failed: ${err.message}`));
-          try { markFoldWanted(params, last); } catch { /* best effort: the fold loop still folds by fill */ }
-        }
-      }
+      if (code === 0) await followUps(params, last, prebuilt);
       return code === 0 ? resolve({ code, last }) : reject(new Error(`indexer exit ${code}: ${(tail.match(/^.*Error: .*$/m)?.[0] || '').slice(0, 400)} … ${tail.slice(-300)}`));
     });
   });
