@@ -3,7 +3,7 @@
 // depth; the strategy catalog) read with the history — the turn's intent stays a model's, never word rules. Jev's limits are
 // unchanged. Deps: role-client (role anis-jev-backup, injectable llm), triage option texts, request-features (structure only).
 import { roleCreate } from '../role-client.js';
-import { KINDS, LOOKUP_KINDS, LOOKUP_Q, OUTCOMES, DEPTHS, ACCEPT_Q } from './triage.js';
+import { KINDS, LOOKUP_KINDS, LOOKUP_Q, OUTCOMES, DEPTHS, ACCEPT_Q, DOCUMENTS, DOCUMENT_Q, DELIVERIES, DELIVERY_Q } from './triage.js';
 import { turnFacts } from './request-features.js';
 
 export const BACKUP_ROLE = 'anis-jev-backup';
@@ -24,6 +24,8 @@ export function backupQuestions({ triage = true, strategies = null, first = true
     q.lookup = { ask: LOOKUP_Q, options: LOOKUP_KINDS };
     q.outcome = { ask: 'Does the latest user turn call for a library search (or an answer), a short question back, or neither?', options: OUTCOMES };
     q.depth = { ask: 'How deep should the reply to the latest user turn go?', options: DEPTHS };
+    q.document = { ask: DOCUMENT_Q, options: first ? { text: DOCUMENTS.text, pdf_new: DOCUMENTS.pdf_new } : DOCUMENTS };
+    q.delivery = { ask: DELIVERY_Q, options: DELIVERIES };
     if (!first) q.accepts_offer = { ask: ACCEPT_Q, options: { yes: 'it accepts the offer or supplies what was asked for', no: 'it does not' } };
   }
   if (strategies && Object.keys(strategies).length) q.strategy = { ask: 'What does the latest user message, read in the context of the thread, ask the assistant to do? When no strategy is for what it asks, choose unmatched.', options: strategies };
@@ -50,7 +52,7 @@ export function readBackup(j, { questions, messages = [] }) {
       const acc = pick(j.accepts_offer, ['yes', 'no']);
       // malicious / stop / complete are not asked: the backup only restores what the turn would otherwise lose to fail-open research
       tri = { malicious: 0, complete: 1, stop_request: 0, kind, stance: null, lookup: pick(j.lookup, keys('lookup')), outcome: pick(j.outcome, keys('outcome')),
-        depth: pick(j.depth, keys('depth')), features, by: 'haiku',
+        depth: pick(j.depth, keys('depth')), document: pick(j.document, keys('document')), delivery: pick(j.delivery, keys('delivery')), features, by: 'haiku',
         ...(facts.first ? { reaction: { choice: 'none', confidence: 1, by: 'first-message' }, follow_up: 0, accepts_offer: 0 }
           : { reaction: null, follow_up: null, accepts_offer: acc ? (acc.choice === 'yes' ? acc.confidence : 1 - acc.confidence) : 0 }) };
     }

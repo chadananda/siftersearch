@@ -53,11 +53,24 @@ export const DEPTHS = {
   deep_report: 'the person wants (or plainly needs) a thorough study: a report across many sources and aspects, for a paper, a talk, a study group or long reflection, more than one reply can hold',
 };
 export const DEPTH_Q = 'Read with the conversation, the reader and the channel: how deep should the reply to the latest user turn go? The channel is context, not a rule: a letter by email is a considered exchange and leans somewhat toward more research, while a chat leans toward a prompt answer, but what the person asks for and who the reader is decide. Choose deep_report only when the person asks for, or clearly needs, a thorough study.';
+// The document modality (Chad 11-10): the reader may want the answer as a printable PDF (branded, QR links). Jev reads it from the
+// conversation, never a word rule; where it goes (a link, or by email) is the second question.
+export const DOCUMENTS = {
+  text: 'no document is wanted: the answer is ordinary text in this reply (the default; a table, list or timeline in the reply is not a document)',
+  pdf_previous: 'the person asks for what the assistant ALREADY gave (its previous reply: a timeline, an answer, a list) as a printable PDF document, a download or an emailed file, and nothing new needs looking up',
+  pdf_new: 'the person asks for something not yet answered (a timeline, a study, an answer) AND wants it as a printable PDF document: the library is searched first, the result is delivered as the PDF',
+};
+export const DOCUMENT_Q = 'Does the latest user message, read with the conversation, ask for the answer as a PDF document (printable, downloadable, "as a PDF", "email me a PDF")? Choose text unless a document is clearly asked for.';
+export const DELIVERIES = {
+  link: 'a download link in the reply (the default when the person does not say how they want the document)',
+  email: 'the person wants the document sent to them by email',
+};
+export const DELIVERY_Q = 'If a PDF document is wanted: does the person want it emailed to them, or a download link in the reply? Choose link unless email is asked for.';
 export const ACCEPT_Q = 'Did the assistant\'s previous reply make an offer (for example to email a fuller report), and does the latest user message accept it, or supply what the assistant asked for to fulfil it (such as an email address)? A message that only asks something new, or declines, does not accept.';
 
 // Thresholds (playbook §7). A borderline score is ANSWERED on a guarded lane — a scholar quoting "instructions" from a
 // text must never be refused. Off-topic needs confidence: Anís's subject is broad, and a wrong pointer turns a seeker away.
-export const T = { malicious: 0.9, guarded: 0.5, offTopic: 0.8, cannedKind: 0.7, incomplete: 0.8, stop: 0.35, askBack: 0.7, outcome: 0.5, depth: 0.6, accept: 0.6 };
+export const T = { malicious: 0.9, guarded: 0.5, offTopic: 0.8, cannedKind: 0.7, incomplete: 0.8, stop: 0.35, askBack: 0.7, outcome: 0.5, depth: 0.6, accept: 0.6, document: 0.6 };
 
 /**
  * Decide what happens to a message from a triage result.
@@ -107,6 +120,8 @@ export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_AP
           lookup: { type: 'choice', instructions: LOOKUP_Q, criteria: LOOKUP_KINDS },
           outcome: { type: 'choice', instructions: 'Read with the conversation and the reader: does the latest user turn call for a library search (or an answer), a short question back, or neither?', criteria: OUTCOMES },
           depth: { type: 'choice', instructions: DEPTH_Q, criteria: DEPTHS },
+          document: { type: 'choice', instructions: DOCUMENT_Q, criteria: first ? { text: DOCUMENTS.text, pdf_new: DOCUMENTS.pdf_new } : DOCUMENTS },
+          delivery: { type: 'choice', instructions: DELIVERY_Q, criteria: DELIVERIES },
           ...(first ? {} : {
             accepts_offer: { type: 'noul', instructions: ACCEPT_Q },
             reaction: { type: 'choice', instructions: 'How does the latest user message react to the assistant\'s previous reply?', criteria: REACTIONS },
@@ -123,7 +138,7 @@ export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_AP
   if (!a) return null;
   {
     const out = { malicious: noul(a.malicious), complete: noul(a.complete), stop_request: noul(a.stop_request),
-      kind: choice(a.kind), stance: choice(a.stance), lookup: choice(a.lookup), outcome: choice(a.outcome), depth: choice(a.depth), features, ms: Date.now() - t0 };
+      kind: choice(a.kind), stance: choice(a.stance), lookup: choice(a.lookup), outcome: choice(a.outcome), depth: choice(a.depth), document: choice(a.document), delivery: choice(a.delivery), features, ms: Date.now() - t0 };
     if (first) Object.assign(out, { reaction: { choice: 'none', confidence: 1, by: 'first-message' }, follow_up: 0, accepts_offer: 0 });
     else Object.assign(out, { reaction: choice(a.reaction), follow_up: noul(a.follow_up), accepts_offer: noul(a.accepts_offer) });
     return out;

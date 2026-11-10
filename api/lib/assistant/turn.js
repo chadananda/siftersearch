@@ -29,6 +29,8 @@ import { withAIContext, currentAIContext, setAIContext } from '../ai-context.js'
 import { timed, timelineOf } from './timeline.js';
 import { phraseStage } from './phrases.js';
 import { resolveLookup } from './lookup.js';
+import { createHash } from 'node:crypto';
+import { makeDocuments, DOC_TEXT } from './pdf/documents.js';   // Jev document = pdf_* → a branded PDF, link or mail
 import { makeReports, renderReport, emailIn, REPORT_TEXT } from './deep-report.js';   // Jev depth = deep_report → a queued job + mail
 
 const OUTPUT_BREAK = 0.8;
@@ -61,7 +63,7 @@ export const workPatch = ({ turn, strategy, id, title }) => sanitizePatch({ thre
 export async function defaultDeps() {   // exported for the strategy dry run (strategy-try.js), which swaps the thread/mail deps out
   const { anisRespond } = await import('./respond.js');
   return { respond: anisRespond, triage: triageMessage, outputCheck: outputBreaksPersona, open: openExchange, close: closeExchange,
-    fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup, limits: liveLimits, spendCap: assertSpendCap, card: loadReaderCard, resolve: resolveQuery, reports: makeReports(),
+    fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup, limits: liveLimits, spendCap: assertSpendCap, card: loadReaderCard, resolve: resolveQuery, reports: makeReports(), documents: makeDocuments(),
     state: await import('../repos/conversation-state-repo.js').then((m) => ({ load: m.getConversationState, append: m.appendStatePatch })) };
 }
 
@@ -369,6 +371,27 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       return { reply, status: 'report', citations: [], retrieved: [], plan: null, conversationId: ex?.conversationId ?? null, path, deep_report: dr, timings: { total_ms: Date.now() - t0 } };
     }
 
+    // DOCUMENTS (Chad 11-10): Jev reads that the reader wants an answer as a PDF (document = pdf_previous | pdf_new) and how to
+    // deliver it (delivery = email | link). pdf_previous renders the assistant's last reply; pdf_new renders this turn's reply below.
+    const docChoice = d.documents && tri && route.action !== 'refuse' && route.action !== 'canned' && (tri.document?.confidence ?? 0) >= T.document ? tri.document.choice : null;
+    const wantEmail = tri?.delivery?.choice === 'email' && (tri.delivery.confidence ?? 0) >= T.document;
+    const sendDoc = async (title, markdown) => {
+      const src = createHash('sha1').update(markdown).digest('hex').slice(0, 16), email = wantEmail ? (participant.email || emailIn(text)) : null;
+      let doc = offerKey ? await d.documents.last(offerKey).catch(() => null) : null;
+      if (!doc || doc.src !== src) { doc = await d.documents.create({ title, markdown }).catch(() => null); if (doc) { doc.src = src; if (offerKey) await d.documents.remember(offerKey, doc).catch(() => {}); } }
+      if (!doc) return { text: DOC_TEXT.failed, ok: false };
+      if (email) { const how = await d.documents.email(doc, email).catch(() => null); return { text: DOC_TEXT.emailed(email, doc.url), ok: true, url: doc.url, mailed: how }; }
+      return { text: wantEmail ? DOC_TEXT.linkAskEmail(doc.url) : DOC_TEXT.link(doc.url), ok: true, url: doc.url };
+    };
+    if (docChoice === 'pdf_previous' && !tri.features?.first) {
+      const at = messages.map((m, i) => (m.role === 'assistant' && !String(m.content).includes('Download the PDF') ? i : -1)).filter((i) => i >= 0).pop();
+      const prevQ = at == null ? '' : [...messages.slice(0, at)].reverse().find((m) => m.role === 'user')?.content || '';
+      const out = at == null ? { text: DOC_TEXT.nothing, ok: false } : await sendDoc(String(prevQ).replace(/\s+/g, ' ').slice(0, 160) || 'Research', String(messages[at].content));
+      onEvent({ type: 'stage', stage: 'craft' }); onEvent({ type: 'text', content: out.text });
+      const path = await finish(out.text, 'document', { document: { kind: 'pdf_previous', ok: out.ok, mailed: out.mailed ?? null } });
+      return { reply: out.text, status: 'document', citations: [], retrieved: [], plan: null, conversationId: ex?.conversationId ?? null, path, timings: { total_ms: Date.now() - t0 } };
+    }
+
     if (route.action === 'refuse' || route.action === 'canned') {
       if (route.strike) d.strikes.strike(who);
       const reply = cannedReply(route.action === 'refuse' ? 'refuse' : route.kind, { name, seed });
@@ -406,6 +429,16 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const broken = await timed('output-check', () => d.outputCheck(reply, { persona: name })).catch(() => null);
     const replaced = broken != null && broken >= OUTPUT_BREAK;
     if (replaced) { d.strikes.strike(who); reply = cannedReply('refuse', { name, seed }); }
+    // pdf_new: the researched reply, delivered as the branded PDF (a letter gets the link in its HTML; a chat gets link or mail)
+    let documentInfo;
+    if (docChoice && docChoice !== 'text' && !replaced && typeof reply === 'string' && reply.trim()) {
+      const out = await timed('pdf', () => sendDoc(String(resolved?.query || text).replace(/\s+/g, ' ').slice(0, 160) || 'Research', reply)).catch(() => null);
+      if (out) {
+        const line = channel.renderer === 'email-html' && out.url ? DOC_TEXT.letterLink(out.url) : out.text;
+        reply = `${reply}\n\n${line}`; if (channel.renderer !== 'email-html') onEvent({ type: 'text', content: `\n\n${line}` });
+        documentInfo = { kind: 'pdf_new', ok: out.ok, mailed: out.mailed ?? null };
+      }
+    }
     // the report: a letter's reply IS the report when it is ready, else it follows by mail; a chat offers to email it
     const job = jobP ? await jobP : null;
     let deepReport;
@@ -429,7 +462,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       const cites = (r.citations || []).map((c) => ({ document_id: c.document_id, paragraph_index: c.paragraph_index ?? null, text: c.text || undefined, id: c.id })).filter((c) => c.document_id != null || c.id != null);
       codePatch = treePatch({ turn: turnNo ?? 0, strategy: strategyOf(strat) ?? r.plan?.shape ?? null, units: { current_user_question: resolved?.query || text, found_passages: cites }, ended: cites.length ? null : 'absence', state: stateBefore, channel: channel.id });
     } catch { codePatch = null; }
-    const path = await finish(reply, 'answered', { engine: 'anis', ...(deepReport ? { deep_report: deepReport } : {}), evidence: r.evidence ?? null, recipe: r.plan?.shape ?? null,
+    const path = await finish(reply, 'answered', { engine: 'anis', ...(deepReport ? { deep_report: deepReport } : {}), ...(documentInfo ? { document: documentInfo } : {}), evidence: r.evidence ?? null, recipe: r.plan?.shape ?? null,
       ...(r.steps ? { steps: r.steps } : {}),   // the strategy graph's trace [{node, step@v, ms, edge}], beside path.jev_calls
       // how the strategy was chosen (jev | jev:cached | backstop + why) and what the search was fed, for the thread view
       plan: { shape: r.plan?.shape ?? null, provenance: r.plan?.provenance ?? null, reason: r.plan?.reason ?? null, overridden: r.plan?.overridden ?? null,
