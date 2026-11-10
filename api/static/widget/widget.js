@@ -16,9 +16,15 @@
   if (window.__sifterChatLoader) return;
   window.__sifterChatLoader = true;
   var api = new URL(script.src).origin;
+  // Each build registers <sifter-chat-<hash>> (the hash is the ?v= the server stamps on the bundle URL below), so a
+  // running widget can load a newer build beside itself and swap in. No hash (unversioned) = plain <sifter-chat>.
+  var BUNDLE = api + '/widget/sifter-chat.js';
+  var ver = (BUNDLE.match(/[?&]v=([0-9a-f]+)/) || [])[1];
+  var tag = ver ? 'sifter-chat-' + ver : 'sifter-chat';
   function mount() {
-    if (document.querySelector('sifter-chat')) return;
-    var el = document.createElement('sifter-chat');
+    if (document.querySelector('[data-sifter-chat], sifter-chat')) return;
+    var el = document.createElement(tag);
+    el.setAttribute('data-sifter-chat', '');
     el.setAttribute('token', key);
     el.setAttribute('api', api);
     // Pass through optional data-* overrides to the element.
@@ -28,12 +34,12 @@
     });
     document.body.appendChild(el);
   }
-  if (window.customElements && customElements.get('sifter-chat')) {
+  if (window.customElements && customElements.get(tag)) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
     return;
   }
   var bundle = document.createElement('script');
-  bundle.src = api + '/widget/sifter-chat.js';
+  bundle.src = BUNDLE;
   bundle.async = true;
   bundle.onload = function () {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);

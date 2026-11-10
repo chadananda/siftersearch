@@ -23,7 +23,7 @@ const loadAsset = (file) => { try { return readFileSync(join(STATIC_DIR, file), 
 // (it was unversioned with a 5-minute cache: the home page kept running an old Anis). Hashed URL → immutable cache.
 export const bundleHash = (body) => createHash('md5').update(String(body || '')).digest('hex').slice(0, 10);
 export const versionedLoader = (loader, hash) =>
-  String(loader).replace("bundle.src = api + '/widget/sifter-chat.js';", `bundle.src = api + '/widget/sifter-chat.js?v=${hash}';`);
+  String(loader).replace("var BUNDLE = api + '/widget/sifter-chat.js';", `var BUNDLE = api + '/widget/sifter-chat.js?v=${hash}';`);
 // Hosts may embed /widget.js from any address of ours (Long Beach used the api tunnel), but Google sign-in only accepts the
 // registered public origin, so the widget always talks to `site` (the worker proxies /api + /widget). Local dev keeps its own.
 export const publicLoader = (loader, hash, site) =>
@@ -73,6 +73,10 @@ export default async function widgetRoutes(fastify) {
         .header('access-control-allow-origin', '*').send(body);
     });
   }
+
+  // The current build, for running widgets to compare with their own and self-update (SifterChat checkVersion).
+  fastify.get('/widget/version', async (req, reply) => reply.header('cache-control', LOADER_CACHE)
+    .header('access-control-allow-origin', '*').send({ v: BUNDLE_HASH }));
 
   // Demo page — accepts ?key= so any profile (incl. the house lab) is testable without touching a host site.
   fastify.get('/widget/demo', async (req, reply) => {

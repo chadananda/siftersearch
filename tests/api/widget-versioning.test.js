@@ -6,8 +6,8 @@ import { versionedLoader, publicLoader, bundleHash, LOADER_CACHE } from '../../a
 
 describe('widget bundle versioning', () => {
   it('stamps the bundle URL in the loader with the content hash', () => {
-    const loader = "var bundle = document.createElement('script');\n  bundle.src = api + '/widget/sifter-chat.js';";
-    expect(versionedLoader(loader, 'abc123')).toContain("bundle.src = api + '/widget/sifter-chat.js?v=abc123';");
+    const loader = "var BUNDLE = api + '/widget/sifter-chat.js';";
+    expect(versionedLoader(loader, 'abc123')).toContain("var BUNDLE = api + '/widget/sifter-chat.js?v=abc123';");
   });
 
   it('the hash changes when the bundle changes, and is stable otherwise', () => {
@@ -21,7 +21,7 @@ describe('widget bundle versioning', () => {
   });
 
   it('points the widget at the public site whatever address served the loader; local dev keeps its own', () => {
-    const loader = "var api = new URL(script.src).origin;\n  bundle.src = api + '/widget/sifter-chat.js';";
+    const loader = "var api = new URL(script.src).origin;\n  var BUNDLE = api + '/widget/sifter-chat.js';";
     const out = publicLoader(loader, 'h1', 'https://siftersearch.com');
     expect(out).toContain('/widget/sifter-chat.js?v=h1');
     const run = (src) => new Function('script', out.split('\n')[0] + ' return api;')({ src });
@@ -33,5 +33,14 @@ describe('widget bundle versioning', () => {
   it('the loader is revalidated on every page load (never browser-cached)', () => {
     expect(LOADER_CACHE).toMatch(/no-cache/);
     expect(LOADER_CACHE).not.toMatch(/max-age=[1-9]/);
+  });
+
+  it('the real loader is stamped: versioned bundle URL, per-build tag, public origin', async () => {
+    const { readFileSync } = await import('fs');
+    const real = readFileSync(new URL('../../api/static/widget/widget.js', import.meta.url), 'utf8');
+    const out = publicLoader(real, 'beef01', 'https://siftersearch.com');
+    expect(out).toContain("var BUNDLE = api + '/widget/sifter-chat.js?v=beef01';");
+    expect(out).toContain("'sifter-chat-' + ver");
+    expect(out).toContain('api = "https://siftersearch.com"');
   });
 });
