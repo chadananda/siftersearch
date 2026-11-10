@@ -1,6 +1,20 @@
 {
-  "generated": "2026-11-10T16:41:03.178Z",
+  "generated": "2026-11-10T18:05:57.009Z",
   "entries": [
+    {
+      "hash": "48d8d4677",
+      "date": "2026-11-10",
+      "type": "Docs",
+      "description": "Anís static docs up to date with 11-10 (quote_search, passage card, PDF document mode, sample menu, lockfile-first deploy)",
+      "scope": null
+    },
+    {
+      "hash": "4b5b1ef68",
+      "date": "2026-11-10",
+      "type": "Other",
+      "description": "Install a changed lockfile BEFORE the import gate (a new package was refused as 'not installed'); lock diff vs the running commit",
+      "scope": null
+    },
     {
       "hash": "c87dfda93",
       "date": "2026-11-10",
@@ -1141,129 +1155,24 @@
       "type": "Fixed",
       "description": "Keep rental workers observable during long jobs",
       "scope": "media"
-    },
-    {
-      "hash": "81a40a151",
-      "date": "2026-10-25",
-      "type": "New",
-      "description": "Slim image on the official pytorch runtime base (no nightly-torch duplicate: 64 GB -> ~25 GB), ssh entrypoint with zombie guards, local image test harness, docker-data-room host check",
-      "scope": "media"
-    },
-    {
-      "hash": "7370ef7c9",
-      "date": "2026-10-25",
-      "type": "New",
-      "description": "Descriptive titles for the six untitled Chad Jones talks (from their summaries and chapters); jones-01 unchanged",
-      "scope": "media"
-    },
-    {
-      "hash": "46c1bda36",
-      "date": "2026-10-25",
-      "type": "Chore",
-      "description": "Hide of jones-01-thursday cancelled (Chad 10-25) — decision restore",
-      "scope": "media"
-    },
-    {
-      "hash": "40c34657b",
-      "date": "2026-10-25",
-      "type": "New",
-      "description": "Reversible hide — talk decisions by slug, edge purge after exclude, media-restore job (decision 'restore'); jones-01-thursday hidden for now (Chad 10-25), restore command in planning/media-hidden.md",
-      "scope": "media"
-    },
-    {
-      "hash": "7a39af680",
-      "date": "2026-10-25",
-      "type": "New",
-      "description": "The remastering demo link is a compact pill above the hero (one link, above the fold; the lower card is gone)",
-      "scope": "media"
-    },
-    {
-      "hash": "e073fd6aa",
-      "date": "2026-10-25",
-      "type": "New",
-      "description": "Per-data-centre boot times and wasted rent in the ledger; rentals prefer the data centres that booted fast and worked, SECURE after a breaker trip",
-      "scope": "media"
-    },
-    {
-      "hash": "63d9855b1",
-      "date": "2026-10-25",
-      "type": "New",
-      "description": "Lane keeper (the cloud lane always comes back), non-sticky money stop, canary-first rental with a 3-strike circuit breaker and wasted-$ ledger, image selftest",
-      "scope": "media"
-    },
-    {
-      "hash": "b782122b8",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Pods without the gate are retired after their jobs (MEDIA_POOL_REQUIRE_GATE); only gate pods join the pool",
-      "scope": "media"
-    },
-    {
-      "hash": "593c7129d",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Rented pods join the worker pool as hosts of the same gate — prep (probe, grade, dfn) and every web / trim-window encode dispatch to pods, aorus and boss; image carries the gate (venv, DeepFilterNet venv, cached Whisper + DNSMOS/NISQA)",
-      "scope": "media"
-    },
-    {
-      "hash": "e05c3b472",
-      "date": "2026-10-24",
-      "type": "Docs",
-      "description": "The tower gate in CLAUDE.md",
-      "scope": null
-    },
-    {
-      "hash": "6b3ff83bf",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Tower never runs heavy media work — a central gate in tools.js: dfn/grade/diarize/transcribe/realign/langid/probe/guard/prep-encodes WAIT for a worker (item back in the queue), web encodes one at a time, light analysis two",
-      "scope": "media"
-    },
-    {
-      "hash": "4ca04bbcb",
-      "date": "2026-10-24",
-      "type": "Performance",
-      "description": "4 talks in flight per pod with a fair share (GPU is ~70 s of a ~12 min cycle: uploads, the CPU half and downloads overlap the next talks)",
-      "scope": "media"
-    },
-    {
-      "hash": "ca1889383",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Explicit redo orders (restore mode) re-run talks the first pass got wrong",
-      "scope": "media"
-    },
-    {
-      "hash": "a6dff9148",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "The worker finds the BAKED aligners (HF_HOME was unset in the ssh-started worker: every Persian talk 'placed 0 words' and was held)",
-      "scope": "media"
-    },
-    {
-      "hash": "b10595eca",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Dewey-discard can be limited to one member via the by param",
-      "scope": "dewey"
-    },
-    {
-      "hash": "9968a2833",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Dead-worker detection starts its clock on the first status read (a state file carrying an old status never tripped it)",
-      "scope": "media"
-    },
-    {
-      "hash": "5c8943978",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "A pod whose worker stopped is replaced (it idled itself out and then took jobs for an hour: nothing completed); the pod's terminate call sends a User-Agent (urllib's got 403); per-talk cycle timings recorded",
-      "scope": "media"
     }
   ],
   "grouped": {
     "2026-11-10": [
+      {
+        "hash": "48d8d4677",
+        "date": "2026-11-10",
+        "type": "Docs",
+        "description": "Anís static docs up to date with 11-10 (quote_search, passage card, PDF document mode, sample menu, lockfile-first deploy)",
+        "scope": null
+      },
+      {
+        "hash": "4b5b1ef68",
+        "date": "2026-11-10",
+        "type": "Other",
+        "description": "Install a changed lockfile BEFORE the import gate (a new package was refused as 'not installed'); lock diff vs the running commit",
+        "scope": null
+      },
       {
         "hash": "c87dfda93",
         "date": "2026-11-10",
@@ -2429,127 +2338,6 @@
         "date": "2026-10-25",
         "type": "Fixed",
         "description": "Keep rental workers observable during long jobs",
-        "scope": "media"
-      },
-      {
-        "hash": "81a40a151",
-        "date": "2026-10-25",
-        "type": "New",
-        "description": "Slim image on the official pytorch runtime base (no nightly-torch duplicate: 64 GB -> ~25 GB), ssh entrypoint with zombie guards, local image test harness, docker-data-room host check",
-        "scope": "media"
-      },
-      {
-        "hash": "7370ef7c9",
-        "date": "2026-10-25",
-        "type": "New",
-        "description": "Descriptive titles for the six untitled Chad Jones talks (from their summaries and chapters); jones-01 unchanged",
-        "scope": "media"
-      },
-      {
-        "hash": "46c1bda36",
-        "date": "2026-10-25",
-        "type": "Chore",
-        "description": "Hide of jones-01-thursday cancelled (Chad 10-25) — decision restore",
-        "scope": "media"
-      },
-      {
-        "hash": "40c34657b",
-        "date": "2026-10-25",
-        "type": "New",
-        "description": "Reversible hide — talk decisions by slug, edge purge after exclude, media-restore job (decision 'restore'); jones-01-thursday hidden for now (Chad 10-25), restore command in planning/media-hidden.md",
-        "scope": "media"
-      },
-      {
-        "hash": "7a39af680",
-        "date": "2026-10-25",
-        "type": "New",
-        "description": "The remastering demo link is a compact pill above the hero (one link, above the fold; the lower card is gone)",
-        "scope": "media"
-      },
-      {
-        "hash": "e073fd6aa",
-        "date": "2026-10-25",
-        "type": "New",
-        "description": "Per-data-centre boot times and wasted rent in the ledger; rentals prefer the data centres that booted fast and worked, SECURE after a breaker trip",
-        "scope": "media"
-      },
-      {
-        "hash": "63d9855b1",
-        "date": "2026-10-25",
-        "type": "New",
-        "description": "Lane keeper (the cloud lane always comes back), non-sticky money stop, canary-first rental with a 3-strike circuit breaker and wasted-$ ledger, image selftest",
-        "scope": "media"
-      }
-    ],
-    "2026-10-24": [
-      {
-        "hash": "b782122b8",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Pods without the gate are retired after their jobs (MEDIA_POOL_REQUIRE_GATE); only gate pods join the pool",
-        "scope": "media"
-      },
-      {
-        "hash": "593c7129d",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Rented pods join the worker pool as hosts of the same gate — prep (probe, grade, dfn) and every web / trim-window encode dispatch to pods, aorus and boss; image carries the gate (venv, DeepFilterNet venv, cached Whisper + DNSMOS/NISQA)",
-        "scope": "media"
-      },
-      {
-        "hash": "e05c3b472",
-        "date": "2026-10-24",
-        "type": "Docs",
-        "description": "The tower gate in CLAUDE.md",
-        "scope": null
-      },
-      {
-        "hash": "6b3ff83bf",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Tower never runs heavy media work — a central gate in tools.js: dfn/grade/diarize/transcribe/realign/langid/probe/guard/prep-encodes WAIT for a worker (item back in the queue), web encodes one at a time, light analysis two",
-        "scope": "media"
-      },
-      {
-        "hash": "4ca04bbcb",
-        "date": "2026-10-24",
-        "type": "Performance",
-        "description": "4 talks in flight per pod with a fair share (GPU is ~70 s of a ~12 min cycle: uploads, the CPU half and downloads overlap the next talks)",
-        "scope": "media"
-      },
-      {
-        "hash": "ca1889383",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Explicit redo orders (restore mode) re-run talks the first pass got wrong",
-        "scope": "media"
-      },
-      {
-        "hash": "a6dff9148",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "The worker finds the BAKED aligners (HF_HOME was unset in the ssh-started worker: every Persian talk 'placed 0 words' and was held)",
-        "scope": "media"
-      },
-      {
-        "hash": "b10595eca",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Dewey-discard can be limited to one member via the by param",
-        "scope": "dewey"
-      },
-      {
-        "hash": "9968a2833",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Dead-worker detection starts its clock on the first status read (a state file carrying an old status never tripped it)",
-        "scope": "media"
-      },
-      {
-        "hash": "5c8943978",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "A pod whose worker stopped is replaced (it idled itself out and then took jobs for an hour: nothing completed); the pod's terminate call sends a User-Agent (urllib's got 403); per-talk cycle timings recorded",
         "scope": "media"
       }
     ]
