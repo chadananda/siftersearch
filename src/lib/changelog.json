@@ -1,6 +1,34 @@
 {
-  "generated": "2026-11-09T19:54:09.523Z",
+  "generated": "2026-11-10T02:20:03.390Z",
   "entries": [
+    {
+      "hash": "1b07a30c7",
+      "date": "2026-11-09",
+      "type": "Other",
+      "description": "Commentary by author/form markers is not scripture; add missed Jain/Avestan/Five Classics canon; intros are scholarship",
+      "scope": null
+    },
+    {
+      "hash": "9c7ec85e0",
+      "date": "2026-11-09",
+      "type": "Other",
+      "description": "Concept layer honours scope filters; question subject ends at the asking sentence",
+      "scope": null
+    },
+    {
+      "hash": "f73fb6c73",
+      "date": "2026-11-09",
+      "type": "Other",
+      "description": "Tools API sets its key before imports (tools.js now loads config via authority.js); prayer dispatcher logs the several-traditions occasion choice first",
+      "scope": null
+    },
+    {
+      "hash": "f2d419440",
+      "date": "2026-11-09",
+      "type": "Docs",
+      "description": "No Jafar on SifterSearch — remove the four Jafar chat docs, point chat references to Anís",
+      "scope": null
+    },
     {
       "hash": "8f53b2460",
       "date": "2026-11-09",
@@ -1442,283 +1470,38 @@
       "type": "New",
       "description": "Work orders for the running cloud lane — post (finish results tower holds on a worker) and cleanup (held talks); backfill relief for tower's queue",
       "scope": "media"
-    },
-    {
-      "hash": "763c05ac2",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Original",
-      "scope": "media"
-    },
-    {
-      "hash": "e7b089631",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Restoration tiers — every talk gets a restored copy and a raw original (light backfill on boss, low priority); audio.remaster_tier = heavy",
-      "scope": "media"
-    },
-    {
-      "hash": "43429056e",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Email allowlist - pre-approved verified addresses get Dewey on signup/login/me",
-      "scope": "dewey"
-    },
-    {
-      "hash": "08ee6a088",
-      "date": "2026-10-24",
-      "type": "Chore",
-      "description": "Deploy 2.187.807 (biography slug pages)",
-      "scope": null
-    },
-    {
-      "hash": "1591706bd",
-      "date": "2026-10-24",
-      "type": "Chore",
-      "description": "Remove biography/[id].astro (replaced by [slug].astro)",
-      "scope": "bio"
-    },
-    {
-      "hash": "2bf21ef51",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Biography pages by name - /biography/<slug> from the canonical full name; id and old slugs 301 to it",
-      "scope": "bio"
-    },
-    {
-      "hash": "fe2a64bea",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "The worker decides everything — deterministic cleanup (chain F) for held talks, same word guard, verdict computed on the worker; tower waits instead of reprocessing in STRICT mode; wording: originals are never replaced",
-      "scope": "media"
-    },
-    {
-      "hash": "cc0bbea07",
-      "date": "2026-10-24",
-      "type": "Docs",
-      "description": "Speaker_sketch_publish sources = gallery manifest / internal gallery endpoint, not /api/media/index",
-      "scope": "media"
-    },
-    {
-      "hash": "dd479788f",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Photos are never shown or exposed — portrait = the speaker's drawing, else initials; no photo in talk/listing/index/speakers APIs, cards, OG image or served files; gallery endpoint internal-only",
-      "scope": "media"
-    },
-    {
-      "hash": "3d08d7a96",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Remove the drawing/photos toggle and portrait rotation — the portrait is the drawing where one exists, else the single best photo; photo keeps its attribution caption, drawing shows none",
-      "scope": "media"
-    },
-    {
-      "hash": "863cdb30e",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Original",
-      "scope": "media"
-    },
-    {
-      "hash": "d8fd99225",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Image deps - no torch constraint file (the base's torch already satisfies whisperx); pip output visible, failures not swallowed",
-      "scope": "media"
-    },
-    {
-      "hash": "bee8cdfb5",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Image deps resolve (dry-run checked against py3.11 linux wheels); sherpa-onnx waits for the diarize stage",
-      "scope": "media"
-    },
-    {
-      "hash": "bb42fe1a1",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Image build - whisperx needs numpy >= 2.1, only the torch family is held to the base image",
-      "scope": "media"
-    },
-    {
-      "hash": "2d9110236",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "Image deps (librosa/nltk pins do not exist for the base image's python) + site version bump",
-      "scope": "media"
-    },
-    {
-      "hash": "5f52fddfb",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Live restoration readout on /media — published/planned, restored, held, five latest; /api/media/restored edge-cached 30 s; verdict summary refreshed every 5 min by the media service",
-      "scope": "media"
-    },
-    {
-      "hash": "4a1106f09",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Worker does the heavy half — word guard, realign and 4 encodes run on the pod (post.py); feedback controller, Dewey stage-0 preview, quality verdicts, baked GHCR image, -Infinity grade fix",
-      "scope": "media"
-    },
-    {
-      "hash": "b14eb708c",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "GPU spend proportional to work - rent only for >= 2 audio h per pod, backpressure on tower's backlog, pod dead-man switch, independent reaper, 8 min boot deadline, rented-vs-busy ledger",
-      "scope": "media"
-    },
-    {
-      "hash": "8c4307e0e",
-      "date": "2026-10-24",
-      "type": "Performance",
-      "description": "Remaster pods prefer an RTX 4090 (twice the speed of the A4500 / A40 / 3090 they got, about the same $ per audio hour)",
-      "scope": "media"
-    },
-    {
-      "hash": "f26dd9af9",
-      "date": "2026-10-24",
-      "type": "Fixed",
-      "description": "One remaster run per talk at a time — duplicate runs (pod collection, re-score, resume) raced on meta.json and a stale run overwrote a newer verdict (938: guard 7.4 %, meta kept 35.5 %)",
-      "scope": "media"
-    },
-    {
-      "hash": "b6493d8cb",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "The word guard cuts windows over 20 s into <= 15 s chunks (paragraphs with no sentence breaks gave 6-8 min windows: one flag swapped minutes) — Gibson 8.9 %, Cardell 7.0 %, Grossmann 6.8 %, Bahai History 8.7 %",
-      "scope": "media"
-    },
-    {
-      "hash": "9f5c058f5",
-      "date": "2026-10-23",
-      "type": "Performance",
-      "description": "Cloud remaster pods are worked concurrently — one pod's 100+ MB download (~7 MB/s per transfer) no longer idles the others' GPUs",
-      "scope": "media"
-    },
-    {
-      "hash": "dc4f42ca2",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "A resumed cloud-remaster run keeps its queue (the pilot's ids were re-queued on every drain — talks redone)",
-      "scope": "media"
-    },
-    {
-      "hash": "99074513a",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "A remaster held on re-score goes back to the previous copy and is re-encoded (3 pilot talks published at 25-35 % fallback under the interim 40 % rule)",
-      "scope": "media"
-    },
-    {
-      "hash": "001651d89",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Morning review for held remasters — media-remaster-review-pack (40 s A/B clips: original vs full UniPASE, the flagged sentences) and media-remaster-decide (publish the full remaster / keep the original)",
-      "scope": "media"
-    },
-    {
-      "hash": "e829ddb03",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "The word guard counts a loss only where the original's ASR was CONFIDENT (p >= 0.8); copy confidence > 0.2 below → fall back; review bar 15 % of sentences",
-      "scope": "media"
-    },
-    {
-      "hash": "d1f36ee13",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "Home hosts take remaster work only while no transcription waits (aorus ran UniPASE at 83 °C with 0.9 GB left — new talks' ASR first); first-failure errors kept in the state",
-      "scope": "media"
-    },
-    {
-      "hash": "12148de28",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "Remaster guard judged against the FINAL text, both copies through the same ASR; per-language runs; chant unguardable; own tower pool",
-      "scope": "media"
-    },
-    {
-      "hash": "905190fbd",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Remaster confirmation — multilingual word checks (Persian holds; interpreted and chant cannot be word-guarded), screen.py language per clip + 90 °C guard + optional GPU ASR",
-      "scope": "media"
-    },
-    {
-      "hash": "55f2ecb7f",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Sketch backfill — every published speaker who still showed a photo is now drawn (style A): Fatheazam, 'Alá'í, Hermann Grossmann, Isobel Sabri, Darius Shahrokh (likeness 0.45–0.73, skin tone checked by eye), Curtis Kelsey drawing 3 (Chad's choice); the name forms ruhiyyih-khan / ruhiyyih-rabbani share Rúhíyyih Khánum's drawing. Speakers with no gallery draw from the portrait in use (tmp extra-sources). Tonight $0.21 Gemini (all-time $3.48).",
-      "scope": "media"
-    },
-    {
-      "hash": "d2906bf38",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "The pod bootstrap runs DETACHED (pip + the verified weight fetch took the whole loop: one pod booting blocked the other pods and every poll); a failed bootstrap closes the pod",
-      "scope": "media"
-    },
-    {
-      "hash": "b00a7c277",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Home hosts join the remaster backfill — aorus when its card has ~6 GB free and an ASR slot is open, boss only when cool; the money stops the pods, not the backfill",
-      "scope": "media"
-    },
-    {
-      "hash": "6de1f485b",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "A re-encode of a published talk bumps meta.version (new ?v= audio URLs) — a remaster with nothing to trim kept its old URL",
-      "scope": "media"
-    },
-    {
-      "hash": "08224c7a3",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "UniPASE remaster backfill — RunPod pods (pinned, sha-verified weights; inference only), tower word guard + realign + publish, worst-first queue",
-      "scope": "media"
-    },
-    {
-      "hash": "c923c0042",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "\"Original\" A/B button under Play on every talk page — a remastered talk plays its kept original from the same moment (and back), one copy at a time; highlight follows s0 while the original plays",
-      "scope": "media"
-    },
-    {
-      "hash": "10d1bc806",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "/media/remaster — unlisted before/after demo of 13 recovered talks (noindex, out of the sitemap, edge-cached; audio from R2 via the media-file route), linked from /media",
-      "scope": "media"
-    },
-    {
-      "hash": "e5a69dee2",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Remaster lab → UniPASE (Chad: 'clear and realistic without changing the voice') — boss ROCm (gfx1151 TheRock torch) runners for UniPASE/StuPASE/LavaSR/Sidon/VoiceFixer/AudioSR, envelope alignment for generative outputs, ElevenLabs blends, one-page lab, 21-clip confirmation set (defect, muffled, clean controls, multilingual with per-language word check), production plan with gates, realign, Opus 96k, throughput and RunPod option",
-      "scope": "media"
-    },
-    {
-      "hash": "b057c4e41",
-      "date": "2026-10-23",
-      "type": "Performance",
-      "description": "Prep no longer waits behind boss's 4 encode slots — re-runs of published talks encode on the tower in their own slot, and a new talk's encode overflows to the tower when boss's slots are full (21:30: ~600 backfill re-runs held the boss slots; 16 prep runs waited, compute 'empty' in the feed)",
-      "scope": "media"
-    },
-    {
-      "hash": "263a1b711",
-      "date": "2026-10-23",
-      "type": "Docs",
-      "description": "Persistent transcription worker deferred (Chad: remastering first) — design + draft patch kept; the 're-align to the listening copy' step planned (alignment only, a stage after web via redo; word indexes unchanged, times recomputed downstream)",
-      "scope": "media"
     }
   ],
   "grouped": {
     "2026-11-09": [
+      {
+        "hash": "1b07a30c7",
+        "date": "2026-11-09",
+        "type": "Other",
+        "description": "Commentary by author/form markers is not scripture; add missed Jain/Avestan/Five Classics canon; intros are scholarship",
+        "scope": null
+      },
+      {
+        "hash": "9c7ec85e0",
+        "date": "2026-11-09",
+        "type": "Other",
+        "description": "Concept layer honours scope filters; question subject ends at the asking sentence",
+        "scope": null
+      },
+      {
+        "hash": "f73fb6c73",
+        "date": "2026-11-09",
+        "type": "Other",
+        "description": "Tools API sets its key before imports (tools.js now loads config via authority.js); prayer dispatcher logs the several-traditions occasion choice first",
+        "scope": null
+      },
+      {
+        "hash": "f2d419440",
+        "date": "2026-11-09",
+        "type": "Docs",
+        "description": "No Jafar on SifterSearch — remove the four Jafar chat docs, point chat references to Anís",
+        "scope": null
+      },
       {
         "hash": "8f53b2460",
         "date": "2026-11-09",
@@ -3185,281 +2968,6 @@
         "date": "2026-10-24",
         "type": "New",
         "description": "Work orders for the running cloud lane — post (finish results tower holds on a worker) and cleanup (held talks); backfill relief for tower's queue",
-        "scope": "media"
-      },
-      {
-        "hash": "763c05ac2",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Original",
-        "scope": "media"
-      },
-      {
-        "hash": "e7b089631",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Restoration tiers — every talk gets a restored copy and a raw original (light backfill on boss, low priority); audio.remaster_tier = heavy",
-        "scope": "media"
-      },
-      {
-        "hash": "43429056e",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Email allowlist - pre-approved verified addresses get Dewey on signup/login/me",
-        "scope": "dewey"
-      },
-      {
-        "hash": "08ee6a088",
-        "date": "2026-10-24",
-        "type": "Chore",
-        "description": "Deploy 2.187.807 (biography slug pages)",
-        "scope": null
-      },
-      {
-        "hash": "1591706bd",
-        "date": "2026-10-24",
-        "type": "Chore",
-        "description": "Remove biography/[id].astro (replaced by [slug].astro)",
-        "scope": "bio"
-      },
-      {
-        "hash": "2bf21ef51",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Biography pages by name - /biography/<slug> from the canonical full name; id and old slugs 301 to it",
-        "scope": "bio"
-      },
-      {
-        "hash": "fe2a64bea",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "The worker decides everything — deterministic cleanup (chain F) for held talks, same word guard, verdict computed on the worker; tower waits instead of reprocessing in STRICT mode; wording: originals are never replaced",
-        "scope": "media"
-      },
-      {
-        "hash": "cc0bbea07",
-        "date": "2026-10-24",
-        "type": "Docs",
-        "description": "Speaker_sketch_publish sources = gallery manifest / internal gallery endpoint, not /api/media/index",
-        "scope": "media"
-      },
-      {
-        "hash": "dd479788f",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Photos are never shown or exposed — portrait = the speaker's drawing, else initials; no photo in talk/listing/index/speakers APIs, cards, OG image or served files; gallery endpoint internal-only",
-        "scope": "media"
-      },
-      {
-        "hash": "3d08d7a96",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Remove the drawing/photos toggle and portrait rotation — the portrait is the drawing where one exists, else the single best photo; photo keeps its attribution caption, drawing shows none",
-        "scope": "media"
-      },
-      {
-        "hash": "863cdb30e",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Original",
-        "scope": "media"
-      },
-      {
-        "hash": "d8fd99225",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Image deps - no torch constraint file (the base's torch already satisfies whisperx); pip output visible, failures not swallowed",
-        "scope": "media"
-      },
-      {
-        "hash": "bee8cdfb5",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Image deps resolve (dry-run checked against py3.11 linux wheels); sherpa-onnx waits for the diarize stage",
-        "scope": "media"
-      },
-      {
-        "hash": "bb42fe1a1",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Image build - whisperx needs numpy >= 2.1, only the torch family is held to the base image",
-        "scope": "media"
-      },
-      {
-        "hash": "2d9110236",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "Image deps (librosa/nltk pins do not exist for the base image's python) + site version bump",
-        "scope": "media"
-      },
-      {
-        "hash": "5f52fddfb",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Live restoration readout on /media — published/planned, restored, held, five latest; /api/media/restored edge-cached 30 s; verdict summary refreshed every 5 min by the media service",
-        "scope": "media"
-      },
-      {
-        "hash": "4a1106f09",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Worker does the heavy half — word guard, realign and 4 encodes run on the pod (post.py); feedback controller, Dewey stage-0 preview, quality verdicts, baked GHCR image, -Infinity grade fix",
-        "scope": "media"
-      },
-      {
-        "hash": "b14eb708c",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "GPU spend proportional to work - rent only for >= 2 audio h per pod, backpressure on tower's backlog, pod dead-man switch, independent reaper, 8 min boot deadline, rented-vs-busy ledger",
-        "scope": "media"
-      },
-      {
-        "hash": "8c4307e0e",
-        "date": "2026-10-24",
-        "type": "Performance",
-        "description": "Remaster pods prefer an RTX 4090 (twice the speed of the A4500 / A40 / 3090 they got, about the same $ per audio hour)",
-        "scope": "media"
-      },
-      {
-        "hash": "f26dd9af9",
-        "date": "2026-10-24",
-        "type": "Fixed",
-        "description": "One remaster run per talk at a time — duplicate runs (pod collection, re-score, resume) raced on meta.json and a stale run overwrote a newer verdict (938: guard 7.4 %, meta kept 35.5 %)",
-        "scope": "media"
-      }
-    ],
-    "2026-10-23": [
-      {
-        "hash": "b6493d8cb",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "The word guard cuts windows over 20 s into <= 15 s chunks (paragraphs with no sentence breaks gave 6-8 min windows: one flag swapped minutes) — Gibson 8.9 %, Cardell 7.0 %, Grossmann 6.8 %, Bahai History 8.7 %",
-        "scope": "media"
-      },
-      {
-        "hash": "9f5c058f5",
-        "date": "2026-10-23",
-        "type": "Performance",
-        "description": "Cloud remaster pods are worked concurrently — one pod's 100+ MB download (~7 MB/s per transfer) no longer idles the others' GPUs",
-        "scope": "media"
-      },
-      {
-        "hash": "dc4f42ca2",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "A resumed cloud-remaster run keeps its queue (the pilot's ids were re-queued on every drain — talks redone)",
-        "scope": "media"
-      },
-      {
-        "hash": "99074513a",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "A remaster held on re-score goes back to the previous copy and is re-encoded (3 pilot talks published at 25-35 % fallback under the interim 40 % rule)",
-        "scope": "media"
-      },
-      {
-        "hash": "001651d89",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Morning review for held remasters — media-remaster-review-pack (40 s A/B clips: original vs full UniPASE, the flagged sentences) and media-remaster-decide (publish the full remaster / keep the original)",
-        "scope": "media"
-      },
-      {
-        "hash": "e829ddb03",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "The word guard counts a loss only where the original's ASR was CONFIDENT (p >= 0.8); copy confidence > 0.2 below → fall back; review bar 15 % of sentences",
-        "scope": "media"
-      },
-      {
-        "hash": "d1f36ee13",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "Home hosts take remaster work only while no transcription waits (aorus ran UniPASE at 83 °C with 0.9 GB left — new talks' ASR first); first-failure errors kept in the state",
-        "scope": "media"
-      },
-      {
-        "hash": "12148de28",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "Remaster guard judged against the FINAL text, both copies through the same ASR; per-language runs; chant unguardable; own tower pool",
-        "scope": "media"
-      },
-      {
-        "hash": "905190fbd",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Remaster confirmation — multilingual word checks (Persian holds; interpreted and chant cannot be word-guarded), screen.py language per clip + 90 °C guard + optional GPU ASR",
-        "scope": "media"
-      },
-      {
-        "hash": "55f2ecb7f",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Sketch backfill — every published speaker who still showed a photo is now drawn (style A): Fatheazam, 'Alá'í, Hermann Grossmann, Isobel Sabri, Darius Shahrokh (likeness 0.45–0.73, skin tone checked by eye), Curtis Kelsey drawing 3 (Chad's choice); the name forms ruhiyyih-khan / ruhiyyih-rabbani share Rúhíyyih Khánum's drawing. Speakers with no gallery draw from the portrait in use (tmp extra-sources). Tonight $0.21 Gemini (all-time $3.48).",
-        "scope": "media"
-      },
-      {
-        "hash": "d2906bf38",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "The pod bootstrap runs DETACHED (pip + the verified weight fetch took the whole loop: one pod booting blocked the other pods and every poll); a failed bootstrap closes the pod",
-        "scope": "media"
-      },
-      {
-        "hash": "b00a7c277",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Home hosts join the remaster backfill — aorus when its card has ~6 GB free and an ASR slot is open, boss only when cool; the money stops the pods, not the backfill",
-        "scope": "media"
-      },
-      {
-        "hash": "6de1f485b",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "A re-encode of a published talk bumps meta.version (new ?v= audio URLs) — a remaster with nothing to trim kept its old URL",
-        "scope": "media"
-      },
-      {
-        "hash": "08224c7a3",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "UniPASE remaster backfill — RunPod pods (pinned, sha-verified weights; inference only), tower word guard + realign + publish, worst-first queue",
-        "scope": "media"
-      },
-      {
-        "hash": "c923c0042",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "\"Original\" A/B button under Play on every talk page — a remastered talk plays its kept original from the same moment (and back), one copy at a time; highlight follows s0 while the original plays",
-        "scope": "media"
-      },
-      {
-        "hash": "10d1bc806",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "/media/remaster — unlisted before/after demo of 13 recovered talks (noindex, out of the sitemap, edge-cached; audio from R2 via the media-file route), linked from /media",
-        "scope": "media"
-      },
-      {
-        "hash": "e5a69dee2",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Remaster lab → UniPASE (Chad: 'clear and realistic without changing the voice') — boss ROCm (gfx1151 TheRock torch) runners for UniPASE/StuPASE/LavaSR/Sidon/VoiceFixer/AudioSR, envelope alignment for generative outputs, ElevenLabs blends, one-page lab, 21-clip confirmation set (defect, muffled, clean controls, multilingual with per-language word check), production plan with gates, realign, Opus 96k, throughput and RunPod option",
-        "scope": "media"
-      },
-      {
-        "hash": "b057c4e41",
-        "date": "2026-10-23",
-        "type": "Performance",
-        "description": "Prep no longer waits behind boss's 4 encode slots — re-runs of published talks encode on the tower in their own slot, and a new talk's encode overflows to the tower when boss's slots are full (21:30: ~600 backfill re-runs held the boss slots; 16 prep runs waited, compute 'empty' in the feed)",
-        "scope": "media"
-      },
-      {
-        "hash": "263a1b711",
-        "date": "2026-10-23",
-        "type": "Docs",
-        "description": "Persistent transcription worker deferred (Chad: remastering first) — design + draft patch kept; the 're-align to the listening copy' step planned (alignment only, a stage after web via redo; word indexes unchanged, times recomputed downstream)",
         "scope": "media"
       }
     ]

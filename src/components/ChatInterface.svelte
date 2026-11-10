@@ -7,6 +7,8 @@
   import { search, session, documents, chat, triggerServerUpdate, authenticatedFetch, admin } from '../lib/api.js';
   import ReligionIcon from './ReligionIcon.svelte';
   import BookCard from './chat/BookCard.svelte';
+  // the book card already shows the description: the reply's first paragraph (the same words) is not shown twice
+  const withoutBookLead = (text, book) => { const d = String(book?.description || '').trim(); const t = String(text || ''); return d && t.startsWith(d) ? t.slice(d.length).replace(/^\s+/, '') : t; };
   import { toCurlyQuotes } from '../lib/text-utils.js';
 
   // App description - baked in at build time
@@ -2038,7 +2040,7 @@
                   {#if msg.isStreaming && !msg.content}
                     <span class="research-typing"><span></span><span></span><span></span></span>
                   {:else}
-                    <div class="research-msg-text prose">{@html formatResearchText(msg.content)}{#if msg.isStreaming}<span class="streaming-cursor"></span>{/if}</div>
+                    <div class="research-msg-text prose">{@html formatResearchText(msg.book ? withoutBookLead(msg.content, msg.book) : msg.content)}{#if msg.isStreaming}<span class="streaming-cursor"></span>{/if}</div>
                     {#if !msg.isStreaming && msg.content && !msg.error}
                       <button class="copy-btn" title="Copy response" onclick={(e) => {
                         const suffix = '\n\n— Anís, Ocean AI Research Assistant\n   siftersearch.com';
