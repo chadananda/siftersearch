@@ -765,6 +765,10 @@
     .panel { background: linear-gradient(178deg, #14181e, #0e1217); color: #e9e6dd; }
     .watermark { color: #b9c8dd; opacity: .045; }
     .msg.assistant .bubble { background: #1b212a; border-color: #2b3442; color: #e9e6dd; box-shadow: none; }
+    .book { background: #1b212a; border-color: #2b3442; border-left-color: var(--gold); color: #e9e6dd; }
+    .book-title { color: #f1ede3; }
+    .book-by { color: #a59d8c; }
+    .book-desc { color: #d3cec2; }
     .bubble.lit::first-letter { color: color-mix(in srgb, var(--accent) 45%, #cfe1ff); }
     .bubble :global(a), .cites a { color: color-mix(in srgb, var(--accent) 30%, #cfe1ff); }
     .cites a { background: color-mix(in srgb, var(--gold) 8%, transparent); border-color: color-mix(in srgb, var(--gold) 40%, transparent); }
