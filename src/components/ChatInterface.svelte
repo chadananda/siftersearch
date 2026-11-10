@@ -25,6 +25,7 @@
   import { promptOneTap } from '../lib/google-signin.js';
   import TranslationView from './TranslationView.svelte';
   import AudioPlayer from './AudioPlayer.svelte';
+  import { ANIS_SAMPLES, SAMPLES_FOR_EVERYONE } from '../lib/anis-samples.js';
 
   // Configure marked for inline parsing (no <p> tags wrapping)
   marked.use({
@@ -1371,6 +1372,14 @@
       researchMessagesEl?.scrollTo({ top: researchMessagesEl.scrollHeight, behavior: 'smooth' });
       researchInputEl?.focus();
     }
+  }
+
+  // "Try a sample" menu (research chat): sends a showcase question per strategy; a thread sends its turns in order
+  let sampleOpen = $state(false);
+  async function runSample(smp) {
+    sampleOpen = false;
+    if (researchLoading) return;
+    for (const turn of [...(smp.before || []), smp.q]) { researchInput = turn; await sendResearchMessage(); }
   }
 
   function handleResearchKeydown(e) {
@@ -2787,6 +2796,24 @@
       <!-- Research chat input form -->
       <form onsubmit={(e) => { e.preventDefault(); sendResearchMessage(); }} class="input-form" aria-label="Research chat form">
         <label for="research-input" class="sr-only">Ask the research assistant</label>
+        {#if isAdmin || SAMPLES_FOR_EVERYONE}
+          <div class="sample-menu">
+            <button type="button" class="sample-btn" aria-haspopup="menu" aria-expanded={sampleOpen} disabled={researchLoading} onclick={() => sampleOpen = !sampleOpen}>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3l14 9-14 9V3z"/></svg>
+              Try a sample
+            </button>
+            {#if sampleOpen}
+              <div class="sample-list" role="menu" tabindex="-1" onkeydown={(e) => { if (e.key === 'Escape') { sampleOpen = false; researchInputEl?.focus(); } }}>
+                {#each ANIS_SAMPLES as smp (smp.strategy)}
+                  <button type="button" role="menuitem" class="sample-item" onclick={() => runSample(smp)}>
+                    <span class="sample-label">{smp.label}</span>
+                    <span class="sample-q">{smp.before ? `${smp.before[0]} → ` : ''}{smp.q}</span>
+                  </button>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        {/if}
         <div class="input-wrapper">
           <textarea
             id="research-input"
@@ -5650,6 +5677,16 @@
     background-color: color-mix(in srgb, var(--accent-primary) 20%, transparent) !important;
     border-color: var(--accent-primary) !important;
   }
+
+  .sample-menu { position: relative; margin-bottom: 0.35rem; }
+  .sample-btn { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.6rem; font-size: 0.8rem; color: var(--text-secondary, inherit); background: transparent; border: 1px solid var(--border-color, rgba(128,128,128,0.35)); border-radius: 999px; cursor: pointer; }
+  .sample-btn:hover:not(:disabled) { color: var(--accent, inherit); border-color: var(--accent, currentColor); }
+  .sample-btn:disabled { opacity: 0.5; cursor: default; }
+  .sample-list { position: absolute; bottom: calc(100% + 0.35rem); left: 0; z-index: 30; width: min(30rem, calc(100vw - 2rem)); max-height: min(60vh, 28rem); overflow-y: auto; display: flex; flex-direction: column; background: light-dark(#fff, #1e293b); border: 1px solid var(--border-color, rgba(128,128,128,0.35)); border-radius: 0.75rem; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+  .sample-item { display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; padding: 0.5rem 0.75rem; text-align: left; background: transparent; border: 0; border-bottom: 1px solid rgba(128,128,128,0.15); cursor: pointer; color: inherit; }
+  .sample-item:hover, .sample-item:focus-visible { background: rgba(128,128,128,0.15); outline: none; }
+  .sample-label { font-size: 0.8rem; font-weight: 600; color: var(--accent, inherit); }
+  .sample-q { font-size: 0.78rem; opacity: 0.8; }
 
   .clear-research-btn {
     padding: 0.375rem;

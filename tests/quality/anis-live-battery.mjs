@@ -8,6 +8,7 @@ import net from 'net';
 net.setDefaultAutoSelectFamilyAttemptTimeout(3000);
 import { isSearchDenial } from '../../api/lib/assistant/lint.js';
 import { markdownDefects } from '../../api/lib/assistant/md-valid.js';
+import { ANIS_SAMPLES } from '../../src/lib/anis-samples.js';
 
 const API = (process.env.API_BASE || 'https://api.siftersearch.com').replace(/\/$/, '');
 const arg = (k) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : null; };
@@ -40,6 +41,8 @@ export const CASES = [
   { id: 'bab-born', q: 'When was the Báb born?', text: /1819/, ms: 20000 },
   { id: 'hi', q: 'hi', ms: 4000 },
 ];
+// the chat menu's showcase questions, one per strategy: timing + non-empty + no denial (check()); the strategy used is read from the trace by hand
+CASES.push(...ANIS_SAMPLES.map((x) => ({ id: `sample-${x.strategy}`, q: x.q, ...(x.before ? { before: x.before } : {}), ms: 90000 })));
 
 async function turn(q, { before = [] } = {}) {
   // a case with `before` is a thread: those turns first (same reader, same conversation), the last one measured
@@ -122,6 +125,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   console.log(`\n${n}/${res.length} pass`);
   mkdirSync('tmp', { recursive: true });
   const file = `tmp/anis-live-battery-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-  writeFileSync(file, JSON.stringify(res.map(({ c, r, f }) => ({ id: c.id, q: c.q, fails: f, ms: r.ms, at: r.at, book: r.book, text: r.text, cites: r.citations.map((x) => x.title) })), null, 1));
+  writeFileSync(file, JSON.stringify(res.map(({ c, r, f }) => ({ id: c.id, q: c.q, fails: f, cid: r.cid, meta: r.complete, ms: r.ms, at: r.at, book: r.book, text: r.text, cites: r.citations.map((x) => x.title) })), null, 1));
   console.log(`replies: ${file}`);
 }
