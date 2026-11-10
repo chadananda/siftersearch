@@ -26,10 +26,11 @@ describe('capitulation on pushback (B)', () => {
     { role: 'assistant', content: `See [Hidden Words](https://oceanlibrary.com/hw#1). ${'More on the heart. '.repeat(10)}` },
     { role: 'user', content: 'You said Gleanings calls the soul a ray of the sun — where?' },
   ];
-  it('earlier replies are kept long enough to check what was said (was 400 chars), links read "[linked]"', () => {
+  it('earlier replies are kept long enough to check what was said (was 400 chars), links read as their text (no "[linked]" marker the writer could echo)', () => {
     const s = conversationSummary(msgs, 'Anís');
     expect(s).toContain('Finally it says the soul is a sign of God');   // past char 400 of an EARLIER reply
-    expect(s).toContain('Hidden Words [linked]');
+    expect(s).toContain('See Hidden Words.');
+    expect(s).not.toContain('[linked');
     expect(s).not.toContain('https://');
     expect(s).not.toContain('ray of the sun');                            // the current question is not "conversation so far"
   });
