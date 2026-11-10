@@ -424,6 +424,9 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const sources = [...(r.citations || []), ...(r.retrieved || [])].map((x) => ({ title: x?.title, url: x?.url ?? x?.source_url ?? null, text: x?.text ?? null }));
     const formed = typeof r.reply === 'string' ? formPass(r.reply, { sources }) : null;
     let reply = formed ? formed.text : r.reply;
+    // a quote the form pass marked with its words (lint citeLinks 2b) is placed by the same output pass every reply link had
+    const upQ = d.upgradeLinks ?? (deps ? null : async (x) => (await import('../ocean-links.js')).upgradeOceanLinks(x));
+    if (upQ && typeof reply === 'string' && /oceanlibrary\.com\/[^\s)]*#~q=/.test(reply)) reply = (await timed('upgrade-quote-links', () => upQ(reply)).catch(() => null)) || reply;
     // Output check: a reply that abandons the persona or leaks instructions is replaced (the widget reconciles its
     // streamed text to the final reply; email sends only this).
     const broken = await timed('output-check', () => d.outputCheck(reply, { persona: name })).catch(() => null);

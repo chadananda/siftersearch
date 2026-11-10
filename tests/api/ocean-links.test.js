@@ -81,6 +81,21 @@ describe('OceanLibrary book-level link + quote', () => {
     const out = await upgradeOceanLinks(`https://oceanlibrary.com/gleanings-x#~q=${encodeURIComponent('[93.1] Know thou that every created thing is a sign of the revelation of God.')}`, { repo });
     expect(out).toMatch(/\?paraId=para_93&selectionString=/);
   });
+  it('round 5 compilation: a quote the writer linked to the whole book is placed — the exit lint marks it with its words, this pass finds them', async () => {
+    const { upgradeOceanLinks } = await import('../../api/lib/ocean-links.js');
+    const { citeLinks } = await import('../../api/lib/assistant/lint.js');
+    const repo = { listDocs: async () => ({ docs: [{ id: 13, external_id: 'saq_en' }] }),
+      getParagraphs: async () => [{ external_para_id: 'para_310', text: 'If a man oppresses another, the purpose of this punishment, rather, is to deter and dissuade, and to oppose iniquity and aggression.', block_attrs: '{"ilm_id":"bl310"}' }] };
+    // our copy of the paragraph (page markers) is not the site's, so the passage reached the writer with a book-level link
+    const t = 'In the same work: [*"The purpose of this punishment, rather, is to deter and dissuade, and to oppose iniquity and aggression"*](https://oceanlibrary.com/saq-r5).';
+    const marked = citeLinks(t, [{ title: 'Some Answered Questions', url: 'https://oceanlibrary.com/saq-r5', text: 'the purpose [pg 311] of this punishment' }]);
+    expect(marked.fixed).toBe(1); expect(marked.text).toContain('](https://oceanlibrary.com/saq-r5#~q=');
+    const out = await upgradeOceanLinks(marked.text, { repo });
+    expect(out).toMatch(/\]\(https:\/\/oceanlibrary\.com\/saq-r5\/?\?paraId=para_310&selectionString=saq_en-bl310\.\d+~saq_en-bl310\.\d+\)\.$/);
+    expect(out).not.toContain('~q=');
+    // another site's book link is left alone (no marker the output pass would not resolve)
+    expect(citeLinks('[*"Thou shalt not avenge, nor bear any grudge"*](https://example.org/leviticus)').fixed).toBe(0);
+  });
   it('leaves the plain book link when the quote is not in the book', async () => {
     const { upgradeOceanLinks } = await import('../../api/lib/ocean-links.js');
     const repo = { listDocs: async () => ({ docs: [{ id: 10, external_id: 'x_en' }] }), getParagraphs: async () => [{ external_para_id: 'para_1', text: 'other words' }] };

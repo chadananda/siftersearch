@@ -113,8 +113,8 @@ async function upgradeOlBookLinks(s, repo) {
     const words = plainText(quote).split(/\s+/).filter(Boolean);
     let r = null;
     for (const n of [12, 8, 5]) {
-      const head = words.slice(0, n).join(' ');
-      r = b?.doc && b.rows.find((x) => x.external_para_id && x.text && locateQuote(x.text, head));
+      const head = words.slice(0, n).join(' '), heads = [head, head.charAt(0).toLowerCase() + head.slice(1)];   // a quote taken mid-sentence, capitalised by its writer
+      r = b?.doc && b.rows.find((x) => x.external_para_id && x.text && heads.some((h) => locateQuote(x.text, h)));
       if (r || words.length <= n) break;
     }
     if (!r) return base;

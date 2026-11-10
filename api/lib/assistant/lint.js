@@ -3,6 +3,7 @@
 // Pure. Deps: md-valid. One rule BLOCKS: a reply ending in an offer to search loses that offer (dropSearchOffer); finalForm applies it,
 // with safeLinkText, at every reply's exit.
 import { safeLinkText, repairEmphasis } from './md-valid.js';
+import { encodeMarker } from '../ool-range.js';
 
 // An offer to run a lookup Anís could run himself: "would you like me to look…", "I can look up X if you'd like", "shall I
 // search…". Not a statement of what was found ("all I could find", "I could find no…") and not an offer to READ with the reader.
@@ -263,9 +264,13 @@ export function citeLinks(text, sources = []) {
     const q = quoteWords(label);
     if (q.split(' ').length < 4) return m;
     const s = srcs.find((x) => bookOf(x.url) === bookOf(u) && paraLevel(x.url) && foldT(x.text).includes(q));
-    if (!s) return m;
+    if (s) { fixed += 1; return `[${label}](${s.url})`; }
+    // (2b) no source here holds the place (our copy's text differs from the site's: page markers, a revised paragraph — round 5
+    //      compilation, 5 placeless quote links): an OceanLibrary book link carries the quoted words as the private "#~q=" marker,
+    //      which the output pass (ocean-links upgradeOceanLinks, run after this lint) turns into the passage's range, or drops
+    if (hostOf(u) !== 'oceanlibrary.com' || u.includes('#')) return m;
     fixed += 1;
-    return `[${label}](${s.url})`;
+    return `[${label}](${bookUrl(u)}#~q=${encodeMarker(label.replace(/[*_]/g, '').trim().replace(/^["“]|["”]$/g, '').trim())})`;
   });
   // (3) a quotation's citation title on another site than the quotation → the quotation's book
   src = src.replace(/(\[[*_\s]*["“][^\[\]\n]+\]\((https?:\/\/[^\s)]+)\)\s*[—–-]\s*)\[([^\[\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, head, u1, title, u2) => {
