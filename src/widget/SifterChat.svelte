@@ -11,6 +11,7 @@
   // that tune the widget without touching the DB profile. ONE public domain; the edge worker proxies /api.
   import { ANIS_SAMPLES, SAMPLES_FOR_EVERYONE } from '../lib/anis-samples.js';
   import { styleQuotes } from '../../api/lib/quote-style.js';
+  import { quoteSegments } from '../../api/lib/quote-blocks.js';
   import { BUILD, tagFor } from './version.js';
   let { token = '', api = 'https://siftersearch.com', accent = '', name = '', mission = '', opened = '', samples = '' } = $props();
   // "Try a sample" menu (one showcase question per strategy): shown with the samples attribute, or once a page was opened
@@ -227,6 +228,9 @@
           else if (ev.type === 'text' && typeof ev.content === 'string') { gotLive = true; stopStatus(); pendBuf += ev.content; }
           else if (ev.type === 'chunk' && typeof ev.text === 'string') { stopStatus(); if (gotLive) replay += ev.text; else pendBuf += ev.text; }
           else if (ev.type === 'book' && ev.book?.title) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.book = ev.book; messages = [...messages]; } }
+          // the reply's quoted blockquotes → passage cards; the book(s) the answer is about (both drawn once the reply is complete)
+          else if (ev.type === 'quote_cards' && Array.isArray(ev.cards)) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.quoteCards = ev.cards; messages = [...messages]; } }
+          else if (ev.type === 'books' && Array.isArray(ev.books)) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.books = ev.books; messages = [...messages]; } }
           else if (ev.type === 'citations' && Array.isArray(ev.citations)) { pendCites = ev.citations; }
           else if (ev.type === 'complete') { if (Array.isArray(ev.citations) && ev.citations.length) pendCites = ev.citations; streamDone = true; }
           else if (ev.type === 'error') { throw new Error(ev.message || 'assistant error'); }
@@ -425,6 +429,23 @@
   });
 </script>
 
+{#snippet bookCard(b)}
+  <div class="book">
+    {#if b.cover_url}
+      <a class="book-cover" href={b.url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+        <img src={coverSrc(b.cover_url, 240)} srcset={[160, 240, 320, 480].map((w) => `${coverSrc(b.cover_url, w)} ${w}w`).join(', ')}
+          sizes="(min-width: 480px) 112px, 88px" alt="Cover of {b.title}" loading="lazy" decoding="async" />
+      </a>
+    {/if}
+    <div class="book-meta">
+      {#if b.url}<a class="book-read" href={b.url} target="_blank" rel="noopener" title="Opens in a new tab">Read<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11C5 7 7.5 5 11.5 5M9 2.5 11.5 5 9 7.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr">(opens in a new tab)</span></a>{/if}
+      <a class="book-title" href={b.url} target="_blank" rel="noopener">{b.title}</a>
+      {#if b.author || b.year}<div class="book-by">{[b.author, b.year].filter(Boolean).join(' · ')}</div>{/if}
+      {#if b.description}<p class="book-desc">{b.description}</p>{/if}
+    </div>
+  </div>
+{/snippet}
+
 {#if cfg && !denied}
   <div class="root {cfg.position === 'bottom-left' ? 'left' : 'right'}" style="--accent:{cfg.accent}">
     {#if open}
@@ -482,22 +503,7 @@
                   <span class="avatar" aria-hidden="true"><svg viewBox="0 0 512 512"><path fill="currentColor" d={OCEAN_D}/></svg></span>
                 {/if}
                 <div class="bubblewrap">
-                  {#if m.book}
-                    <div class="book">
-                      {#if m.book.cover_url}
-                        <a class="book-cover" href={m.book.url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
-                          <img src={coverSrc(m.book.cover_url, 240)} srcset={[160, 240, 320, 480].map((w) => `${coverSrc(m.book.cover_url, w)} ${w}w`).join(', ')}
-                            sizes="(min-width: 480px) 112px, 88px" alt="Cover of {m.book.title}" loading="lazy" decoding="async" />
-                        </a>
-                      {/if}
-                      <div class="book-meta">
-                        {#if m.book.url}<a class="book-read" href={m.book.url} target="_blank" rel="noopener" title="Opens in a new tab">Read<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11C5 7 7.5 5 11.5 5M9 2.5 11.5 5 9 7.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr">(opens in a new tab)</span></a>{/if}
-                        <a class="book-title" href={m.book.url} target="_blank" rel="noopener">{m.book.title}</a>
-                        {#if m.book.author || m.book.year}<div class="book-by">{[m.book.author, m.book.year].filter(Boolean).join(' · ')}</div>{/if}
-                        {#if m.book.description}<p class="book-desc">{m.book.description}</p>{/if}
-                      </div>
-                    </div>
-                  {/if}
+                  {#if m.book}{@render bookCard(m.book)}{/if}
                   {#if m.book?.sufficient && m.book.follow_up && m.role === 'assistant' && m.done}
                     <div class="bubble follow">{m.book.follow_up}</div>
                   {/if}
@@ -512,11 +518,30 @@
                           : phase === 'deepening-more' ? 'Still searching — combing the historical records…'
                           : 'Searching the ocean of texts…'}</span>
                       {:else}
+                        {#if m.quoteCards?.length && !m.pending}
+                          {#each quoteSegments(m.content, m.quoteCards) as seg}
+                            {#if seg.kind === 'quote'}
+                              <figure class="qcard">
+                                {#if seg.card.cover_url}
+                                  <a class="qcard-cover" href={seg.card.url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                                    <img src={coverSrc(seg.card.cover_url, 96)} srcset={[48, 96, 144].map((w) => `${coverSrc(seg.card.cover_url, w)} ${w}w`).join(', ')} sizes="44px" alt="" loading="lazy" decoding="async" />
+                                  </a>
+                                {/if}
+                                <div class="qcard-body">
+                                  <div class="qcard-text">{@html renderRich(seg.body)}</div>
+                                  <p class="qcard-cite">— <a href={seg.card.url} target="_blank" rel="noopener">{#if seg.card.author}{seg.card.author}, {/if}<em>{seg.card.title}</em>{#if seg.card.place}, {seg.card.place}{/if}</a></p>
+                                </div>
+                              </figure>
+                            {:else}{@html renderRich(seg.md)}{/if}
+                          {/each}
+                        {:else}
                         {@html renderRich(m.book ? withoutBookLead(m.content, m.book) : m.content)}{#if m.pending}<span class="caret" aria-hidden="true"></span>{/if}
+                        {/if}
                       {/if}
                     {:else}{m.content}{/if}
                   </div>
                   {/if}
+                  {#each m.books || [] as b (b.id)}{@render bookCard(b)}{/each}
                   {#if m.citations?.length}
                     <div class="cites">
                       {#each m.citations.slice(0, 4) as c, ci}
@@ -741,6 +766,17 @@
     text-decoration: none; color: #fff; background: var(--accent); }
   .book-read:hover { background: var(--accent-deep); }
   @media (min-width: 480px) { .book-cover img { width: 112px; } }
+  /* quote card: a quoted passage with its book's tiny cover and the linked citation (Chad 11-10) */
+  .qcard { display: flex; gap: 10px; align-items: flex-start; margin: .55em 0; padding: 10px; border: 1px solid #e7dfcf; border-left: 2.5px solid var(--gold);
+    border-radius: 0 8px 8px 0; background: color-mix(in srgb, var(--gold) 5%, transparent); }
+  .qcard-cover { flex: 0 0 auto; display: block; line-height: 0; }
+  .qcard-cover img { width: 44px; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 3px; box-shadow: 0 1px 5px rgba(60, 40, 10, .18); }
+  .qcard-body { min-width: 0; flex: 1 1 auto; }
+  .qcard-text { color: var(--quote); line-height: 1.5; }
+  .qcard .qcard-cite { margin: 6px 0 0; font-size: .85em; color: #6b6253; }
+  .qcard .qcard-cite a { color: inherit; text-decoration: none; }
+  .qcard .qcard-cite a:hover { color: var(--accent-deep); text-decoration: underline; }
+  .qcard .qcard-cite em { font-family: var(--serif); color: #2a2620; }
   .msg.user .bubblewrap { max-width: 78%; }
 
   .bubble {
@@ -855,6 +891,9 @@
     .book-title { color: #f1ede3; }
     .book-by { color: #a59d8c; }
     .book-desc { color: #d3cec2; }
+    .qcard { border-color: #2b3442; border-left-color: var(--gold); }
+    .qcard .qcard-cite { color: #a59d8c; }
+    .qcard .qcard-cite em { color: #f1ede3; }
     .bubble.lit::first-letter { color: color-mix(in srgb, var(--accent) 45%, #cfe1ff); }
     .bubble :global(a), .cites a { color: color-mix(in srgb, var(--accent) 30%, #cfe1ff); }
     .cites a { background: color-mix(in srgb, var(--gold) 8%, transparent); border-color: color-mix(in srgb, var(--gold) 40%, transparent); }

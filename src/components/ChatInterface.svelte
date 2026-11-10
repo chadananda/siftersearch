@@ -8,6 +8,8 @@
   import ReligionIcon from './ReligionIcon.svelte';
   import BookCard from './chat/BookCard.svelte';
   import PassageCard from './chat/PassageCard.svelte';
+  import QuoteCard from './chat/QuoteCard.svelte';
+  import { quoteSegments } from '../../api/lib/quote-blocks.js';
   // the passage card shows the quote + citation: drop the reply's leading blockquote, keep anything else
   const withoutQuote = (text) => String(text || '').replace(/^(?:>.*(?:\n|$))+\s*/, '');
   // the book card already shows the description: the reply's first paragraph (the same words) is not shown twice
@@ -1326,6 +1328,11 @@
           researchMessages = researchMessages.map((m, i) => i === assistantIdx ? { ...m, progress: event.text } : m);
         } else if (event.type === 'book' && event.book) {
           researchMessages = researchMessages.map((m, i) => i === assistantIdx ? { ...m, book: event.book } : m);
+        } else if (event.type === 'quote_cards' && Array.isArray(event.cards)) {
+          // each quoted blockquote of the reply → its passage card (tiny cover + linked citation); unmatched blocks stay plain
+          researchMessages = researchMessages.map((m, i) => i === assistantIdx ? { ...m, quoteCards: event.cards } : m);
+        } else if (event.type === 'books' && Array.isArray(event.books)) {
+          researchMessages = researchMessages.map((m, i) => i === assistantIdx ? { ...m, books: event.books } : m);
         } else if (event.type === 'passage' && event.passage) {
           researchMessages = researchMessages.map((m, i) => i === assistantIdx ? { ...m, passages: [...(m.passages || []), event.passage] } : m);
         } else if (event.type === 'citations') {
@@ -2056,7 +2063,12 @@
                   {#if msg.isStreaming && !msg.content}
                     <span class="research-typing"><span></span><span></span><span></span></span>
                   {:else}
+                    {#if msg.quoteCards?.length && !msg.isStreaming}
+                      <!-- quoted passages as cards (the reply's own blockquotes, swapped in once it is complete) -->
+                      <div class="research-msg-text prose">{#each quoteSegments(msg.content, msg.quoteCards) as seg}{#if seg.kind === 'quote'}<QuoteCard card={seg.card} html={formatResearchText(seg.body)} />{:else}{@html formatResearchText(seg.md)}{/if}{/each}</div>
+                    {:else}
                     <div class="research-msg-text prose">{@html formatResearchText(msg.book ? withoutBookLead(msg.content, msg.book) : msg.passages?.length ? withoutQuote(msg.content) : msg.content)}{#if msg.isStreaming}<span class="streaming-cursor"></span>{/if}</div>
+                    {/if}
                     {#if !msg.isStreaming && msg.content && !msg.error}
                       <button class="copy-btn" title="Copy response" onclick={(e) => {
                         const suffix = '\n\n— Anís, Ocean AI Research Assistant\n   siftersearch.com';
@@ -2076,6 +2088,8 @@
                   {/if}
                 </div>
                 {/if}
+                <!-- the book(s) the answer is about (the work Jev named, cited in the reply): below the text, so nothing above it moves -->
+                {#each msg.books || [] as b (b.id)}<BookCard book={b} />{/each}
                 <!-- Citations (collapsed by default) -->
                 {#if msg.citations?.length > 0}
                   <details class="research-citations">

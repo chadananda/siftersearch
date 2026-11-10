@@ -460,6 +460,13 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       }
     }
     const lint = lintReply(reply);
+    // passage cards (Chad 11-10): each quoted blockquote → its book's tiny cover + the linked citation; the work Jev named, cited in the
+    // reply → its book card. Live chat only: the clients swap a blockquote for its card; email/PDF/voice keep the plain reply.
+    const qc = d.quoteCards ?? (deps ? null : async (...a) => (await import('./quote-cards.js')).quoteCards(...a));
+    const present = qc && channel.live && !replaced && typeof reply === 'string' && reply.trim()
+      ? await timed('quote-cards', () => qc(reply, [...(r.citations || []), ...(r.retrieved || [])], { namedWork: u.named_work ?? null })).catch(() => null) : null;
+    if (present?.cards?.length) onEvent({ type: 'quote_cards', cards: present.cards });
+    if (present?.books?.length) onEvent({ type: 'books', books: present.books });
     // tree end: code appends what the turn gave (every quoted/listed item), the thread entry, and what stayed open
     try {
       const cites = (r.citations || []).map((c) => ({ document_id: c.document_id, paragraph_index: c.paragraph_index ?? null, text: c.text || undefined, id: c.id })).filter((c) => c.document_id != null || c.id != null);
@@ -486,7 +493,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       retrieved: r.retrieved?.length ?? 0,
       format: r.format ?? null, profile: r.profile ?? null,
       output_check: broken, replaced, lint, ...(formed && (formed.repairs.search_denial || formed.repairs.search_offer || formed.repairs.deflection) ? { form: formed.repairs } : {}), timings: r.timings, search_detail: r.plan?.timings ?? null });
-    return { ...r, reply, status: 'answered', conversationId: ex?.conversationId ?? null, path, ...(deepReport ? { deep_report: deepReport } : {}) };
+    return { ...r, reply, status: 'answered', conversationId: ex?.conversationId ?? null, path, ...(deepReport ? { deep_report: deepReport } : {}),
+      ...(present?.cards?.length ? { quote_cards: present.cards } : {}), ...(present?.books?.length ? { books: present.books } : {}) };
   } catch (err) {
     if (ex) await d.fail({ ...ex, error: err?.message }).catch(() => {});
     if (isSpendCap(err)) return spendLimited();   // the cap was reached mid-turn (a later paid call): same polite reply
