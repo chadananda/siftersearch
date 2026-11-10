@@ -122,7 +122,7 @@ export async function findTitled(cands, { index = null, match = null, listDocs =
   if (!pool.length) return null;
   const top = Math.max(...pool.map((h) => h.score));
   const ids = pool.filter((h) => h.score >= top - 0.06).sort((a, b) => b.score - a.score).map((h) => h.doc.id).slice(0, 40);
-  const { docs } = await listDocs({ ids, fields: ['id', 'title', 'author', 'religion', 'collection', 'slug', 'language', 'source_site', 'paragraph_count', 'encumbered', 'source_url', 'external_id'], limit: 40, count: false });
+  const { docs } = await listDocs({ ids, fields: ['id', 'title', 'author', 'religion', 'collection', 'slug', 'language', 'source_site', 'paragraph_count', 'encumbered', 'source_url', 'external_id', 'description', 'cover_url', 'year'], limit: 40, count: false });
   const asked = cands.join(' ');
   const sorted = docs.filter((d) => (d.paragraph_count ?? 1) > 0 && (books.length ? !notBook(d) : true))
     .sort((a, b) => workRank(b, asked) - workRank(a, asked) || (b.paragraph_count || 0) - (a.paragraph_count || 0));

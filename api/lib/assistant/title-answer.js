@@ -1,7 +1,9 @@
 // A message that is ONLY a library book's title ("“God Passes By”") → that book at once: the link, a short summary, the offer.
 // No Jev, no search, no writer (Chad 11-09: "12s is unacceptable … the user is stating the name of the book without any extra bits").
 // Code only RESOLVES: the whole message must equal a book's title in the title index (work-request.js findWork, whole-title rule).
-// The summary is written ONCE per book from its own opening pages (Haiku, role anis-work-summary) and cached in data/run.
+// The summary is the document's own description (docs.description, every document has one — Chad 11-09); only a document
+// without one gets a summary written ONCE from its opening pages (Haiku, role anis-work-summary), cached in data/run.
+// Order (Chad 11-09): the summary, then the book itself — a `book` event (cover, title, author, link) the chat renders as a card.
 // Deps: work-request (bareTitle, findWork, workLead, workOffer), hit-links workLinks, paragraphs-repo paragraphsInRange, ai chatCompletion.
 import { readFileSync, writeFileSync, mkdirSync, renameSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -24,6 +26,8 @@ ${opening}`;
 
 /** The book's summary: cached, else written once from its opening pages. → text or null (no summary = link + offer only). */
 export async function workSummary(doc, { read = null, complete = null } = {}) {
+  const own = String(doc.description || '').trim();
+  if (own) return own;
   const key = String(doc.id), hit = load().get(key);
   if (hit) return hit;
   const rows = await (read || (async (id) => (await import('../paragraphs-repo.js')).paragraphsInRange(id, 0, 60, { limit: 60 })))(doc.id).catch(() => []);
@@ -46,18 +50,16 @@ export async function titleOnly(text, { find = findWork } = {}) {
   return work?.doc ? work : null;
 }
 
-/** Stream the answer: the linked book first (instant), then its summary, then the offer. → { reply, citations } */
+/** Stream the answer: the summary, then the book (a `book` card event + its linked lead line), then the offer. → { reply, citations, book } */
 export async function titleAnswer(work, { onEvent = () => {}, links = null, summary = workSummary } = {}) {
-  const all = [work.doc, ...(work.others || [])];
-  const wl = await (links || (async (xs) => (await import('../hit-links.js')).workLinks(xs)))(all).catch(() => null);
+  const all = [work.doc, ...(work.others || [])], d = work.doc;
+  const [wl, sum] = await Promise.all([(links || (async (xs) => (await import('../hit-links.js')).workLinks(xs)))(all).catch(() => null), summary(d).catch(() => null)]);
   const urlOf = (x) => wl?.get?.(x.id) ?? workUrl(x);
-  const lead = workLead(work, urlOf);
-  onEvent({ type: 'text', content: lead });
-  const sum = await summary(work.doc).catch(() => null);
-  if (sum) onEvent({ type: 'text', content: `\n\n${sum}` });
-  const offer = workOffer(work);
-  if (offer) onEvent({ type: 'text', content: `\n\n${offer}` });
-  const reply = [lead, sum, offer].filter(Boolean).join('\n\n');
+  const book = { id: d.id, title: d.title, author: d.author || null, year: d.year ?? null, url: urlOf(d) || null, cover_url: d.cover_url || null, description: sum || null, encumbered: d.encumbered === 1 };
+  onEvent({ type: 'book', book });
+  const lead = workLead(work, urlOf), offer = workOffer(work);
+  const reply = [sum, lead, offer].filter(Boolean).join('\n\n');
+  onEvent({ type: 'text', content: reply });
   const citations = all.map((x) => ({ title: x.title, author: x.author, url: urlOf(x) ?? null, religion: x.religion, document_id: x.id, paragraph_index: null, text: '' }));
-  return { reply, citations };
+  return { reply, citations, book };
 }

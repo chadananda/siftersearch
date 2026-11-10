@@ -17,14 +17,19 @@ describe('title-answer', () => {
     expect(await titleOnly('What does God Passes By say about the martyrdom of the Báb?', { find })).toBeNull();
     expect(find).not.toHaveBeenCalled();
   });
-  it('streams the link first, then the summary, then the offer', async () => {
+  it('summary first, then the book (a card event + the linked line), then the offer', async () => {
     const ev = [];
     const r = await titleAnswer(GPB, { onEvent: (e) => ev.push(e), links: async () => new Map([[21310, 'https://oceanlibrary.com/god-passes-by_shoghi-effendi']]), summary: async () => 'A history of the first century.' });
-    const texts = ev.filter((e) => e.type === 'text').map((e) => e.content);
-    expect(texts[0]).toContain('[*God Passes By*](https://oceanlibrary.com/god-passes-by_shoghi-effendi)');
-    expect(texts[1]).toContain('A history of the first century.');
+    expect(ev[0]).toMatchObject({ type: 'book', book: { id: 21310, title: 'God Passes By', url: 'https://oceanlibrary.com/god-passes-by_shoghi-effendi' } });
+    expect(r.reply.indexOf('A history of the first century.')).toBe(0);
+    expect(r.reply).toContain('[*God Passes By*](https://oceanlibrary.com/god-passes-by_shoghi-effendi)');
     expect(r.reply).toContain('read it with you');
     expect(r.citations[0].document_id).toBe(21310);
+  });
+  it('the document\'s own description is the summary — no model call', async () => {
+    const complete = vi.fn();
+    expect(await workSummary({ id: 1, title: 'X', description: 'Its own summary.' }, { complete })).toBe('Its own summary.');
+    expect(complete).not.toHaveBeenCalled();
   });
   it('the summary is written once per book, then served from the cache', async () => {
     const doc = { id: 990000001 + Math.floor(Math.random() * 1e6), title: 'T', author: 'A' };
