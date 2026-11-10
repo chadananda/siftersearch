@@ -3,6 +3,9 @@
 // capability denial, leaked markers, malformed markdown, empty/error, expected book card / cited work, latency targets. Replies saved for hand review.
 //   node tests/quality/anis-live-battery.mjs [--only id,id] [--concurrency 3]   API_BASE (default https://api.siftersearch.com)
 import { writeFileSync, mkdirSync } from 'fs';
+import net from 'net';
+// a slow home link: Node's 250 ms per-address connect race gave "fetch failed" (ETIMEDOUT on every Cloudflare IP) while curl got through
+net.setDefaultAutoSelectFamilyAttemptTimeout(3000);
 import { isSearchDenial } from '../../api/lib/assistant/lint.js';
 import { markdownDefects } from '../../api/lib/assistant/md-valid.js';
 
@@ -52,7 +55,7 @@ async function turn(q) {
         let e; try { e = JSON.parse(line); } catch { continue; }
         at[e.type] ??= Date.now() - t0; out.events[e.type] = (out.events[e.type] || 0) + 1;
         if (e.type === 'chunk') out.chunks += e.text || '';
-        else if (e.type === 'text') out.text = e.content || out.text;   // the whole reply (title/find paths); else the streamed chunks
+        else if (e.type === 'text') out.text += e.content || '';   // the live stream; the chunk replay at the end is the canonical reply (SifterChat.svelte)
         else if (e.type === 'book') out.book = e.book;
         else if (e.type === 'sources') out.sources = e.sources?.length ? e.sources : out.sources;
         else if (e.type === 'citations') out.citations = e.citations || [];
@@ -61,7 +64,7 @@ async function turn(q) {
       }
     }
   } catch (e) { out.error = e.message; }
-  return { ...out, text: (out.text || out.chunks).trim(), ms: Date.now() - t0, at };
+  return { ...out, text: (out.chunks || out.text).trim(), ms: Date.now() - t0, at };
 }
 
 export function check(c, r) {
