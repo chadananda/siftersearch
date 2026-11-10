@@ -30,6 +30,21 @@ describe('Jev fills the filter units in the same call', () => {
   });
 });
 
+describe('a bare work title is the book (Chad 11-09: "God Passes By" fell to Unmatched and ran slow research)', () => {
+  const run = (content, strategy, kind = ans('work')) => chooseStrategy([{ role: 'user', content }],
+    { apiKey: 'k', fetchImpl: async () => ({ ok: true, json: async () => ({ answers: { strategy, kind_1: kind } }) }), options: { book: 'b', about: 'a', understanding: 'u', unmatched: 'x' } });
+  it('below-confidence book on a message that is only a work name → book', async () => {
+    const r = await run('“God Passes By”', ans('book', 0.4));
+    expect(r.strategy.choice).toBe('book'); expect(r.strategy.reason).toBe('named-work-only'); expect(r.units.named_work).toBe('God Passes By');
+    expect(r.decisions[0].chosen).toBe('book');
+  });
+  it('a question with more than the title, or a non-book pick, stays Unmatched', async () => {
+    expect((await run('What does God Passes By say about the Báb’s martyrdom?', ans('book', 0.4))).strategy.choice).toBe('unmatched');
+    expect((await run('“God Passes By”', ans('understanding', 0.4))).strategy.choice).toBe('unmatched');
+    expect((await run('“God Passes By”', ans('book', 0.4), ans('work', 0.2))).strategy.choice).toBe('unmatched');
+  });
+});
+
 describe('hard filters first, widening when thin', () => {
   it('search.shelf by_person filters by author, gated free when none; the tradition filter applies', async () => {
     const seen = [];

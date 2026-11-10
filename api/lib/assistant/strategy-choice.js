@@ -128,6 +128,12 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
     const subj = choice(a.subject_religion), subjectOn = strategy.choice !== 'comparison' && subj?.choice && subj.choice !== 'none' && SIDES[subj.choice] && (subj.confidence ?? 0) >= min && !jevPatch.patch.scope?.religions_specified && !jevPatch.turnOnly;
     const turnOnly = subjectOn ? { scope: { religions_specified: [subj.choice] } } : jevPatch.turnOnly;
     const units = namedUnits(a, spans, messages.filter((m) => m.role === 'user').at(-1)?.content || '', min);
+    // the message is ONLY a work's name (Jev's own kind answer: a work, nothing else asked): Jev's top pick book/about stands even below
+    // confidence — a bare title is the book (Chad 11-09: "God Passes By" fell to Unmatched, was read as a quotation, ran slow research)
+    if (strategy.reason === 'low-confidence' && ['book', 'about'].includes(strategy.was) && opts[strategy.was] && units.named_work && !units.named_person && !units.topic) {
+      strategy = { ...raw, choice: strategy.was, reason: 'named-work-only' };
+      decisions[0] = { ...decisions[0], chosen: strategy.choice, reason: strategy.reason };
+    }
     if (subjectOn) decisions.push({ point: 'subject-religion', by: 'jev', saw: state, options: Object.keys(SIDES), probabilities: jevProbabilities(subj), chosen: subj.choice, reason: 'a hard filter for this turn', ms });
     if (Object.keys(units).length) decisions.push({ point: 'named-units', by: 'jev', saw: spans, options: Object.keys(KINDS), chosen: units, reason: null, ms });
     const patch = { jev: jevPatch.patch, turnOnly, continues: jevPatch.continues, offer: jevPatch.offer };
