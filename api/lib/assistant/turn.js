@@ -16,6 +16,7 @@ import { narrate } from './narrate.js';
 import { turnMeta } from './turn-meta.js';
 import { progressText } from './progress.js';
 import { chooseStrategy, strategyOf } from './strategy-choice.js';
+import { titleOnly, titleAnswer } from './title-answer.js';
 import { timeoutDecision, jevTimeoutsOf } from './jev-call.js';   // W3: Jev chooses the strategy from context
 import { restate, understoodText, tarpitPhrase } from './understanding.js';   // W3: the "what I understood" line
 import { decisionLog } from './decision-log.js';
@@ -109,6 +110,25 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     onEvent({ type: 'stage', stage: 'craft' }); onEvent({ type: 'text', content: tp.text });
     if (ex) await d.close({ ...ex, reply: tp.text, status: 'tarpit', path: { gate: 'tarpit', meta: turnMeta({ status: 'tarpit', meter, ms: Date.now() - t0 }) }, channel: channel.id }).catch(() => {});
     return { reply: tp.text, status: 'tarpit', citations: [], retrieved: [], plan: null, conversationId: ex?.conversationId ?? null,
+      timings: { total_ms: Date.now() - t0 } };
+  }
+
+  // A message that is ONLY a library book's title → that book at once (title-answer.js): link, cached summary, offer; no Jev, no
+  // search, no writer (Chad 11-09: "the user is stating the name of the book without any extra bits" — 12 s was unacceptable).
+  // Code resolves only: the whole message must equal a book's title in the title index. Anything more goes to Jev as usual.
+  const titleFn = d.titleOnly ?? (deps ? null : titleOnly);
+  const titled = titleFn && engine === undefined && research === undefined && !variants && !llm ? await titleFn(text).catch(() => null) : null;
+  if (titled) {
+    const ex = await d.open(logArgs).catch(() => null);
+    if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
+    onEvent({ type: 'sources', sources: [], plan: { shape: 'work', work: titled.doc.id }, ms: Date.now() - t0 });
+    onEvent({ type: 'stage', stage: 'craft' });
+    const { reply, citations } = await (d.titleAnswer ?? titleAnswer)(titled, { onEvent });
+    onEvent({ type: 'sources', sources: citations, plan: { shape: 'work', work: titled.doc.id }, ms: Date.now() - t0 });
+    const path = { gate: 'title', route: 'title', strategy: 'book', work: titled.doc.id, meta: turnMeta({ status: 'answered', meter, ms: Date.now() - t0 }),
+      timeline: timelineOf(timeline, t0), llm: meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null })) };
+    if (ex) await d.close({ ...ex, reply, status: 'answered', path, channel: channel.id }).catch(() => {});
+    return { reply, status: 'answered', citations, retrieved: [], plan: { shape: 'work', work: titled.doc.id }, conversationId: ex?.conversationId ?? null,
       timings: { total_ms: Date.now() - t0 } };
   }
 

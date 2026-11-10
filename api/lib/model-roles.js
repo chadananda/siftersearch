@@ -19,6 +19,8 @@ export const MODEL_ROLES = {
     why: 'one fast call over raw search; ANIS_LLM env switches it (kept for compatibility)' },
   'assistant-term': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-13', needs: ['fast', 'tiny-output'],
     why: 'extract the word a CTAI question is about (20 tokens)' },
+  'anis-work-summary': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-09', needs: ['fast', 'tiny-output'],
+    why: 'Chad 11-09: a bare book title → link + a short summary in ~2s; written ONCE per book from its opening pages, cached in data/run (title-answer.js)' },
   'anis-understood': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-03', needs: ['fast', 'tiny-output'],
     why: 'the "what I understood" line: one noun phrase restating the resolved request from Jev\'s decision (System One has no free-text type)' },
   'anis-unmatched-recheck': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-08', needs: ['fast', 'json', 'tiny-output'],
