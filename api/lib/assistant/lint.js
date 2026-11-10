@@ -228,18 +228,21 @@ const paraLevel = (u) => /[?&]paraId=|selectionString=|#p\d+|#\(/.test(u || '');
 const hostOf = (u) => { try { return new URL(u).host.replace(/^www\./, ''); } catch { return null; } };
 const bookUrl = (u) => String(u || '').replace(/[?#].*$/, '').replace(/(\.[a-z]+\/.+?)\/$/, '$1');
 const quoteWords = (label) => foldT(label.replace(/[*_]/g, '').replace(/^\s*["“]|["”]\s*$/g, ''));
+const OWN_SITE = /^https?:\/\/(?:[a-z0-9-]+\.)?siftersearch\.com(?:[/?#]|$)/i;
 export function citeLinks(text, sources = []) {
   let src = String(text || ''), fixed = 0;
   const srcs = (sources || []).filter((x) => x?.url);
-  // (0) our own reader link (siftersearch.com/library) where a source of the same title has a public link → that link
-  src = src.replace(/\[([^\[\]\n]+)\]\((https?:\/\/(?:www\.)?siftersearch\.com\/library\/[^\s)]+)\)/g, (m, label, u) => {
+  // (0) our own address (siftersearch.com) — Anís never names it (public identity, round 5 HARD RULE): a source of the same title with a
+  //     public link → that link; none → the citation stays as unlinked text (the title or quotation, never our reader)
+  src = src.replace(/\[([^\[\]\n]+)\]\((https?:\/\/(?:[a-z0-9-]+\.)?siftersearch\.com(?:\/[^\s)]*)?)\)/gi, (m, label, u) => {
     const own = srcs.find((x) => x.url === u) || srcs.find((x) => bookOf(x.url) === bookOf(u));
-    const t = own?.title && foldT(own.title);
-    const pub = t && srcs.find((x) => foldT(x.title) === t && !/siftersearch\.com/.test(x.url));
-    if (!pub) return m;
+    const t = foldT((own?.title || label).replace(/[*_]/g, ''));
+    const pub = t && srcs.find((x) => foldT(x.title) === t && !OWN_SITE.test(x.url));
     fixed += 1;
-    return `[${label}](${pub.url})`;
+    return pub ? `[${label}](${pub.url})` : label;
   });
+  const bare = /\s*\(?<?https?:\/\/(?:[a-z0-9-]+\.)?siftersearch\.com(?:\/[^\s)>]*)?>?\)?/gi;   // a bare address of ours, with its brackets
+  if (bare.test(src)) { fixed += 1; src = src.replace(bare, ''); }
   // (1) "[X](U1) ([link](U2))", same book → "[X](U2)"
   src = src.replace(/\[([^\[\]\n]+)\]\((https?:\/\/[^\s)]+)\)\s*\(\[(?:link|source|here)\]\((https?:\/\/[^\s)]+)\)\)/gi, (m, label, u1, u2) => {
     if (bookOf(u1) !== bookOf(u2)) return m;

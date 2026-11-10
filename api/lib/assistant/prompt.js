@@ -157,10 +157,15 @@ export function passageHeader(p, i) {
   return `[${i + 1}] ${p.source_title || 'Untitled'}${p.place || p.locator ? ` · at ${p.place || p.locator}` : ''}${who ? ` — ${who}` : ''}${voices}${p.authority ? ` · ${p.authority}` : ''}${p.standing ? ` · [${p.standing}]` : ''}${tier ? ` · ${tier}` : ''}${p.theme ? ` · theme: ${p.theme}` : ''}${p.translation ? ` · EXISTING TRANSLATION (${p.translation}) — quote it verbatim` : ''}${originalNote(p)}`;
 }
 
+// Anís never names siftersearch.com (public identity; round 5: timeline Source cells linked our reader): a passage whose only link is
+// our own reader reaches the writer with NO URL, so it is cited as an unlinked title; the exit lint (citeLinks) is the backstop
+const OWN_SITE = /^https?:\/\/(?:[a-z0-9-]+\.)?siftersearch\.com(?:[/?#]|$)/i;
+export const publicUrl = (u) => (u && !OWN_SITE.test(String(u)) ? u : null);
+
 export function anisUserPayload({ question, conversation = '', passages = [], conversational = false, entities = null, peopleAnswer = null, target = null, direction = '' }) {
-  const lines = passages.map((p, i) => `${passageHeader(p, i)}\nURL: ${p.citation_url || '(none)'}\n${passageText(p)}`);
+  const lines = passages.map((p, i) => `${passageHeader(p, i)}\nURL: ${publicUrl(p.citation_url) || '(none — cite the title without a link)'}\n${passageText(p)}`);
   // Each piece of evidence goes with its verbatim PROOF — the model reads what the source actually says.
-  const cite = (e) => `${e.statement}${e.when ? ` (${e.when})` : ''} — ${e.source || 'source'}${e.url ? ` URL: ${e.url}` : ''}${e.proof ? ` — proof: "${String(e.proof).slice(0, 220)}"` : ''}`;
+  const cite = (e) => `${e.statement}${e.when ? ` (${e.when})` : ''} — ${e.source || 'source'}${publicUrl(e.url) ? ` URL: ${publicUrl(e.url)}` : ''}${e.proof ? ` — proof: "${String(e.proof).slice(0, 220)}"` : ''}`;
   const people = (entities || []).map((p) => `- ${p.name}: ${(p.evidence || []).map(cite).join('; ')}`);
   let peopleBlock = '';
   if (peopleAnswer) {

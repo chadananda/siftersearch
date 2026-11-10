@@ -2,6 +2,7 @@
 // a quotation links its paragraph, the Uncompiled Published Letters cite last, unbalanced emphasis repaired.
 import { describe, it, expect } from 'vitest';
 import { formPass, citeLinks, lastResortLast } from '../../api/lib/assistant/lint.js';
+import { anisUserPayload } from '../../api/lib/assistant/prompt.js';
 import { markdownDefects } from '../../api/lib/assistant/md-valid.js';
 
 const GL = 'https://oceanlibrary.com/gleanings-from-the-writings-of-bahaullah';
@@ -50,11 +51,21 @@ describe('emphasis repair', () => {
 });
 
 describe('reader links', () => {
-  it('a siftersearch.com/library link gives way to a public link of the same work among the sources; none → it stays', () => {
+  it('a siftersearch.com/library link gives way to a public link of the same work among the sources; none → unlinked text (round 5: Anís never names siftersearch.com)', () => {
     const ss = 'https://siftersearch.com/library/bahai/administrative/universal-house-of_ridvan-message-1979#p60';
     const pub = 'https://oceanlibrary.com/ridvan-message-1979/?paraId=para_60';
     const t = `[*Riḍván Message 1979*](${ss})`;
     expect(citeLinks(t, [{ title: 'Riḍván Message 1979', url: ss }, { title: 'Ridván Message 1979', url: pub }]).text).toBe(`[*Riḍván Message 1979*](${pub})`);
-    expect(citeLinks(t, [{ title: 'Riḍván Message 1979', url: ss }]).text).toBe(t);
+    expect(citeLinks(t, [{ title: 'Riḍván Message 1979', url: ss }]).text).toBe('*Riḍván Message 1979*');
+    // the timeline's Source cells (round 5): a book with no public source, a quotation, the id viewer, a bare address — none survive
+    const cell = '| 1890 | ‘Abdu’l-Bahá meets pilgrims | [*Memories of Nine Years in ‘Akká*](https://siftersearch.com/library/bahai/bahai-books/youness-afroukhteh_memories-of-nine-years-in-akka#p1610) |';
+    expect(formPass(cell).text).toBe('| 1890 | ‘Abdu’l-Bahá meets pilgrims | *Memories of Nine Years in ‘Akká* |');
+    expect(citeLinks('[*"He is the Lord"*](https://siftersearch.com/library/view?doc=12#p3) — read it (https://siftersearch.com/library/view?doc=12).').text).toBe('*"He is the Lord"* — read it.');
+    expect(formPass(`[*Riḍván Message 1979*](${pub})`).text).toBe(`[*Riḍván Message 1979*](${pub})`);
+  });
+  it('the writer is never handed our reader as a passage URL (the source of the timeline links): a public URL passes, ours becomes none', () => {
+    const p = (u) => ({ text: 'Pilgrims came to ‘Akká.', source_title: 'Memories of Nine Years in ‘Akká', source_author: 'Youness Afroukhteh', citation_url: u, religion: "Baha'i" });
+    const out = anisUserPayload({ question: 'timeline', passages: [p('https://siftersearch.com/library/bahai/bahai-books/youness-afroukhteh_memories-of-nine-years-in-akka#p1610'), p('https://oceanlibrary.com/x/?paraId=para_3')] });
+    expect(out).not.toMatch(/siftersearch\.com/); expect(out).toMatch(/URL: \(none/); expect(out).toMatch(/URL: https:\/\/oceanlibrary\.com\/x\/\?paraId=para_3/);
   });
 });
