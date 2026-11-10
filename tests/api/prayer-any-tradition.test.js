@@ -40,7 +40,7 @@ const stems = (s) => fold(s).split(/[^\p{L}']+/u).map((w) => w.replace(/'s$/, ''
 function search(layer, { query, limit = 10, filters = {} }) {
   const q = stems(query);
   const pool = ROWS.filter((r) => (!filters.tradition || canonicalTradition(r.religion) === canonicalTradition(filters.tradition))
-    && (filters.documentId == null || r.document_id === filters.documentId));
+    && (filters.documentId == null || [filters.documentId].flat().includes(r.document_id)));
   const scored = pool.map((r) => {
     const words = new Set(stems(r.text));
     if (layer === 'literal_search') return [r, fold(r.text).includes(fold(query)) ? 1 : 0];

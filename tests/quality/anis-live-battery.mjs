@@ -125,6 +125,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   console.log(`\n${n}/${res.length} pass`);
   mkdirSync('tmp', { recursive: true });
   const file = `tmp/anis-live-battery-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-  writeFileSync(file, JSON.stringify(res.map(({ c, r, f }) => ({ id: c.id, q: c.q, fails: f, cid: r.cid, meta: r.complete, ms: r.ms, at: r.at, book: r.book, text: r.text, cites: r.citations.map((x) => x.title) })), null, 1));
+  writeFileSync(file, JSON.stringify(res.map(({ c, r, f }) => ({ id: c.id, q: c.q, fails: f, cid: r.cid ?? null, meta: r.complete, ms: r.ms, at: r.at, book: r.book, text: r.text, cites: r.citations.map((x) => x.title) })), null, 1));
   console.log(`replies: ${file}`);
 }

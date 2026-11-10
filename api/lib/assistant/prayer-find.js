@@ -47,8 +47,8 @@ async function bodyOf(p, paragraphsInRange) {
 /** One tradition's candidates for a name/incipit and/or a need. → { candidates, works, how } */
 async function oneTradition(tradition, a, d) {
   const filters = { ...(tradition ? { tradition } : {}), ...(a.lang ? { language: a.lang } : {}) };
-  const works = tradition ? await prayerWorksOf(tradition, { findDocuments: d.findDocuments, language: a.lang || null }).catch(() => []) : [];
-  const inWorks = [...(a.workDoc ? [a.workDoc] : []), ...works.filter((w) => w.id !== a.workDoc?.id)].slice(0, 3);
+  // the prayer works resolve WHILE the tradition-wide searches run (11-10 battery: a slow works lookup held every search ~6 s)
+  const worksP = tradition ? prayerWorksOf(tradition, { findDocuments: d.findDocuments, language: a.lang || null }).catch(() => []) : Promise.resolve([]);
   const q = (layer, query, limit, f = filters) => d.search(layer, { query, limit, filters: f }).then((o) => o?.passages || [], () => []);
   const named = a.name || a.incipit, jobs = [], how = [], top = new Set();
   const first = (pr) => pr.then((ps) => { if (ps[0]?.document_id != null) top.add(keyOf(ps[0])); return ps; });
@@ -61,7 +61,11 @@ async function oneTradition(tradition, a, d) {
     jobs.push(q('hype_search', a.need, 8), q('phrase_search', a.need, 6));
     how.push(`the need "${a.need}" by meaning across ${tradition || 'the library'}`);
   }
-  for (const w of inWorks) jobs.push(q('phrase_search', named || a.need, 4, { documentId: w.id }));
+  const works = await worksP;
+  const inWorks = [...(a.workDoc ? [a.workDoc] : []), ...works.filter((w) => w.id !== a.workDoc?.id)].slice(0, 3);
+  // ONE phrase search over all the prayer works (a documentId list), not one per work: 11-10 a need across every tradition fired 22
+  // per-work searches beside the 22 tradition-wide ones, and the answer waited on the slowest (9 s) of them
+  if (inWorks.length) jobs.push(q('phrase_search', named || a.need, 4 * inWorks.length, { documentId: inWorks.length === 1 ? inWorks[0].id : inWorks.map((w) => w.id) }));
   if (inWorks.length) how.push(`inside ${inWorks.map((w) => w.title).join(', ')}`);
   const raw = (await Promise.all(jobs)).flat();
   const workIds = new Set([...works, ...(a.workDoc ? [a.workDoc] : [])].map((w) => Number(w.id)));
