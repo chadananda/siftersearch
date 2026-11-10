@@ -1,0 +1,1518 @@
+{
+ "tradition": "judaism",
+ "label": "Judaism",
+ "harvested": "2026-11-10",
+ "candidates": 2534,
+ "questions": [
+  {
+   "id": "judaism-001",
+   "q": "what is jewish religion beliefs",
+   "variants": [
+    "what is jewish religion",
+    "what are the basic beliefs of jewish religion",
+    "what is the jewish religion belief",
+    "what is the religion for jewish",
+    "what is jewish belief",
+    "what is the jewish religion beliefs",
+    "what are the beliefs of jewish religion",
+    "what are the main beliefs of jewish religion"
+   ],
+   "score": 58.26,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-002",
+   "q": "what does the jewish religion believe",
+   "variants": [
+    "what is jewish religion do they believe in jesus",
+    "what does jewish religion believe",
+    "what does jewish religion believe in",
+    "what is jewish religion believe",
+    "what does jewish believe in",
+    "what do jewish religion believe",
+    "what is the jewish religion what do they believe in",
+    "what religion jewish people believe in"
+   ],
+   "score": 43.44,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-003",
+   "q": "what do jewish people believe in",
+   "variants": [
+    "what do jewish people in",
+    "what do jewish people not believe in",
+    "what does jewish people believe jesus is"
+   ],
+   "score": 25.72,
+   "volume": 18100,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-004",
+   "q": "do jewish people believe in jesus",
+   "variants": [
+    "do jewish people believe in jesus christ",
+    "do jewish people not believe in jesus",
+    "do jewish faith people believe in jesus",
+    "do you jewish people believe in jesus",
+    "why does jewish people believe in jesus",
+    "do jewish people believe jesus is god",
+    "why do jewish people believe in jesus",
+    "do jewish people believe jesus"
+   ],
+   "score": 24.77,
+   "volume": 40500,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-005",
+   "q": "can jewish people eat pork",
+   "variants": [
+    "do jewish people eat pork"
+   ],
+   "score": 23.71,
+   "volume": 22200,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-006",
+   "q": "do jews believe in jesus",
+   "variants": [
+    "do jews believe in jesus christ",
+    "what do jews believe of jesus",
+    "where do jews believe jesus is",
+    "do jews in israel believe in jesus",
+    "do yemenite jews believe in jesus",
+    "do you jews believe in jesus",
+    "how do jews believe jesus",
+    "do jews believe jesus existed"
+   ],
+   "score": 23.48,
+   "volume": 40500,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-007",
+   "q": "do jews believe in heaven",
+   "variants": [],
+   "score": 23.15,
+   "volume": 12100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-008",
+   "q": "is jewish a religion or race",
+   "variants": [
+    "is jewish religion or race",
+    "what is jewish a religion or race",
+    "jewish religion vs race",
+    "is jewish the religion or race",
+    "are jewish people a race or religion",
+    "is jewish a religion race or ethnicity",
+    "why is jewish a religion and race",
+    "is jewish a religion ethnicity or race"
+   ],
+   "score": 22.63,
+   "volume": 14800,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-009",
+   "q": "is jewish a religion",
+   "variants": [
+    "is jewish religion",
+    "is jewish the religion",
+    "does jewish a religion"
+   ],
+   "score": 22.23,
+   "volume": 4400,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-010",
+   "q": "what is the talmud",
+   "variants": [],
+   "score": 22.19,
+   "volume": 22200,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-011",
+   "q": "do jewish people celebrate christmas",
+   "variants": [
+    "do jewish people not celebrate christmas",
+    "how do jewish people celebrate christmas"
+   ],
+   "score": 22.19,
+   "volume": 6600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-012",
+   "q": "what is judaism religion",
+   "variants": [
+    "what does the judaism religion believe",
+    "what is judaism religion beliefs",
+    "what is judaism the religion of",
+    "what is judaism religion in urdu",
+    "what is judaism religion in hindi",
+    "what is judaism in religion",
+    "what religion is judaism",
+    "what is judaism as a religion"
+   ],
+   "score": 22.1,
+   "volume": 22200,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-013",
+   "q": "do jews eat pork",
+   "variants": [
+    "can jews eat pork",
+    "do jews not eat pork",
+    "do religious jews eat pork",
+    "does jews eat pork",
+    "why do jews eat pork",
+    "do jews in israel eat pork"
+   ],
+   "score": 21.98,
+   "volume": 22200,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-014",
+   "q": "do jewish people believe in heaven",
+   "variants": [
+    "do the jewish people believe in heaven",
+    "do jewish people in heaven",
+    "do jewish people not believe in heaven"
+   ],
+   "score": 21.18,
+   "volume": 12100,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-015",
+   "q": "what does the talmud say about jesus",
+   "variants": [
+    "what does the talmud say about jesus and mary",
+    "what does talmud say about jesus and mary",
+    "what does the talmud say about christians and jesus",
+    "what does the talmud say about jesus christ",
+    "what does the talmud say about jesus and christians",
+    "what does the talmud say about jesus in the afterlife",
+    "what is the talmud say about jesus",
+    "what is the talmud and what does it say about jesus"
+   ],
+   "score": 21.17,
+   "volume": 8100,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-016",
+   "q": "when was jewish religion founded",
+   "variants": [],
+   "score": 20.58,
+   "volume": 6600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-017",
+   "q": "when did jewish religion start",
+   "variants": [],
+   "score": 20.41,
+   "volume": 8100,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-018",
+   "q": "does judaism believe in heaven",
+   "variants": [
+    "does judaism not believe in heaven"
+   ],
+   "score": 20.34,
+   "volume": 12100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-019",
+   "q": "what do jewish people believe about jesus",
+   "variants": [
+    "what do jewish people believe about jesus christ",
+    "what do jewish people believe about jesus and god"
+   ],
+   "score": 20.27,
+   "volume": 9900,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-020",
+   "q": "do jewish people believe in god",
+   "variants": [
+    "do jewish believe in god",
+    "who do jewish people believe is god",
+    "why do jewish people believe in god",
+    "how do jewish people believe in god"
+   ],
+   "score": 20.23,
+   "volume": 8100,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-021",
+   "q": "what is judaism",
+   "variants": [],
+   "score": 20.19,
+   "volume": 22200,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-022",
+   "q": "what is the torah",
+   "variants": [],
+   "score": 19.83,
+   "volume": 18100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-023",
+   "q": "do jews believe in an afterlife",
+   "variants": [
+    "do jews not believe in an afterlife"
+   ],
+   "score": 19.78,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-024",
+   "q": "are jewish people white",
+   "variants": [
+    "do jewish people identify as white",
+    "are jewish people considered white"
+   ],
+   "score": 19.14,
+   "volume": 9900,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-025",
+   "q": "do jews believe in god",
+   "variants": [
+    "who do jews believe to be their god",
+    "who do jews believe is god"
+   ],
+   "score": 19.11,
+   "volume": 8100,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-026",
+   "q": "is judaism an ethnicity",
+   "variants": [],
+   "score": 19.06,
+   "volume": 14800,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-027",
+   "q": "who is abraham in the bible",
+   "variants": [
+    "who was abraham in the bible",
+    "who is abraham in the bible summary"
+   ],
+   "score": 19.03,
+   "volume": 9900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-028",
+   "q": "do jewish people get circumcised",
+   "variants": [
+    "why do jewish people get circumcised",
+    "how do jewish people get circumcised",
+    "when do jewish people get circumcised"
+   ],
+   "score": 19.02,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-029",
+   "q": "when was judaism founded",
+   "variants": [
+    "when was judaism founded date",
+    "when was judaism religion founded",
+    "when was judaism founded and by whom",
+    "when was judaism founded bc",
+    "when was judaism founded year",
+    "when was judaism founded as a religion",
+    "when and where was judaism founded",
+    "when was talmudic judaism founded"
+   ],
+   "score": 18.86,
+   "volume": 6600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-030",
+   "q": "who do jewish people believe in",
+   "variants": [
+    "who do jewish people believe is the messiah"
+   ],
+   "score": 18.8,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-031",
+   "q": "is judaism a race or religion",
+   "variants": [],
+   "score": 18.78,
+   "volume": 14800,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-032",
+   "q": "when did judaism start",
+   "variants": [
+    "when did judaism start as a religion",
+    "when did judaism start date",
+    "when did the judaism religion start"
+   ],
+   "score": 18.76,
+   "volume": 8100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-033",
+   "q": "what do jews believe about jesus",
+   "variants": [
+    "what do zionist jews believe about jesus",
+    "what do jews not believe about jesus",
+    "what do jews believe about jesus christ",
+    "what do you jews believe about jesus"
+   ],
+   "score": 18.57,
+   "volume": 9900,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-034",
+   "q": "do jews celebrate christmas",
+   "variants": [
+    "how do jews celebrate christmas",
+    "do jews not celebrate christmas"
+   ],
+   "score": 18.55,
+   "volume": 6600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-035",
+   "q": "do jews celebrate easter",
+   "variants": [],
+   "score": 18.54,
+   "volume": 9900,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-036",
+   "q": "what is the talmud in judaism",
+   "variants": [
+    "what is judaism talmud",
+    "what is the significance of the talmud in judaism"
+   ],
+   "score": 18.31,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-037",
+   "q": "how did jewish religion start",
+   "variants": [
+    "how is jewish religion"
+   ],
+   "score": 18.22,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-038",
+   "q": "why do jews wear yamakas",
+   "variants": [
+    "do jews wear yamakas"
+   ],
+   "score": 18.13,
+   "volume": 3600,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-039",
+   "q": "is jewish a religion or nationality",
+   "variants": [
+    "is jewish religion or nationality",
+    "jewish religion vs nationality"
+   ],
+   "score": 17.99,
+   "volume": 880,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-040",
+   "q": "where do jewish people originate from",
+   "variants": [],
+   "score": 17.95,
+   "volume": 8100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-041",
+   "q": "do jewish people celebrate easter",
+   "variants": [],
+   "score": 17.78,
+   "volume": 9900,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-042",
+   "q": "who founded judaism religion",
+   "variants": [
+    "who founded judaism"
+   ],
+   "score": 17.69,
+   "volume": 3600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-043",
+   "q": "who wrote the torah",
+   "variants": [
+    "who wrote the torah books",
+    "who wrote the torah in the bible",
+    "who wrote the torah bible",
+    "who wrote the torah and talmud",
+    "who wrote the torah in islam",
+    "who wrote the torah according to the torah",
+    "who wrote the mishneh torah",
+    "who wrote the talmud and torah"
+   ],
+   "score": 17.69,
+   "volume": 3600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-044",
+   "q": "who was moses father",
+   "variants": [
+    "who was moses",
+    "who is moses father",
+    "who was moses father in law"
+   ],
+   "score": 17.63,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-045",
+   "q": "why do jewish people not eat pork",
+   "variants": [
+    "do jewish people not eat pork"
+   ],
+   "score": 17.6,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-046",
+   "q": "what is judaism holy book",
+   "variants": [
+    "what is judaism book",
+    "what is the judaism holy book"
+   ],
+   "score": 17.59,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-047",
+   "q": "what do jews believe happens after death",
+   "variants": [
+    "what do jews believe in after death"
+   ],
+   "score": 17.57,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-048",
+   "q": "what is jewish religion called",
+   "variants": [
+    "what is the jewish religion called",
+    "what is jewish people's religion called",
+    "what is jewish religion book called",
+    "what is the jewish religion book called"
+   ],
+   "score": 17.47,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-049",
+   "q": "do jews get circumcised",
+   "variants": [
+    "when do jews get circumcised",
+    "why do jews get circumcised",
+    "how do jews get circumcised"
+   ],
+   "score": 17.44,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-050",
+   "q": "what are the beliefs of judaism",
+   "variants": [
+    "what are the core beliefs of judaism",
+    "what is judaism belief",
+    "what are the main beliefs of judaism",
+    "what are the basic beliefs of judaism",
+    "what are the key beliefs of judaism",
+    "what are the major beliefs of judaism",
+    "what is a basic belief of judaism",
+    "what belief is judaism"
+   ],
+   "score": 17.44,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-051",
+   "q": "who was moses wife",
+   "variants": [
+    "who is moses wife",
+    "who was moses wife in the bible",
+    "who was moses second wife"
+   ],
+   "score": 17.33,
+   "volume": 3600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-052",
+   "q": "when was moses born",
+   "variants": [
+    "when was moses born and died",
+    "when was moses born in the bible",
+    "when was moses born date",
+    "when was moses born in egypt",
+    "when was moses born month",
+    "when was moses born timeline",
+    "when was moses born in islam",
+    "when was moses austin born"
+   ],
+   "score": 17.32,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-053",
+   "q": "what is the torah portion this week",
+   "variants": [],
+   "score": 17.29,
+   "volume": 5400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-054",
+   "q": "who was abraham's father",
+   "variants": [
+    "who is abraham's father",
+    "who was abraham's father in the bible"
+   ],
+   "score": 17.24,
+   "volume": 3600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-055",
+   "q": "why do jews not eat pork",
+   "variants": [],
+   "score": 17.16,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-056",
+   "q": "how do jewish people view jesus",
+   "variants": [],
+   "score": 17.16,
+   "volume": 1300,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-057",
+   "q": "who is moses in the bible",
+   "variants": [
+    "who was moses in the bible",
+    "who is moses father in the bible",
+    "who is moses wife in the bible",
+    "who is moses mother in the bible",
+    "who is moses in the bible father"
+   ],
+   "score": 17.14,
+   "volume": 3600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-058",
+   "q": "when was abraham born",
+   "variants": [
+    "when was abraham born and died",
+    "when was abraham born date",
+    "when was abraham born in the bible",
+    "when was abraham born lincoln",
+    "when was abraham born in ur",
+    "when was abraham born bible",
+    "when was abraham born in bc",
+    "when and where was abraham born"
+   ],
+   "score": 17.12,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-059",
+   "q": "who founded jewish religion",
+   "variants": [
+    "who founded the jewish religion"
+   ],
+   "score": 17.1,
+   "volume": 3600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-060",
+   "q": "how many books are in the torah",
+   "variants": [
+    "how many books are in the torah bible",
+    "how many books are in the jewish torah",
+    "how many books are in the torah scroll",
+    "how many books are in the original torah",
+    "how many books in the torah",
+    "how many books are there in the torah",
+    "how many books are in the hebrew torah",
+    "how many books are contained in the torah"
+   ],
+   "score": 17.09,
+   "volume": 1000,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-061",
+   "q": "who is moses",
+   "variants": [
+    "who is moses mose"
+   ],
+   "score": 17.04,
+   "volume": 3600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-062",
+   "q": "why do jewish people wear yamakas",
+   "variants": [
+    "why do jewish people wear a yamaka",
+    "do jewish people wear yamakas",
+    "why do jewish people wear yamakas on their head"
+   ],
+   "score": 16.97,
+   "volume": 2400,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-063",
+   "q": "where do jewish people worship",
+   "variants": [
+    "where do jewish people go to worship",
+    "where do jewish people gather to worship"
+   ],
+   "score": 16.76,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-064",
+   "q": "what do jewish people wear on their head",
+   "variants": [
+    "what do jewish people wear"
+   ],
+   "score": 16.74,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-065",
+   "q": "does jewish religion believe in jesus",
+   "variants": [
+    "does jewish religion believe in jesus christ",
+    "do jewish religion believe in jesus christ",
+    "do jewish religion believe in jesus",
+    "does the jewish religion believe in jesus"
+   ],
+   "score": 16.64,
+   "volume": 110,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-066",
+   "q": "where do jews worship",
+   "variants": [
+    "where do jews go to worship",
+    "where do jews gather to worship"
+   ],
+   "score": 16.63,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-067",
+   "q": "who wrote the talmud",
+   "variants": [
+    "who wrote the talmud book",
+    "what is the talmud who wrote it",
+    "who wrote the talmud and why",
+    "who wrote the talmud judaism",
+    "who wrote the talmud yerushalmi",
+    "who wrote talmud bavli",
+    "who wrote the jewish talmud",
+    "who wrote the talmud bible"
+   ],
+   "score": 16.59,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-068",
+   "q": "do jewish people celebrate thanksgiving",
+   "variants": [
+    "do religious jewish people celebrate thanksgiving"
+   ],
+   "score": 16.58,
+   "volume": 1900,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-069",
+   "q": "who was abraham",
+   "variants": [
+    "who was abraham lincoln",
+    "who was abraham maslow",
+    "who was abraham in judaism",
+    "who was abraham married to"
+   ],
+   "score": 16.58,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-070",
+   "q": "is judaism jewish",
+   "variants": [],
+   "score": 16.57,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-071",
+   "q": "who do jews pray to",
+   "variants": [
+    "who do the jews pray to",
+    "who do jews pray too"
+   ],
+   "score": 16.56,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-072",
+   "q": "how do jewish people pray",
+   "variants": [
+    "do jewish people pray",
+    "how do jewish people pray with their hands",
+    "how do jewish people pray in a synagogue",
+    "how do jewish people pray at home",
+    "how do jewish people pray ks2",
+    "how do jewish people pray worship"
+   ],
+   "score": 16.54,
+   "volume": 1000,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-073",
+   "q": "does judaism believe in afterlife",
+   "variants": [
+    "does judaism not believe in an afterlife",
+    "what does judaism believe for afterlife"
+   ],
+   "score": 16.53,
+   "volume": 4400,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-074",
+   "q": "how do jews view jesus",
+   "variants": [
+    "how do jews and muslims view jesus",
+    "how do jews today view jesus"
+   ],
+   "score": 16.46,
+   "volume": 1300,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-075",
+   "q": "who is abraham",
+   "variants": [],
+   "score": 16.45,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-076",
+   "q": "why do jews circumcise",
+   "variants": [
+    "why do jews circumcise babies",
+    "why do jews circumcise their boys"
+   ],
+   "score": 16.39,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-077",
+   "q": "what is judaism symbol",
+   "variants": [
+    "what is the judaism symbol",
+    "what does judaism symbol mean"
+   ],
+   "score": 16.38,
+   "volume": 2400,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-078",
+   "q": "how do jews pray",
+   "variants": [
+    "how do jews pray with hands",
+    "how do jews pray to god",
+    "how do jews pray at home"
+   ],
+   "score": 16.38,
+   "volume": 1000,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-079",
+   "q": "do jews believe in reincarnation",
+   "variants": [
+    "why do jews believe in reincarnation"
+   ],
+   "score": 16.36,
+   "volume": 1300,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-080",
+   "q": "do jewish people believe in an afterlife",
+   "variants": [],
+   "score": 16.27,
+   "volume": 4400,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-081",
+   "q": "why do jews wear hats",
+   "variants": [
+    "why do jews wear the little hat"
+   ],
+   "score": 16.13,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-082",
+   "q": "does judaism believe in reincarnation",
+   "variants": [],
+   "score": 16.12,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-083",
+   "q": "can jews drink alcohol",
+   "variants": [
+    "do jews drink alcohol",
+    "does jews drink alcohol",
+    "can jews drink",
+    "can jews drink alcohol on shabbat"
+   ],
+   "score": 16,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-084",
+   "q": "is judaism monotheistic or polytheistic",
+   "variants": [
+    "what is judaism monotheistic or polytheistic"
+   ],
+   "score": 15.95,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-085",
+   "q": "jews vs israelites",
+   "variants": [],
+   "score": 15.92,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-086",
+   "q": "do jewish people celebrate halloween",
+   "variants": [
+    "do jewish people do halloween"
+   ],
+   "score": 15.86,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-087",
+   "q": "is jewish religion christian",
+   "variants": [
+    "jewish religion vs christian",
+    "what is jewish christian religion",
+    "is jewish religion considered christian"
+   ],
+   "score": 15.84,
+   "volume": 2400,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-088",
+   "q": "who do jews believe in",
+   "variants": [
+    "who do jews believe is the messiah",
+    "who do the jews believe their messiah is"
+   ],
+   "score": 15.83,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-089",
+   "q": "do jews believe jesus is the son of god",
+   "variants": [],
+   "score": 15.82,
+   "volume": 1900,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-090",
+   "q": "do jews worship jesus",
+   "variants": [
+    "why do jews worship jesus",
+    "what do jews worship jesus"
+   ],
+   "score": 15.74,
+   "volume": 480,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-091",
+   "q": "how did judaism spread",
+   "variants": [
+    "how did judaism spread to europe"
+   ],
+   "score": 15.64,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-092",
+   "q": "where was the jewish religion founded",
+   "variants": [],
+   "score": 15.63,
+   "volume": 2900,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-093",
+   "q": "what is the torah in the bible",
+   "variants": [
+    "what is torah from the bible",
+    "what is torah in the bible"
+   ],
+   "score": 15.48,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-094",
+   "q": "who was moses mother",
+   "variants": [
+    "who is moses mother",
+    "who was moses mother in the bible"
+   ],
+   "score": 15.48,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-095",
+   "q": "why do jews put stones on graves",
+   "variants": [],
+   "score": 15.44,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "judaism-096",
+   "q": "what do jews call god",
+   "variants": [],
+   "score": 15.42,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-097",
+   "q": "do jews believe jesus was crucified",
+   "variants": [
+    "why do jews believe jesus was crucified"
+   ],
+   "score": 15.41,
+   "volume": 880,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-098",
+   "q": "why do jewish people have curls",
+   "variants": [
+    "why do jewish people have two curls"
+   ],
+   "score": 15.39,
+   "volume": 320,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-099",
+   "q": "what do jewish people call god",
+   "variants": [],
+   "score": 15.38,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "judaism-100",
+   "q": "can jewish people get tattoos",
+   "variants": [
+    "do jewish people get tattoos"
+   ],
+   "score": 15.33,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  }
+ ]
+}

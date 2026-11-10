@@ -44,7 +44,7 @@ export const CASES = [
 // the chat menu's showcase questions, one per strategy: timing + non-empty + no denial (check()); the strategy used is read from the trace by hand
 CASES.push(...ANIS_SAMPLES.map((x) => ({ id: `sample-${x.strategy}`, q: x.q, ...(x.before ? { before: x.before } : {}), ms: 90000 })));
 
-async function turn(q, { before = [] } = {}) {
+export async function turn(q, { before = [] } = {}) {
   // a case with `before` is a thread: those turns first (same reader, same conversation), the last one measured
   const uid = `user_${crypto.randomUUID()}`, messages = []; let cid = null;
   for (const p of before) { const r = await send(p, messages, uid, cid); cid = r.cid; messages.push({ role: 'user', content: p }, { role: 'assistant', content: r.text }); }

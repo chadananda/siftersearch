@@ -1,0 +1,1319 @@
+{
+ "tradition": "bahai",
+ "label": "Baha'i",
+ "harvested": "2026-11-10",
+ "candidates": 466,
+ "questions": [
+  {
+   "id": "bahai-001",
+   "q": "what is bahai faith",
+   "variants": [
+    "what do bahai faith believe",
+    "what does bahai faith believe",
+    "what is the bahai faith",
+    "what does bahai faith mean",
+    "what is bahai faith symbol",
+    "what is bahai faith based on",
+    "what is bahai faith in a nutshell",
+    "what is bahai faith religion"
+   ],
+   "score": 81.21,
+   "volume": 1600,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-002",
+   "q": "what do bahai believe",
+   "variants": [
+    "what do bahai people believe",
+    "what does bahai believe",
+    "what do bahai religion believe",
+    "what do bahais believe",
+    "what does bahai religion believe",
+    "what do the bahai believe",
+    "what do bahai believe in",
+    "what does the bahai believe"
+   ],
+   "score": 70.94,
+   "volume": 390,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-003",
+   "q": "what do baha'is believe in",
+   "variants": [
+    "what does baha'i faith believe",
+    "what does the baha'i faith believe in",
+    "what do baha'is believe",
+    "what do baha'i faith believe in",
+    "what baha'is believe",
+    "what does the baha'i religion believe",
+    "what do baha'i believe",
+    "what does the baha'i faith believe"
+   ],
+   "score": 70.71,
+   "volume": 30,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-004",
+   "q": "what is baha'i faith",
+   "variants": [
+    "what are the beliefs of the baha'i faith",
+    "what is the baha'i faith beliefs",
+    "what is baha'i faith religion",
+    "what religion is baha'i faith",
+    "what is the baha'i faith",
+    "what does the baha'i faith teach",
+    "what does the baha'i faith",
+    "what is forbidden in baha'i faith"
+   ],
+   "score": 59.03,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-005",
+   "q": "what is bahaism",
+   "variants": [],
+   "score": 53.12,
+   "volume": 1600,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-006",
+   "q": "how many bahais in the world",
+   "variants": [
+    "how many bahai in the world"
+   ],
+   "score": 45.36,
+   "volume": 30,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-007",
+   "q": "who are the bahais",
+   "variants": [],
+   "score": 39.5,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-008",
+   "q": "how many bahais are there",
+   "variants": [],
+   "score": 34.99,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-009",
+   "q": "what religion is bahai",
+   "variants": [
+    "what is bahai religion in hindi",
+    "what is bahai religion facts",
+    "what is bahai religion beliefs",
+    "what does bahai religion mean",
+    "what is bahai religion in arabic",
+    "what is a bahai religion",
+    "what are bahai religion",
+    "what are bahai religion beliefs"
+   ],
+   "score": 26.87,
+   "volume": 90,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-010",
+   "q": "do baha'is drink alcohol",
+   "variants": [],
+   "score": 25.97,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-011",
+   "q": "how do bahai worship",
+   "variants": [
+    "how do bahai faith worship",
+    "how do the bahai worship",
+    "how do bahai people worship"
+   ],
+   "score": 24.1,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-012",
+   "q": "does bahai faith believe in jesus",
+   "variants": [
+    "do bahai believe in jesus",
+    "do bahais believe in jesus",
+    "does the bahai faith believe in jesus",
+    "do the bahai believe in jesus",
+    "does bahai believe in jesus",
+    "do bahai faith believe in jesus"
+   ],
+   "score": 22.55,
+   "volume": 40,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-013",
+   "q": "is bahai a religion",
+   "variants": [
+    "is bahai religion"
+   ],
+   "score": 21.87,
+   "volume": 70,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-014",
+   "q": "do bahai drink alcohol",
+   "variants": [
+    "can bahai drink alcohol",
+    "do bahai people drink alcohol",
+    "do bahai religion drink alcohol",
+    "can bahais drink alcohol"
+   ],
+   "score": 21.8,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-015",
+   "q": "what is bahai faith all about",
+   "variants": [
+    "what is the bahai faith all about"
+   ],
+   "score": 21.19,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-016",
+   "q": "what does bahai faith say about jesus",
+   "variants": [
+    "what the bahai faith says about jesus",
+    "what does bahai say about jesus"
+   ],
+   "score": 20.63,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-017",
+   "q": "how does bahai faith promote peace",
+   "variants": [
+    "how does the bahai faith promote peace",
+    "how does bahai faith religion promote peace",
+    "how do bahai faith promote peace"
+   ],
+   "score": 20.54,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-018",
+   "q": "what do bahai believe about jesus",
+   "variants": [
+    "what do bahais believe about jesus",
+    "what do the bahai believe about jesus",
+    "what does bahai believe about jesus"
+   ],
+   "score": 20.08,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-019",
+   "q": "where did bahai faith originate",
+   "variants": [
+    "where does bahai faith originate",
+    "where do bahai faith originate",
+    "where is bahai faith from",
+    "where does bahai originate",
+    "where does bahai faith originate from"
+   ],
+   "score": 19.47,
+   "volume": 50,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-020",
+   "q": "is bahai a christian religion",
+   "variants": [
+    "is bahai religion christian"
+   ],
+   "score": 17.17,
+   "volume": 50,
+   "sources": [
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-021",
+   "q": "do baha'is believe in reincarnation",
+   "variants": [],
+   "score": 17.11,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-022",
+   "q": "how do baha'is pray",
+   "variants": [],
+   "score": 16.87,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-023",
+   "q": "what do baha'is call god",
+   "variants": [],
+   "score": 15.87,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-024",
+   "q": "what does bahai say about homosexuality",
+   "variants": [],
+   "score": 15.5,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-025",
+   "q": "who is baha'u'llah",
+   "variants": [],
+   "score": 14.7,
+   "volume": 140,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-026",
+   "q": "do baha'is believe in god",
+   "variants": [
+    "do baha'is believe jesus is god",
+    "does the baha'i faith believe in god"
+   ],
+   "score": 14.35,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-027",
+   "q": "is bahai faith a branch of islam",
+   "variants": [
+    "is bahai faith islam"
+   ],
+   "score": 14.25,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-028",
+   "q": "what is bahaism religion",
+   "variants": [],
+   "score": 13.83,
+   "volume": 720,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-029",
+   "q": "does bahai faith celebrate christmas",
+   "variants": [
+    "do the bahai celebrate christmas",
+    "do bahai celebrate christmas",
+    "does bahai celebrate christmas"
+   ],
+   "score": 13.75,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-030",
+   "q": "how do baha'is celebrate nowruz",
+   "variants": [],
+   "score": 13.67,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-031",
+   "q": "do bahai believe in quran",
+   "variants": [
+    "do bahais believe in quran"
+   ],
+   "score": 13.51,
+   "volume": 10,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-032",
+   "q": "what is bahai house of worship",
+   "variants": [
+    "what do bahai worship",
+    "what is bahai worship",
+    "what is bahai house",
+    "what does bahai worship",
+    "what religion is bahai house of worship",
+    "what is the bahai house of worship"
+   ],
+   "score": 13.24,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-033",
+   "q": "does bahai faith believe in trinity",
+   "variants": [],
+   "score": 12.77,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-034",
+   "q": "who was baha'u'llah",
+   "variants": [],
+   "score": 12.7,
+   "volume": 140,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-035",
+   "q": "how do bahai pray",
+   "variants": [
+    "how do the bahai pray",
+    "how do bahais pray",
+    "how to bahai pray"
+   ],
+   "score": 12.66,
+   "volume": 30,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-036",
+   "q": "when was baha'u'llah born",
+   "variants": [
+    "when did baha'u'llah born"
+   ],
+   "score": 12.58,
+   "volume": 20,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-037",
+   "q": "what do bahai believe about muhammad",
+   "variants": [],
+   "score": 12.2,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-038",
+   "q": "what do bahai believe about death",
+   "variants": [
+    "what do bahai believe about creation and death"
+   ],
+   "score": 12.03,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-039",
+   "q": "bahai vs islam",
+   "variants": [
+    "bahai faith vs islam"
+   ],
+   "score": 11.94,
+   "volume": 90,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-040",
+   "q": "how did bahai faith begin",
+   "variants": [],
+   "score": 11.77,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-041",
+   "q": "bahai vs christianity",
+   "variants": [
+    "bahai religion vs christianity"
+   ],
+   "score": 11.77,
+   "volume": 110,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-042",
+   "q": "who are bahai people",
+   "variants": [
+    "who do bahai people worship"
+   ],
+   "score": 11.71,
+   "volume": 20,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-043",
+   "q": "when was bahai faith founded",
+   "variants": [
+    "when was bahai founded"
+   ],
+   "score": 11.71,
+   "volume": 30,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-044",
+   "q": "does bahai faith celebrate easter",
+   "variants": [
+    "do bahai celebrate easter",
+    "does bahai celebrate easter"
+   ],
+   "score": 11.59,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-045",
+   "q": "who is bahaullah",
+   "variants": [],
+   "score": 11.4,
+   "volume": 140,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-046",
+   "q": "do bahai accept homosexuality",
+   "variants": [],
+   "score": 11.37,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-047",
+   "q": "is baha'i faith christian",
+   "variants": [],
+   "score": 11.2,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-048",
+   "q": "what are bahai beliefs",
+   "variants": [
+    "what are the beliefs of bahai"
+   ],
+   "score": 11.18,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-049",
+   "q": "what is bahai temple",
+   "variants": [
+    "what is bahai lotus temple",
+    "what is a bahai temple",
+    "what to wear to a bahai temple",
+    "what is bahai temple chicago",
+    "what are bahai temples",
+    "what is a bahai temple called"
+   ],
+   "score": 11.16,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-050",
+   "q": "what do bahai believe happens after death",
+   "variants": [],
+   "score": 11.07,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-051",
+   "q": "where do bahai faith go for pilgrimage",
+   "variants": [
+    "where do bahai go for pilgrimage"
+   ],
+   "score": 11,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-052",
+   "q": "do bahai wear hijab",
+   "variants": [
+    "do bahai women wear hijab"
+   ],
+   "score": 10.84,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-053",
+   "q": "do bahai fast ramadan",
+   "variants": [],
+   "score": 10.77,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-054",
+   "q": "what does bahai mean in english",
+   "variants": [
+    "what does bahai mean",
+    "what is bahai mean"
+   ],
+   "score": 10.75,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-055",
+   "q": "what do bahai eat",
+   "variants": [
+    "what do bahai people eat",
+    "what food do bahai eat"
+   ],
+   "score": 10.62,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-056",
+   "q": "how do bahai celebrate important days",
+   "variants": [],
+   "score": 10.5,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-057",
+   "q": "what the bahai faith says about muhammad",
+   "variants": [],
+   "score": 10.34,
+   "volume": 0,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-058",
+   "q": "when did bahai faith start",
+   "variants": [
+    "when did bahai start"
+   ],
+   "score": 10.27,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-059",
+   "q": "do baha'is support israel",
+   "variants": [
+    "does the baha'i faith support israel"
+   ],
+   "score": 10.09,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-060",
+   "q": "what is bahaism beliefs",
+   "variants": [
+    "what are the core beliefs of bahaism"
+   ],
+   "score": 10.09,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-061",
+   "q": "why do bahai celebrate nowruz",
+   "variants": [
+    "do bahai celebrate nowruz"
+   ],
+   "score": 10,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-062",
+   "q": "why do bahai go to israel",
+   "variants": [
+    "why is bahai in israel"
+   ],
+   "score": 9.95,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-063",
+   "q": "who was bahaullah",
+   "variants": [],
+   "score": 9.6,
+   "volume": 140,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-064",
+   "q": "what the bahai faith says about the soul",
+   "variants": [],
+   "score": 9.52,
+   "volume": 0,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-065",
+   "q": "can baha'is eat pork",
+   "variants": [
+    "do baha'is eat pork"
+   ],
+   "score": 9.5,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-066",
+   "q": "are bahai vegetarian",
+   "variants": [
+    "are bahais vegetarian",
+    "is bahai vegetarian"
+   ],
+   "score": 9.49,
+   "volume": 10,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-067",
+   "q": "why do bahais fast",
+   "variants": [
+    "why do bahai fast"
+   ],
+   "score": 9.47,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-068",
+   "q": "what do baha'is believe about jesus",
+   "variants": [],
+   "score": 9.45,
+   "volume": 10,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-069",
+   "q": "who is abdul baha",
+   "variants": [],
+   "score": 9.39,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-070",
+   "q": "who founded bahai faith",
+   "variants": [
+    "who founded bahai"
+   ],
+   "score": 9.27,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-071",
+   "q": "do bahais eat pork",
+   "variants": [
+    "does bahai religion eat pork",
+    "can bahai eat pork",
+    "do bahai eat pork",
+    "do bahai people eat pork",
+    "does bahai eat pork"
+   ],
+   "score": 9.02,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-072",
+   "q": "is bahai faith similar to islam",
+   "variants": [],
+   "score": 9,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-073",
+   "q": "what is bahai jewish",
+   "variants": [],
+   "score": 8.97,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-074",
+   "q": "bahai vs zoroastrianism",
+   "variants": [
+    "bahai religion vs zoroastrianism"
+   ],
+   "score": 8.87,
+   "volume": 30,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-075",
+   "q": "what the bahai faith says about the afterlife",
+   "variants": [],
+   "score": 8.8,
+   "volume": 0,
+   "sources": [
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-076",
+   "q": "is bahai faith christian",
+   "variants": [
+    "is the bahai faith christian"
+   ],
+   "score": 8.65,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-077",
+   "q": "is bahai a good religion",
+   "variants": [],
+   "score": 8.57,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-078",
+   "q": "what are bahai people",
+   "variants": [
+    "what are bahai people called",
+    "what is bahai people"
+   ],
+   "score": 8.44,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-079",
+   "q": "do baha'i believe in jesus",
+   "variants": [
+    "does the baha'i faith believe in jesus",
+    "does baha'i faith believe in jesus"
+   ],
+   "score": 8.4,
+   "volume": 0,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-080",
+   "q": "what is the bab",
+   "variants": [],
+   "score": 8.37,
+   "volume": 20,
+   "sources": [
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-081",
+   "q": "does bahai faith believe in reincarnation",
+   "variants": [
+    "do bahai believe in reincarnation",
+    "does bahai believe in reincarnation"
+   ],
+   "score": 8.32,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-082",
+   "q": "how to become bahai",
+   "variants": [],
+   "score": 8.29,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-083",
+   "q": "what is bahai community",
+   "variants": [],
+   "score": 8.27,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-084",
+   "q": "how does bahai differ from islam",
+   "variants": [],
+   "score": 8.2,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-085",
+   "q": "is bahai faith abrahamic",
+   "variants": [],
+   "score": 8.17,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-086",
+   "q": "how to join bahai faith",
+   "variants": [],
+   "score": 8.17,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-087",
+   "q": "is bahai faith growing",
+   "variants": [
+    "is the bahai faith growing"
+   ],
+   "score": 8.13,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-088",
+   "q": "what does the baha'i faith say about homosexuality",
+   "variants": [],
+   "score": 8.1,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-089",
+   "q": "how to pronounce bahai religion",
+   "variants": [
+    "how to pronounce bahai"
+   ],
+   "score": 8.09,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-090",
+   "q": "is bahai faith muslim",
+   "variants": [
+    "is the bahai faith muslim"
+   ],
+   "score": 8.04,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-091",
+   "q": "what is the bahai faith holy book",
+   "variants": [
+    "what is the bahai holy book",
+    "what is the holy book for bahai faith"
+   ],
+   "score": 7.99,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-092",
+   "q": "what is bahai jew",
+   "variants": [
+    "what is a bahai jew"
+   ],
+   "score": 7.99,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-093",
+   "q": "what is bahai naw ruz",
+   "variants": [],
+   "score": 7.97,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-094",
+   "q": "where do bahai people live",
+   "variants": [
+    "where do bahai live"
+   ],
+   "score": 7.94,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-095",
+   "q": "what are baha'is",
+   "variants": [
+    "what is baha'is",
+    "what is a baha'i"
+   ],
+   "score": 7.9,
+   "volume": 10,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "bahai-096",
+   "q": "how many bahais in the us",
+   "variants": [],
+   "score": 7.87,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-097",
+   "q": "what god do bahai worship",
+   "variants": [],
+   "score": 7.87,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-098",
+   "q": "do bahai support lgbtq",
+   "variants": [],
+   "score": 7.8,
+   "volume": 0,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-099",
+   "q": "is bahai faith part of islam",
+   "variants": [],
+   "score": 7.7,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "bahai-100",
+   "q": "how do baha'is greet each other",
+   "variants": [],
+   "score": 7.6,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  }
+ ]
+}

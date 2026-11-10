@@ -1,0 +1,1483 @@
+{
+ "tradition": "hinduism",
+ "label": "Hinduism",
+ "harvested": "2026-11-10",
+ "candidates": 1436,
+ "questions": [
+  {
+   "id": "hinduism-001",
+   "q": "what do hindus believe",
+   "variants": [
+    "what do hindus believe for afterlife",
+    "what do hindus believe of jesus",
+    "what do hindus believe on",
+    "what do hindus believe in their religion",
+    "what do hindus believe ks2",
+    "what do hindu people believe",
+    "what does a hindu believe"
+   ],
+   "score": 22.09,
+   "volume": 6600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-002",
+   "q": "do hindus believe in jesus",
+   "variants": [
+    "do hindus believe in jesus christ",
+    "how do hindus believe in jesus",
+    "do the hindus believe in jesus"
+   ],
+   "score": 21.9,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-003",
+   "q": "what is hinduism religion",
+   "variants": [
+    "is hinduism a religion or what",
+    "what is hinduism religion beliefs",
+    "what is hinduism the religion of",
+    "what is hinduism as a religion",
+    "what is hinduism in religion",
+    "what is hinduism religion symbol"
+   ],
+   "score": 21.49,
+   "volume": 18100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-004",
+   "q": "is hinduism a religion",
+   "variants": [],
+   "score": 20.55,
+   "volume": 18100,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-005",
+   "q": "what is hinduism",
+   "variants": [],
+   "score": 19.83,
+   "volume": 18100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-006",
+   "q": "do hindus believe in god",
+   "variants": [
+    "do hindus believe in one god",
+    "do hindus believe in our god",
+    "do hindus really believe in their gods",
+    "do hindus actually believe in their gods",
+    "do hindus believe in a god",
+    "how do hindus believe in god",
+    "do hindus believe in god or gods",
+    "who do hindus believe is god"
+   ],
+   "score": 19.6,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-007",
+   "q": "do hindus eat pork",
+   "variants": [
+    "can hindus eat pork",
+    "do hindus not eat pork",
+    "why do hindus eat pork",
+    "should hindus eat pork",
+    "does hindus eat pork",
+    "do hindus in india eat pork",
+    "are hindus allowed to eat pork"
+   ],
+   "score": 19.47,
+   "volume": 3600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-008",
+   "q": "what is the vedas",
+   "variants": [],
+   "score": 19.37,
+   "volume": 5400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-009",
+   "q": "do hindus eat beef",
+   "variants": [
+    "do hindus in bali eat beef",
+    "do hindus not eat beef",
+    "do hindus in kerala eat beef",
+    "can hindus eat beef",
+    "do hindus of kerala eat beef",
+    "do hindus in india eat beef",
+    "does hindus in kerala eat beef",
+    "does hindus eat beef"
+   ],
+   "score": 19.36,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-010",
+   "q": "can hindus eat meat",
+   "variants": [
+    "do hindus eat meat",
+    "can hindus eat buffalo meat",
+    "does hindus eat meat"
+   ],
+   "score": 19.34,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-011",
+   "q": "what is hinduism beliefs",
+   "variants": [
+    "what are the core beliefs of hinduism",
+    "what are the beliefs of hinduism",
+    "what are the main beliefs of hinduism",
+    "what are the basic beliefs of hinduism",
+    "what are the major beliefs of hinduism",
+    "what are the main beliefs in hinduism",
+    "what is hinduism core beliefs",
+    "what is hinduism main beliefs"
+   ],
+   "score": 18.98,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-012",
+   "q": "do hindus believe in reincarnation",
+   "variants": [
+    "why do hindus believe in reincarnation",
+    "how do hindus believe in reincarnation",
+    "do hindus or buddhists believe in reincarnation",
+    "do hindus and buddhists believe in reincarnation",
+    "do the hindus believe in reincarnation"
+   ],
+   "score": 18.49,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-013",
+   "q": "what is hinduism about",
+   "variants": [
+    "what is hinduism even about",
+    "what does hinduism about",
+    "what is unique about hinduism",
+    "what is important about hinduism"
+   ],
+   "score": 18.18,
+   "volume": 18100,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-014",
+   "q": "when was hinduism founded",
+   "variants": [
+    "when was hinduism founded date",
+    "when was hinduism founded in years",
+    "when was hinduism founded in india",
+    "when and where was hinduism founded",
+    "when was hinduism founded bc",
+    "when was hinduism founded and by who",
+    "when was hinduism founded and by whom",
+    "when was the hinduism religion founded"
+   ],
+   "score": 17.99,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-015",
+   "q": "is hinduism monotheistic or polytheistic",
+   "variants": [
+    "what is hinduism polytheistic or monotheistic",
+    "what is hinduism monotheistic or polytheistic"
+   ],
+   "score": 17.91,
+   "volume": 6600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-016",
+   "q": "who founded hinduism",
+   "variants": [
+    "who founded hinduism religion",
+    "who founded hinduism in india",
+    "who founded hinduism and buddhism"
+   ],
+   "score": 17.78,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-017",
+   "q": "when did hinduism start",
+   "variants": [
+    "when did hinduism start in india",
+    "when did hinduism start as a religion",
+    "when did hinduism start date"
+   ],
+   "score": 17.57,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-018",
+   "q": "how do hindus worship",
+   "variants": [
+    "how do hindus worship at home",
+    "how do hindus worship their gods",
+    "how do hindus worship brahman",
+    "how do hindus worship brahma",
+    "how do hindus worship ks2",
+    "how do hindus worship god",
+    "how do hindus worship cows"
+   ],
+   "score": 17.31,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-019",
+   "q": "when did hinduism originate",
+   "variants": [],
+   "score": 17.09,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-020",
+   "q": "can hindus drink alcohol",
+   "variants": [
+    "do hindus drink alcohol",
+    "does hindu drink alcohol",
+    "can hindus drink"
+   ],
+   "score": 17.06,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-021",
+   "q": "what is hinduism holy book",
+   "variants": [
+    "what is hinduism holy book called",
+    "what is hinduism book"
+   ],
+   "score": 16.87,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-022",
+   "q": "why do hindus worship cows",
+   "variants": [
+    "do hindus worship cows",
+    "why do hindus worship",
+    "why do hindus worship cow dung"
+   ],
+   "score": 16.86,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-023",
+   "q": "does hinduism believe in reincarnation",
+   "variants": [
+    "does hinduism or buddhism believe in reincarnation",
+    "does hinduism and buddhism believe in reincarnation"
+   ],
+   "score": 16.82,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-024",
+   "q": "does hinduism believe in jesus",
+   "variants": [
+    "does hinduism believe in jesus christ"
+   ],
+   "score": 16.81,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-025",
+   "q": "does hinduism believe in god",
+   "variants": [
+    "does hinduism believe in one god"
+   ],
+   "score": 16.73,
+   "volume": 1900,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-026",
+   "q": "what is the bhagavad gita",
+   "variants": [
+    "what does the bhagavad gita teach",
+    "what is the bhagavad gita summary",
+    "what is the meaning of the bhagavad gita",
+    "what is the origin of the bhagavad gita",
+    "what is the bhagavad gita part of",
+    "what bhagavad gita says",
+    "what is the bhagavad gita in hinduism",
+    "what does bhagavad gita say"
+   ],
+   "score": 16.66,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-027",
+   "q": "why do hindus fast",
+   "variants": [
+    "why do hindus fast on thursday",
+    "why do hindus keep fast",
+    "why do hindus fast today",
+    "why do hindus fast on monday",
+    "why do hindus fast on tuesday",
+    "why do hindus fast for purtassi"
+   ],
+   "score": 16.57,
+   "volume": 40,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-028",
+   "q": "who was krishna",
+   "variants": [
+    "who was krishna in hinduism",
+    "who was krishna das",
+    "who was krishna married to",
+    "who was krishna guru",
+    "who was krishna father",
+    "who was krishna desai"
+   ],
+   "score": 16.44,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-029",
+   "q": "hindus vs muslims",
+   "variants": [
+    "hindus vs muslims in india"
+   ],
+   "score": 16.39,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-030",
+   "q": "what does hinduism say about tattoos",
+   "variants": [],
+   "score": 16.23,
+   "volume": 20,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-031",
+   "q": "what is hinduism sacred text",
+   "variants": [],
+   "score": 15.94,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-032",
+   "q": "who is krishna",
+   "variants": [],
+   "score": 15.92,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-033",
+   "q": "do hindus celebrate christmas",
+   "variants": [
+    "why do hindus celebrate christmas",
+    "how do hindus celebrate christmas"
+   ],
+   "score": 15.88,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-034",
+   "q": "how did hinduism spread",
+   "variants": [
+    "how did hinduism change as it spread"
+   ],
+   "score": 15.84,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-035",
+   "q": "who do hindus worship",
+   "variants": [
+    "who do hindus worship as god",
+    "who do hindus worship as their god",
+    "who do hindus worship ks2"
+   ],
+   "score": 15.77,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-036",
+   "q": "what do hindus believe happens after death",
+   "variants": [
+    "what do hindus believe about what happens after death",
+    "what do hindus believe after death",
+    "what do hindus believe happen after death"
+   ],
+   "score": 15.72,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-037",
+   "q": "are hindus vegetarian",
+   "variants": [
+    "does hindu vegetarian"
+   ],
+   "score": 15.7,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-038",
+   "q": "is hinduism polytheistic",
+   "variants": [],
+   "score": 15.64,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-039",
+   "q": "is hinduism monotheistic",
+   "variants": [],
+   "score": 15.62,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-040",
+   "q": "when did hinduism begin",
+   "variants": [
+    "when did hinduism begin date",
+    "when did hinduism and buddhism begin",
+    "when did hinduism begin year"
+   ],
+   "score": 15.59,
+   "volume": 4400,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-041",
+   "q": "how did hinduism start",
+   "variants": [],
+   "score": 15.44,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-042",
+   "q": "where do hindus worship",
+   "variants": [
+    "where do hindus go to worship",
+    "where do hindus typically worship",
+    "where do hindus worship for kids",
+    "where do hindus pray and worship"
+   ],
+   "score": 15.39,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-043",
+   "q": "does hinduism have a god",
+   "variants": [
+    "does hinduism have many gods",
+    "does hinduism have multiple gods"
+   ],
+   "score": 15.37,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-044",
+   "q": "how did hinduism originate",
+   "variants": [
+    "how does hinduism originate"
+   ],
+   "score": 15.26,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-045",
+   "q": "are hindus vegan",
+   "variants": [],
+   "score": 15.16,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-046",
+   "q": "who wrote the vedas",
+   "variants": [
+    "who wrote the vedas in hinduism",
+    "who wrote the vedas and upanishads",
+    "who wrote the vedas hinduism",
+    "who wrote the vedas first",
+    "who wrote the 4 vedas",
+    "who wrote the vedas in hindi",
+    "who wrote the four vedas",
+    "who wrote the vedas and puranas"
+   ],
+   "score": 14.79,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-047",
+   "q": "when was krishna born",
+   "variants": [
+    "when was krishna born time",
+    "when was krishna born year",
+    "when was krishna born date",
+    "when was krishna born and died",
+    "when was lord krishna born",
+    "when was krishna born 2026",
+    "when was krishna born on janmashtami"
+   ],
+   "score": 14.73,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-048",
+   "q": "what is the vedas in hinduism",
+   "variants": [
+    "what do the vedas teach hinduism"
+   ],
+   "score": 14.71,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-049",
+   "q": "why do hindus not eat beef",
+   "variants": [
+    "why do hindus not eat beef or pork"
+   ],
+   "score": 14.52,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-050",
+   "q": "do hindus wear turbans",
+   "variants": [
+    "why do hindus wear turbans",
+    "do hindus or sikhs wear turbans"
+   ],
+   "score": 14.52,
+   "volume": 590,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-051",
+   "q": "does hinduism have a holy book",
+   "variants": [
+    "does hinduism have a book"
+   ],
+   "score": 14.5,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-052",
+   "q": "what does hinduism say about jesus",
+   "variants": [],
+   "score": 14.33,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-053",
+   "q": "do hindus drink milk",
+   "variants": [
+    "can hindus drink milk",
+    "do hindu vegetarians drink milk"
+   ],
+   "score": 14.33,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-054",
+   "q": "who is god in hinduism",
+   "variants": [],
+   "score": 14.32,
+   "volume": 1600,
+   "sources": [
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-055",
+   "q": "who wrote the bhagavad gita",
+   "variants": [
+    "who wrote the bhagavad gita first",
+    "who wrote the bhagavad gita book",
+    "who wrote the bhagavad gita in telugu",
+    "who wrote the bhagavad gita in marathi",
+    "who wrote bhagavad gita in english",
+    "who wrote the bhagavad gita in english",
+    "who wrote bhagavad gita quotes",
+    "who wrote the bhagavad gita in kannada"
+   ],
+   "score": 14.19,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-056",
+   "q": "is hinduism the oldest religion",
+   "variants": [
+    "why is hinduism the oldest religion",
+    "is hinduism the oldest religion in the world"
+   ],
+   "score": 14.06,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-057",
+   "q": "what is karma in hinduism",
+   "variants": [
+    "what is hinduism karma"
+   ],
+   "score": 14.05,
+   "volume": 1300,
+   "sources": [
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-058",
+   "q": "what do hindus not eat",
+   "variants": [
+    "what do hindus eat",
+    "what can hindus not eat",
+    "what meat do hindus not eat",
+    "do hindus not eat",
+    "what do hindus eat and not eat",
+    "what do hindus not eat or drink"
+   ],
+   "score": 14.04,
+   "volume": 170,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-059",
+   "q": "how do hindus pray",
+   "variants": [
+    "how do hindus pray at home",
+    "how do hindus pray in a temple",
+    "how do hindus pray ks2"
+   ],
+   "score": 14.02,
+   "volume": 260,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-060",
+   "q": "what do hindus worship",
+   "variants": [
+    "what is hindu worship"
+   ],
+   "score": 13.85,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-061",
+   "q": "hinduism vs christianity",
+   "variants": [
+    "what is hinduism vs christianity",
+    "hinduism vs christianity chart"
+   ],
+   "score": 13.76,
+   "volume": 1000,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-062",
+   "q": "what do hindus believe about the afterlife",
+   "variants": [],
+   "score": 13.73,
+   "volume": 590,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-063",
+   "q": "can hindus eat chicken",
+   "variants": [
+    "do hindus eat chicken"
+   ],
+   "score": 13.7,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-064",
+   "q": "do hindus fast",
+   "variants": [],
+   "score": 13.68,
+   "volume": 210,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-065",
+   "q": "what do hindus think of jesus",
+   "variants": [
+    "what do hindus think about jesus",
+    "what do hindus think jesus was"
+   ],
+   "score": 13.47,
+   "volume": 480,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-066",
+   "q": "where do hindus come from",
+   "variants": [],
+   "score": 13.45,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-067",
+   "q": "is hinduism older than judaism",
+   "variants": [
+    "why is hinduism older than judaism"
+   ],
+   "score": 13.35,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-068",
+   "q": "do hindus believe in karma",
+   "variants": [
+    "why do hindus believe in karma"
+   ],
+   "score": 13.33,
+   "volume": 260,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-069",
+   "q": "do hindus drink",
+   "variants": [],
+   "score": 13.31,
+   "volume": 260,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-070",
+   "q": "do hindus have a holy book",
+   "variants": [],
+   "score": 13.31,
+   "volume": 480,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-071",
+   "q": "who is krishna in hinduism",
+   "variants": [],
+   "score": 13.31,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-072",
+   "q": "what is hinduism gods",
+   "variants": [
+    "what is the concept of god in hinduism",
+    "what is hinduism god called",
+    "what is hinduism god name",
+    "what is hinduism main god",
+    "what is hinduism concept of god",
+    "what is hinduism god"
+   ],
+   "score": 13.19,
+   "volume": 480,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-073",
+   "q": "what do hindus believe about god",
+   "variants": [
+    "what do hindus believe about multiple gods",
+    "what does hindus believe about god",
+    "what do hindu people believe about god",
+    "what do hindus believe about god and jesus"
+   ],
+   "score": 13.14,
+   "volume": 140,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-074",
+   "q": "is hinduism older than christianity",
+   "variants": [],
+   "score": 13.01,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-075",
+   "q": "why do hindus revere cows",
+   "variants": [
+    "do hindus revere cows"
+   ],
+   "score": 12.84,
+   "volume": 880,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-076",
+   "q": "why do hindus not eat meat",
+   "variants": [
+    "do hindus not eat meat",
+    "why do hindus eat meat",
+    "why do hindus not eat meat on tuesday",
+    "why do hindus not eat meat on saturday"
+   ],
+   "score": 12.84,
+   "volume": 90,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-077",
+   "q": "who do hindus pray to",
+   "variants": [],
+   "score": 12.65,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-078",
+   "q": "what is hinduism based on",
+   "variants": [],
+   "score": 12.53,
+   "volume": 170,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-079",
+   "q": "why did krishna not marry radha",
+   "variants": [
+    "why did krishna marry rukmini and not radha"
+   ],
+   "score": 12.48,
+   "volume": 260,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-080",
+   "q": "what is hinduism origin",
+   "variants": [],
+   "score": 12.43,
+   "volume": 720,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-081",
+   "q": "what do hindus believe about jesus",
+   "variants": [
+    "what do hindu people believe about jesus"
+   ],
+   "score": 12.38,
+   "volume": 480,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-082",
+   "q": "who was krishna's wife",
+   "variants": [
+    "who is krishna's wife"
+   ],
+   "score": 12.35,
+   "volume": 260,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-083",
+   "q": "how did hinduism develop",
+   "variants": [
+    "how did hinduism develop in india"
+   ],
+   "score": 12.32,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-084",
+   "q": "do hindus believe in heaven",
+   "variants": [],
+   "score": 12.27,
+   "volume": 390,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-085",
+   "q": "what is reincarnation in hinduism",
+   "variants": [
+    "what is hinduism reincarnation"
+   ],
+   "score": 12.26,
+   "volume": 480,
+   "sources": [
+    "paa"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-086",
+   "q": "why do hindus celebrate diwali",
+   "variants": [
+    "do hindus celebrate diwali",
+    "why do hindus and sikhs celebrate diwali"
+   ],
+   "score": 12.26,
+   "volume": 210,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-087",
+   "q": "what does hinduism teach",
+   "variants": [
+    "what does hinduism teach you",
+    "what does hinduism teach us"
+   ],
+   "score": 12.22,
+   "volume": 170,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-088",
+   "q": "what do hindus believe about life after death",
+   "variants": [
+    "what do hindus think about life after death",
+    "what does hinduism believe about life after death",
+    "what do hindus believe about after death"
+   ],
+   "score": 12.17,
+   "volume": 590,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-089",
+   "q": "when were the vedas written",
+   "variants": [],
+   "score": 12.11,
+   "volume": 480,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-090",
+   "q": "do hindus have a god",
+   "variants": [],
+   "score": 11.99,
+   "volume": 590,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-091",
+   "q": "how do hindus believe the world was created",
+   "variants": [],
+   "score": 11.82,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-092",
+   "q": "why do hindus cremate their dead",
+   "variants": [
+    "why do hindus cremate"
+   ],
+   "score": 11.69,
+   "volume": 140,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-093",
+   "q": "is hinduism indian",
+   "variants": [],
+   "score": 11.67,
+   "volume": 390,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-094",
+   "q": "do hindus pray",
+   "variants": [],
+   "score": 11.59,
+   "volume": 170,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-095",
+   "q": "do hindus eat fish",
+   "variants": [
+    "can hindus eat fish",
+    "do hindu vegetarians eat fish"
+   ],
+   "score": 11.44,
+   "volume": 210,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "hinduism-096",
+   "q": "what does hinduism say about homosexuality",
+   "variants": [
+    "what does hinduism say on homosexuality"
+   ],
+   "score": 11.4,
+   "volume": 170,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-097",
+   "q": "what do hindus believe about brahman",
+   "variants": [],
+   "score": 11.34,
+   "volume": 90,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-098",
+   "q": "why is hinduism important",
+   "variants": [
+    "why is hinduism important today",
+    "why is hinduism important in history",
+    "why is varanasi important to hinduism",
+    "why 108 is important in hinduism",
+    "why are the vedas important in hinduism"
+   ],
+   "score": 11.34,
+   "volume": 140,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-099",
+   "q": "what does hinduism say about other religions",
+   "variants": [
+    "what does hinduism say about respecting other religions",
+    "what does hinduism say about marrying other religions"
+   ],
+   "score": 11.31,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "hinduism-100",
+   "q": "why do hindus have a red dot",
+   "variants": [
+    "why do hindus have red dot on forehead"
+   ],
+   "score": 11.3,
+   "volume": 170,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  }
+ ]
+}

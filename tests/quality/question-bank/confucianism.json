@@ -1,0 +1,1345 @@
+{
+ "tradition": "confucianism",
+ "label": "Confucianism",
+ "harvested": "2026-11-10",
+ "candidates": 680,
+ "questions": [
+  {
+   "id": "confucianism-001",
+   "q": "what do confucianists believe",
+   "variants": [
+    "what do confucianists believe in"
+   ],
+   "score": 37.27,
+   "volume": 170,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-002",
+   "q": "what does confucianism believe in",
+   "variants": [
+    "what do confucianism people believe in",
+    "what do confucianism believe in",
+    "what did confucianism believe in"
+   ],
+   "score": 27.12,
+   "volume": 170,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-003",
+   "q": "what is confucianism",
+   "variants": [],
+   "score": 26.38,
+   "volume": 9900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-004",
+   "q": "is confucianism a religion",
+   "variants": [
+    "is confucianism religion",
+    "is it a confucianism religion"
+   ],
+   "score": 19.88,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-005",
+   "q": "what is confucianism in simple terms",
+   "variants": [
+    "what is confucianism simple",
+    "what is confucianism simple terms",
+    "what is neo confucianism in simple terms",
+    "what is confucianism for kids in simple terms"
+   ],
+   "score": 19.58,
+   "volume": 210,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-006",
+   "q": "is confucianism good",
+   "variants": [],
+   "score": 19.27,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-007",
+   "q": "how many confucianists in the world",
+   "variants": [],
+   "score": 18.75,
+   "volume": 40,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-008",
+   "q": "who was confucius",
+   "variants": [
+    "who was confucius book",
+    "who was confucius for kids",
+    "who was confucius in china",
+    "who was confucius china",
+    "who was confucius answer"
+   ],
+   "score": 17.88,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-009",
+   "q": "what does confucianism teach",
+   "variants": [
+    "what does confucianism teach to the young",
+    "what does confucianism teach people",
+    "what did confucianism teach"
+   ],
+   "score": 17.86,
+   "volume": 390,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-010",
+   "q": "does confucianism have a god",
+   "variants": [
+    "do confucianism have a god"
+   ],
+   "score": 17.76,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-011",
+   "q": "confucianism vs daoism",
+   "variants": [
+    "confucianism vs daoism vs legalism"
+   ],
+   "score": 17.38,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-012",
+   "q": "who is confucius",
+   "variants": [],
+   "score": 17.37,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-013",
+   "q": "who founded confucianism",
+   "variants": [
+    "who founded confucianism religion",
+    "what is confucianism and who founded it",
+    "who founded neo confucianism"
+   ],
+   "score": 16.98,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-014",
+   "q": "what does confucianism mean",
+   "variants": [
+    "what do confucianism mean"
+   ],
+   "score": 16.82,
+   "volume": 1600,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-015",
+   "q": "what is confucianism beliefs",
+   "variants": [
+    "what are the beliefs of confucianism",
+    "what is confucianism main beliefs",
+    "what are the main beliefs of confucianism",
+    "what are the basic beliefs of confucianism",
+    "what are the major beliefs of confucianism",
+    "what are the core beliefs of confucianism",
+    "what is confucianism key beliefs",
+    "what are the key beliefs of confucianism"
+   ],
+   "score": 16.72,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-016",
+   "q": "what is confucianism based on",
+   "variants": [
+    "what is the philosophy of confucianism based on"
+   ],
+   "score": 16.57,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-017",
+   "q": "what did confucius teach",
+   "variants": [
+    "what did confucius teach people",
+    "what do the analects of confucius teach",
+    "what does confucius teach"
+   ],
+   "score": 16.53,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-018",
+   "q": "why is confucianism important",
+   "variants": [
+    "why confucianism is important"
+   ],
+   "score": 15.72,
+   "volume": 390,
+   "sources": [
+    "bing",
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-019",
+   "q": "when was confucianism founded",
+   "variants": [
+    "when was confucianism founded dynasty",
+    "when was confucianism founded in china",
+    "when was confucianism founded date",
+    "when and where was confucianism founded",
+    "when was neo confucianism founded",
+    "when was confucianism and daoism founded"
+   ],
+   "score": 15.65,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-020",
+   "q": "is confucianism monotheistic or polytheistic",
+   "variants": [
+    "what is confucianism monotheistic or polytheistic",
+    "is confucianism polytheistic or monotheistic",
+    "is confucianism a monotheistic or polytheistic religion"
+   ],
+   "score": 15.61,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-021",
+   "q": "when was confucius born",
+   "variants": [
+    "when was confucius born and died",
+    "when did confucius born",
+    "when was confucius born dynasty",
+    "when was confucius born in china",
+    "when and where was confucius born",
+    "when was philosopher confucius born"
+   ],
+   "score": 15.46,
+   "volume": 1000,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-022",
+   "q": "is confucianism a religion or philosophy",
+   "variants": [
+    "what is confucianism religion or philosophy",
+    "is confucianism considered a religion or a philosophy",
+    "is confucianism religion or philosophy"
+   ],
+   "score": 15.09,
+   "volume": 390,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-023",
+   "q": "when did confucianism start",
+   "variants": [
+    "when did confucianism start in china"
+   ],
+   "score": 15.04,
+   "volume": 1000,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-024",
+   "q": "what is confucius known for",
+   "variants": [
+    "what is confucius best known for",
+    "what is confucius well known for",
+    "what was confucius known for"
+   ],
+   "score": 14.79,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-025",
+   "q": "confucianism vs buddhism",
+   "variants": [
+    "confucianism vs taoism vs buddhism",
+    "what is confucianism vs buddhism",
+    "confucianism vs buddhism differences"
+   ],
+   "score": 14.69,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-026",
+   "q": "how did confucianism spread",
+   "variants": [
+    "how did neo confucianism spread",
+    "how did confucianism spread to japan"
+   ],
+   "score": 14.53,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-027",
+   "q": "is confucianism still practiced today",
+   "variants": [
+    "is confucianism practiced today"
+   ],
+   "score": 14.43,
+   "volume": 170,
+   "sources": [
+    "bing",
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-028",
+   "q": "when did confucianism begin",
+   "variants": [],
+   "score": 14.42,
+   "volume": 1000,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-029",
+   "q": "when did confucianism originate",
+   "variants": [],
+   "score": 14.34,
+   "volume": 1000,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-030",
+   "q": "what does confucianism focus on",
+   "variants": [
+    "what is the focus of confucianism",
+    "what is the main focus of confucianism"
+   ],
+   "score": 14.27,
+   "volume": 90,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-031",
+   "q": "confucianism vs legalism",
+   "variants": [],
+   "score": 13.73,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-032",
+   "q": "when did confucius live",
+   "variants": [],
+   "score": 13.5,
+   "volume": 1000,
+   "sources": [
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-033",
+   "q": "what is the analects",
+   "variants": [
+    "what are the analects"
+   ],
+   "score": 13.5,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-034",
+   "q": "what is confucianism known for",
+   "variants": [],
+   "score": 13.23,
+   "volume": 320,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-035",
+   "q": "what is confucianism religion",
+   "variants": [
+    "what is confucianism a religion"
+   ],
+   "score": 12.94,
+   "volume": 210,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-036",
+   "q": "is confucianism a philosophy",
+   "variants": [
+    "is confucianism philosophy"
+   ],
+   "score": 12.86,
+   "volume": 170,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-037",
+   "q": "when was confucianism born",
+   "variants": [],
+   "score": 12.6,
+   "volume": 1000,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-038",
+   "q": "who wrote the analects",
+   "variants": [
+    "who wrote the analects of confucius",
+    "who wrote the analects for women"
+   ],
+   "score": 12.3,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-039",
+   "q": "who do confucianism worship",
+   "variants": [],
+   "score": 12.19,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-040",
+   "q": "does confucianism have a holy book",
+   "variants": [
+    "do confucianism have a holy book"
+   ],
+   "score": 11.94,
+   "volume": 90,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-041",
+   "q": "what is confucianism holy book",
+   "variants": [
+    "what is confucianism book"
+   ],
+   "score": 11.92,
+   "volume": 210,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-042",
+   "q": "do confucianism believe in god",
+   "variants": [
+    "does confucianism believe in god",
+    "do confucianisms believe in god"
+   ],
+   "score": 11.88,
+   "volume": 140,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-043",
+   "q": "is confucianism monotheistic",
+   "variants": [],
+   "score": 11.72,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-044",
+   "q": "how did confucianism influence chinese society",
+   "variants": [
+    "how does confucianism influence chinese society today"
+   ],
+   "score": 11.71,
+   "volume": 480,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-045",
+   "q": "what is the analects of confucius",
+   "variants": [
+    "what is the meaning of the analects of confucius",
+    "what does the analects of confucius mean"
+   ],
+   "score": 11.7,
+   "volume": 170,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-046",
+   "q": "is confucianism ethnic or universalizing",
+   "variants": [
+    "is confucianism universalizing or ethnic",
+    "is confucianism universalizing or ethnic religion",
+    "is confucianism ethnic or universalizing religion"
+   ],
+   "score": 11.68,
+   "volume": 140,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-047",
+   "q": "who was confucius and what did he teach",
+   "variants": [
+    "who was confucius and what did he do"
+   ],
+   "score": 11.57,
+   "volume": 170,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-048",
+   "q": "who is confucius and what is he known for",
+   "variants": [
+    "who is confucius and what did he do"
+   ],
+   "score": 11.57,
+   "volume": 50,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-049",
+   "q": "does confucianism still exist",
+   "variants": [
+    "does confucianism still exist today",
+    "does neo confucianism still exist"
+   ],
+   "score": 11.5,
+   "volume": 40,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-050",
+   "q": "confucianism vs neo confucianism",
+   "variants": [],
+   "score": 11.48,
+   "volume": 210,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-051",
+   "q": "who started confucianism",
+   "variants": [
+    "who started confucianism in china"
+   ],
+   "score": 11.47,
+   "volume": 480,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-052",
+   "q": "how did confucianism start",
+   "variants": [
+    "how did neo confucianism start"
+   ],
+   "score": 11.46,
+   "volume": 170,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-053",
+   "q": "why is confucius important",
+   "variants": [],
+   "score": 11.43,
+   "volume": 390,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-054",
+   "q": "how did confucianism affect chinese society",
+   "variants": [],
+   "score": 11.33,
+   "volume": 480,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-055",
+   "q": "what is confucianism sacred text",
+   "variants": [],
+   "score": 11.2,
+   "volume": 210,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-056",
+   "q": "do confucianists believe in god",
+   "variants": [],
+   "score": 11.07,
+   "volume": 10,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-057",
+   "q": "where was confucius born",
+   "variants": [],
+   "score": 11.01,
+   "volume": 390,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-058",
+   "q": "why did confucius create his philosophy",
+   "variants": [],
+   "score": 10.98,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-059",
+   "q": "how does confucianism work",
+   "variants": [],
+   "score": 10.97,
+   "volume": 30,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-060",
+   "q": "what does confucius say about love",
+   "variants": [
+    "what did confucius say about love",
+    "what does confucius say about"
+   ],
+   "score": 10.83,
+   "volume": 10,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-061",
+   "q": "what was confucius' religion",
+   "variants": [],
+   "score": 10.8,
+   "volume": 210,
+   "sources": [
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-062",
+   "q": "what is confucianism about",
+   "variants": [
+    "what is unique about confucianism"
+   ],
+   "score": 10.45,
+   "volume": 110,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-063",
+   "q": "what is confucianism philosophy",
+   "variants": [
+    "what is confucianism in philosophy",
+    "what is confucianism in eastern philosophy"
+   ],
+   "score": 10.39,
+   "volume": 210,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-064",
+   "q": "does confucianism believe in reincarnation",
+   "variants": [
+    "do confucianism believe in reincarnation"
+   ],
+   "score": 10.37,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-065",
+   "q": "what is confucianism in china",
+   "variants": [
+    "what is confucianism in ancient china",
+    "what is confucianism china",
+    "what is confucianism ancient china"
+   ],
+   "score": 10.31,
+   "volume": 30,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-066",
+   "q": "what is the golden rule of confucianism",
+   "variants": [
+    "what is confucianism golden rule"
+   ],
+   "score": 10.18,
+   "volume": 140,
+   "sources": [
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-067",
+   "q": "do confucians believe in god",
+   "variants": [],
+   "score": 10.06,
+   "volume": 140,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-068",
+   "q": "does confucianism have a deity",
+   "variants": [],
+   "score": 10.03,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-069",
+   "q": "what was confucius philosophy",
+   "variants": [
+    "what is confucius philosophy"
+   ],
+   "score": 10.01,
+   "volume": 210,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-070",
+   "q": "who was confucius and when did he live",
+   "variants": [],
+   "score": 9.85,
+   "volume": 70,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-071",
+   "q": "how to say confucianism",
+   "variants": [
+    "how do you say confucianism"
+   ],
+   "score": 9.8,
+   "volume": 170,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-072",
+   "q": "what is confucius real name",
+   "variants": [
+    "what is the real name of confucius",
+    "what is confucius name"
+   ],
+   "score": 9.77,
+   "volume": 170,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-073",
+   "q": "confucianism vs christianity",
+   "variants": [],
+   "score": 9.55,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-074",
+   "q": "how do confucianism worship",
+   "variants": [],
+   "score": 9.49,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-075",
+   "q": "what was the purpose of the analects",
+   "variants": [],
+   "score": 9.35,
+   "volume": 20,
+   "sources": [
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-076",
+   "q": "what is confucianism simple definition",
+   "variants": [
+    "what is confucianism definition",
+    "what is neo confucianism simple definition"
+   ],
+   "score": 9.18,
+   "volume": 50,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-077",
+   "q": "does confucianism have a sacred text",
+   "variants": [],
+   "score": 9.15,
+   "volume": 30,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-078",
+   "q": "does confucianism believe in afterlife",
+   "variants": [
+    "do confucianism believe in afterlife",
+    "does confucianism believe in the afterlife"
+   ],
+   "score": 9.06,
+   "volume": 50,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-079",
+   "q": "is confucianism polytheistic",
+   "variants": [],
+   "score": 8.98,
+   "volume": 110,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-080",
+   "q": "what is the meaning of confucius",
+   "variants": [],
+   "score": 8.92,
+   "volume": 110,
+   "sources": [
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-081",
+   "q": "what did confucius say before he died",
+   "variants": [],
+   "score": 8.79,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-082",
+   "q": "is confucianism chinese",
+   "variants": [],
+   "score": 8.69,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-083",
+   "q": "how old would confucius be today",
+   "variants": [],
+   "score": 8.59,
+   "volume": 20,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-084",
+   "q": "how did confucianism provide legitimacy for the government",
+   "variants": [],
+   "score": 8.54,
+   "volume": 90,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-085",
+   "q": "why is confucianism not considered a religion",
+   "variants": [
+    "why is confucianism considered a religion",
+    "why is confucianism not a religion",
+    "why is confucianism considered a philosophy and not a religion"
+   ],
+   "score": 8.48,
+   "volume": 30,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-086",
+   "q": "what are the teachings of confucianism",
+   "variants": [
+    "what is the core teaching of confucianism",
+    "what is confucianism teaching"
+   ],
+   "score": 8.46,
+   "volume": 70,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-087",
+   "q": "when did confucianism end",
+   "variants": [],
+   "score": 8.13,
+   "volume": 30,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-088",
+   "q": "does confucianism believe in heaven",
+   "variants": [
+    "do confucianism believe in heaven"
+   ],
+   "score": 8.06,
+   "volume": 10,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-089",
+   "q": "what does analects mean",
+   "variants": [],
+   "score": 8.05,
+   "volume": 70,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-090",
+   "q": "did neo confucianism include buddhism",
+   "variants": [],
+   "score": 8.03,
+   "volume": 50,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-091",
+   "q": "does confucianism have an afterlife",
+   "variants": [],
+   "score": 7.99,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-092",
+   "q": "what is confucius famous for",
+   "variants": [
+    "what is confucius famous quote",
+    "what is confucius most famous for"
+   ],
+   "score": 7.99,
+   "volume": 30,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-093",
+   "q": "how did confucianism influence japanese culture",
+   "variants": [],
+   "score": 7.75,
+   "volume": 40,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-094",
+   "q": "what does confucianism mean in ancient china",
+   "variants": [],
+   "score": 7.75,
+   "volume": 40,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-095",
+   "q": "what does confucianism emphasize",
+   "variants": [
+    "what did confucianism emphasize"
+   ],
+   "score": 7.74,
+   "volume": 50,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "confucianism-096",
+   "q": "how did confucianism influence japan",
+   "variants": [
+    "did confucianism influence japan"
+   ],
+   "score": 7.64,
+   "volume": 20,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-097",
+   "q": "what is confucianism symbol",
+   "variants": [],
+   "score": 7.63,
+   "volume": 50,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-098",
+   "q": "why did confucius create confucianism",
+   "variants": [],
+   "score": 7.59,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-099",
+   "q": "why did confucius emphasize the study of history",
+   "variants": [],
+   "score": 7.53,
+   "volume": 50,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "confucianism-100",
+   "q": "does confucianism still exist in china today",
+   "variants": [],
+   "score": 7.47,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  }
+ ]
+}

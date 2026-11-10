@@ -1,0 +1,1412 @@
+{
+ "tradition": "christianity",
+ "label": "Christianity",
+ "harvested": "2026-11-10",
+ "candidates": 1808,
+ "questions": [
+  {
+   "id": "christianity-001",
+   "q": "when was jesus born",
+   "variants": [
+    "when was jesus born month",
+    "when was jesus born and died",
+    "when was jesus born year",
+    "when was jesus born in the bible",
+    "when was jesus born date",
+    "when was the day that jesus was born",
+    "when was jesus born day",
+    "when was jesus born actually"
+   ],
+   "score": 23.95,
+   "volume": 90500,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-002",
+   "q": "how many books are in the bible",
+   "variants": [
+    "how many books are in the bible catholic",
+    "how many books are in the bible kjv",
+    "how many books are in the bible niv",
+    "how many books are in the bible total",
+    "how many books are in the bible christian",
+    "how many books are in the bible esv",
+    "how many gospel books are in the bible",
+    "how many books are in the bible altogether"
+   ],
+   "score": 23.82,
+   "volume": 49500,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-003",
+   "q": "who wrote the bible",
+   "variants": [
+    "who wrote the bible originally",
+    "who wrote the bible book",
+    "who wrote the gospels in the bible",
+    "who wrote the bible first",
+    "who wrote the bible richard",
+    "who wrote the bible friedman",
+    "who wrote the bible genesis"
+   ],
+   "score": 22.41,
+   "volume": 49500,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-004",
+   "q": "what does the bible say about cremation",
+   "variants": [
+    "what does the bible say about of",
+    "what does the bible say about be",
+    "what does bible say on cremation"
+   ],
+   "score": 21.86,
+   "volume": 27100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-005",
+   "q": "christians vs catholics",
+   "variants": [
+    "christian vs catholic bible"
+   ],
+   "score": 20.9,
+   "volume": 33100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-006",
+   "q": "do christians believe in dinosaurs",
+   "variants": [
+    "do christians not believe in dinosaurs",
+    "how do christians believe in dinosaurs"
+   ],
+   "score": 20.68,
+   "volume": 3600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-007",
+   "q": "who was jesus",
+   "variants": [
+    "who was jesus brother",
+    "who was jesus father",
+    "who was jesus christ",
+    "who was jesus mother",
+    "who was jesus wife",
+    "who was jesus dad",
+    "who was jesus of nazareth",
+    "who was jesus book"
+   ],
+   "score": 20.07,
+   "volume": 12100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-008",
+   "q": "what do christians believe",
+   "variants": [
+    "what do christians zionists believe",
+    "what do christian quakers believe",
+    "what do christians not believe in",
+    "what do zion christians believe in"
+   ],
+   "score": 19.83,
+   "volume": 3600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-009",
+   "q": "when was christianity founded",
+   "variants": [
+    "when was christianity founded bc",
+    "when was christianity founded in africa",
+    "when was christianity founded year",
+    "when was christianity founded as a religion",
+    "when was christianity founded date",
+    "when was christianity founded in nepal",
+    "when was christianity founded in nigeria",
+    "when was christianity founded bce"
+   ],
+   "score": 19.83,
+   "volume": 9900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-010",
+   "q": "what does the bible say about homosexuality",
+   "variants": [
+    "what does bible say on homosexuality"
+   ],
+   "score": 19.69,
+   "volume": 27100,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-011",
+   "q": "what is the gospel",
+   "variants": [],
+   "score": 19.48,
+   "volume": 14800,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-012",
+   "q": "do christians celebrate halloween",
+   "variants": [
+    "should christians celebrate halloween",
+    "can christians celebrate halloween",
+    "how do christians celebrate halloween",
+    "do christians not celebrate halloween",
+    "is it okay for christians to celebrate halloween",
+    "are christians allowed to celebrate halloween",
+    "why do christians celebrate halloween"
+   ],
+   "score": 19.27,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-013",
+   "q": "do christians believe in evolution",
+   "variants": [
+    "do christians believe in the evolution of animals",
+    "how do christians believe in evolution"
+   ],
+   "score": 19.25,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-014",
+   "q": "christianity vs catholicism",
+   "variants": [
+    "what is christianity vs catholicism"
+   ],
+   "score": 19.17,
+   "volume": 33100,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-015",
+   "q": "what does the bible say about tattoos",
+   "variants": [
+    "what does the bible say about getting a tattoo",
+    "what does bible say on tattoos",
+    "what does the bible say about tattoo"
+   ],
+   "score": 19.14,
+   "volume": 18100,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-016",
+   "q": "what is christianity",
+   "variants": [],
+   "score": 19.13,
+   "volume": 12100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-017",
+   "q": "who is jesus",
+   "variants": [],
+   "score": 19.13,
+   "volume": 12100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-018",
+   "q": "can christians eat pork",
+   "variants": [
+    "do christians eat pork",
+    "is it true that christians can eat pork"
+   ],
+   "score": 19.13,
+   "volume": 9900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-019",
+   "q": "how many christians are there worldwide",
+   "variants": [],
+   "score": 18.89,
+   "volume": 22200,
+   "sources": [
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-020",
+   "q": "what does the bible teach about forgiveness",
+   "variants": [],
+   "score": 18.67,
+   "volume": 8100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-021",
+   "q": "what does the bible say about marriage",
+   "variants": [
+    "what does bible say on marriage"
+   ],
+   "score": 18.66,
+   "volume": 8100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-022",
+   "q": "should christians eat pork",
+   "variants": [],
+   "score": 18.6,
+   "volume": 9900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-023",
+   "q": "what is the bible",
+   "variants": [],
+   "score": 18.43,
+   "volume": 8100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-024",
+   "q": "who is jesus father",
+   "variants": [],
+   "score": 18.42,
+   "volume": 9900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-025",
+   "q": "who founded christianity",
+   "variants": [
+    "who founded christianity today",
+    "who founded christianity in india",
+    "who founded christianity religion",
+    "who was christianity founded by",
+    "who founded christianity in rome",
+    "who founded christianity and when",
+    "who founded christianity and catholicism",
+    "who founded orthodox christianity"
+   ],
+   "score": 18.37,
+   "volume": 5400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-026",
+   "q": "who wrote the gospels",
+   "variants": [
+    "who wrote the gospel of john",
+    "who wrote the gospel of mark",
+    "who wrote the gospel of matthew",
+    "who wrote the gospel of luke",
+    "who wrote the gospel of thomas",
+    "who wrote the gospel of judas",
+    "who wrote the gospel of wealth"
+   ],
+   "score": 18.31,
+   "volume": 3600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-027",
+   "q": "who is jesus dad",
+   "variants": [],
+   "score": 17.94,
+   "volume": 9900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-028",
+   "q": "what does the bible say about love",
+   "variants": [
+    "what does bible say about love"
+   ],
+   "score": 17.89,
+   "volume": 8100,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-029",
+   "q": "what does the bible say about divorce",
+   "variants": [
+    "what does bible say on divorce",
+    "what does the bible say about when to divorce"
+   ],
+   "score": 17.88,
+   "volume": 12100,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-030",
+   "q": "is christianity a religion",
+   "variants": [],
+   "score": 17.73,
+   "volume": 5400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-031",
+   "q": "why did jesus weep",
+   "variants": [],
+   "score": 17.63,
+   "volume": 5400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-032",
+   "q": "who is jesus christ",
+   "variants": [
+    "who is jesus christ in the bible"
+   ],
+   "score": 17.57,
+   "volume": 5400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-033",
+   "q": "how did christianity spread",
+   "variants": [
+    "how did christianity spread in africa",
+    "how did christianity spread in rome",
+    "how did christianity spread to europe",
+    "how does christianity spread"
+   ],
+   "score": 17.56,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-034",
+   "q": "do christians believe in the virgin mary",
+   "variants": [],
+   "score": 17.5,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-035",
+   "q": "why did jesus curse the fig tree",
+   "variants": [],
+   "score": 17.49,
+   "volume": 5400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-036",
+   "q": "are christians and catholics the same",
+   "variants": [
+    "are catholics and christians the same"
+   ],
+   "score": 17.44,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-037",
+   "q": "what is christianity beliefs",
+   "variants": [
+    "what are the beliefs of christianity",
+    "what are the core beliefs of christianity",
+    "what are the main beliefs of christianity",
+    "what are the key beliefs of christianity",
+    "what are the basic beliefs of christianity",
+    "what are the major beliefs of christianity",
+    "what are the beliefs of orthodox christianity",
+    "what are the central beliefs of christianity"
+   ],
+   "score": 17.44,
+   "volume": 1000,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-038",
+   "q": "do christians believe jesus is god",
+   "variants": [
+    "why do christians believe jesus is god",
+    "do christians believe in jesus",
+    "do christians believe jesus is the son of god",
+    "do christians believe in god",
+    "do all christians believe jesus is god",
+    "does christians believe in jesus",
+    "do christians believe in god or jesus"
+   ],
+   "score": 17.35,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-039",
+   "q": "what does the bible say about forgiveness",
+   "variants": [
+    "what does bible say about forgiveness"
+   ],
+   "score": 17.3,
+   "volume": 8100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-040",
+   "q": "does christianity believe in evolution",
+   "variants": [
+    "does christianity not believe in evolution"
+   ],
+   "score": 17.3,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-041",
+   "q": "what does the bible say about halloween",
+   "variants": [],
+   "score": 17.23,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-042",
+   "q": "why do christians fast",
+   "variants": [
+    "why do christians fast and pray"
+   ],
+   "score": 17.21,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-043",
+   "q": "why did jesus die on the cross",
+   "variants": [
+    "why did jesus die"
+   ],
+   "score": 17.21,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-044",
+   "q": "christianity vs islam",
+   "variants": [
+    "christianity vs islam debate",
+    "christianity vs islam vs judaism",
+    "christianity vs judaism vs islam"
+   ],
+   "score": 17.04,
+   "volume": 9900,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-045",
+   "q": "christians vs muslims",
+   "variants": [
+    "christians vs muslims war",
+    "christian vs muslim war",
+    "christians vs jews vs muslims"
+   ],
+   "score": 17.01,
+   "volume": 9900,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-046",
+   "q": "when did christianity start",
+   "variants": [],
+   "score": 16.98,
+   "volume": 9900,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-047",
+   "q": "what is the bible verse of the day",
+   "variants": [
+    "what is the bible verse",
+    "what is the bible verse of the day today"
+   ],
+   "score": 16.98,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-048",
+   "q": "what is christianity definition",
+   "variants": [
+    "what is christianity simple definition"
+   ],
+   "score": 16.95,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-049",
+   "q": "do christians do lent",
+   "variants": [],
+   "score": 16.87,
+   "volume": 4400,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-050",
+   "q": "what is christianity religion",
+   "variants": [
+    "what is christianity the religion of",
+    "what is christianity as a religion"
+   ],
+   "score": 16.84,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-051",
+   "q": "what does jesus say about homosexuality",
+   "variants": [
+    "what does jesus say about marriage and homosexuality"
+   ],
+   "score": 16.78,
+   "volume": 8100,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-052",
+   "q": "what does the bible say about gambling",
+   "variants": [
+    "what does bible say on gambling"
+   ],
+   "score": 16.75,
+   "volume": 8100,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-053",
+   "q": "what is the gospel in the bible",
+   "variants": [
+    "what are the four gospels in the bible",
+    "what is the meaning of the gospel in the bible",
+    "what is the meaning of gospel in the bible",
+    "what is gospel according to bible"
+   ],
+   "score": 16.74,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-054",
+   "q": "how do christians explain dinosaurs",
+   "variants": [
+    "how do christians explain dinosaurs and cavemen"
+   ],
+   "score": 16.66,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-055",
+   "q": "what does the bible teach about marriage",
+   "variants": [],
+   "score": 16.64,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-056",
+   "q": "what is the bible belt",
+   "variants": [
+    "what is the meaning of the bible belt",
+    "what is the bible belt in the us",
+    "what is the bible belt in america"
+   ],
+   "score": 16.59,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-057",
+   "q": "what is the gospel of jesus christ",
+   "variants": [
+    "what is the meaning of the gospel of jesus christ",
+    "what is the gospel of christ"
+   ],
+   "score": 16.56,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-058",
+   "q": "does the bible mention dinosaurs",
+   "variants": [],
+   "score": 16.43,
+   "volume": 5400,
+   "sources": [
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-059",
+   "q": "who is jesus mother",
+   "variants": [],
+   "score": 16.33,
+   "volume": 3600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-060",
+   "q": "are christians allowed to eat pork",
+   "variants": [],
+   "score": 16.22,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-061",
+   "q": "does christianity believe in dinosaurs",
+   "variants": [
+    "does christianity not believe in dinosaurs"
+   ],
+   "score": 16.21,
+   "volume": 3600,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-062",
+   "q": "how did christianity start",
+   "variants": [],
+   "score": 16.14,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-063",
+   "q": "do christians believe in saints",
+   "variants": [],
+   "score": 16.12,
+   "volume": 1000,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-064",
+   "q": "why did jesus speak in parables",
+   "variants": [],
+   "score": 16.03,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-065",
+   "q": "do christians fast",
+   "variants": [],
+   "score": 16.02,
+   "volume": 1600,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-066",
+   "q": "why do christians support israel",
+   "variants": [
+    "why do american christians support israel",
+    "why do christians in the us support israel",
+    "do christians support israel",
+    "why are christians in support of israel"
+   ],
+   "score": 15.83,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-067",
+   "q": "who was jesus first disciple",
+   "variants": [],
+   "score": 15.82,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-068",
+   "q": "what is the bible verse for today",
+   "variants": [],
+   "score": 15.81,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-069",
+   "q": "can christians get tattoos",
+   "variants": [],
+   "score": 15.7,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-070",
+   "q": "does christianity believe in reincarnation",
+   "variants": [],
+   "score": 15.63,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-071",
+   "q": "can christians drink alcohol",
+   "variants": [
+    "do christians drink alcohol"
+   ],
+   "score": 15.54,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-072",
+   "q": "what does jesus say about forgiveness",
+   "variants": [],
+   "score": 15.42,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-073",
+   "q": "why did jesus get baptized",
+   "variants": [],
+   "score": 15.42,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-074",
+   "q": "do christians celebrate passover",
+   "variants": [
+    "how do christians celebrate passover",
+    "should christians celebrate passover"
+   ],
+   "score": 15.39,
+   "volume": 1600,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-075",
+   "q": "do christians believe in reincarnation",
+   "variants": [],
+   "score": 15.35,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-076",
+   "q": "does christianity come from judaism",
+   "variants": [],
+   "score": 15.35,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-077",
+   "q": "when was jesus born month and day",
+   "variants": [],
+   "score": 15.33,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-078",
+   "q": "why did jesus wash the disciples feet",
+   "variants": [],
+   "score": 15.33,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-079",
+   "q": "how does christianity explain dinosaurs",
+   "variants": [],
+   "score": 15.26,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-080",
+   "q": "why do christians not celebrate halloween",
+   "variants": [
+    "why do christians do not celebrate halloween"
+   ],
+   "score": 15.26,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-081",
+   "q": "why did jesus flip tables",
+   "variants": [
+    "why did jesus flip the tables in the temple"
+   ],
+   "score": 15.21,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-082",
+   "q": "is christianity older than islam",
+   "variants": [],
+   "score": 15.18,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-083",
+   "q": "should christians support israel",
+   "variants": [],
+   "score": 15.13,
+   "volume": 720,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-084",
+   "q": "christianity vs buddhism",
+   "variants": [],
+   "score": 15.12,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-085",
+   "q": "did jesus eat pork",
+   "variants": [],
+   "score": 15.02,
+   "volume": 2400,
+   "sources": [
+    "paa"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-086",
+   "q": "do christians believe in ghosts",
+   "variants": [],
+   "score": 14.92,
+   "volume": 880,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-087",
+   "q": "what does jesus say about marriage",
+   "variants": [],
+   "score": 14.92,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-088",
+   "q": "how do christians pray",
+   "variants": [
+    "how do christians pray to god",
+    "how do christians pray in the spirit",
+    "how do christians worship and pray",
+    "how do christians pray with their hands",
+    "how do orthodox christians pray"
+   ],
+   "score": 14.91,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-089",
+   "q": "why do christians eat pork",
+   "variants": [
+    "why do christians eat pork and shellfish",
+    "why do christians not eat pork"
+   ],
+   "score": 14.85,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-090",
+   "q": "when do christians fast",
+   "variants": [],
+   "score": 14.8,
+   "volume": 1000,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-091",
+   "q": "what does christianity say about dinosaurs",
+   "variants": [
+    "what does christianity say about the dinosaurs"
+   ],
+   "score": 14.75,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-092",
+   "q": "what is the meaning of the gospel",
+   "variants": [
+    "what is the meaning of the gospel today",
+    "what is the meaning of the gospel of luke",
+    "what is the meaning of the word gospel",
+    "what is the meaning of the gospel truth",
+    "what is the meaning of the synoptic gospels",
+    "what is the meaning of john in the gospel",
+    "what is the meaning of gospel in hindi",
+    "what is the meaning of the term gospel"
+   ],
+   "score": 14.75,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-093",
+   "q": "is christianity growing",
+   "variants": [],
+   "score": 14.74,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-094",
+   "q": "what did jesus teach",
+   "variants": [
+    "what did jesus teach people",
+    "what did jesus teach us"
+   ],
+   "score": 14.67,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-095",
+   "q": "how do christians fast",
+   "variants": [
+    "how do you christian fast",
+    "how do christians usually fast"
+   ],
+   "score": 14.64,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "christianity-096",
+   "q": "does christianity believe in karma",
+   "variants": [],
+   "score": 14.62,
+   "volume": 880,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-097",
+   "q": "should christians do yoga",
+   "variants": [],
+   "score": 14.6,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-098",
+   "q": "where do christians worship",
+   "variants": [
+    "where do christians worship god",
+    "where do christians worship and pray"
+   ],
+   "score": 14.6,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-099",
+   "q": "is christianity illegal in china",
+   "variants": [],
+   "score": 14.52,
+   "volume": 1600,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "christianity-100",
+   "q": "what does jesus say about tithing",
+   "variants": [],
+   "score": 14.52,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  }
+ ]
+}

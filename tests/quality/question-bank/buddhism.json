@@ -1,0 +1,1503 @@
+{
+ "tradition": "buddhism",
+ "label": "Buddhism",
+ "harvested": "2026-11-10",
+ "candidates": 1657,
+ "questions": [
+  {
+   "id": "buddhism-001",
+   "q": "what does a buddhist monk do all day",
+   "variants": [
+    "what do buddhist monks do all day"
+   ],
+   "score": 32,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-002",
+   "q": "do buddhist monks get paid",
+   "variants": [],
+   "score": 24.69,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-003",
+   "q": "do buddhists believe in reincarnation",
+   "variants": [
+    "why do buddhists believe in reincarnation",
+    "how do buddhists believe in reincarnation",
+    "do buddhists or hindus believe in reincarnation",
+    "do zen buddhists believe in reincarnation",
+    "do buddhists and hindus believe in reincarnation"
+   ],
+   "score": 22.61,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-004",
+   "q": "how do buddhist monks eat",
+   "variants": [
+    "how do buddhists eat",
+    "do buddhist monks eat"
+   ],
+   "score": 22.49,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-005",
+   "q": "do buddhist monks believe in god",
+   "variants": [
+    "do buddhists believe in god",
+    "do the buddhist monks believe in god",
+    "do buddhist monks believe in a god",
+    "does buddhist monks believe in god",
+    "do buddhists monks believe in god",
+    "do buddhists believe in a god"
+   ],
+   "score": 22.27,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-006",
+   "q": "what is buddhism religion",
+   "variants": [
+    "what is buddhism religion beliefs",
+    "what are the beliefs of buddhism religion",
+    "what is buddhism is it a religion",
+    "what is buddhism religion in urdu",
+    "what is buddhism religion symbol"
+   ],
+   "score": 22.23,
+   "volume": 27100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-007",
+   "q": "do buddhists believe in jesus",
+   "variants": [
+    "do buddhist monks believe in jesus",
+    "what do buddhists believe of jesus",
+    "do buddhists also believe in jesus",
+    "can a buddhist believe in jesus",
+    "does a buddhist monk believe in jesus",
+    "do buddhists believe in jesus christ",
+    "why do buddhist believe in jesus",
+    "do buddhists believe jesus existed"
+   ],
+   "score": 21.6,
+   "volume": 1000,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-008",
+   "q": "why do buddhist monks fast",
+   "variants": [
+    "why do buddhists fast",
+    "do buddhist monks fast",
+    "why do buddhist fast"
+   ],
+   "score": 20.94,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-009",
+   "q": "is buddhism a religion",
+   "variants": [
+    "does buddhism is a religion"
+   ],
+   "score": 20.61,
+   "volume": 27100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-010",
+   "q": "what is buddhism",
+   "variants": [],
+   "score": 20.53,
+   "volume": 27100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-011",
+   "q": "what do buddhist monks believe",
+   "variants": [
+    "what do buddhist monks do",
+    "what do buddhists believe",
+    "what do buddhists believe on",
+    "what do buddhist monks believe in",
+    "what are buddhist monks",
+    "what do buddhists believe in",
+    "what do a buddhist believe in"
+   ],
+   "score": 19.45,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-012",
+   "q": "who founded buddhism",
+   "variants": [
+    "who founded buddhism religion",
+    "who founded buddhism and jainism",
+    "who founded buddhism in india",
+    "who was buddhism founded by",
+    "who founded buddhism and when",
+    "who founded buddhism answer",
+    "who founded buddhism in china",
+    "who founded zen buddhism"
+   ],
+   "score": 19.34,
+   "volume": 9900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-013",
+   "q": "does buddhism have a god",
+   "variants": [
+    "does buddhism have multiple gods",
+    "does japanese buddhism have gods",
+    "does zen buddhism have gods",
+    "does buddhism not have a god"
+   ],
+   "score": 19.29,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-014",
+   "q": "does buddhism believe in reincarnation",
+   "variants": [
+    "does buddhism or hinduism believe in reincarnation",
+    "does zen buddhism believe in reincarnation",
+    "does japanese buddhism believe in reincarnation"
+   ],
+   "score": 18.9,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-015",
+   "q": "buddhism vs hinduism",
+   "variants": [
+    "buddhism vs hinduism vs taoism",
+    "what is buddhism vs hinduism",
+    "buddhism vs hinduism differences"
+   ],
+   "score": 18.8,
+   "volume": 9900,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-016",
+   "q": "who was the buddha",
+   "variants": [
+    "who was buddha",
+    "who was buddha in buddhism",
+    "who was the first buddha",
+    "who was the original buddha",
+    "who was the last buddha",
+    "who was the historical buddha",
+    "who was buddha ks2",
+    "who was the real buddha"
+   ],
+   "score": 18.67,
+   "volume": 6600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-017",
+   "q": "when was buddhism founded",
+   "variants": [
+    "when was buddhism founded year",
+    "when was buddhism founded date",
+    "when was buddhism founded in india",
+    "when was buddhism founded bc",
+    "when and where was buddhism founded",
+    "when was buddhism founded in china",
+    "when was buddhism founded and by who",
+    "when was mahayana buddhism founded"
+   ],
+   "score": 18.41,
+   "volume": 5400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-018",
+   "q": "who is the buddha",
+   "variants": [
+    "who is buddha"
+   ],
+   "score": 18.36,
+   "volume": 6600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-019",
+   "q": "does buddhism believe in god",
+   "variants": [
+    "what is buddhism do they believe in god",
+    "does buddhism not believe in god",
+    "does zen buddhism believe in god",
+    "does buddhism religion believe in god",
+    "does vajrayana buddhism believe in god",
+    "does buddhism believe in one god",
+    "does nichiren buddhism believe in god"
+   ],
+   "score": 18.26,
+   "volume": 8100,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-020",
+   "q": "can buddhist monks marry",
+   "variants": [
+    "do buddhist monks marry",
+    "can buddhists marry",
+    "do buddhists monks marry",
+    "does buddhist monks marry"
+   ],
+   "score": 17.96,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-021",
+   "q": "what is the dhammapada",
+   "variants": [],
+   "score": 17.89,
+   "volume": 260,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-022",
+   "q": "is buddhism a religion or philosophy",
+   "variants": [],
+   "score": 17.58,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-023",
+   "q": "what do buddhists believe happens after death",
+   "variants": [
+    "what do buddhists believe in after death",
+    "what do buddhists believe happen after death"
+   ],
+   "score": 17.18,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-024",
+   "q": "is buddhism monotheistic or polytheistic",
+   "variants": [
+    "what is buddhism monotheistic or polytheistic",
+    "what is buddhism polytheistic or monotheistic"
+   ],
+   "score": 17.11,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-025",
+   "q": "when did buddhism start",
+   "variants": [
+    "when did buddhism start date",
+    "when did buddhism start in china"
+   ],
+   "score": 17.09,
+   "volume": 3600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-026",
+   "q": "do buddhist monks eat meat",
+   "variants": [
+    "do buddhists eat meat",
+    "are buddhist monks allowed to eat meat",
+    "can buddhist monks eat meat",
+    "why do buddhist monks eat meat",
+    "do buddhist monks not eat meat",
+    "do buddhists monks eat meat",
+    "do japanese buddhist monks eat meat",
+    "do buddhist monks in japan eat meat"
+   ],
+   "score": 16.98,
+   "volume": 170,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-027",
+   "q": "buddhism vs christianity",
+   "variants": [
+    "what is buddhism vs christianity",
+    "buddhism vs christianity similarities"
+   ],
+   "score": 16.94,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-028",
+   "q": "do buddhists pray",
+   "variants": [],
+   "score": 16.9,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-029",
+   "q": "do buddhists believe in an afterlife",
+   "variants": [
+    "do zen buddhists believe in an afterlife",
+    "what do buddhists believe in the afterlife",
+    "what do buddhist believe for afterlife"
+   ],
+   "score": 16.88,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-030",
+   "q": "how did buddhism spread",
+   "variants": [
+    "how did buddhism spread to china",
+    "how did buddhism change as it spread",
+    "how did buddhism spread to japan"
+   ],
+   "score": 16.86,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-031",
+   "q": "what is buddhism holy book",
+   "variants": [
+    "what is buddhism book",
+    "what is buddhism holy book called"
+   ],
+   "score": 16.64,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-032",
+   "q": "do buddhists celebrate christmas",
+   "variants": [
+    "what do buddhists celebrate on christmas",
+    "how do buddhists celebrate christmas",
+    "do buddhist monks celebrate christmas",
+    "why do buddhists celebrate christmas",
+    "do buddhist people celebrate christmas",
+    "when do buddhists celebrate christmas"
+   ],
+   "score": 16.56,
+   "volume": 720,
+   "sources": [
+    "bing",
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-033",
+   "q": "what is the tripitaka",
+   "variants": [
+    "what is tripitaka"
+   ],
+   "score": 16.29,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-034",
+   "q": "what is buddhism symbol",
+   "variants": [
+    "what animal is a symbol of buddhism",
+    "what is buddhism symbol called"
+   ],
+   "score": 16.19,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-035",
+   "q": "do buddhists believe in karma",
+   "variants": [
+    "why do buddhists believe in karma",
+    "do zen buddhists believe in karma"
+   ],
+   "score": 16.14,
+   "volume": 720,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-036",
+   "q": "what are the core beliefs of buddhism",
+   "variants": [
+    "what is buddhism beliefs",
+    "what are the beliefs of buddhism",
+    "what is buddhism core beliefs",
+    "what is buddhism the belief of"
+   ],
+   "score": 16.07,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-037",
+   "q": "what are monks in buddhism",
+   "variants": [],
+   "score": 16.04,
+   "volume": 1600,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-038",
+   "q": "do buddhists believe in heaven",
+   "variants": [
+    "do buddhists believe in god or heaven"
+   ],
+   "score": 16.04,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-039",
+   "q": "are buddhists vegetarian",
+   "variants": [
+    "does buddhist vegetarian"
+   ],
+   "score": 16,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-040",
+   "q": "is buddhism monotheistic",
+   "variants": [],
+   "score": 15.94,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-041",
+   "q": "are buddhist monks celibate",
+   "variants": [
+    "do buddhist monks have to be celibate",
+    "do buddhist monks remain celibate",
+    "do buddhist monks need to be celibate"
+   ],
+   "score": 15.89,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-042",
+   "q": "where do buddhists worship",
+   "variants": [
+    "where do buddhists go to worship",
+    "where do buddhist monks worship"
+   ],
+   "score": 15.82,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-043",
+   "q": "who do buddhists pray to",
+   "variants": [
+    "who do buddhist monks pray to"
+   ],
+   "score": 15.81,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-044",
+   "q": "does buddhism have a holy book",
+   "variants": [
+    "does buddhism have a book"
+   ],
+   "score": 15.81,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-045",
+   "q": "do buddhists worship buddha",
+   "variants": [
+    "why do buddhists worship buddha",
+    "how do buddhists worship buddha",
+    "do buddhists worship buddha as a god"
+   ],
+   "score": 15.79,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-046",
+   "q": "are buddhists vegan",
+   "variants": [],
+   "score": 15.64,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-047",
+   "q": "how old is buddhism",
+   "variants": [],
+   "score": 15.35,
+   "volume": 2900,
+   "sources": [
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-048",
+   "q": "who is buddha god",
+   "variants": [
+    "who is the buddha god"
+   ],
+   "score": 15.25,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-049",
+   "q": "what do buddhist monks eat",
+   "variants": [
+    "what do buddhists eat",
+    "what do zen buddhist monks eat",
+    "what do buddhist monks eat for breakfast",
+    "what do buddhist monks eat in a day",
+    "what do korean buddhist monks eat"
+   ],
+   "score": 15.2,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-050",
+   "q": "can buddhists eat meat",
+   "variants": [
+    "is buddhist can eat meat"
+   ],
+   "score": 15.18,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-051",
+   "q": "how do buddhists pray",
+   "variants": [
+    "how do buddhist pray at home",
+    "how do zen buddhists pray",
+    "how does a buddhist pray",
+    "how do buddhists pray with their hands",
+    "how to buddhist pray"
+   ],
+   "score": 15.04,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-052",
+   "q": "why do buddhist monks shave their heads",
+   "variants": [
+    "why do buddhists shave their heads",
+    "why do buddhists monks shave their heads",
+    "why do buddhist monks have to shave their heads",
+    "do buddhist monks shave their heads",
+    "why buddhist monks shave their head"
+   ],
+   "score": 14.98,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-053",
+   "q": "why do buddhist monks meditate",
+   "variants": [
+    "why do buddhists meditate",
+    "do buddhist monks meditate"
+   ],
+   "score": 14.95,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-054",
+   "q": "does buddhism believe in afterlife",
+   "variants": [
+    "does zen buddhism believe in an afterlife"
+   ],
+   "score": 14.76,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-055",
+   "q": "what is buddhism sacred text",
+   "variants": [
+    "what is buddhisms sacred text"
+   ],
+   "score": 14.46,
+   "volume": 1600,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-056",
+   "q": "what does buddhism say about jesus",
+   "variants": [
+    "what does buddhism say of jesus",
+    "what does buddhism say about jesus resurrection",
+    "what does buddhism say about jesus christ"
+   ],
+   "score": 14.44,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-057",
+   "q": "what does buddhism teach",
+   "variants": [
+    "what does buddhism teach you",
+    "what does buddhism teach people",
+    "what does buddhism teach us",
+    "what did buddhism teach"
+   ],
+   "score": 14.4,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-058",
+   "q": "what are the main beliefs of buddhism",
+   "variants": [
+    "what are the three main beliefs of buddhism",
+    "what is the main belief in buddhism",
+    "what is buddhism main beliefs"
+   ],
+   "score": 14.32,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-059",
+   "q": "buddhism vs jainism",
+   "variants": [],
+   "score": 14.31,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-060",
+   "q": "do buddhists have a holy book",
+   "variants": [
+    "do buddhists have a book"
+   ],
+   "score": 14.3,
+   "volume": 880,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-061",
+   "q": "does buddhism believe in karma",
+   "variants": [
+    "does zen buddhism believe in karma"
+   ],
+   "score": 14.28,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-062",
+   "q": "what is buddhism definition",
+   "variants": [
+    "what is buddhism simple definition",
+    "what is zen buddhism definition"
+   ],
+   "score": 14.15,
+   "volume": 720,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-063",
+   "q": "what is buddhism known for",
+   "variants": [
+    "what is tendai buddhism known for",
+    "what is zen buddhism known for"
+   ],
+   "score": 14.07,
+   "volume": 140,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-064",
+   "q": "what do buddhists think of jesus",
+   "variants": [
+    "what do buddhists think about jesus",
+    "what do buddhist monks think of jesus"
+   ],
+   "score": 14.06,
+   "volume": 90,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-065",
+   "q": "do buddhists pray to buddha",
+   "variants": [
+    "why do buddhists pray to buddha",
+    "do buddhist monks pray to buddha"
+   ],
+   "score": 13.96,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-066",
+   "q": "does buddhism believe in jesus",
+   "variants": [],
+   "score": 13.9,
+   "volume": 1000,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-067",
+   "q": "is buddhism older than christianity",
+   "variants": [],
+   "score": 13.89,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-068",
+   "q": "who wrote the tripitaka",
+   "variants": [
+    "who wrote tripitaka in buddhism"
+   ],
+   "score": 13.87,
+   "volume": 170,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-069",
+   "q": "how do buddhist monks meditate",
+   "variants": [
+    "how do buddhists meditate",
+    "how long do buddhist monks meditate",
+    "how much do buddhist monks meditate"
+   ],
+   "score": 13.84,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-070",
+   "q": "what are the basic beliefs of buddhism",
+   "variants": [
+    "what are the 10 basic beliefs of buddhism"
+   ],
+   "score": 13.82,
+   "volume": 1000,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-071",
+   "q": "what is the tripitaka in buddhism",
+   "variants": [
+    "what are tripitakas in buddhism",
+    "what is the meaning of tripitaka in buddhism"
+   ],
+   "score": 13.78,
+   "volume": 90,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-072",
+   "q": "what is buddhism place of worship",
+   "variants": [
+    "what is buddhism worship",
+    "what is buddhism worship place",
+    "what is buddhism place of worship called"
+   ],
+   "score": 13.57,
+   "volume": 480,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-073",
+   "q": "where do buddhist monks live",
+   "variants": [
+    "where do buddhists live",
+    "where do buddhist monks live country",
+    "where do buddhist monks live in india",
+    "where do buddhist monks"
+   ],
+   "score": 13.56,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-074",
+   "q": "is buddhism indian",
+   "variants": [],
+   "score": 13.51,
+   "volume": 720,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-075",
+   "q": "what are the major beliefs of buddhism",
+   "variants": [
+    "what is buddhism major beliefs"
+   ],
+   "score": 13.47,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-076",
+   "q": "what does buddha say about jesus",
+   "variants": [
+    "what did buddha say about jesus"
+   ],
+   "score": 13.46,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-077",
+   "q": "do buddhists believe in a soul",
+   "variants": [
+    "do buddhists not believe in souls"
+   ],
+   "score": 13.34,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-078",
+   "q": "why do buddhists wear orange",
+   "variants": [
+    "why do buddhist monks wear orange",
+    "why do buddhists wear orange robes",
+    "do buddhists wear orange"
+   ],
+   "score": 13.32,
+   "volume": 70,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-079",
+   "q": "what did the buddha teach",
+   "variants": [
+    "what did buddha teach",
+    "what did the buddha teach people",
+    "what did buddha teach us",
+    "what did buddha teach the people",
+    "what does the buddha teach",
+    "what does the buddha teach us"
+   ],
+   "score": 13.22,
+   "volume": 210,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-080",
+   "q": "where do buddhists come from",
+   "variants": [
+    "where do buddhist monks come from"
+   ],
+   "score": 13.15,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-081",
+   "q": "how do buddhists worship",
+   "variants": [
+    "how do buddhists worship in a temple",
+    "how to buddhist worship",
+    "how does a buddhist worship"
+   ],
+   "score": 12.93,
+   "volume": 170,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-082",
+   "q": "why is buddhism important",
+   "variants": [
+    "why is the tripitaka important to buddhism",
+    "why is 3 important in buddhism",
+    "why is buddhism important in china",
+    "why is buddhism important to history"
+   ],
+   "score": 12.9,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-083",
+   "q": "do buddhists fast",
+   "variants": [],
+   "score": 12.81,
+   "volume": 170,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-084",
+   "q": "what is the dhammapada book",
+   "variants": [],
+   "score": 12.77,
+   "volume": 260,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-085",
+   "q": "what is buddhism god",
+   "variants": [
+    "what is buddhism god name",
+    "what is buddhism name of god"
+   ],
+   "score": 12.77,
+   "volume": 480,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-086",
+   "q": "how do buddhists think the world was created",
+   "variants": [],
+   "score": 12.74,
+   "volume": 210,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-087",
+   "q": "what do buddhists worship",
+   "variants": [
+    "what do buddhists worship in",
+    "what is buddhists place of worship",
+    "what god do buddhists worship"
+   ],
+   "score": 12.7,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-088",
+   "q": "did buddha believe in god",
+   "variants": [
+    "do buddhists believe buddha is their god",
+    "do buddhists believe buddha is god"
+   ],
+   "score": 12.68,
+   "volume": 590,
+   "sources": [
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-089",
+   "q": "why do buddhist monks wear orange robes",
+   "variants": [
+    "why do buddhist monks wear robes",
+    "do buddhist monks wear orange robes"
+   ],
+   "score": 12.57,
+   "volume": 90,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-090",
+   "q": "how do buddhists believe the world was created",
+   "variants": [
+    "what do buddhists believe about how the world was created"
+   ],
+   "score": 12.52,
+   "volume": 210,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-091",
+   "q": "how does buddhism differ from hinduism",
+   "variants": [],
+   "score": 12.49,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-092",
+   "q": "how does buddhism work",
+   "variants": [
+    "how does karma work in buddhism",
+    "how does buddhism reincarnation work"
+   ],
+   "score": 12.49,
+   "volume": 170,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-093",
+   "q": "is a buddhist a monk",
+   "variants": [
+    "are monks buddhist",
+    "is a monk buddhist",
+    "are buddhists monks",
+    "are buddhist monks"
+   ],
+   "score": 12.45,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-094",
+   "q": "buddhism vs zen buddhism",
+   "variants": [],
+   "score": 12.37,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-095",
+   "q": "how do buddhist monks live",
+   "variants": [
+    "how do buddhists live",
+    "how do buddhists live their lives",
+    "how do buddhists monks live"
+   ],
+   "score": 12.31,
+   "volume": 40,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "buddhism-096",
+   "q": "what does buddhism say about suffering",
+   "variants": [
+    "what does zen buddhism say about suffering",
+    "what does buddhism say about pain and suffering"
+   ],
+   "score": 12.27,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-097",
+   "q": "what did the buddha do",
+   "variants": [],
+   "score": 12.25,
+   "volume": 390,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-098",
+   "q": "buddhism vs islam",
+   "variants": [],
+   "score": 12.23,
+   "volume": 260,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-099",
+   "q": "what are the 5 precepts of buddhism",
+   "variants": [],
+   "score": 12.23,
+   "volume": 480,
+   "sources": [
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "buddhism-100",
+   "q": "does buddhism have a caste system",
+   "variants": [],
+   "score": 12.19,
+   "volume": 170,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  }
+ ]
+}

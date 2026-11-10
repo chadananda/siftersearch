@@ -1,0 +1,1340 @@
+{
+ "tradition": "zoroastrianism",
+ "label": "Zoroastrianism",
+ "harvested": "2026-11-10",
+ "candidates": 676,
+ "questions": [
+  {
+   "id": "zoroastrianism-001",
+   "q": "what is zoroastrianism beliefs",
+   "variants": [
+    "what are the main beliefs of zoroastrianism",
+    "what is zoroastrianism main belief",
+    "what are the beliefs of zoroastrianism",
+    "what are the basic beliefs of zoroastrianism",
+    "what are the core beliefs of zoroastrianism",
+    "what are the major beliefs of zoroastrianism",
+    "what is a major belief in zoroastrianism",
+    "what are zoroastrianism main beliefs"
+   ],
+   "score": 37.91,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-002",
+   "q": "what is zoroastrianism",
+   "variants": [],
+   "score": 29.68,
+   "volume": 6600,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-003",
+   "q": "why didn't zoroastrianism spread",
+   "variants": [
+    "why did zoroastrianism spread"
+   ],
+   "score": 26.45,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-004",
+   "q": "what do zoroastrians believe",
+   "variants": [
+    "what do zoroastrians believe in",
+    "what does zoroastrian religion believe",
+    "what does a zoroastrian believe",
+    "what does zoroastrians believe in",
+    "what do the zoroastrians believe",
+    "what did zoroastrians believe",
+    "what does the zoroastrian religion believe"
+   ],
+   "score": 25.72,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-005",
+   "q": "why do zoroastrians not accept converts",
+   "variants": [],
+   "score": 24.77,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-006",
+   "q": "what is zoroastrianism religion",
+   "variants": [
+    "what religion is zoroastrianism closest to",
+    "what religion is similar to zoroastrianism",
+    "what religion is closest to zoroastrianism",
+    "what is zoroastrianism religion in hindi",
+    "what kind of religion is zoroastrianism",
+    "what is the zoroastrianism religion",
+    "what religion is zoroastrianism similar to",
+    "what is the oldest religion zoroastrianism"
+   ],
+   "score": 22.9,
+   "volume": 6600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-007",
+   "q": "what is unique about zoroastrianism",
+   "variants": [
+    "what is zoroastrianism about"
+   ],
+   "score": 21.32,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-008",
+   "q": "do zoroastrians believe in jesus",
+   "variants": [],
+   "score": 20.6,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-009",
+   "q": "why do zoroastrians wear masks",
+   "variants": [
+    "why do zoroastrian priests wear masks"
+   ],
+   "score": 19.55,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-010",
+   "q": "what is a zoroaster",
+   "variants": [],
+   "score": 19.18,
+   "volume": 6600,
+   "sources": [
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-011",
+   "q": "how do zoroastrians pray",
+   "variants": [
+    "how do the zoroastrians pray",
+    "how often do zoroastrians pray",
+    "how did zoroastrians pray",
+    "how to zoroastrians pray"
+   ],
+   "score": 18.76,
+   "volume": 40,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-012",
+   "q": "do zoroastrians still exist",
+   "variants": [
+    "do zoroastrians still exist in iran"
+   ],
+   "score": 17.72,
+   "volume": 170,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-013",
+   "q": "what is zoroaster religion",
+   "variants": [
+    "what is the religion of zoroaster",
+    "what was zoroaster religion"
+   ],
+   "score": 16.95,
+   "volume": 6600,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-014",
+   "q": "what is a zoroastrian",
+   "variants": [
+    "what are zoroastrians",
+    "what do zoroastrians do"
+   ],
+   "score": 16.67,
+   "volume": 6600,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-015",
+   "q": "what does zoroastrianism mean",
+   "variants": [
+    "what does zoroastrianism mean in history"
+   ],
+   "score": 16.39,
+   "volume": 170,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-016",
+   "q": "what do zoroastrians think of jesus",
+   "variants": [
+    "what do zoroastrians think about jesus"
+   ],
+   "score": 16.14,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-017",
+   "q": "is zoroastrianism the oldest religion",
+   "variants": [
+    "is zoroastrianism the oldest monotheistic religion",
+    "is zoroastrianism oldest religion"
+   ],
+   "score": 15.98,
+   "volume": 210,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-018",
+   "q": "what is zoroastrianism based on",
+   "variants": [
+    "what was zoroastrianism based on"
+   ],
+   "score": 15.93,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-019",
+   "q": "when did zoroastrianism start",
+   "variants": [
+    "when did zoroastrianism start and end"
+   ],
+   "score": 15.62,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-020",
+   "q": "when was zoroastrianism founded",
+   "variants": [
+    "when and where was zoroastrianism founded",
+    "when was zoroastrianism founded year"
+   ],
+   "score": 15.35,
+   "volume": 590,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-021",
+   "q": "how zoroastrians bury their dead",
+   "variants": [
+    "how do zoroastrians bury their dead",
+    "do zoroastrians bury their dead",
+    "how do zoroastrians bury their dead now"
+   ],
+   "score": 15.35,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-022",
+   "q": "is zoroastrianism older than judaism",
+   "variants": [
+    "is zoroastrianism or judaism older"
+   ],
+   "score": 15.27,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-023",
+   "q": "do zoroastrians believe in god",
+   "variants": [
+    "do zoroastrians believe in one god"
+   ],
+   "score": 15.15,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-024",
+   "q": "is zoroastrianism monotheistic",
+   "variants": [],
+   "score": 15.13,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-025",
+   "q": "does zoroastrianism still exist",
+   "variants": [
+    "does zoroastrianism still exist in iran"
+   ],
+   "score": 14.95,
+   "volume": 170,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-026",
+   "q": "do zoroastrians believe in reincarnation",
+   "variants": [],
+   "score": 14.91,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-027",
+   "q": "is zoroastrianism still practiced",
+   "variants": [
+    "is zoroastrianism still practiced today"
+   ],
+   "score": 14.62,
+   "volume": 480,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-028",
+   "q": "who founded zoroastrianism",
+   "variants": [
+    "who was zoroastrianism founded",
+    "who founded zoroastrianism religion"
+   ],
+   "score": 14.6,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-029",
+   "q": "what do zoroastrians believe about jesus",
+   "variants": [],
+   "score": 14.27,
+   "volume": 30,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-030",
+   "q": "when did zoroastrianism originate",
+   "variants": [],
+   "score": 14.07,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-031",
+   "q": "when did zoroaster live",
+   "variants": [],
+   "score": 14.07,
+   "volume": 170,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-032",
+   "q": "do zoroastrians worship fire",
+   "variants": [
+    "why do zoroastrians worship fire",
+    "do the zoroastrians worship fire",
+    "did zoroastrians worship fire",
+    "did the zoroastrians worship fire"
+   ],
+   "score": 13.9,
+   "volume": 90,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-033",
+   "q": "what does zoroastrianism believe in",
+   "variants": [
+    "what do zoroastrianism believe",
+    "what does zoroastrianism believe",
+    "what is zoroastrianism believe",
+    "what did zoroastrianism believe in"
+   ],
+   "score": 13.7,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-034",
+   "q": "who was zoroaster",
+   "variants": [
+    "who was zoroaster in the bible"
+   ],
+   "score": 13.61,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-035",
+   "q": "who is zoroaster",
+   "variants": [],
+   "score": 13.53,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-036",
+   "q": "what does zoroastrianism teach",
+   "variants": [
+    "what did zoroastrianism teach",
+    "what values does zoroastrianism teach"
+   ],
+   "score": 13.4,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-037",
+   "q": "what is the avesta",
+   "variants": [],
+   "score": 13.03,
+   "volume": 170,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-038",
+   "q": "when was zoroastrianism created",
+   "variants": [],
+   "score": 12.99,
+   "volume": 590,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-039",
+   "q": "what religion is zoroastrianism most similar to",
+   "variants": [
+    "what is zoroastrianism most similar to"
+   ],
+   "score": 12.96,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-040",
+   "q": "how did zoroastrianism influence judaism",
+   "variants": [
+    "did zoroastrianism influence judaism"
+   ],
+   "score": 12.63,
+   "volume": 70,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-041",
+   "q": "when was zoroaster born",
+   "variants": [
+    "when was zoroaster born and died",
+    "when was prophet zoroaster born"
+   ],
+   "score": 12.5,
+   "volume": 70,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-042",
+   "q": "can you convert to zoroastrianism",
+   "variants": [],
+   "score": 12.45,
+   "volume": 170,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-043",
+   "q": "when did zoroastrianism begin",
+   "variants": [],
+   "score": 12.43,
+   "volume": 480,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-044",
+   "q": "what did zoroaster teach",
+   "variants": [
+    "what belief did zoroaster teach",
+    "what does zoroaster teach",
+    "what did the prophet zoroaster teach"
+   ],
+   "score": 12.41,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-045",
+   "q": "why did zoroastrianism die out",
+   "variants": [
+    "why did zoroastrianism die",
+    "did zoroastrianism die out"
+   ],
+   "score": 12.23,
+   "volume": 40,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-046",
+   "q": "how old is zoroastrianism",
+   "variants": [],
+   "score": 12.19,
+   "volume": 590,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-047",
+   "q": "is zoroastrianism abrahamic",
+   "variants": [],
+   "score": 11.99,
+   "volume": 170,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-048",
+   "q": "how did zoroastrianism start",
+   "variants": [],
+   "score": 11.93,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-049",
+   "q": "how did zoroastrianism spread",
+   "variants": [],
+   "score": 11.84,
+   "volume": 90,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-050",
+   "q": "what does zoroastrianism say about homosexuality",
+   "variants": [],
+   "score": 11.77,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-051",
+   "q": "why did zoroastrianism decline",
+   "variants": [
+    "why did zoroastrianism decline in iran",
+    "why is zoroastrianism in decline"
+   ],
+   "score": 11.46,
+   "volume": 40,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-052",
+   "q": "who is zoroastrianism",
+   "variants": [],
+   "score": 11.45,
+   "volume": 480,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-053",
+   "q": "zoroastrianism vs islam",
+   "variants": [
+    "what is zoroastrianism vs islam"
+   ],
+   "score": 11.45,
+   "volume": 170,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-054",
+   "q": "are zoroastrians people of the book",
+   "variants": [],
+   "score": 11.38,
+   "volume": 90,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-055",
+   "q": "does zoroastrianism have a holy book",
+   "variants": [
+    "does zoroastrianism have a book"
+   ],
+   "score": 11.33,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-056",
+   "q": "what do zoroastrians believe about god",
+   "variants": [],
+   "score": 11.24,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-057",
+   "q": "what is zoroastrianism holy book",
+   "variants": [
+    "what is the holy book of zoroastrianism",
+    "what is zoroastrianism book",
+    "what is the zoroastrianism holy book"
+   ],
+   "score": 11.2,
+   "volume": 70,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-058",
+   "q": "where was zoroastrianism founded",
+   "variants": [],
+   "score": 11.08,
+   "volume": 210,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-059",
+   "q": "is zoroastrianism a religion",
+   "variants": [
+    "is zoroastrianism religion"
+   ],
+   "score": 10.85,
+   "volume": 70,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-060",
+   "q": "do zoroastrians marry their sisters",
+   "variants": [],
+   "score": 10.77,
+   "volume": 10,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-061",
+   "q": "what do zoroastrians believe happens after death",
+   "variants": [
+    "what do zoroastrians believe after death"
+   ],
+   "score": 10.66,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-062",
+   "q": "how do you pronounce zoroastrianism",
+   "variants": [],
+   "score": 10.47,
+   "volume": 260,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-063",
+   "q": "what do zoroastrians think of christianity",
+   "variants": [],
+   "score": 10.4,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-064",
+   "q": "what do zoroastrians worship",
+   "variants": [
+    "what did zoroastrians worship",
+    "what do the zoroastrians worship",
+    "what god do zoroastrians worship"
+   ],
+   "score": 10.38,
+   "volume": 30,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-065",
+   "q": "who started zoroastrianism",
+   "variants": [],
+   "score": 10.25,
+   "volume": 40,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-066",
+   "q": "what does the bible say about zoroastrianism",
+   "variants": [],
+   "score": 10.17,
+   "volume": 10,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-067",
+   "q": "is zoroastrianism an abrahamic religion",
+   "variants": [
+    "does zoroastrianism predate abrahamic religions",
+    "is zoroastrianism related to abrahamic religions",
+    "did zoroastrianism influence abrahamic religions"
+   ],
+   "score": 10.13,
+   "volume": 50,
+   "sources": [
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-068",
+   "q": "how do zoroastrians dispose of their dead",
+   "variants": [],
+   "score": 10.07,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-069",
+   "q": "what does zoroastrianism say about jesus",
+   "variants": [],
+   "score": 10.07,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-070",
+   "q": "was zoroaster a real person",
+   "variants": [],
+   "score": 10.01,
+   "volume": 50,
+   "sources": [
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-071",
+   "q": "what do zoroastrians wear",
+   "variants": [],
+   "score": 9.87,
+   "volume": 10,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-072",
+   "q": "who do zoroastrians worship",
+   "variants": [
+    "who did zoroastrians worship"
+   ],
+   "score": 9.87,
+   "volume": 40,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-073",
+   "q": "can zoroastrians eat pork",
+   "variants": [
+    "do zoroastrians eat pork",
+    "does zoroastrians eat pork"
+   ],
+   "score": 9.85,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-074",
+   "q": "are there still zoroastrians",
+   "variants": [],
+   "score": 9.54,
+   "volume": 90,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-075",
+   "q": "is zoroastrianism older than christianity",
+   "variants": [],
+   "score": 9.49,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-076",
+   "q": "how to say zoroastrianism",
+   "variants": [
+    "how do you say zoroastrianism"
+   ],
+   "score": 9.42,
+   "volume": 50,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-077",
+   "q": "how do zoroastrians worship",
+   "variants": [],
+   "score": 9.39,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-078",
+   "q": "when was the avesta written",
+   "variants": [],
+   "score": 9.39,
+   "volume": 40,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-079",
+   "q": "what is a zoroastrian religion",
+   "variants": [
+    "what is zoroastrian religion in urdu",
+    "what is zoroastrian parsi religion",
+    "what is zoroastrian religion",
+    "what is zoroastrian religion in hindi",
+    "what is parsi zoroastrian religion",
+    "what religion do zoroastrians follow"
+   ],
+   "score": 9.35,
+   "volume": 30,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-080",
+   "q": "why is zoroastrianism dying",
+   "variants": [
+    "why is zoroastrianism a dying religion"
+   ],
+   "score": 9.31,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-081",
+   "q": "does zoroastrianism predate christianity",
+   "variants": [],
+   "score": 9.29,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-082",
+   "q": "when did zoroastrianism end",
+   "variants": [
+    "when did zoroastrianism end in iran"
+   ],
+   "score": 9.29,
+   "volume": 30,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-083",
+   "q": "where do zoroastrians worship",
+   "variants": [],
+   "score": 9.25,
+   "volume": 40,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-084",
+   "q": "how did zoroastrianism influence judaism christianity and islam",
+   "variants": [],
+   "score": 9.25,
+   "volume": 40,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-085",
+   "q": "do zoroastrians believe in allah",
+   "variants": [],
+   "score": 9.17,
+   "volume": 10,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-086",
+   "q": "what is zoroastrianism in simple terms",
+   "variants": [
+    "what is zoroastrianism simple"
+   ],
+   "score": 9.14,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-087",
+   "q": "does zoroastrianism accept converts",
+   "variants": [],
+   "score": 9.07,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-088",
+   "q": "what is the zoroastrian faith",
+   "variants": [
+    "what is zoroastrian faith"
+   ],
+   "score": 9.04,
+   "volume": 20,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-089",
+   "q": "how did zoroastrianism influence christianity",
+   "variants": [
+    "does zoroastrianism influence christianity",
+    "did zoroastrianism influence christianity"
+   ],
+   "score": 8.95,
+   "volume": 30,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-090",
+   "q": "when did zoroastrianism die out",
+   "variants": [
+    "when did zoroastrianism die out in iran"
+   ],
+   "score": 8.91,
+   "volume": 30,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-091",
+   "q": "is zoroastrianism polytheistic",
+   "variants": [],
+   "score": 8.83,
+   "volume": 70,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-092",
+   "q": "what is older zoroastrianism or judaism",
+   "variants": [
+    "what is zoroastrianism and judaism"
+   ],
+   "score": 8.83,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-093",
+   "q": "does zoroastrianism believe in jesus",
+   "variants": [],
+   "score": 8.77,
+   "volume": 30,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-094",
+   "q": "does zoroastrianism have a god",
+   "variants": [
+    "does zoroastrianism have multiple gods"
+   ],
+   "score": 8.76,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-095",
+   "q": "why was zoroastrianism important",
+   "variants": [
+    "why is zoroastrianism important"
+   ],
+   "score": 8.76,
+   "volume": 20,
+   "sources": [
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "zoroastrianism-096",
+   "q": "where do most zoroastrians live",
+   "variants": [
+    "where do zoroastrians live"
+   ],
+   "score": 8.67,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-097",
+   "q": "is zoroastrianism still around",
+   "variants": [],
+   "score": 8.37,
+   "volume": 30,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-098",
+   "q": "how many followers does zoroastrianism have",
+   "variants": [
+    "how many followers does zoroastrianism have today"
+   ],
+   "score": 8.37,
+   "volume": 20,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-099",
+   "q": "does zoroastrianism believe in reincarnation",
+   "variants": [],
+   "score": 8.23,
+   "volume": 50,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "zoroastrianism-100",
+   "q": "who wrote the avesta",
+   "variants": [
+    "who wrote the zend avesta"
+   ],
+   "score": 8.18,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  }
+ ]
+}

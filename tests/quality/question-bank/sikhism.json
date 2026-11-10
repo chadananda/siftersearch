@@ -1,0 +1,1447 @@
+{
+ "tradition": "sikhism",
+ "label": "Sikhism",
+ "harvested": "2026-11-10",
+ "candidates": 1144,
+ "questions": [
+  {
+   "id": "sikhism-001",
+   "q": "why is sikhism important",
+   "variants": [
+    "why is equality important in sikhism",
+    "why is the langar important in sikhism"
+   ],
+   "score": 19.42,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-002",
+   "q": "what is the guru granth sahib",
+   "variants": [
+    "what does the guru granth sahib teach",
+    "what is the guru granth sahib written in",
+    "what does the guru granth sahib contain",
+    "what is the meaning of guru granth sahib",
+    "what are the teachings of guru granth sahib",
+    "what is the significance of the guru granth sahib",
+    "what is the guru granth sahib for kids",
+    "what is the guru granth sahib in sikhism"
+   ],
+   "score": 15.46,
+   "volume": 170,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-003",
+   "q": "who was guru nanak",
+   "variants": [
+    "who is guru nanak",
+    "who was guru nanak dev",
+    "who was guru nanak in hindi",
+    "who was guru nanak ks1",
+    "who was guru nanak bbc",
+    "who was guru nanak in tamil",
+    "who was guru nanak in marathi",
+    "who was guru nanak jayanti"
+   ],
+   "score": 13.39,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-004",
+   "q": "what does sikhism say about the end of the world",
+   "variants": [],
+   "score": 12.1,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-005",
+   "q": "when was guru nanak born",
+   "variants": [
+    "when was guru nanak born and died",
+    "when was guru nanak born date",
+    "when was guru nanak born time",
+    "when was guru nanak born day",
+    "when and where was guru nanak born",
+    "when did guru nanak born"
+   ],
+   "score": 11.94,
+   "volume": 140,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-006",
+   "q": "who wrote the guru granth sahib",
+   "variants": [
+    "who wrote the guru granth sahib ji",
+    "who wrote guru granth sahib first",
+    "who wrote guru granth sahib ji",
+    "who wrote the first guru granth sahib",
+    "who wrote the original guru granth sahib",
+    "who wrote guru granth sahib by hand"
+   ],
+   "score": 11.29,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-007",
+   "q": "what rules does sikhism have",
+   "variants": [
+    "what is sikhism rules"
+   ],
+   "score": 10.04,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-008",
+   "q": "can a non sikh become a sikh",
+   "variants": [],
+   "score": 9.9,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-009",
+   "q": "do sikhs believe in jesus",
+   "variants": [
+    "do sikhs believe jesus is god",
+    "can sikhs believe in jesus",
+    "does sikh religion believe in jesus",
+    "what do sikhs believe jesus",
+    "do sikhs believe jesus existed",
+    "what do sikhs believe in jesus"
+   ],
+   "score": 8.72,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-010",
+   "q": "who was guru nanak dev ji",
+   "variants": [
+    "who is guru nanak dev ji",
+    "who was guru nanak dev ji father"
+   ],
+   "score": 8.2,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-011",
+   "q": "what did guru nanak teach",
+   "variants": [
+    "what did guru nanak teach for kids",
+    "what did guru nanak teach people"
+   ],
+   "score": 7.82,
+   "volume": 10,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-012",
+   "q": "do sikhs believe in reincarnation",
+   "variants": [
+    "why do sikhs believe in reincarnation"
+   ],
+   "score": 7.55,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-013",
+   "q": "do sikhs believe in god",
+   "variants": [
+    "how do sikhs believe in god",
+    "why do sikhs believe in god",
+    "do sikhs believe in one god",
+    "who do sikhs believe is god",
+    "do sikhs believe in hindu gods",
+    "do sikhs believe one god"
+   ],
+   "score": 7.43,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-014",
+   "q": "why is guru nanak important",
+   "variants": [
+    "why is guru nanak so important",
+    "why is guru nanak important in sikhism"
+   ],
+   "score": 7.17,
+   "volume": 10,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-015",
+   "q": "can sikhs drink alcohol",
+   "variants": [
+    "do sikhs drink alcohol",
+    "can you drink alcohol as a sikh",
+    "can sikhs drink alcohol in the uk",
+    "can sikhs drink"
+   ],
+   "score": 7.12,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-016",
+   "q": "what did guru nanak teach about god",
+   "variants": [],
+   "score": 6.69,
+   "volume": 10,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-017",
+   "q": "what do sikhs believe",
+   "variants": [
+    "what do sikhs believe in",
+    "what does sikh religion believe",
+    "what do sikh believe",
+    "what do sikhs believe on",
+    "what does a sikh believe",
+    "what do sikhs believe in afterlife",
+    "what do sikh people believe in",
+    "what does the sikh religion believe"
+   ],
+   "score": 6.65,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-018",
+   "q": "who is guru nanak dev",
+   "variants": [],
+   "score": 6.61,
+   "volume": 10,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-019",
+   "q": "what is sikhism beliefs",
+   "variants": [
+    "what are the beliefs of sikhism",
+    "what are the main beliefs of sikhism",
+    "what are the core beliefs of sikhism",
+    "what are the key beliefs of sikhism",
+    "what are the basic beliefs of sikhism",
+    "what is sikhism core beliefs",
+    "what is sikhism key beliefs",
+    "what is sikhism beliefs and practices"
+   ],
+   "score": 6.14,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-020",
+   "q": "do sikhs wear turbans",
+   "variants": [
+    "why do sikhs wear turbans",
+    "do sikhs only wear turbans",
+    "do sikhs wear turbans in bed",
+    "do sikh women wear turbans",
+    "do sikhs or hindus wear turbans",
+    "do sikhs wear turbans at home",
+    "does a sikh have to wear a turban",
+    "do sikhs always wear turbans"
+   ],
+   "score": 6.1,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-021",
+   "q": "what do sikhs believe happens after death",
+   "variants": [
+    "what do sikhs believe will happen after death",
+    "what do sikhs believe happen after death"
+   ],
+   "score": 6.04,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-022",
+   "q": "who is guru nanak jayanti",
+   "variants": [],
+   "score": 5.93,
+   "volume": 10,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-023",
+   "q": "what does the guru granth sahib say about eating meat",
+   "variants": [],
+   "score": 5.87,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-024",
+   "q": "what does the guru granth sahib say about homosexuality",
+   "variants": [
+    "what does the guru granth sahib say about islam",
+    "what does the guru granth sahib say about marriage",
+    "what does the guru granth sahib say about women",
+    "what does the guru granth sahib say about death",
+    "what does the guru granth sahib say about alcohol"
+   ],
+   "score": 5.85,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-025",
+   "q": "what do sikhs eat",
+   "variants": [
+    "what do sikhs not eat",
+    "what do sikhs eat and not eat",
+    "what can sikhs eat"
+   ],
+   "score": 5.85,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-026",
+   "q": "how do sikhs greet each other",
+   "variants": [],
+   "score": 5.66,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-027",
+   "q": "does sikhism have a god",
+   "variants": [],
+   "score": 5.5,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-028",
+   "q": "what does sikhism say about death",
+   "variants": [],
+   "score": 5.4,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-029",
+   "q": "why do sikhs cover their hair",
+   "variants": [
+    "why do sikh girls cover their hair",
+    "why do sikh men cover their hair"
+   ],
+   "score": 5.24,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-030",
+   "q": "do sikhs celebrate diwali",
+   "variants": [
+    "why do sikhs celebrate diwali",
+    "how do sikhs celebrate diwali",
+    "do sikh people celebrate diwali",
+    "what do sikhs celebrate on diwali",
+    "when do sikhs celebrate diwali",
+    "does sikh celebrate diwali",
+    "should sikhs celebrate diwali"
+   ],
+   "score": 5.09,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-031",
+   "q": "why did guru nanak go to mecca",
+   "variants": [],
+   "score": 5.07,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-032",
+   "q": "who wrote the guru granth sahib holy book",
+   "variants": [],
+   "score": 5.07,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-033",
+   "q": "what does sikhism teach",
+   "variants": [
+    "what does sikhism teach us",
+    "what is sikhism bbc teach",
+    "what values does sikhism teach"
+   ],
+   "score": 5.03,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-034",
+   "q": "do sikhs eat meat",
+   "variants": [
+    "can sikhs eat meat",
+    "do sikhs not eat meat",
+    "should sikhs eat meat",
+    "why do sikhs eat meat",
+    "how do sikhs eat meat",
+    "does sikh eat meat",
+    "does sikh eat halal meat",
+    "do sikhs eat halal meat"
+   ],
+   "score": 4.99,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-035",
+   "q": "is sikhism declining",
+   "variants": [],
+   "score": 4.9,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-036",
+   "q": "do sikhs cut their hair",
+   "variants": [
+    "can sikhs cut their hair",
+    "do sikhs never cut their hair",
+    "do sikhs ever cut their hair",
+    "when do sikhs cut their hair",
+    "do sikh women cut their hair",
+    "how do sikhs cut their hair",
+    "do sikh men cut their hair",
+    "are sikhs allowed to cut their hair"
+   ],
+   "score": 4.67,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-037",
+   "q": "when was sikhism founded",
+   "variants": [
+    "when was sikhism founded and by whom",
+    "when was sikhism founded date",
+    "when was sikhism founded year",
+    "when and where was sikhism founded",
+    "when was sikhism religion founded",
+    "when was sikhism first founded"
+   ],
+   "score": 4.53,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-038",
+   "q": "do sikhs believe in allah",
+   "variants": [],
+   "score": 4.5,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-039",
+   "q": "what to do when a sikh dies",
+   "variants": [
+    "what happens when a sikh dies",
+    "what to say when a sikh dies"
+   ],
+   "score": 4.47,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-040",
+   "q": "is sikhism a religion",
+   "variants": [
+    "is sikhism religion"
+   ],
+   "score": 4.39,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-041",
+   "q": "what is sikhism religion",
+   "variants": [
+    "what religion is sikhism closest to",
+    "what is sikhism the religion"
+   ],
+   "score": 4.37,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-042",
+   "q": "why do sikhs carry knives",
+   "variants": [
+    "do sikhs carry knives",
+    "why do sikh people carry knives",
+    "why do sikh men carry knives",
+    "why are sikhs allowed to carry knives",
+    "why do sikhs carry knives uk",
+    "why do the sikhs carry knives"
+   ],
+   "score": 4.36,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-043",
+   "q": "do sikhs believe in heaven",
+   "variants": [],
+   "score": 4.34,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-044",
+   "q": "what do sikhs believe about god",
+   "variants": [
+    "what do sikhs believe about god ks2"
+   ],
+   "score": 4.32,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-045",
+   "q": "do sikhs eat eggs",
+   "variants": [
+    "can a sikh eat eggs",
+    "can sikhs eat eggs"
+   ],
+   "score": 4.26,
+   "volume": null,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-046",
+   "q": "how do sikhs pray",
+   "variants": [
+    "how do sikhs pray at home",
+    "how to sikhs pray",
+    "how do sikhs pray and worship"
+   ],
+   "score": 4.24,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-047",
+   "q": "what does sikhism say about jesus",
+   "variants": [],
+   "score": 4.22,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-048",
+   "q": "does sikhism believe in reincarnation",
+   "variants": [],
+   "score": 4.22,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-049",
+   "q": "why do sikh not shave",
+   "variants": [
+    "do sikhs not shave",
+    "why do sikhs not shave"
+   ],
+   "score": 4.21,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-050",
+   "q": "can sikhs eat beef",
+   "variants": [
+    "do sikhs eat beef"
+   ],
+   "score": 4.17,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-051",
+   "q": "how do sikhs worship",
+   "variants": [
+    "how do sikhs worship god",
+    "how do sikh people worship",
+    "how do sikh worship in the gurdwara"
+   ],
+   "score": 4.13,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-052",
+   "q": "what do sikhs wear on their head",
+   "variants": [
+    "what do sikhs wear",
+    "what do sikhs wear in their head"
+   ],
+   "score": 4.08,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-053",
+   "q": "do sikhs fast",
+   "variants": [],
+   "score": 4.04,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-054",
+   "q": "what is sikhism known for",
+   "variants": [],
+   "score": 4,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-055",
+   "q": "what is sikhism place of worship",
+   "variants": [
+    "what is sikhism worship place",
+    "what is the sikhism place of worship"
+   ],
+   "score": 3.95,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-056",
+   "q": "why do sikhs have long hair",
+   "variants": [
+    "why do sikh men have long hair",
+    "do sikhs have long hair"
+   ],
+   "score": 3.93,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-057",
+   "q": "what is sikhism god",
+   "variants": [
+    "what is sikhism god called",
+    "what is sikhism name of god",
+    "what is the name of god in sikhism",
+    "what is sikhism god name"
+   ],
+   "score": 3.93,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-058",
+   "q": "what is sikhism",
+   "variants": [],
+   "score": 3.9,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-059",
+   "q": "does sikhism believe in jesus",
+   "variants": [],
+   "score": 3.76,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-060",
+   "q": "does sikhism have a holy book",
+   "variants": [],
+   "score": 3.64,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-061",
+   "q": "was guru nanak born a hindu",
+   "variants": [
+    "was guru nanak born as a hindu",
+    "was guru nanak a hindu"
+   ],
+   "score": 3.62,
+   "volume": null,
+   "sources": [
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-062",
+   "q": "do sikhs marry cousins",
+   "variants": [
+    "do sikhs marry their cousins",
+    "can sikhs marry their cousins"
+   ],
+   "score": 3.62,
+   "volume": null,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-063",
+   "q": "how do sikhs treat their wives",
+   "variants": [
+    "how do sikh men treat their wives"
+   ],
+   "score": 3.62,
+   "volume": 0,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-064",
+   "q": "why did guru nanak eat meat",
+   "variants": [],
+   "score": 3.6,
+   "volume": null,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-065",
+   "q": "what is the guru granth sahib and why is it important",
+   "variants": [],
+   "score": 3.6,
+   "volume": null,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-066",
+   "q": "do sikhs believe in karma",
+   "variants": [
+    "why do sikhs believe in karma"
+   ],
+   "score": 3.49,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-067",
+   "q": "how does sikhism differ from hinduism",
+   "variants": [],
+   "score": 3.44,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-068",
+   "q": "what does sikhism believe in",
+   "variants": [],
+   "score": 3.42,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-069",
+   "q": "how do sikhs view jesus",
+   "variants": [],
+   "score": 3.4,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-070",
+   "q": "what is unique about sikhism",
+   "variants": [
+    "what is sikhism about"
+   ],
+   "score": 3.39,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-071",
+   "q": "how do sikhs celebrate vaisakhi",
+   "variants": [],
+   "score": 3.38,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-072",
+   "q": "can sikhs eat pork",
+   "variants": [
+    "do sikhs eat pork",
+    "does sikh eat pork"
+   ],
+   "score": 3.26,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-073",
+   "q": "does a sikh have to marry a sikh",
+   "variants": [
+    "do sikhs have to marry other sikhs"
+   ],
+   "score": 3.25,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-074",
+   "q": "do sikhs celebrate christmas",
+   "variants": [
+    "what do sikhs celebrate on christmas",
+    "should sikhs celebrate christmas"
+   ],
+   "score": 3.24,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-075",
+   "q": "what is sikhism holy book",
+   "variants": [
+    "what is sikhism book",
+    "what is the sikhism holy book",
+    "what is sikhism holy book called"
+   ],
+   "score": 3.11,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-076",
+   "q": "do sikhs accept lgbtq",
+   "variants": [],
+   "score": 3.1,
+   "volume": 0,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-077",
+   "q": "what do sikhs believe about the afterlife",
+   "variants": [],
+   "score": 3.06,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-078",
+   "q": "why do sikh have beards",
+   "variants": [
+    "why do sikhs have long beards",
+    "why do sikhs have beards",
+    "do sikhs have to have beards",
+    "why do sikh men have beards"
+   ],
+   "score": 3.06,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-079",
+   "q": "what does sikhism say about eating meat",
+   "variants": [],
+   "score": 3,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-080",
+   "q": "when did sikhism start",
+   "variants": [
+    "when did sikhism start date",
+    "when did sikhism religion start",
+    "when did sikhism start in india",
+    "when did sikhism start year"
+   ],
+   "score": 3,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-081",
+   "q": "why do sikhs carry a kirpan",
+   "variants": [],
+   "score": 2.96,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-082",
+   "q": "how do sikhs believe humans were created",
+   "variants": [],
+   "score": 2.94,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-083",
+   "q": "who founded sikhism",
+   "variants": [
+    "who founded sikhism religion",
+    "what is sikhism and who founded it",
+    "who was sikhism founded by"
+   ],
+   "score": 2.94,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-084",
+   "q": "sikhs vs muslims",
+   "variants": [
+    "what is sikh vs muslim",
+    "sikhs vs muslims war"
+   ],
+   "score": 2.91,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-085",
+   "q": "do sikhs like jews",
+   "variants": [],
+   "score": 2.9,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-086",
+   "q": "what is sikhism for kids",
+   "variants": [
+    "what is sikhism kids"
+   ],
+   "score": 2.84,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-087",
+   "q": "who do sikhs worship",
+   "variants": [
+    "who do sikhs worship as god"
+   ],
+   "score": 2.83,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-088",
+   "q": "are sikhs vegetarian",
+   "variants": [
+    "does sikh vegetarian"
+   ],
+   "score": 2.83,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-089",
+   "q": "what do sikhs believe about jesus",
+   "variants": [],
+   "score": 2.8,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-090",
+   "q": "how do sikhs believe the world was created",
+   "variants": [],
+   "score": 2.8,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-091",
+   "q": "are sikhs muslim",
+   "variants": [],
+   "score": 2.8,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-092",
+   "q": "is sikhism monotheistic",
+   "variants": [],
+   "score": 2.8,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-093",
+   "q": "can sikhism eat pork",
+   "variants": [],
+   "score": 2.8,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-094",
+   "q": "is sikhism islam",
+   "variants": [
+    "is sikhism from islam"
+   ],
+   "score": 2.79,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-095",
+   "q": "who do sikhs pray to",
+   "variants": [
+    "who do the sikhs pray to"
+   ],
+   "score": 2.77,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "sikhism-096",
+   "q": "when do sikhs go to temple",
+   "variants": [
+    "do sikhs go to temple"
+   ],
+   "score": 2.75,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-097",
+   "q": "how did sikhism spread",
+   "variants": [],
+   "score": 2.72,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-098",
+   "q": "where do sikhs live",
+   "variants": [
+    "where do sikhs live in india",
+    "where do sikhs live today",
+    "where do most sikhs live"
+   ],
+   "score": 2.71,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-099",
+   "q": "sikhs vs hindus",
+   "variants": [
+    "what is sikh vs hindu"
+   ],
+   "score": 2.69,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "sikhism-100",
+   "q": "do sikhs like muslims",
+   "variants": [
+    "why do sikhs like muslims",
+    "do sikhs pray like muslims"
+   ],
+   "score": 2.65,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  }
+ ]
+}

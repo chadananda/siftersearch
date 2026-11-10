@@ -1,0 +1,1470 @@
+{
+ "tradition": "islam",
+ "label": "Islam",
+ "harvested": "2026-11-10",
+ "candidates": 1822,
+ "questions": [
+  {
+   "id": "islam-001",
+   "q": "do muslims believe in jesus",
+   "variants": [
+    "do muslims believe in jesus christ",
+    "do muslims believe jesus is the messiah",
+    "are muslims allowed to believe in jesus",
+    "does muslims believe in jesus",
+    "do muslims believe in jesus or allah",
+    "why do muslims believe in jesus",
+    "how do muslims believe in jesus"
+   ],
+   "score": 25.9,
+   "volume": 18100,
+   "sources": [
+    "bing",
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-002",
+   "q": "do muslims celebrate christmas",
+   "variants": [
+    "do muslims in america celebrate christmas",
+    "how do muslims celebrate christmas",
+    "can muslims celebrate christmas"
+   ],
+   "score": 23.03,
+   "volume": 14800,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-003",
+   "q": "what do muslims believe",
+   "variants": [
+    "what do qadiani muslims believe",
+    "what do muslim people believe in"
+   ],
+   "score": 23.02,
+   "volume": 14800,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-004",
+   "q": "what is islam religion",
+   "variants": [
+    "what are the beliefs of islam religion",
+    "what is islam religion beliefs",
+    "what does the islam religion teach",
+    "what is islam religion called",
+    "what is islam the religion of",
+    "what is islam is it a religion",
+    "what is islam religion based on",
+    "what is islam a religion of"
+   ],
+   "score": 22.87,
+   "volume": 33100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-005",
+   "q": "does islam believe in jesus",
+   "variants": [
+    "does islam believe in jesus christ",
+    "does islam believe jesus is the messiah",
+    "does islam religion believe in jesus"
+   ],
+   "score": 22.3,
+   "volume": 18100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-006",
+   "q": "why do muslims not eat pork",
+   "variants": [
+    "do muslims not eat pork",
+    "why do muslims eat pork"
+   ],
+   "score": 21.22,
+   "volume": 6600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-007",
+   "q": "what is islam",
+   "variants": [
+    "what is islam from"
+   ],
+   "score": 20.95,
+   "volume": 33100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-008",
+   "q": "is islam a religion",
+   "variants": [],
+   "score": 20.7,
+   "volume": 33100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-009",
+   "q": "what is the quran",
+   "variants": [],
+   "score": 20.43,
+   "volume": 8100,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-010",
+   "q": "do muslims believe in god",
+   "variants": [
+    "does muslims believe in god or allah",
+    "who do muslims believe is god"
+   ],
+   "score": 20.23,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-011",
+   "q": "when was islam founded",
+   "variants": [
+    "when was islam founded bc",
+    "when was islam founded as a religion",
+    "when was islam founded date",
+    "when was islam founded year",
+    "when was islam founded and by whom",
+    "when was islam founded bce",
+    "when and where was islam founded",
+    "when was islam founded and by who"
+   ],
+   "score": 20.23,
+   "volume": 14800,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-012",
+   "q": "who wrote the quran",
+   "variants": [
+    "who wrote the quran for muhammad",
+    "who wrote the quran in islam",
+    "who wrote the quran first",
+    "who wrote the quran book",
+    "who wrote the quran on paper",
+    "who wrote the quran bible",
+    "who wrote the quran originally",
+    "who wrote the quran down"
+   ],
+   "score": 20.02,
+   "volume": 12100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-013",
+   "q": "how do muslims pray",
+   "variants": [
+    "how do muslims pray in space",
+    "how do muslims pray on a plane",
+    "how do muslims pray to allah",
+    "how do you muslim pray",
+    "how do muslims in space pray",
+    "how do muslims pray at work",
+    "how do muslims pray at home"
+   ],
+   "score": 19.7,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-014",
+   "q": "does islam celebrate christmas",
+   "variants": [],
+   "score": 19.56,
+   "volume": 14800,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-015",
+   "q": "what is islam about",
+   "variants": [
+    "what is islam all about",
+    "what is islam even about",
+    "what is islam really about",
+    "what does islam say about islam",
+    "what does islam say about"
+   ],
+   "score": 19.27,
+   "volume": 33100,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-016",
+   "q": "who was muhammad",
+   "variants": [
+    "who was prophet muhammad",
+    "who was muhammad in islam",
+    "who was muhammad ali",
+    "who was muhammad in the bible",
+    "who was hazrat muhammad",
+    "who was muhammad ghori"
+   ],
+   "score": 18.86,
+   "volume": 5400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-017",
+   "q": "can muslims drink alcohol",
+   "variants": [
+    "do muslims drink alcohol",
+    "can muslims drink"
+   ],
+   "score": 18.68,
+   "volume": 8100,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-018",
+   "q": "what is the hadith",
+   "variants": [
+    "what are the hadiths"
+   ],
+   "score": 18.58,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-019",
+   "q": "do muslims eat pork",
+   "variants": [
+    "can muslims eat pork",
+    "do muslims eat pork and beef",
+    "do muslims in indonesia eat pork",
+    "are muslims allowed to eat pork"
+   ],
+   "score": 18.58,
+   "volume": 9900,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-020",
+   "q": "islam vs garry",
+   "variants": [
+    "what is islam vs garry",
+    "islam vs garry odds",
+    "islam vs ian garry",
+    "islam vs garry date"
+   ],
+   "score": 18.45,
+   "volume": 22200,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-021",
+   "q": "who founded islam",
+   "variants": [
+    "who founded islam religion",
+    "who founded islam and christianity",
+    "who was islam founded by"
+   ],
+   "score": 18.43,
+   "volume": 6600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-022",
+   "q": "is islam and muslim the same",
+   "variants": [
+    "are muslims and islam the same",
+    "is islam and muslim religion the same",
+    "is islam and muslim the same religion"
+   ],
+   "score": 18.16,
+   "volume": 18100,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-023",
+   "q": "why do muslims cover their hair",
+   "variants": [
+    "why do muslims have to cover their hair",
+    "why do muslims women cover their hair",
+    "why do muslims girls cover their hair"
+   ],
+   "score": 17.89,
+   "volume": 4400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-024",
+   "q": "who do muslims worship",
+   "variants": [],
+   "score": 17.73,
+   "volume": 5400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-025",
+   "q": "who is muhammad",
+   "variants": [],
+   "score": 17.73,
+   "volume": 5400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-026",
+   "q": "what do muslims believe about jesus",
+   "variants": [
+    "what do muslims believe about jesus christ"
+   ],
+   "score": 17.6,
+   "volume": 6600,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-027",
+   "q": "what are the beliefs of islam",
+   "variants": [
+    "what are the core beliefs of islam",
+    "what are the main beliefs of islam",
+    "what are the basic beliefs of islam",
+    "what are the major beliefs of islam",
+    "what are the fundamental beliefs of islam",
+    "what is islam beliefs",
+    "what is islam core beliefs",
+    "what are the beliefs of islam and christianity"
+   ],
+   "score": 17.57,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-028",
+   "q": "why do muslims wear hijabs",
+   "variants": [
+    "do muslims wear hijabs"
+   ],
+   "score": 17.55,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-029",
+   "q": "when did islam begin",
+   "variants": [
+    "when did islam begin date",
+    "when did islam religion begin"
+   ],
+   "score": 17.4,
+   "volume": 12100,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-030",
+   "q": "why do muslims fast during ramadan",
+   "variants": [
+    "why do muslims fast for ramadan"
+   ],
+   "score": 17.37,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-031",
+   "q": "how did islam spread",
+   "variants": [
+    "how did islam spread to indonesia",
+    "how did islam spread to africa",
+    "how did islam spread to spain",
+    "how did islam spread in africa"
+   ],
+   "score": 17.19,
+   "volume": 3600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-032",
+   "q": "can muslims have dogs",
+   "variants": [
+    "do muslims have dogs"
+   ],
+   "score": 17.17,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-033",
+   "q": "why do muslims fast",
+   "variants": [
+    "why did muslims fast yesterday"
+   ],
+   "score": 17.1,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-034",
+   "q": "muslims vs christians",
+   "variants": [
+    "muslims vs christians numbers",
+    "muslims vs christians population",
+    "muslims vs christians war"
+   ],
+   "score": 17.05,
+   "volume": 9900,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-035",
+   "q": "do muslims celebrate birthdays",
+   "variants": [
+    "should muslims celebrate birthdays",
+    "how do muslims celebrate birthdays"
+   ],
+   "score": 17.01,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-036",
+   "q": "is islam older than christianity",
+   "variants": [],
+   "score": 17,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-037",
+   "q": "are muslims islamic",
+   "variants": [
+    "is it islamic or muslim"
+   ],
+   "score": 16.67,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-038",
+   "q": "who is muhammad in islam",
+   "variants": [
+    "who is prophet muhammad in islam",
+    "who is muhammad in islam religion"
+   ],
+   "score": 16.65,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-039",
+   "q": "do muslims believe in heaven",
+   "variants": [],
+   "score": 16.44,
+   "volume": 1300,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-040",
+   "q": "is islam muslim",
+   "variants": [
+    "is it muslim or islam",
+    "is islam and muslim"
+   ],
+   "score": 16.41,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-041",
+   "q": "what do muslims think about jesus",
+   "variants": [
+    "what do muslims think of jesus",
+    "what do muslims think about jesus christ"
+   ],
+   "score": 16.36,
+   "volume": 6600,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-042",
+   "q": "how do muslims view jesus",
+   "variants": [],
+   "score": 16.15,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-043",
+   "q": "can muslims date",
+   "variants": [],
+   "score": 16.08,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-044",
+   "q": "do muslims celebrate halloween",
+   "variants": [
+    "do muslims in america celebrate halloween",
+    "should muslims celebrate halloween",
+    "can muslims celebrate halloween"
+   ],
+   "score": 16.06,
+   "volume": 2400,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-045",
+   "q": "who is muhammad ali",
+   "variants": [],
+   "score": 16.04,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-046",
+   "q": "when do muslims pray",
+   "variants": [
+    "when do muslims have to pray",
+    "when should muslims pray"
+   ],
+   "score": 16.03,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-047",
+   "q": "where do muslims worship",
+   "variants": [],
+   "score": 15.92,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-048",
+   "q": "what is islamic date today",
+   "variants": [
+    "what is islamic date today in pakistan"
+   ],
+   "score": 15.9,
+   "volume": 2900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-049",
+   "q": "what is muhammad ali known for",
+   "variants": [
+    "what is muhammad known for",
+    "what was muhammad ali known for",
+    "what is muhammad ali most known for",
+    "what is muhammad ali known for in boxing"
+   ],
+   "score": 15.87,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-050",
+   "q": "why do muslims pray 5 times a day",
+   "variants": [
+    "do muslims pray 5 times a day"
+   ],
+   "score": 15.69,
+   "volume": 1000,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-051",
+   "q": "how do muslims greet each other",
+   "variants": [
+    "how do muslims greet each other in the morning"
+   ],
+   "score": 15.67,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-052",
+   "q": "is islam a religion of peace",
+   "variants": [],
+   "score": 15.62,
+   "volume": 2400,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-053",
+   "q": "why did muhammad ali change his name",
+   "variants": [],
+   "score": 15.62,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-054",
+   "q": "what is the hadith in islam",
+   "variants": [
+    "what is the hadith islam",
+    "what is islam hadith",
+    "what is the meaning of hadith in islam"
+   ],
+   "score": 15.58,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-055",
+   "q": "what is islam faith",
+   "variants": [],
+   "score": 15.57,
+   "volume": 4400,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-056",
+   "q": "what does the quran say about jesus",
+   "variants": [
+    "what did jesus say in the quran",
+    "what does quran say about quran",
+    "what does muhammad say about jesus in the quran",
+    "what does the quran say about jesus birth",
+    "what is the quran say about jesus"
+   ],
+   "score": 15.57,
+   "volume": 3600,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-057",
+   "q": "do muslims believe in the old testament",
+   "variants": [],
+   "score": 15.48,
+   "volume": 1000,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-058",
+   "q": "why do muslims wash their feet",
+   "variants": [
+    "why do muslims always wash their feet",
+    "why do muslims have to wash their feet"
+   ],
+   "score": 15.39,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-059",
+   "q": "what is islam symbol",
+   "variants": [
+    "what is the meaning of the islam symbol"
+   ],
+   "score": 15.3,
+   "volume": 3600,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-060",
+   "q": "can muslims wear gold",
+   "variants": [
+    "do muslims wear gold"
+   ],
+   "score": 15.24,
+   "volume": 1900,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-061",
+   "q": "do muslims eat meat",
+   "variants": [
+    "how do muslims eat meat"
+   ],
+   "score": 15.22,
+   "volume": 1300,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-062",
+   "q": "what does islam say about jesus",
+   "variants": [
+    "what does islam say about jesus christ",
+    "what does islam say about the crucifixion of jesus",
+    "what does islam say about jesus death"
+   ],
+   "score": 15.19,
+   "volume": 880,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-063",
+   "q": "do muslims drink coffee",
+   "variants": [
+    "can muslims drink coffee"
+   ],
+   "score": 15.09,
+   "volume": 880,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-064",
+   "q": "who do muslims pray to",
+   "variants": [],
+   "score": 15.08,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-065",
+   "q": "what did muhammad say about jesus",
+   "variants": [
+    "what does muhammad say about jesus",
+    "what does prophet muhammad say about jesus"
+   ],
+   "score": 15.05,
+   "volume": 720,
+   "sources": [
+    "bing",
+    "paa"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-066",
+   "q": "when do muslims fast",
+   "variants": [
+    "when do muslims break their fast"
+   ],
+   "score": 15.02,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-067",
+   "q": "where do muslims come from",
+   "variants": [],
+   "score": 14.92,
+   "volume": 1300,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-068",
+   "q": "can muslims listen to music",
+   "variants": [
+    "do muslims listen to music"
+   ],
+   "score": 14.87,
+   "volume": 1600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-069",
+   "q": "how did islam begin",
+   "variants": [],
+   "score": 14.85,
+   "volume": 2900,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-070",
+   "q": "do muslims circumcise",
+   "variants": [],
+   "score": 14.82,
+   "volume": 1900,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-071",
+   "q": "what is islam vs muslim",
+   "variants": [
+    "what is islam and what is muslim",
+    "islam vs muslim",
+    "muslims vs islam",
+    "muslim vs islam",
+    "what is islam to muslim",
+    "what is islam what is muslim",
+    "what is islam religion vs muslim",
+    "what is islam or muslim"
+   ],
+   "score": 14.61,
+   "volume": 880,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-072",
+   "q": "when did islam become a religion",
+   "variants": [],
+   "score": 14.54,
+   "volume": 1000,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-073",
+   "q": "do muslims drink",
+   "variants": [],
+   "score": 14.42,
+   "volume": 1600,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-074",
+   "q": "who do muslims believe in",
+   "variants": [
+    "who do muslims believe is the messiah"
+   ],
+   "score": 14.4,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-075",
+   "q": "what do muslims wear on their head",
+   "variants": [
+    "what do muslims wear"
+   ],
+   "score": 14.4,
+   "volume": 1000,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-076",
+   "q": "where do muslims pray",
+   "variants": [
+    "where do muslims go to pray",
+    "where do muslims pray mosque",
+    "where do muslims pray towards"
+   ],
+   "score": 14.39,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-077",
+   "q": "what do muslims believe happens after death",
+   "variants": [
+    "what do muslims believe happen after death"
+   ],
+   "score": 14.36,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-078",
+   "q": "are muslims allowed to drink alcohol",
+   "variants": [],
+   "score": 14.3,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-079",
+   "q": "does islam believe in reincarnation",
+   "variants": [],
+   "score": 14.3,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-080",
+   "q": "do muslims like dogs",
+   "variants": [
+    "do muslims not like dogs",
+    "why do muslims like dogs",
+    "do muslims like dogs as pets"
+   ],
+   "score": 14.26,
+   "volume": 1300,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-081",
+   "q": "what do muslims eat",
+   "variants": [
+    "what do muslims not eat"
+   ],
+   "score": 14.09,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-082",
+   "q": "when do muslims go to mosque",
+   "variants": [],
+   "score": 13.97,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-083",
+   "q": "what is the quran in islam",
+   "variants": [
+    "what is quran islam"
+   ],
+   "score": 13.96,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-084",
+   "q": "how many books are in the quran",
+   "variants": [
+    "how many books are in the quran bible",
+    "how many books before quran",
+    "how many books are there in the quran",
+    "how many books are mentioned in the quran",
+    "how many books of the bible are in the quran",
+    "how many different books are in the quran",
+    "how many books of the torah are in the quran"
+   ],
+   "score": 13.93,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-085",
+   "q": "what does the quran teach",
+   "variants": [
+    "what does the quran teach muslims",
+    "what does the quran teach us",
+    "what did muhammad teach in the quran"
+   ],
+   "score": 13.91,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-086",
+   "q": "where do muslims live",
+   "variants": [
+    "where do most muslims live"
+   ],
+   "score": 13.78,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-087",
+   "q": "what did muhammad teach",
+   "variants": [
+    "what did prophet muhammad teach",
+    "what did muhammad teach muslims",
+    "what did muhammad teach for kids",
+    "what did muhammad teach people",
+    "what did muhammad teach us"
+   ],
+   "score": 13.65,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-088",
+   "q": "who wrote the quran and when was it written",
+   "variants": [],
+   "score": 13.55,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-089",
+   "q": "who is muhammad in the bible",
+   "variants": [
+    "who is prophet muhammad in the bible",
+    "who is muhammad related to in the bible"
+   ],
+   "score": 13.39,
+   "volume": 720,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-090",
+   "q": "how do muslims get to heaven",
+   "variants": [
+    "how do muslims believe they get to heaven",
+    "how do muslims get into heaven",
+    "how do muslims think they get to heaven"
+   ],
+   "score": 13.29,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-091",
+   "q": "who wrote the hadith",
+   "variants": [
+    "who wrote the hadith in islam",
+    "who wrote the hadith books",
+    "who wrote the hadiths in islam",
+    "who wrote the hadith islam",
+    "who wrote the hadith and sunnah",
+    "who wrote the hadith of gabriel"
+   ],
+   "score": 13.24,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-092",
+   "q": "what is islamic law",
+   "variants": [
+    "what is islamic sharia law",
+    "what is islamic law called"
+   ],
+   "score": 13.19,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-093",
+   "q": "do muslims believe christians go to heaven",
+   "variants": [],
+   "score": 13.17,
+   "volume": 260,
+   "sources": [
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-094",
+   "q": "do muslims use toilet paper",
+   "variants": [
+    "do muslims not use toilet paper",
+    "what do muslims use for toilet paper"
+   ],
+   "score": 13.09,
+   "volume": 1000,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-095",
+   "q": "how did islam spread so quickly",
+   "variants": [],
+   "score": 13.07,
+   "volume": 480,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "islam-096",
+   "q": "what does islam mean in arabic",
+   "variants": [
+    "what is islam in arabic",
+    "what is islam mean"
+   ],
+   "score": 13.06,
+   "volume": 720,
+   "sources": [
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-097",
+   "q": "do muslims believe in adam and eve",
+   "variants": [],
+   "score": 13.03,
+   "volume": 590,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-098",
+   "q": "what is the origin of islam",
+   "variants": [
+    "what is islam origin"
+   ],
+   "score": 13.03,
+   "volume": 720,
+   "sources": [
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-099",
+   "q": "does islam believe in god",
+   "variants": [],
+   "score": 13.01,
+   "volume": 390,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "islam-100",
+   "q": "what is the meaning of the quran",
+   "variants": [
+    "what is the meaning of the quran in english",
+    "what is the meaning of quran in urdu",
+    "what is the meaning of the word quran",
+    "what is the meaning of quran in malayalam",
+    "what is the meaning of quran in hindi",
+    "what is the meaning of quran in bangla",
+    "what is the meaning of quran hafiz",
+    "what is the meaning of quran in bengali"
+   ],
+   "score": 12.99,
+   "volume": 260,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  }
+ ]
+}

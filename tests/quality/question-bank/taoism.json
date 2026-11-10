@@ -1,0 +1,1334 @@
+{
+ "tradition": "taoism",
+ "label": "Taoism",
+ "harvested": "2026-11-10",
+ "candidates": 956,
+ "questions": [
+  {
+   "id": "taoism-001",
+   "q": "what do taoists believe",
+   "variants": [
+    "what does a taoist believe",
+    "what god do taoists believe in",
+    "what do the taoists believe",
+    "what do taoists believe in",
+    "what do taoist believe"
+   ],
+   "score": 54.74,
+   "volume": 320,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-002",
+   "q": "what is daoism",
+   "variants": [],
+   "score": 34.13,
+   "volume": 5400,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-003",
+   "q": "do taoists believe in god",
+   "variants": [
+    "can a taoist believe in god"
+   ],
+   "score": 31.5,
+   "volume": 260,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-004",
+   "q": "what do taoists do",
+   "variants": [],
+   "score": 26.57,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-005",
+   "q": "what do taoists eat",
+   "variants": [
+    "what do taoist monks eat",
+    "what can taoists eat"
+   ],
+   "score": 26.31,
+   "volume": 10,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-006",
+   "q": "how many taoists",
+   "variants": [
+    "how many taoists in the world",
+    "how many taoists are there",
+    "how many people are taoist"
+   ],
+   "score": 25.79,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-007",
+   "q": "what does daoism teach",
+   "variants": [
+    "what did daoism teach"
+   ],
+   "score": 24.13,
+   "volume": 140,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-008",
+   "q": "what do taoists believe happens after death",
+   "variants": [
+    "what do taoists believe after death"
+   ],
+   "score": 21.47,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-009",
+   "q": "do taoists drink alcohol",
+   "variants": [
+    "can taoists drink alcohol"
+   ],
+   "score": 21.4,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-010",
+   "q": "do taoists believe in reincarnation",
+   "variants": [
+    "do taoist believe in reincarnation"
+   ],
+   "score": 20.99,
+   "volume": 170,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-011",
+   "q": "why is daoism important",
+   "variants": [],
+   "score": 20.73,
+   "volume": 70,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-012",
+   "q": "what is daoism philosophy",
+   "variants": [
+    "what is daoism chinese philosophy",
+    "what is the daoism philosophy",
+    "what is daoism in philosophy"
+   ],
+   "score": 20.73,
+   "volume": 5400,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-013",
+   "q": "what does daoism mean",
+   "variants": [
+    "what does daoism mean in history",
+    "what is daoism mean"
+   ],
+   "score": 19.82,
+   "volume": 390,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-014",
+   "q": "how do taoists worship",
+   "variants": [],
+   "score": 19.21,
+   "volume": 10,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-015",
+   "q": "what is daoism religion",
+   "variants": [
+    "what is the daoism religion",
+    "what kind of religion is daoism"
+   ],
+   "score": 19.05,
+   "volume": 5400,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-016",
+   "q": "how does daoism differ from confucianism",
+   "variants": [
+    "how do daoism and confucianism differ",
+    "how did daoism differ from confucianism"
+   ],
+   "score": 18.59,
+   "volume": 40,
+   "sources": [
+    "bing",
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-017",
+   "q": "is daoism a religion",
+   "variants": [],
+   "score": 18,
+   "volume": 1600,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-018",
+   "q": "do taoists eat meat",
+   "variants": [
+    "can taoists eat meat",
+    "do taoist eat meat",
+    "do taoist monks eat meat",
+    "are taoists allowed to eat meat"
+   ],
+   "score": 17.83,
+   "volume": 30,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-019",
+   "q": "who was lao tzu",
+   "variants": [
+    "who is lao tzu"
+   ],
+   "score": 17.51,
+   "volume": 1000,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-020",
+   "q": "when was daoism founded",
+   "variants": [
+    "when was daoism founded in china",
+    "when was confucianism and daoism founded",
+    "when and where was daoism founded"
+   ],
+   "score": 17.2,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-021",
+   "q": "who founded daoism",
+   "variants": [
+    "who founded taoism daoism",
+    "who was daoism founded by"
+   ],
+   "score": 17.13,
+   "volume": 1000,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-022",
+   "q": "what is daoist religion",
+   "variants": [],
+   "score": 17.03,
+   "volume": 5400,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-023",
+   "q": "what does daoism focus on",
+   "variants": [],
+   "score": 16.67,
+   "volume": 30,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-024",
+   "q": "daoism vs confucianism",
+   "variants": [
+    "daoism vs taoism vs confucianism",
+    "daoism vs confucianism vs buddhism",
+    "daoism vs confucianism vs legalism",
+    "daoism vs confucianism in china"
+   ],
+   "score": 15.85,
+   "volume": 1900,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-025",
+   "q": "why is taoism bad",
+   "variants": [],
+   "score": 15.5,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-026",
+   "q": "what is taoism in simple terms",
+   "variants": [
+    "what is taoism religion in simple terms",
+    "what is taoism simple"
+   ],
+   "score": 15.36,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-027",
+   "q": "do taoists believe in an afterlife",
+   "variants": [
+    "do taoists believe in the afterlife"
+   ],
+   "score": 15.1,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-028",
+   "q": "is taoism good",
+   "variants": [],
+   "score": 15,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-029",
+   "q": "why do daoists accept whatever happens",
+   "variants": [],
+   "score": 14.99,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-030",
+   "q": "what are the main beliefs of daoism",
+   "variants": [
+    "what are the beliefs of daoism",
+    "what is the belief of daoism",
+    "what is the main belief of daoism",
+    "what is daoism beliefs",
+    "what are the three main beliefs of daoism",
+    "what is daoism main beliefs",
+    "what are the 3 main beliefs of daoism"
+   ],
+   "score": 14.63,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-031",
+   "q": "who was laozi",
+   "variants": [],
+   "score": 14.58,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-032",
+   "q": "who is laozi",
+   "variants": [],
+   "score": 14.58,
+   "volume": 880,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-033",
+   "q": "what is daoism in simple terms",
+   "variants": [
+    "what is daoism simple"
+   ],
+   "score": 14.34,
+   "volume": 70,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-034",
+   "q": "what does taoism believe in",
+   "variants": [
+    "what does taoism religion believe in",
+    "what do taoism believe",
+    "what do taoism people believe in",
+    "what do taoism believe in",
+    "what does taoism believe in afterlife",
+    "what do the taoism believe in",
+    "what is taoism believe"
+   ],
+   "score": 14.2,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-035",
+   "q": "how did daoism spread",
+   "variants": [],
+   "score": 13.97,
+   "volume": 260,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-036",
+   "q": "what do taoists believe about death",
+   "variants": [],
+   "score": 13.77,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-037",
+   "q": "are taoists vegetarian",
+   "variants": [],
+   "score": 13.23,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-038",
+   "q": "who wrote the tao te ching",
+   "variants": [
+    "who wrote tao te ching nyt"
+   ],
+   "score": 13.2,
+   "volume": 390,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-039",
+   "q": "how to become daoist",
+   "variants": [],
+   "score": 13.17,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-040",
+   "q": "where do taoists worship",
+   "variants": [],
+   "score": 13.09,
+   "volume": 70,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-041",
+   "q": "what is taoist philosophy",
+   "variants": [],
+   "score": 13.04,
+   "volume": 110,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-042",
+   "q": "when was lao tzu born",
+   "variants": [
+    "when was lao tzu born and died"
+   ],
+   "score": 12.81,
+   "volume": 90,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-043",
+   "q": "what does daoism emphasize",
+   "variants": [],
+   "score": 12.77,
+   "volume": 30,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-044",
+   "q": "do taoists pray",
+   "variants": [
+    "do taoist pray"
+   ],
+   "score": 12.69,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-045",
+   "q": "can taoist eat beef",
+   "variants": [
+    "does taoist eat beef",
+    "can taoists eat beef",
+    "do taoists eat beef",
+    "do taoist eat beef"
+   ],
+   "score": 12.18,
+   "volume": 10,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-046",
+   "q": "who was laozi in ancient china",
+   "variants": [
+    "who is laozi in ancient china"
+   ],
+   "score": 12.03,
+   "volume": 40,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-047",
+   "q": "what does taoism teach",
+   "variants": [
+    "what did taoism teach",
+    "what value does taoism teach",
+    "what values does taoism teach"
+   ],
+   "score": 12.01,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-048",
+   "q": "does daoism have a god",
+   "variants": [],
+   "score": 11.95,
+   "volume": 50,
+   "sources": [
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-049",
+   "q": "when did laozi live",
+   "variants": [],
+   "score": 11.87,
+   "volume": 70,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-050",
+   "q": "how did daoism start",
+   "variants": [],
+   "score": 11.86,
+   "volume": 90,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-051",
+   "q": "who is laozi in daoism",
+   "variants": [],
+   "score": 11.85,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-052",
+   "q": "what does the tao te ching teach",
+   "variants": [
+    "what is the tao te ching"
+   ],
+   "score": 11.78,
+   "volume": 30,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-053",
+   "q": "does taoism have a god",
+   "variants": [
+    "does taoism have gods",
+    "why does taoism have gods"
+   ],
+   "score": 11.78,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-054",
+   "q": "what is daoism and confucianism",
+   "variants": [
+    "what is confucianism daoism and legalism",
+    "what is legalism daoism and confucianism",
+    "what is confucianism daoism and buddhism"
+   ],
+   "score": 11.64,
+   "volume": 30,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-055",
+   "q": "when did daoism begin",
+   "variants": [],
+   "score": 11.57,
+   "volume": 170,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-056",
+   "q": "taoism vs buddhism",
+   "variants": [
+    "what is taoism vs buddhism",
+    "taoism vs zen buddhism",
+    "daoism vs taoism vs buddhism",
+    "taoism vs buddhism vs confucianism",
+    "taoism vs buddhism vs hinduism",
+    "taoism vs buddhism vs zen"
+   ],
+   "score": 11.57,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-057",
+   "q": "when was laozi born",
+   "variants": [
+    "when was laozi born and died"
+   ],
+   "score": 11.56,
+   "volume": 90,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-058",
+   "q": "do taoists meditate",
+   "variants": [
+    "do taoist meditate"
+   ],
+   "score": 11.36,
+   "volume": 30,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-059",
+   "q": "how does daoism compare with confucianism",
+   "variants": [],
+   "score": 11.31,
+   "volume": 10,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-060",
+   "q": "what did laozi teach",
+   "variants": [],
+   "score": 11.29,
+   "volume": 40,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-061",
+   "q": "what does taoism say about love",
+   "variants": [],
+   "score": 11,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-062",
+   "q": "what does taoism focus on",
+   "variants": [],
+   "score": 10.98,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-063",
+   "q": "what is the way in daoism",
+   "variants": [
+    "what is the way daoism"
+   ],
+   "score": 10.97,
+   "volume": 50,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-064",
+   "q": "what are the core beliefs of daoism",
+   "variants": [],
+   "score": 10.95,
+   "volume": 70,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-065",
+   "q": "when did daoism start",
+   "variants": [
+    "when did daoism start and end"
+   ],
+   "score": 10.94,
+   "volume": 110,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-066",
+   "q": "does taoism believe in karma",
+   "variants": [],
+   "score": 10.8,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-067",
+   "q": "what do taoists worship",
+   "variants": [],
+   "score": 10.79,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-068",
+   "q": "what is lao tzu known for",
+   "variants": [
+    "what is lao tzu best known for",
+    "what is lao tzu",
+    "what was lao tzu known for",
+    "what did lao tzu do"
+   ],
+   "score": 10.72,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-069",
+   "q": "what do daoists avoid in life",
+   "variants": [],
+   "score": 10.62,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-070",
+   "q": "what are the beliefs of taoism",
+   "variants": [
+    "what is taoism main beliefs",
+    "what are the main beliefs of taoism",
+    "what is taoism beliefs",
+    "what is taoism core beliefs",
+    "what is taoism religion beliefs",
+    "what are the core beliefs of taoism",
+    "what is taoism belief",
+    "what is taoism beliefs and practices"
+   ],
+   "score": 10.56,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-071",
+   "q": "what does taoism say about jesus",
+   "variants": [],
+   "score": 10.5,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-072",
+   "q": "when did laozi die",
+   "variants": [],
+   "score": 10.45,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-073",
+   "q": "what did laozi do",
+   "variants": [],
+   "score": 10.41,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-074",
+   "q": "what are the basic beliefs of daoism",
+   "variants": [
+    "what is the basic belief of daoism",
+    "what were the basic beliefs of daoism",
+    "what are the basic concepts or beliefs of daoism"
+   ],
+   "score": 10.35,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-075",
+   "q": "what does daoism mean in ancient china",
+   "variants": [
+    "what is daoism in ancient china",
+    "what is daoism ancient china"
+   ],
+   "score": 10.34,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-076",
+   "q": "are taoists vegan",
+   "variants": [],
+   "score": 10.33,
+   "volume": 50,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-077",
+   "q": "what do daoists believe about death",
+   "variants": [],
+   "score": 10.3,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-078",
+   "q": "who do taoists worship",
+   "variants": [],
+   "score": 10.29,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-079",
+   "q": "daoism vs legalism",
+   "variants": [],
+   "score": 10.17,
+   "volume": 70,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-080",
+   "q": "how do taoists pray",
+   "variants": [
+    "how often do taoists pray"
+   ],
+   "score": 10.17,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-081",
+   "q": "what does taoism say about homosexuality",
+   "variants": [],
+   "score": 10.1,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-082",
+   "q": "what is the main idea of daoism",
+   "variants": [],
+   "score": 10.06,
+   "volume": 110,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-083",
+   "q": "who was lao tzu and what did he teach",
+   "variants": [],
+   "score": 9.85,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-084",
+   "q": "does taoism believe in reincarnation",
+   "variants": [],
+   "score": 9.74,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-085",
+   "q": "what does taoism say about death",
+   "variants": [],
+   "score": 9.7,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-086",
+   "q": "what are the major beliefs of daoism",
+   "variants": [],
+   "score": 9.53,
+   "volume": 50,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-087",
+   "q": "what is the tao te ching book about",
+   "variants": [
+    "what is the tao te ching about",
+    "what is tao te ching book about"
+   ],
+   "score": 9.42,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-088",
+   "q": "what is lao tzu sometimes understood as",
+   "variants": [],
+   "score": 9.29,
+   "volume": 20,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-089",
+   "q": "what does taoism mean",
+   "variants": [
+    "what does taoism symbol mean",
+    "what does taoism mean in english"
+   ],
+   "score": 9.21,
+   "volume": 0,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-090",
+   "q": "what is daoism in china",
+   "variants": [],
+   "score": 8.97,
+   "volume": 20,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-091",
+   "q": "how do taoists view jesus",
+   "variants": [],
+   "score": 8.9,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-092",
+   "q": "who do taoists pray to",
+   "variants": [],
+   "score": 8.77,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-093",
+   "q": "when did daoism originate",
+   "variants": [
+    "when and where did daoism originate"
+   ],
+   "score": 8.62,
+   "volume": 30,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-094",
+   "q": "how did daoism impact china",
+   "variants": [],
+   "score": 8.61,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-095",
+   "q": "does taoism still exist",
+   "variants": [],
+   "score": 8.6,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "taoism-096",
+   "q": "does taoism accept lgbtq",
+   "variants": [],
+   "score": 8.6,
+   "volume": 0,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-097",
+   "q": "what do taoists wear",
+   "variants": [
+    "what do taoist monks wear",
+    "what do taoist wear"
+   ],
+   "score": 8.56,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-098",
+   "q": "what is taoism",
+   "variants": [],
+   "score": 8.52,
+   "volume": 0,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-099",
+   "q": "what is daoism simple definition",
+   "variants": [
+    "what is daoism definition"
+   ],
+   "score": 8.51,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "taoism-100",
+   "q": "what is taoist tai chi",
+   "variants": [],
+   "score": 8.49,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  }
+ ]
+}

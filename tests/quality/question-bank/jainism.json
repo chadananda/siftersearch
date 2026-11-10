@@ -1,0 +1,1387 @@
+{
+ "tradition": "jainism",
+ "label": "Jainism",
+ "harvested": "2026-11-10",
+ "candidates": 806,
+ "questions": [
+  {
+   "id": "jainism-001",
+   "q": "why do jains fast",
+   "variants": [
+    "why do jains fast today"
+   ],
+   "score": 27.01,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-002",
+   "q": "does jainism believe in karma",
+   "variants": [],
+   "score": 26.37,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-003",
+   "q": "do jains believe in karma",
+   "variants": [],
+   "score": 25.07,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-004",
+   "q": "how do jains fast",
+   "variants": [],
+   "score": 23.27,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-005",
+   "q": "do jains believe in god",
+   "variants": [
+    "do jains believe in hindu gods",
+    "do jain believe in god",
+    "do the jains believe in god",
+    "do jains not believe in god"
+   ],
+   "score": 22.42,
+   "volume": 140,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-006",
+   "q": "do jains marry",
+   "variants": [],
+   "score": 21.17,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-007",
+   "q": "what is jainism religion",
+   "variants": [
+    "what is jainism religion in urdu",
+    "what is jainism religion in hindi",
+    "what is jainism the religion",
+    "what is the symbol of jainism religion",
+    "what is the meaning of jainism religion",
+    "what is a jainism religion",
+    "what religion is jainism from",
+    "what is the indian religion jainism"
+   ],
+   "score": 20.9,
+   "volume": 3600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-008",
+   "q": "what is jainism",
+   "variants": [],
+   "score": 18.33,
+   "volume": 3600,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-009",
+   "q": "what are jains",
+   "variants": [],
+   "score": 17.39,
+   "volume": 3600,
+   "sources": [
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-010",
+   "q": "how do jains marry",
+   "variants": [],
+   "score": 17.1,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-011",
+   "q": "what do jains believe",
+   "variants": [
+    "what do jains believe in",
+    "what do the jains believe in"
+   ],
+   "score": 16.88,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-012",
+   "q": "who founded jainism",
+   "variants": [
+    "who founded jainism religion",
+    "who founded jainism and buddhism",
+    "who founded jainism in india",
+    "who founded jainism mahavira",
+    "who founded jainism answer"
+   ],
+   "score": 15.64,
+   "volume": 590,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-013",
+   "q": "do jains believe in reincarnation",
+   "variants": [],
+   "score": 15.53,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-014",
+   "q": "what are the basic beliefs of jainism",
+   "variants": [
+    "what is jainism beliefs",
+    "what are the beliefs of jainism",
+    "what are jainism beliefs"
+   ],
+   "score": 15.29,
+   "volume": 20,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-015",
+   "q": "when was jainism founded",
+   "variants": [
+    "when was jainism founded in india",
+    "when was jainism founded and by whom",
+    "when was jainism religion founded",
+    "when jainism founded"
+   ],
+   "score": 14.57,
+   "volume": 260,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-016",
+   "q": "what does jainism believe in",
+   "variants": [
+    "what do jainism believe in",
+    "what jainism believe",
+    "what god does jainism believe in"
+   ],
+   "score": 14.52,
+   "volume": 40,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-017",
+   "q": "does jainism believe in god",
+   "variants": [
+    "do jainism believe in god",
+    "does jainism and buddhism believe in god",
+    "is jainism believe in god",
+    "does jainism believe in god upsc",
+    "does jainism believe in existence of god",
+    "does jainism believe in hindu gods"
+   ],
+   "score": 14.49,
+   "volume": 140,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-018",
+   "q": "what does jainism mean",
+   "variants": [
+    "what is jainism mean"
+   ],
+   "score": 13.8,
+   "volume": 260,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-019",
+   "q": "do jains eat ginger",
+   "variants": [
+    "why do jains eat ginger",
+    "can jains eat ginger",
+    "do jains not eat ginger",
+    "does jains eat ginger"
+   ],
+   "score": 13.76,
+   "volume": 50,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-020",
+   "q": "do jains drink milk",
+   "variants": [
+    "are jains allowed to drink milk",
+    "can jains drink milk",
+    "does jains drink milk",
+    "why do jains drink milk"
+   ],
+   "score": 13.57,
+   "volume": 70,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-021",
+   "q": "what do jainism eat",
+   "variants": [
+    "what can jainism eat",
+    "what do jainism people eat",
+    "what does jainism eat",
+    "what jainism eat",
+    "what did jainism eat"
+   ],
+   "score": 13.44,
+   "volume": 720,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-022",
+   "q": "do jains eat potato",
+   "variants": [
+    "why do jains eat potato",
+    "do jains not eat potato",
+    "does jains eat potato"
+   ],
+   "score": 12.96,
+   "volume": 90,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-023",
+   "q": "when was mahavira born and died",
+   "variants": [
+    "when was mahavira born",
+    "when was mahavira born and died in hindi",
+    "when was mahavira born and died place",
+    "when was mahavira born and died ncert"
+   ],
+   "score": 12.95,
+   "volume": 40,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-024",
+   "q": "do jains eat dairy",
+   "variants": [
+    "why do jains eat dairy",
+    "can jains eat dairy"
+   ],
+   "score": 12.88,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-025",
+   "q": "how did jainism start",
+   "variants": [
+    "how did the jainism start"
+   ],
+   "score": 12.85,
+   "volume": 70,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-026",
+   "q": "what does jain mean",
+   "variants": [
+    "what does a jain meal mean",
+    "what does a jain mean",
+    "what does jain mean in food",
+    "what does jain mean in india",
+    "what does the jain mean"
+   ],
+   "score": 12.69,
+   "volume": 260,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-027",
+   "q": "when did jainism start",
+   "variants": [
+    "when did jainism start in india",
+    "when did jainism religion start"
+   ],
+   "score": 12.24,
+   "volume": 210,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-028",
+   "q": "what are jain beliefs",
+   "variants": [],
+   "score": 12.1,
+   "volume": 0,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-029",
+   "q": "are jains hindu",
+   "variants": [
+    "are jains hindus",
+    "does jain is hindu",
+    "do jains are hindu",
+    "does jains are hindu"
+   ],
+   "score": 12.07,
+   "volume": 170,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-030",
+   "q": "does jainism have a god",
+   "variants": [],
+   "score": 12,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-031",
+   "q": "who do jains worship",
+   "variants": [
+    "who do the jains worship"
+   ],
+   "score": 11.7,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-032",
+   "q": "does jainism believe in reincarnation",
+   "variants": [],
+   "score": 11.27,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-033",
+   "q": "what do jains not eat",
+   "variants": [
+    "what do the jains eat",
+    "what do jains eat",
+    "what does a jain eat",
+    "what do jains eat and not eat",
+    "what are jains not allowed to eat"
+   ],
+   "score": 11.27,
+   "volume": 40,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-034",
+   "q": "who was mahavira",
+   "variants": [
+    "who was mahavira in jainism",
+    "who was vardhamana mahavira",
+    "who was the mother of mahavira",
+    "who was mahavira swami"
+   ],
+   "score": 11.23,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-035",
+   "q": "are jains vegan",
+   "variants": [],
+   "score": 11.22,
+   "volume": 140,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-036",
+   "q": "why do jains wear masks",
+   "variants": [
+    "why do jains wear white mask",
+    "do jains wear masks"
+   ],
+   "score": 11.09,
+   "volume": 30,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-037",
+   "q": "is jainism part of hinduism",
+   "variants": [],
+   "score": 11.08,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-038",
+   "q": "are jains vegetarian",
+   "variants": [],
+   "score": 11.04,
+   "volume": 140,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-039",
+   "q": "who is mahavira",
+   "variants": [],
+   "score": 10.98,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-040",
+   "q": "is jainism monotheistic",
+   "variants": [],
+   "score": 10.9,
+   "volume": 90,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-041",
+   "q": "what are the main beliefs of jainism",
+   "variants": [
+    "what is jainism main beliefs",
+    "what are the 3 main beliefs of jainism"
+   ],
+   "score": 10.67,
+   "volume": 30,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-042",
+   "q": "can jains eat potatoes",
+   "variants": [],
+   "score": 10.63,
+   "volume": 50,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-043",
+   "q": "what does jainism teach",
+   "variants": [
+    "what did mahavira teach in jainism",
+    "what does jainism teach us",
+    "what did jainism teach",
+    "what values does jainism teach",
+    "what is jainism teach"
+   ],
+   "score": 10.45,
+   "volume": 10,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-044",
+   "q": "is jainism a religion",
+   "variants": [
+    "is jainism religion"
+   ],
+   "score": 10.39,
+   "volume": 90,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-045",
+   "q": "do jains drink alcohol",
+   "variants": [
+    "can jains drink alcohol"
+   ],
+   "score": 10.39,
+   "volume": 30,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-046",
+   "q": "can jains eat mushrooms",
+   "variants": [
+    "does jains eat mushrooms",
+    "do jains eat mushrooms"
+   ],
+   "score": 10.28,
+   "volume": 40,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-047",
+   "q": "is jainism monotheistic or polytheistic",
+   "variants": [],
+   "score": 10.26,
+   "volume": 110,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-048",
+   "q": "why do jains do not wear clothes",
+   "variants": [
+    "do jains not wear clothes",
+    "why do jains not wear clothes"
+   ],
+   "score": 10.06,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-049",
+   "q": "why is jaine nelson not in the videos",
+   "variants": [],
+   "score": 10.02,
+   "volume": 210,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-050",
+   "q": "when did jainism begin",
+   "variants": [],
+   "score": 10.02,
+   "volume": 210,
+   "sources": [
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-051",
+   "q": "what can jain people eat",
+   "variants": [
+    "what vegetables can jain people eat",
+    "what do jain people eat",
+    "what can jains eat",
+    "what do the jain people eat",
+    "what can the jains eat"
+   ],
+   "score": 9.89,
+   "volume": 90,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-052",
+   "q": "how did jainism spread",
+   "variants": [
+    "how did jainism spread in india"
+   ],
+   "score": 9.85,
+   "volume": 40,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-053",
+   "q": "how do jains celebrate diwali",
+   "variants": [
+    "do jains celebrate diwali"
+   ],
+   "score": 9.69,
+   "volume": 10,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-054",
+   "q": "how do jains worship",
+   "variants": [
+    "how do jains worship god"
+   ],
+   "score": 9.39,
+   "volume": 10,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-055",
+   "q": "why do jains not eat onions",
+   "variants": [
+    "why do jains not eat onion and garlic",
+    "do jains not eat onion"
+   ],
+   "score": 9.37,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-056",
+   "q": "why do jains celebrate diwali",
+   "variants": [],
+   "score": 9.19,
+   "volume": 30,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-057",
+   "q": "do jains not eat root vegetables",
+   "variants": [
+    "why do jains not eat root vegetables"
+   ],
+   "score": 9.1,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-058",
+   "q": "do jains have a god",
+   "variants": [],
+   "score": 9.08,
+   "volume": 110,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-059",
+   "q": "where do jains live",
+   "variants": [
+    "where do jains live in india",
+    "where do most jains live"
+   ],
+   "score": 9.08,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-060",
+   "q": "what does jainism say about homosexuality",
+   "variants": [],
+   "score": 9.07,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-061",
+   "q": "can jains eat eggs",
+   "variants": [
+    "do jains eat eggs"
+   ],
+   "score": 9.01,
+   "volume": 50,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-062",
+   "q": "do jains have reservation",
+   "variants": [
+    "do jains have reservation in india",
+    "do jains have reservation in upsc"
+   ],
+   "score": 8.96,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-063",
+   "q": "what religion is jain",
+   "variants": [
+    "what are jains religion",
+    "what is jains religion",
+    "what is jain religion in india"
+   ],
+   "score": 8.92,
+   "volume": 40,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-064",
+   "q": "what is jainism diet",
+   "variants": [
+    "what is the jainism diet",
+    "what is a jainism diet"
+   ],
+   "score": 8.7,
+   "volume": 10,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-065",
+   "q": "do jains eat meat",
+   "variants": [
+    "can jains eat meat"
+   ],
+   "score": 8.65,
+   "volume": 30,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-066",
+   "q": "why do jains take diksha",
+   "variants": [
+    "why do young jains take diksha",
+    "why do jain girls take diksha"
+   ],
+   "score": 8.65,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-067",
+   "q": "do jains drink coffee",
+   "variants": [],
+   "score": 8.57,
+   "volume": 10,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-068",
+   "q": "do jains have caste system",
+   "variants": [
+    "do jains have caste"
+   ],
+   "score": 8.44,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-069",
+   "q": "does jainism have a holy book",
+   "variants": [],
+   "score": 8.37,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-070",
+   "q": "do jains believe in rebirth",
+   "variants": [],
+   "score": 8.19,
+   "volume": 10,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-071",
+   "q": "where was mahavira born",
+   "variants": [
+    "where was mahavira born and died",
+    "where was lord mahavira born",
+    "where was mahavira born in bihar",
+    "where mahavira born",
+    "where was mahavira born answer",
+    "where was mahavira jain born"
+   ],
+   "score": 8.16,
+   "volume": 30,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-072",
+   "q": "what are the core beliefs of jainism",
+   "variants": [
+    "what is jainism core beliefs",
+    "what is the core belief of jainism"
+   ],
+   "score": 8.15,
+   "volume": 20,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-073",
+   "q": "how did jainism begin",
+   "variants": [],
+   "score": 8.13,
+   "volume": 70,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-074",
+   "q": "what does jainism say about god",
+   "variants": [],
+   "score": 8.07,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-075",
+   "q": "does jainism support lgbtq",
+   "variants": [],
+   "score": 8.07,
+   "volume": 10,
+   "sources": [
+    "google",
+    "paa"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-076",
+   "q": "what is jain meal",
+   "variants": [
+    "what is a typical jain meal",
+    "what is jain vegetarian meal",
+    "what are jain meals",
+    "what is jain meal in train",
+    "what is jain meal in irctc"
+   ],
+   "score": 8.04,
+   "volume": 50,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-077",
+   "q": "what do jains say when someone dies",
+   "variants": [],
+   "score": 7.97,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-078",
+   "q": "where do jains worship",
+   "variants": [
+    "where do jains go to worship"
+   ],
+   "score": 7.95,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-079",
+   "q": "does jainism believe in rebirth",
+   "variants": [
+    "does jainism and buddhism believe in rebirth"
+   ],
+   "score": 7.95,
+   "volume": 10,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-080",
+   "q": "who do jains pray to",
+   "variants": [],
+   "score": 7.91,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-081",
+   "q": "do jains wear clothes",
+   "variants": [
+    "what clothes do jains wear"
+   ],
+   "score": 7.88,
+   "volume": 10,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-082",
+   "q": "what is jainism philosophy",
+   "variants": [
+    "what is the basic philosophy of jainism",
+    "what is the core philosophy of jainism",
+    "what is the jainism philosophy"
+   ],
+   "score": 7.78,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-083",
+   "q": "is jainism atheistic",
+   "variants": [],
+   "score": 7.75,
+   "volume": 30,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-084",
+   "q": "is jain a religion",
+   "variants": [],
+   "score": 7.73,
+   "volume": 50,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-085",
+   "q": "do jains live longer",
+   "variants": [],
+   "score": 7.67,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-086",
+   "q": "what is jainism holy book",
+   "variants": [
+    "what is jainism book",
+    "what is the jainism holy book",
+    "what is the jainism holy book called"
+   ],
+   "score": 7.66,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-087",
+   "q": "what do jains celebrate on diwali",
+   "variants": [
+    "what do jains celebrate"
+   ],
+   "score": 7.6,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-088",
+   "q": "how do jains pray",
+   "variants": [],
+   "score": 7.59,
+   "volume": 10,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-089",
+   "q": "what is jainism in simple words",
+   "variants": [],
+   "score": 7.57,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-090",
+   "q": "what is jainism symbol",
+   "variants": [
+    "what are the symbols of jainism",
+    "what is the jainism symbol",
+    "what is symbol of jainism"
+   ],
+   "score": 7.55,
+   "volume": 20,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-091",
+   "q": "who is lord mahavira",
+   "variants": [],
+   "score": 7.51,
+   "volume": 10,
+   "sources": [
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-092",
+   "q": "are jains brahmins",
+   "variants": [],
+   "score": 7.45,
+   "volume": 20,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-093",
+   "q": "is jainism related to hinduism",
+   "variants": [
+    "how is jainism related to hinduism"
+   ],
+   "score": 7.38,
+   "volume": 20,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-094",
+   "q": "do jains believe in idol worship",
+   "variants": [
+    "do jains do idol worship",
+    "do jains worship idols"
+   ],
+   "score": 7.35,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-095",
+   "q": "does jainism have a founder",
+   "variants": [],
+   "score": 7.29,
+   "volume": 10,
+   "sources": [
+    "google",
+    "bing"
+   ],
+   "held_out": true
+  },
+  {
+   "id": "jainism-096",
+   "q": "what do jains say during paryushan",
+   "variants": [],
+   "score": 7.27,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-097",
+   "q": "what does jainism focus on",
+   "variants": [],
+   "score": 7.27,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-098",
+   "q": "does jainism come under hinduism",
+   "variants": [
+    "does jainism come from hinduism",
+    "did jainism come from hinduism",
+    "does jainism and buddhism come under hinduism"
+   ],
+   "score": 7.27,
+   "volume": 10,
+   "sources": [
+    "bing",
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-099",
+   "q": "do jains get reservation",
+   "variants": [
+    "do jains get reservation in jee",
+    "do jains get reservation in india",
+    "do jains get reservation in neet",
+    "do jains get reservation in upsc"
+   ],
+   "score": 7.19,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": false
+  },
+  {
+   "id": "jainism-100",
+   "q": "do jains believe in krishna",
+   "variants": [],
+   "score": 7.17,
+   "volume": 10,
+   "sources": [
+    "google"
+   ],
+   "held_out": true
+  }
+ ]
+}
