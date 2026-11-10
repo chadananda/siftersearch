@@ -100,6 +100,18 @@
   // this visitor's companion relationship (memory, premises, exposures) — the seeker's right to begin again, and
   // how a tester resets Anis. The server deletes only the CALLER's own participant (same resolver as chat).
   let resetOpen = $state(false);
+  // Book card (inline: this is a compiled custom element, no child components). Cover through the image worker, sized by srcset.
+  function coverSrc(u, w) {
+    const abs = /^https?:/.test(u) ? u : `${api.replace(/\/$/, '')}${u.startsWith('/') ? '' : '/'}${u}`;
+    return `${abs}${abs.includes('?') ? '&' : '?'}tr=w-${w},q-80,e-sharpen`;
+  }
+  // The card shows the description; drop it from the reply text when the reply opens with it.
+  function withoutBookLead(text, book) {
+    const d = (book?.description || '').trim();
+    if (!d || !text) return text;
+    const t = text.trimStart();
+    return t.startsWith(d) ? t.slice(d.length).trimStart() : text;
+  }
   function newConversation() { messages = []; persist(); errorMsg = ''; resetOpen = false; }
   async function startOver() {
     try { await fetch(`${api}/api/v1/companion`, { method: 'DELETE', credentials: 'include' }); } catch { /* local reset still happens */ }
@@ -194,6 +206,7 @@
           else if (ev.type === 'status' && typeof ev.text === 'string') { statusText = ev.text; serverStatus = true; }
           else if (ev.type === 'text' && typeof ev.content === 'string') { gotLive = true; stopStatus(); pendBuf += ev.content; }
           else if (ev.type === 'chunk' && typeof ev.text === 'string') { stopStatus(); if (gotLive) replay += ev.text; else pendBuf += ev.text; }
+          else if (ev.type === 'book' && ev.book?.title) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.book = ev.book; messages = [...messages]; } }
           else if (ev.type === 'citations' && Array.isArray(ev.citations)) { pendCites = ev.citations; }
           else if (ev.type === 'complete') { if (Array.isArray(ev.citations) && ev.citations.length) pendCites = ev.citations; streamDone = true; }
           else if (ev.type === 'error') { throw new Error(ev.message || 'assistant error'); }
@@ -414,6 +427,22 @@
                   <span class="avatar" aria-hidden="true"><svg viewBox="0 0 512 512"><path fill="currentColor" d={OCEAN_D}/></svg></span>
                 {/if}
                 <div class="bubblewrap">
+                  {#if m.book}
+                    <div class="book">
+                      {#if m.book.cover_url}
+                        <a class="book-cover" href={m.book.url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                          <img src={coverSrc(m.book.cover_url, 240)} srcset={[160, 240, 320, 480].map((w) => `${coverSrc(m.book.cover_url, w)} ${w}w`).join(', ')}
+                            sizes="(min-width: 480px) 112px, 88px" alt="Cover of {m.book.title}" loading="lazy" decoding="async" />
+                        </a>
+                      {/if}
+                      <div class="book-meta">
+                        <a class="book-title" href={m.book.url} target="_blank" rel="noopener">{m.book.title}</a>
+                        {#if m.book.author || m.book.year}<div class="book-by">{[m.book.author, m.book.year].filter(Boolean).join(' · ')}</div>{/if}
+                        {#if m.book.description}<p class="book-desc">{m.book.description}</p>{/if}
+                        {#if m.book.url}<a class="book-read" href={m.book.url} target="_blank" rel="noopener">Read the book</a>{/if}
+                      </div>
+                    </div>
+                  {/if}
                   <div class="bubble" class:lit={m.lit}>
                     {#if m.role === 'assistant'}
                       {#if m.pending && !m.content}
@@ -424,7 +453,7 @@
                           : phase === 'deepening-more' ? 'Still searching — combing the historical records…'
                           : 'Searching the ocean of texts…'}</span>
                       {:else}
-                        {@html renderRich(m.content)}{#if m.pending}<span class="caret" aria-hidden="true"></span>{/if}
+                        {@html renderRich(m.book ? withoutBookLead(m.content, m.book) : m.content)}{#if m.pending}<span class="caret" aria-hidden="true"></span>{/if}
                       {/if}
                     {:else}{m.content}{/if}
                   </div>
@@ -620,6 +649,19 @@
   }
   .avatar svg { width: 100%; height: 100%; display: block; }
   .bubblewrap { max-width: 84%; min-width: 0; }
+  .book { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 8px; padding: 12px; background: #fffdf8;
+    border: 1px solid #e9e2d2; border-left: 3px solid var(--gold); border-radius: 12px; }
+  .book-cover { flex: 0 0 auto; display: block; line-height: 0; }
+  .book-cover img { width: 88px; height: auto; border-radius: 4px; box-shadow: 0 2px 8px rgba(60, 40, 10, .18); }
+  .book-meta { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .book-title { font-family: var(--serif); font-style: italic; font-size: 1.08em; line-height: 1.25; color: inherit; text-decoration: none; }
+  .book-title:hover { color: var(--accent-deep); text-decoration: underline; }
+  .book-by { font-size: .85em; opacity: .7; }
+  .book-desc { margin: 2px 0 0; font-size: .9em; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+  .book-read { align-self: flex-start; margin-top: 6px; padding: 5px 12px; border-radius: 999px; font-size: .85em; text-decoration: none;
+    color: #fff; background: var(--accent); }
+  .book-read:hover { background: var(--accent-deep); }
+  @media (min-width: 480px) { .book-cover img { width: 112px; } }
   .msg.user .bubblewrap { max-width: 78%; }
 
   .bubble {
