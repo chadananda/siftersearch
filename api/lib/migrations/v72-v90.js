@@ -2134,6 +2134,17 @@ export const migrations = {
     await query('CREATE UNIQUE INDEX IF NOT EXISTS idx_anis_state_conv ON anis_state_patches(conversation_id, version)');
     logger.info('Migration 198 complete: anis_state_patches (conversation_state)');
   },
+  199: async () => {
+    // HyPE SEEDED FROM THE QUESTION BANK (planning/anis-tradition-rollout.md, Chad 11-10): one row per bank question × paragraph the
+    // grader judged, at a HyPE version — 'seeded' (the question was merged into content.hyp_questions) or 'rejected' (the paragraph does
+    // not answer it; never paid for again). Distinguishes bank questions from generated ones and counts them. Small table (≤ ~1k rows per tradition).
+    await query(`CREATE TABLE IF NOT EXISTS hype_bank_seeds (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, tradition TEXT NOT NULL, bank_id TEXT NOT NULL, question TEXT NOT NULL,
+      para_id INTEGER NOT NULL, doc_id INTEGER NOT NULL, version TEXT NOT NULL, verdict TEXT NOT NULL, why TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+    await query('CREATE UNIQUE INDEX IF NOT EXISTS idx_hype_bank_seeds_pair ON hype_bank_seeds(bank_id, para_id, version)');
+    await query('CREATE INDEX IF NOT EXISTS idx_hype_bank_seeds_trad ON hype_bank_seeds(tradition, version)');
+    logger.info('Migration 199 complete: hype_bank_seeds');
+  },
 };
 
 export const graphMigrations = {

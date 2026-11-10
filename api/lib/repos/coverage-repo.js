@@ -28,7 +28,10 @@ export const STRUCTURE_NEEDED_FROM = 60;
 /** Works that carry a traditional numbering we have not yet verified on our copy (refs/schemes.js) — counted as missing. */
 export const REFS_EXPECTED = new Set([21307]);   // The Kitáb-i-Aqdas: ¶1–190, Q&A 1–107
 
-export const LAYERS = ['text', 'embedding', 'keyword', 'phrase', 'sections', 'refs', 'context', 'hype', 'entities', 'concepts', 'alignment', 'translation'];
+export const LAYERS = ['text', 'embedding', 'keyword', 'phrase', 'sections', 'refs', 'context', 'hype', 'entities', 'concepts', 'alignment', 'translation', 'originals'];
+/** HyPE is only ever planned for paragraph/quote blocks of ≥ 60 characters (hype-program-repo ELIGIBLE, retrieval.js MIN_LEN):
+ *  the ledger's hype total counts those, so a fully hyped document reads 100 % (short lines and headings are not "missing"). */
+export const HYPE_MIN_LEN = 60;
 const QD = () => process.env.QDRANT_URL || 'http://127.0.0.1:6333';
 
 /** Points in a Qdrant collection for one document (exact count on the doc_id payload index). null when unreachable.
@@ -63,7 +66,8 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
       SUM(hyp_model = ?) AS hype_current, SUM(extract_model IS NOT NULL) AS extracted,
       SUM(LENGTH(COALESCE(translation, '')) > 0) AS translated, SUM(LENGTH(COALESCE(text, '')) > 0) AS texted,
       SUM(json_extract(block_attrs, '$.pn') IS NOT NULL) AS with_pn, SUM(pdf_page IS NOT NULL) AS with_page,
-      SUM(json_extract(block_attrs, '$.pn') IS NOT NULL OR pdf_page IS NOT NULL) AS with_ref
+      SUM(json_extract(block_attrs, '$.pn') IS NOT NULL OR pdf_page IS NOT NULL) AS with_ref,
+      SUM(COALESCE(blocktype, 'paragraph') IN ('paragraph', 'quote') AND LENGTH(COALESCE(text, '')) >= ${HYPE_MIN_LEN}) AS hype_eligible
     FROM content WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(is_duplicate, 0) = 0`, [hypeVersion || '', id], 'coverage:content');
   const total = c?.total || 0;
   const [mentions, concepts, aligned, sections, kw, phrase, hype, conceptPts, structure, kwSkip] = await Promise.all([
@@ -84,6 +88,11 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
   const [kwN, phraseN, hypeN, conceptN] = [known(kw, 'keyword'), known(phrase, 'phrase'), known(hype, 'hype'), known(conceptPts, 'concepts')];
   const kwTotal = Math.max(0, (c?.texted ?? total) - (kwSkip?.n || 0));
   const nonEnglish = !/^en/i.test(String(doc.language || 'en'));
+  // originals ↔ translations (tradition readiness, Chad 11-10): a non-English paragraph is LINKED when it carries a stored
+  // translation or a live alignment to its English partner. Read only for non-English documents (one doc_id read).
+  const linked = nonEnglish ? await queryOne(`SELECT COUNT(*) AS n FROM content c WHERE c.doc_id = ? AND c.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0
+      AND (LENGTH(COALESCE(c.translation, '')) > 0 OR EXISTS (SELECT 1 FROM content_alignment a WHERE (a.orig_id = c.id OR a.trans_id = c.id) AND a.retired_at IS NULL))`,
+  [id], 'coverage:originals') : null;
   // paragraph authors matter only where a book mixes writers (Bahá'í compilations, Lights of Guidance): one grouped read on doc_id
   const authorRows = /^bah/i.test(String(doc.religion || '').normalize('NFD').replace(/[̀-ͯ]/g, '')) ? await queryAll(
     `SELECT authors FROM content WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(is_duplicate, 0) = 0 AND authors IS NOT NULL GROUP BY authors`, [id], 'coverage:authors') : [];
@@ -105,11 +114,14 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
     // has total 0; the total is its paragraphs only when it has one, or SHOULD (REFS_EXPECTED — the Aqdas until verified)
     row('refs', c?.with_pn, c?.with_ref, c?.with_page, null, c?.with_ref || REFS_EXPECTED.has(id) ? (c?.texted ?? total) : 0),
     row('context', c?.context, c?.context, null),                       // feeds HyPE/extraction; not searched itself
-    row('hype', c?.hype, c?.hype_current, hypeN, hypeVersion),           // points = questions
+    // total = paragraphs HyPE is ever planned for (HYPE_MIN_LEN); generated capped at it (a short line can hold linked questions)
+    row('hype', Math.min(c?.hype || 0, c?.hype_eligible ?? total), Math.min(c?.hype_current || 0, c?.hype_eligible ?? total), hypeN, hypeVersion, c?.hype_eligible ?? total),   // points = questions
     row('entities', c?.extracted, c?.extracted, mentions?.n),
     row('concepts', concepts?.n, concepts?.n, conceptN),              // points = claims
     row('alignment', aligned?.n, aligned?.n, 0),                        // not indexed as a layer yet
     row('translation', nonEnglish ? c?.translated : 0, nonEnglish ? c?.translated : 0, 0, null, nonEnglish ? total : 0),
+    // non-English paragraphs linked to English (stored translation OR alignment); an English document has none to link: total 0
+    row('originals', nonEnglish ? linked?.n : 0, nonEnglish ? linked?.n : 0, 0, null, nonEnglish ? total : 0),
   ];
 }
 
@@ -209,6 +221,13 @@ export async function coverageSummary() {
   const tierOf = { 1: 'core', 2: 'gray' };
   return { live_docs: live?.n || 0, measured_docs: measured?.n || 0, rows: rows.map((r) => ({ ...r, tier: tierOf[r.core] || 'supplemental' })) };
 }
+
+/** The whole coverage_totals table (religion × layer × core; ~13 layers × tiers × religions — a few hundred rows). The
+ *  tradition-readiness report reads only this, never the per-document ledger. */
+export const coverageTotalsAll = () => queryAll('SELECT religion, layer, core, docs, total, generated, current, indexed, reached, docs_with FROM coverage_totals', [], 'coverage:totals-all');
+/** Live documents per stored religion value (one grouped read of docs; no content rows). */
+export const liveDocsByReligion = () => queryAll(`SELECT COALESCE(religion, 'Other') AS religion, COUNT(*) AS docs FROM docs
+    WHERE deleted_at IS NULL AND duplicate_of IS NULL GROUP BY 1`, [], 'coverage:live-by-religion');
 
 /** One document's ledger rows. */
 export const docCoverage = (docId) =>

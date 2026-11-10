@@ -343,3 +343,40 @@ describe('hype-quality report', () => {
     expect((await hypeQualityReport({ counts: false }, deps)).progress).toBeNull();
   });
 });
+
+describe('hypeProgramJob: tradition — bank seeding first, seeds re-merged after the tier', () => {
+  it('runs hype-bank-seed for the tradition before the tier, then reapplies after complete; later resumes skip seeding', async () => {
+    const { w, deps } = fakeWorld({ select: [docsOf(2)] });
+    const order = [];
+    deps.seed = async (p) => { order.push(['seed', p.tradition, p.maxUsd]); return { status: 'complete', pairs: 4, seeded: 3, rejected: 1 }; };
+    deps.reapply = async (t) => { order.push(['reapply', t]); return { merged: 1 }; };
+    const origSelect = deps.select; deps.select = async (a) => { order.push(['select']); return origSelect(a); };
+    const r = await hypeProgramJob({ tier: 'core', maxUsd: 5, tradition: 'bahai' }, deps);
+    expect(r.status).toBe('complete');
+    expect(order[0]).toEqual(['seed', 'bahai', 5]);
+    expect(order.at(-1)).toEqual(['reapply', 'bahai']);
+    expect(r.seed).toMatchObject({ seeded: 3, rejected: 1 });
+    expect(r.reapplied).toEqual({ merged: 1 });
+    expect(w.submits).toHaveLength(1);
+    order.length = 0;
+    await hypeProgramJob({ tier: 'core', maxUsd: 5, tradition: 'bahai', seedDone: true }, fakeWorld().deps);
+    expect(order).toEqual([]);
+  });
+  it('a seeding yield (drain) yields the program with the seed resume; no tradition → no seeding', async () => {
+    const { w, deps } = fakeWorld({ select: [docsOf(2)] });
+    deps.seed = async () => ({ yielded: true, resume: { tradition: 'bahai', checkBatch: 'cb1', pairs: [] } });
+    const y = await hypeProgramJob({ tier: 'core', maxUsd: 5, tradition: 'bahai' }, deps);
+    expect(y).toMatchObject({ yielded: true, resume: { tier: 'core', tradition: 'bahai', seedResume: { checkBatch: 'cb1' } } });
+    expect(w.submits).toHaveLength(0);
+    let seeded = false; const u = fakeWorld({ select: [docsOf(1)] }); u.deps.seed = async () => { seeded = true; };
+    await hypeProgramJob({ tier: 'core', maxUsd: 5 }, u.deps);
+    expect(seeded).toBe(false);
+  });
+  it('dryRun with a tradition adds the seeding plan', async () => {
+    const { deps } = fakeWorld();
+    deps.count = async () => Object.fromEntries(['core', 'gray', 'history', 'rest'].map((t) => [t, { primary: { docs: 0, total: 0, done: 0, pending: 0, requests: 0 }, copy: { docs: 0, total: 0, done: 0, pending: 0, requests: 0 } }]));
+    deps.seed = async (p) => ({ dryRun: p.dry, pairs: 160, estUsd: 1.2 });
+    const r = await hypeProgramJob({ dryRun: true, tradition: 'bahai' }, deps);
+    expect(r.seed).toEqual({ dryRun: true, pairs: 160, estUsd: 1.2 });
+  });
+});

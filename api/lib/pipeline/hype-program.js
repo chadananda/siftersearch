@@ -44,6 +44,8 @@ async function defaults(over) {
     checks: async () => (await import('./hype-batch-app.js')).makeHypeChecks(BUDGET_KEY),
     log: async (kind, text) => (await import('../repos/activity-repo.js')).logActivity(kind, text),
     draining: async () => (await import('../drain.js')).isDraining(),
+    seed: async (p) => (await import('./hype-bank-seed.js')).hypeBankSeedJob(p),
+    reapply: async (t) => (await import('./hype-bank-seed.js')).reapplyBankSeeds(t),
     ...over,
   };
 }
@@ -101,14 +103,24 @@ export async function hypeProgramJob(params = {}, deps = {}) {
   const { tier = null, maxUsd = null, dryRun = false, setBaseline = null, resume = false, limit = Infinity, noDisambig = false, upgrade = false,
     sampleRate = DEFAULT_SAMPLE_RATE, pollMs = 60000, margin = {}, minSample = DEFAULT_MIN_SAMPLE, maxGrade = DEFAULT_MAX_GRADE, roundParas = DEFAULT_ROUND_PARAS } = params;
   if (tier && !TIER_ORDER.includes(tier)) return { status: 'error', error: `tier must be one of ${TIER_ORDER.join(', ')}` };
-  if (dryRun) return dryRunReport(await d.count({ version: HYPE_VERSION }), tier, d);
+  // tradition (Chad 11-10, planning/anis-tradition-rollout.md): its question bank is seeded FIRST (hype-bank-seed), and its seeds are
+  // re-merged after the tier completes (a regeneration replaces a paragraph's questions). The tier selection itself is not tradition-filtered.
+  const { tradition = null } = params;
+  if (dryRun) return { ...dryRunReport(await d.count({ version: HYPE_VERSION }), tier, d), ...(tradition ? { seed: await d.seed({ tradition, dry: true }) } : {}) };
   if (setBaseline) return setBaselineFrom(setBaseline, tier, d.store);
   if (!tier) return { status: 'error', error: `tier required (${TIER_ORDER.join(' | ')})` };
   if (!(Number(maxUsd) > 0)) return { status: 'error', error: 'maxUsd required (> 0): this job spends money' };
   const monthUsd = monthlyUsd(d.env);
   if (!monthUsd) return { status: 'budget', reason: 'HYPE_PROGRAM_USD_MONTH is 0 or not a number — the program spends nothing without a monthly ceiling' };
   if (resume) d.store.clearPause();
-  const sum = { tier, rounds: 0, paragraphs: 0, requests: 0, batches: 0, written: 0, failed: 0, exhausted: 0, gated: 0, spendRefused: 0, unplannable: 0, errors: [] };
+  let seed = null;
+  if (tradition && !params.seedDone) {
+    seed = await d.seed({ maxUsd, pollMs, ...(params.seedResume || {}), tradition });
+    if (seed?.yielded) return { tier, seed, yielded: true, resume: { ...params, seedResume: seed.resume } };
+    if (seed?.status === 'error') return { status: 'error', error: `bank seeding: ${seed.error}`, seed };
+    params = { ...params, seedDone: true, seedResume: undefined };   // every later resume skips it
+  }
+  const sum = { tier, ...(seed ? { seed: { status: seed.status, pairs: seed.pairs, seeded: seed.seeded ?? 0, rejected: seed.rejected ?? 0 } } : {}), rounds: 0, paragraphs: 0, requests: 0, batches: 0, written: 0, failed: 0, exhausted: 0, gated: 0, spendRefused: 0, unplannable: 0, errors: [] };
   const stopFor = (p) => ({ ...sum, phase: 'stopped', reason: `quality: ${p.reason}`, pausedAt: p.at, batch: p.batch });
   return withAIContext({ billTo: BUDGET_KEY, stage: 'hype', caller: BUDGET_KEY }, async () => {
     // free measurement of each doc as it settles; the batch's entry (+ the 1% grade, + the auto-pause) when its last doc has
@@ -208,6 +220,7 @@ export async function hypeProgramJob(params = {}, deps = {}) {
         // the tier is written: wait for its last checks (their grades may still pause it), then report
         while (await collectChecks()) { if (d.store.pause()) break; if (await d.draining()) return { ...sum, yielded: true, resume: { ...params } }; await d.sleep(pollMs); }
         const p2 = d.store.pause(); if (p2) return stopFor(p2);
+        if (tradition) try { sum.reapplied = await d.reapply(tradition); } catch (e) { sum.errors.push(`reapply: ${String(e?.message || e).slice(0, 200)}`); }
         return { ...sum, status: 'complete' };
       }
     }

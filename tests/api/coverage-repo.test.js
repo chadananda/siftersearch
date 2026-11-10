@@ -5,7 +5,7 @@ import Database from 'better-sqlite3';
 let raw;
 const SCHEMA = `
 CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, language TEXT, religion TEXT, scope TEXT, deleted_at TEXT, duplicate_of INTEGER, author TEXT, collection TEXT, source_site TEXT);  -- production docs has no authority column
-CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, text TEXT DEFAULT 'words', block_attrs TEXT, pdf_page INTEGER, synced INTEGER, embedding BLOB, context TEXT, hyp_questions TEXT, hyp_model TEXT,
+CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, text TEXT DEFAULT 'words enough to be a real paragraph that HyPE would plan questions for, yes', blocktype TEXT, block_attrs TEXT, pdf_page INTEGER, synced INTEGER, embedding BLOB, context TEXT, hyp_questions TEXT, hyp_model TEXT,
   extract_model TEXT, translation TEXT, deleted_at TEXT, is_duplicate INTEGER, authors TEXT);
 CREATE TABLE entity_mentions_v2 (id INTEGER PRIMARY KEY, doc_id INTEGER, para_id TEXT, status TEXT);
 CREATE TABLE concept_claims (id INTEGER PRIMARY KEY, doc_id INTEGER, para_id TEXT, proof_ok INTEGER);
@@ -43,6 +43,24 @@ beforeEach(() => {
 });
 
 describe('coverage ledger', () => {
+  it('originals: non-English paragraphs linked to a translation (stored or aligned); English docs need none', async () => {
+    raw.prepare("INSERT INTO content (id, doc_id) VALUES (5, 2)").run();
+    const m2 = Object.fromEntries((await repo.measureDoc(2, { hypeVersion: 'v15', count })).map((r) => [r.layer, r]));
+    expect(m2.originals).toMatchObject({ total: 2, generated: 1, current: 1 });   // ¶4 has a translation (and an alignment), ¶5 nothing
+    raw.prepare('INSERT INTO content_alignment (trans_id, orig_id) VALUES (1, 5)').run();
+    const m3 = Object.fromEntries((await repo.measureDoc(2, { hypeVersion: 'v15', count })).map((r) => [r.layer, r]));
+    expect(m3.originals.generated).toBe(2);
+    const m1 = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count })).map((r) => [r.layer, r]));
+    expect(m1.originals).toMatchObject({ total: 0, generated: 0 });
+  });
+  it('hype total = HyPE-eligible paragraphs only (paragraph/quote, >= 60 chars)', async () => {
+    raw.prepare("UPDATE content SET text = 'short' WHERE id = 3").run();
+    raw.prepare("UPDATE content SET blocktype = 'heading' WHERE id = 2").run();
+    const m = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count })).map((r) => [r.layer, r]));
+    expect(m.hype.total).toBe(1);
+    expect(m.text.total).toBe(3);
+    expect(m.hype.current).toBeLessThanOrEqual(1);
+  });
   it('recent documents carry every layer of their ledger', async () => {
     raw.exec("ALTER TABLE docs ADD COLUMN created_at TEXT; ALTER TABLE docs ADD COLUMN paragraph_count INTEGER; ALTER TABLE docs ADD COLUMN cover_url TEXT;");
     raw.prepare("UPDATE docs SET created_at = '2026-10-17T00:00:00Z' WHERE id = 2").run();
