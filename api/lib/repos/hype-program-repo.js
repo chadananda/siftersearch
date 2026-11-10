@@ -17,7 +17,7 @@ export async function hypeParagraphs(docIds, version, { authors = false, pending
     const rows = await queryAll(`SELECT id, doc_id, LENGTH(text) AS len, ${DONE} AS done${authors ? ', authors' : ''} FROM content
       WHERE doc_id IN (${ph(ch)}) AND ${ELIGIBLE}${pendingOnly ? ` AND NOT ${DONE}` : ''} ORDER BY doc_id, paragraph_index`,
     pendingOnly ? [version, ...ch, version] : [version, ...ch], 'hype-program:paragraphs');
-    out.push(...rows.map((r) => ({ ...r, done: !!r.done })));
+    for (const r of rows) out.push({ ...r, done: !!r.done });   // never push(...rows): a big chunk overflows the call stack
   }
   return out;
 }
@@ -39,6 +39,6 @@ export async function paragraphTotals(docIds, version) {
 /** The written questions (and passage) of content rows, by id → [{ id, doc_id, text, original_text, hyp_questions, hyp_model }]. */
 export async function hypeRows(ids) {
   const out = [];
-  for (const ch of chunks(ids, 500)) out.push(...await queryAll(`SELECT id, doc_id, text, original_text, hyp_questions, hyp_model FROM content WHERE id IN (${ph(ch)})`, ch, 'hype-program:rows'));
+  for (const ch of chunks(ids, 500)) for (const r of await queryAll(`SELECT id, doc_id, text, original_text, hyp_questions, hyp_model FROM content WHERE id IN (${ph(ch)})`, ch, 'hype-program:rows')) out.push(r);
   return out;
 }
