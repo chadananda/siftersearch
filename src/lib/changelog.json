@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-10T16:34:25.885Z",
+  "generated": "2026-11-10T16:39:28.718Z",
   "entries": [
     {
       "hash": "c87dfda93",
@@ -1274,20 +1274,6 @@
       "type": "Fixed",
       "description": "The reaper no longer kills pods for a quiet GPU (transfers dominate: the GPU works ~1 min in 7) - last resort at 60 min",
       "scope": "media"
-    },
-    {
-      "hash": "a8fb0b591",
-      "date": "2026-10-24",
-      "type": "Docs",
-      "description": "Large-upload API",
-      "scope": "dewey"
-    },
-    {
-      "hash": "a59355440",
-      "date": "2026-10-24",
-      "type": "New",
-      "description": "Dewey-discard ops job (delete the stored copy of a received upload, decline the item)",
-      "scope": "dewey"
     }
   ],
   "grouped": {
@@ -2593,20 +2579,6 @@
         "type": "Fixed",
         "description": "The reaper no longer kills pods for a quiet GPU (transfers dominate: the GPU works ~1 min in 7) - last resort at 60 min",
         "scope": "media"
-      },
-      {
-        "hash": "a8fb0b591",
-        "date": "2026-10-24",
-        "type": "Docs",
-        "description": "Large-upload API",
-        "scope": "dewey"
-      },
-      {
-        "hash": "a59355440",
-        "date": "2026-10-24",
-        "type": "New",
-        "description": "Dewey-discard ops job (delete the stored copy of a received upload, decline the item)",
-        "scope": "dewey"
       }
     ]
   }
