@@ -170,9 +170,9 @@ const lastUser = (messages) => [...(messages || [])].reverse().find((m) => m.rol
 
 /** Text the reader put inside quotation marks (double, guillemets or single, ≥ 4 words), longest first; null when none.
  *  A single quote opens only after a space/start and closes before punctuation/space, so the apostrophes in Bahá'u'lláh never cut it. */
-export function quotedSpan(text) {
-  const t = String(text || '');
-  const spans = [...t.matchAll(/[“"«]([^”"»]{20,})[”"»]/g), ...t.matchAll(/(?:^|[\s(—])[‘']([^\n]{20,}?)[’'](?=[\s.,;:?!)—]|$)/g)].map((m) => m[1].trim()).filter((q) => q.split(/\s+/).length >= 4);
+export function quotedSpan(text, minWords = 4) {
+  const t = String(text || ''), c = minWords >= 4 ? 20 : 3;   // a tree that already knows the turn traces a quotation takes a short one ("hatred ceases", minWords 2)
+  const spans = [...t.matchAll(new RegExp(`[“"«]([^”"»]{${c},})[”"»]`, 'g')), ...t.matchAll(new RegExp(`(?:^|[\\s(—])[‘']([^\\n]{${c},}?)[’'](?=[\\s.,;:?!)—]|$)`, 'g'))].map((m) => m[1].trim()).filter((q) => q.split(/\s+/).length >= minWords);
   return spans.length ? spans.sort((a, b) => b.length - a.length)[0] : null;
 }
 

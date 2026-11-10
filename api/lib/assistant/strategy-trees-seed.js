@@ -183,7 +183,7 @@ const timeline = tree('timeline', 'l1', [
 //   h1 → h2 → h7 → $absence  : 2 searches (nothing anywhere) · h1 error → $fallback
 const history_fact = tree('history_fact', 'h1', [
   ['h1', 'search.together', { list: [
-    { element: 'search.shelf', params: { query: '{{topic}}', authority: ['history', 'scholarship'], k: 6 } },   // histories, chronicles, scholarship of the tradition
+    { element: 'search.shelf', params: { query: '{{topic}}', authority: ['history', 'scholarship', 'interpretation'], k: 6 } },   // histories, chronicles, scholarship of the tradition; interpretation: God Passes By is the Guardian's history
     { element: 'search.web', params: { query: '{{topic}}' } }] }, 'tool', ['topic', 'religions_specified'], ['found_passages', 'web_found', 'missing'],
     { one: 'h2', several: 'h2', thin: 'h2', none: '$absence', error: '$fallback' }],
   ['h2', 'switch', { on: { unit: 'found_passages' }, cases: { filled: 'library', empty: 'web' }, default: 'web' }, 'decide', ['found_passages'], [], { library: 'h3', web: 'h7' }],

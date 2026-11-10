@@ -21,6 +21,15 @@ export const SEARCH_DENIAL = new RegExp(String.raw`${I_CANT}\b[^.!?\n]{0,80}?\b$
   + String.raw`|\b(?:no|without\s+(?:a|any))\s+(?:way|means|ability|tool)\s+(?:for\s+me\s+)?to\s+${DENY_VERB}`
   + String.raw`|\b(?:beyond|outside)\s+what\s+I\s+can\s+(?:search|look\s+up)\b`, 'i');
 export const isSearchDenial = (s) => SEARCH_DENIAL.test(String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '));
+// A DEFLECTION (11-10 live battery, history_fact + quote_trace): the reply sends the reader off to ask differently instead of
+// answering — "You might try asking…", "a helpful way forward is to ask specifically for…", "try rephrasing", "narrow your
+// question". The research is Anís's; the question asked is the one to answer. Not the texts' own counsel (quoted words never count).
+const ASK_VERB = String.raw`(?:ask(?:ing)?|rephras\w*|reword\w*|re-?phras\w*|narrow\w*|refin\w*|reformulat\w*)`;
+export const DEFLECTION = new RegExp(String.raw`\b(?:you\s+(?:might|could|may|can)\s+(?:also\s+|instead\s+|first\s+)?(?:want\s+to\s+)?try|try)\s+(?:asking|rephrasing|rewording|phrasing|narrowing|refining)\b`
+  + String.raw`|\b(?:way\s+forward|next\s+step|approach|starting\s+point|place\s+to\s+start)\s+(?:is|would\s+be|might\s+be|could\s+be|may\s+be)\s+to\s+${ASK_VERB}\b`
+  + String.raw`|\b(?:you\s+(?:could|can|might|may)\s+)?ask(?:ing)?\s+(?:me\s+)?(?:more\s+)?specifically\s+(?:about|for|which|what|whether)\b`
+  + String.raw`|\b(?:narrow|rephrase|reword|refine|reformulate)\s+(?:your|the)\s+(?:question|query|request)\b`, 'i');
+export const isDeflection = (s) => DEFLECTION.test(String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '));
 export const LINT = [
   { id: 'we-bahais', re: /\bwe\s+bah[aá]['’]?[ií]s?\b/i, why: 'speaks for a community' },
   { id: 'the-position', re: /\bthe\s+(bah[aá]['’]?[ií]|christian|muslim|islamic|jewish|buddhist|hindu)\s+position\s+is\b/i, why: 'a reading presented as a tradition\'s position' },
@@ -38,6 +47,8 @@ export const LINT = [
   { id: 'search-offer', re: SEARCH_OFFER, why: 'offers a search it could run itself' },
   // 11-10 (Chad: "I cannot search from here" is never correct): BLOCKING — dropSearchDenial removes the sentence at every reply's exit
   { id: 'search-denial', re: SEARCH_DENIAL, why: 'says it cannot search the library or a book' },
+  // 11-10 (live battery): BLOCKING — dropDeflection removes a sentence telling the reader to ask differently
+  { id: 'deflection', re: DEFLECTION, why: 'tells the reader to ask differently instead of answering' },
   { id: 'human-claim', re: /\bas\s+a\s+(human|person|believer\s+myself)\b|\bi\s+am\s+(a\s+)?human\b/i, why: 'claims to be human' },
 ];
 
@@ -149,8 +160,8 @@ export function mixedScript(text) {
 export function finalForm(text) { return formPass(text).text; }
 /** finalForm with what it repaired, for the turn's path (forensics counts form.search_denial as a WRITER defect). Pure. */
 export function formPass(text) {
-  const den = dropSearchDenial(text), off = dropSearchOffer(den.text);
-  return { text: safeLinkText(off.text), repairs: { search_denial: den.dropped, search_offer: off.dropped } };
+  const den = dropSearchDenial(text), def = dropDeflection(den.text), off = dropSearchOffer(def.text);
+  return { text: safeLinkText(off.text), repairs: { search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}) } };
 }
 
 // THE SEARCH DENIAL — BLOCKING, ABSOLUTE (Chad 11-10: '"I cannot search from here" is never correct'). Anywhere in the reply, a
@@ -158,19 +169,22 @@ export function formPass(text) {
 // answer ("I can't run a literal search from here, but the book does speak of …") keeps what follows the "but". Blockquotes,
 // tables and headings are never touched; quoted words never count; the reply is never emptied. Pure.
 const BUT = /^(.*?),?\s+(?:but|however|though|although|still)\s*,?\s+(.+)$/is;
-export function dropSearchDenial(text) {
+export const dropSearchDenial = (text) => dropSentences(text, isSearchDenial);
+// THE DEFLECTION — BLOCKING, same rules as the denial: the sentence telling the reader to ask differently goes, the rest stays. Pure.
+export const dropDeflection = (text) => dropSentences(text, isDeflection);
+function dropSentences(text, bad) {
   const src = String(text || '');
-  if (!isSearchDenial(src.split('\n').filter((l) => !/^\s*(?:>|\||#)/.test(l)).join('\n'))) return { text: src, dropped: 0 };
+  if (!bad(src.split('\n').filter((l) => !/^\s*(?:>|\||#)/.test(l)).join('\n'))) return { text: src, dropped: 0 };
   let dropped = 0;
   const lines = src.split('\n').map((line) => {
-    if (/^\s*(?:>|\||#)/.test(line) || !isSearchDenial(line)) return line;
+    if (/^\s*(?:>|\||#)/.test(line) || !bad(line)) return line;
     const lead = (line.match(/^\s*(?:[-*+]\s+|\d+[.)]\s+)?/) || [''])[0];
     const sents = line.slice(lead.length).match(/[^.!?]+(?:[.!?]+["”’)*_]*|$)\s*/g) || [line.slice(lead.length)];
     const kept = sents.map((x) => {
-      if (!isSearchDenial(x)) return x;
+      if (!bad(x)) return x;
       dropped += 1;
       const b = x.match(BUT);
-      if (b && isSearchDenial(b[1]) && !isSearchDenial(b[2])) return `${b[2].charAt(0).toUpperCase()}${b[2].slice(1)}`;
+      if (b && bad(b[1]) && !bad(b[2])) return `${b[2].charAt(0).toUpperCase()}${b[2].slice(1)}`;
       return '';
     }).join('').replace(/\s{2,}/g, ' ').trim();
     return kept ? `${lead}${kept}` : '';

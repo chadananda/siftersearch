@@ -149,9 +149,14 @@ export async function runGraph(g, s) {
 const GATHER_KEYS = ['fast', 'plan', 'conversational', 'work', 'live', 'researched', 'wantsOriginal', 'asks', 'huntAsEvidence', 'huntP', 'sourced', 'original',
   'study', 'strat', 'position', 'language', 'res', 'searchQ'];
 /** anisRespond's gather: by the lookup strategy's graph when Jev chose one (book, quote_trace, term, original, about), else the 'respond' graph (Unmatched). */
+/** A lookup strategy whose graph runs over the whole turn state (a v1 lookup graph). Its tree (declares `needs`: quote_trace/term/original@2) is an
+ * executor instead (respond.strategy → runStrategyGraph, with the turn's units): run over the turn state it had no units (quotation_candidates got the whole
+ * question) and its s.out never reached the writer (11-10 quote_trace@2: passages found, "writer passages: none recorded"). */
+export const runsOverTurn = (name) => LOOKUP_STRATEGIES.has(name) && !graphFor(name)?.needs;
+
 export async function gatherByGraph(s) {
   const own = strategyOf(s.direction?.strategy);
-  await runGraph((LOOKUP_STRATEGIES.has(own) && graphFor(own)) || graphFor('respond'), s);
+  await runGraph((runsOverTurn(own) && graphFor(own)) || graphFor('respond'), s);
   if (s.done) return s.done;
   return { [GATHERED]: true, ...Object.fromEntries(GATHER_KEYS.map((k) => [k, s[k]])), asks: s.asks || [] };   // asks: Unmatched has no hunt node now
 }
@@ -170,18 +175,22 @@ export async function runStrategyGraph(name, choice, ctx) {
  * tree declares in `needs` (from Jev's choice: sides → compare_sides). A one-node graph (no `needs`) keeps the old executor's world: no units are built.
  */
 export function entryUnits(g, choice, ctx = {}) {
-  const sc = ctx.scope?.units || {}, floor = sc.scope_sources?.authority_floor;
+  // the floor is the turn's only when a layer above the default set it (ctx.scope.sources: unit → layer, turn.js): a religion Jev set for the turn once carried the
+  // DEFAULT floor 'interpretation' along with it, and every history/scholarship passage was filtered out (11-10 history_fact: 6 hits → writer passages empty)
+  const sc = ctx.scope?.units || {}, floorLayer = ctx.scope?.sources ? ctx.scope.sources.authority_floor : ctx.scope?.source;
   const turnLayer = { ...(sc.religions_specified ? { religions_specified: sc.religions_specified } : {}), ...(sc.reply_language ? { reply_language: sc.reply_language } : {}),
-    ...(ctx.scope?.source && ctx.scope.source !== 'default' && sc.authority_floor ? { authority_floor: sc.authority_floor } : {}) };
+    ...(floorLayer && floorLayer !== 'default' && sc.authority_floor ? { authority_floor: sc.authority_floor } : {}) };
   const ch = ctx.channel?.id ?? ctx.channel ?? null;
   const u = buildUnits({ question: ctx.query ?? ctx.question ?? '', messages: ctx.messages || [], state: ctx.state || emptyState(), turnLayer, profile: ctx.profile || {}, needs: g.needs || [],
     request: { ...(choice?.units || {}), ...(choice?.sides?.length ? { compare_sides: choice.sides } : {}) }, channel: ch, depth: ctx.depth ?? null });
-  if (u.authority_floor === 'interpretation' && !turnLayer.authority_floor && !floor) u.authority_floor = 'any';   // the registry default is not a filter
+  if (u.authority_floor === 'interpretation' && !turnLayer.authority_floor && (u.scope_sources?.authority_floor ?? 'default') === 'default') u.authority_floor = 'any';   // the registry default is not a filter
   Object.assign(u, g.units || {});   // the tree's own unit defaults (absence_template)
   u.given = ctx.state?.given || [];
   if (g.needs?.includes('scripture_reference')) u.scripture_reference = parseScriptureRef(u.current_user_question);
   if (g.needs?.includes('compare_sides') && !u.compare_sides && Array.isArray(u.religions_specified) && u.religions_specified.length > 1) u.compare_sides = u.religions_specified;
-  if (g.needs?.includes('quoted_words') && !String(u.quoted_words ?? '').trim()) u.quoted_words = quotedSpan(u.current_user_question) ?? u.quoted_words;   // the reader's own quotation marks
+  if (g.needs?.includes('quoted_words') && !String(u.quoted_words ?? '').trim()) u.quoted_words = quotedSpan(u.current_user_question) ?? quotedSpan(u.current_user_question, 2) ?? u.quoted_words;   // the reader's own quotation marks
+  // tradition first (review rule 1): the side Jev named is the scope over the site default (11-10: "hatred ceases" in the Dhammapada searched with religion Baha'i)
+  if (!g.needs?.includes('compare_sides') && choice?.sides?.length && ['site', 'default', undefined].includes(u.scope_sources?.religions_specified)) u.religions_specified = [...choice.sides];
   if (choice?.sources && Object.keys(choice.sources).length) { u.named_sources = Object.values(choice.sources); u.side_sources = choice.sources; }   // side_sources: tradition → the book Jev named for that side
   // Jev says the message takes its subject from the last turn: searches use that topic, never the follow-up's own words (follows_topic), and the anchor loads the last turn's passages
   if (choice?.refersBack) { u.refers_back = true; if (u.last_topic) u.follows_topic = String(u.last_topic).slice(0, 300); }

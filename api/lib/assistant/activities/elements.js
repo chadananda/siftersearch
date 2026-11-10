@@ -107,7 +107,9 @@ const authorsOf = async (s, who) => { try { const a = ((await call(s, 'author_lo
 // the deep passage a book holds is often not its best-scoring paragraph library-wide (dry run 6: the Sutra Collection's anatta discourse)
 const booksOf = (u, n = 3) => [...new Set((u.found_passages || []).map((x) => Number(x.document_id)).filter(Number.isFinite))].slice(0, n);
 const searchInput = async (s, p, u, trad) => { if (p.inside) return { query: text(s, u, p.query, '{{follows_topic}}', '{{current_user_question}}'), limit: kOf(p, u) ?? 6, filters: { documentId: booksOf(u, p.books ?? 3) } };
-  const who = !p.wide && p.by_person ? personOf(u) : null, filters = p.wide ? {} : { ...(trad ? { tradition: trad } : {}), ...(p.in_named ? namedWork(u) : {}), ...(who ? { author: await authorsOf(s, who) } : {}), ...(p.author ? { author: p.author } : {}), ...(p.language ? { language: p.language } : {}), ...(p.work ? { work: p.work } : {}) };
+  const who = !p.wide && p.by_person ? personOf(u) : null, filters = p.wide ? {} : { ...(trad ? { tradition: trad } : {}), ...(p.in_named ? namedWork(u) : {}), ...(who ? { author: await authorsOf(s, who) } : {}), ...(p.author ? { author: p.author } : {}), ...(p.language ? { language: p.language } : {}), ...(p.work ? { work: p.work } : {}),
+    // the authority kinds are a search filter (fused_search over-fetches ×3 for it), not only a post-filter over the top k: a history search post-filtered from 6 generic hits found none (11-10)
+    ...([p.authority].flat().filter(Boolean).length ? { authority: [p.authority].flat().filter(Boolean) } : {}) };
   // the topic (question minus the named spans) only where a hard filter carries those names; every other pass keeps the whole question
   // (dry run 5, 11-09: "Sufi writers like understand fana" — stripping "Rumi" from unfiltered passes lost him). quoted: the reader's quoted words, literal+phrase
   const named = (p.in_named && namedWork(u)) || who, layers = p.quoted ? ['literal', 'phrase'] : p.layers;

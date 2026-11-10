@@ -239,7 +239,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   // SCOPE through the layers (turn > conversation > reader > site > default): this turn's Jev patch, the stored state, the reader card, the host profile
   const jevPatch = strat?.patch?.jev || {}, turnOnly = strat?.patch?.turnOnly || null, turnNo = ex?.round ?? null;
   const scopeR = resolveScope({ turn: { ...(jevPatch.scope || {}), ...(jevPatch.reader || {}), ...(turnOnly?.scope || {}) }, conversation: conversationLayer(stateBefore), reader: readerLayer(card?.data), site: siteLayer(profile) });
-  const scope = { religion: scopeR.religion, units: scopeR.units, source: scopeR.units.scope_source };
+  const scope = { religion: scopeR.religion, units: scopeR.units, source: scopeR.units.scope_source, sources: scopeR.sources };   // sources: unit → layer (entryUnits: a default floor is no filter)
   let codePatch = null;
   const decisions = decisionLog(strat?.decisions || []);   // every strategy decision of the turn (inputs, options, probabilities, branch) → path.decisions
   for (const info of jevTimeouts) decisions.record('jev:timeout', timeoutDecision(info));
@@ -424,7 +424,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
           format: r.format ? { choice: r.format.id, by: r.format.by } : null } },
       retrieved: r.retrieved?.length ?? 0,
       format: r.format ?? null, profile: r.profile ?? null,
-      output_check: broken, replaced, lint, ...(formed && (formed.repairs.search_denial || formed.repairs.search_offer) ? { form: formed.repairs } : {}), timings: r.timings, search_detail: r.plan?.timings ?? null });
+      output_check: broken, replaced, lint, ...(formed && (formed.repairs.search_denial || formed.repairs.search_offer || formed.repairs.deflection) ? { form: formed.repairs } : {}), timings: r.timings, search_detail: r.plan?.timings ?? null });
     return { ...r, reply, status: 'answered', conversationId: ex?.conversationId ?? null, path, ...(deepReport ? { deep_report: deepReport } : {}) };
   } catch (err) {
     if (ex) await d.fail({ ...ex, error: err?.message }).catch(() => {});

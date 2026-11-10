@@ -13,7 +13,7 @@ import { render, template } from './activities/templates.js';
 import { TIER_ORDER } from './source-tier.js';
 import { standingOf, authorityOrder } from './tradition-authority.js';
 import { supports } from './channels.js';
-import { strategyGraphOn, runStrategyGraph } from './activities/graph.js';
+import { strategyGraphOn, runStrategyGraph, runsOverTurn } from './activities/graph.js';
 import { LOOKUP_STRATEGIES } from './strategy-seed.js';
 import { lastTopic, lastPassages } from './units.js';
 import { withReplyContext } from './reply-anchors.js';
@@ -247,9 +247,10 @@ export async function runStrategy(choice, ctx) {
   // Jev read the message as pointing at the LAST reply (refers_back): search the last turn's topic, not the glued/literal follow-up, and keep the passages it cited as the anchor
   const topic = choice?.refersBack ? lastTopic(ctx.state || undefined, ctx.messages || []) : null;
   if (topic) { ctx = { ...ctx, query: topic }; log.record('refers-back:query', { by: 'jev', saw: { topic }, options: ['glued follow-up', 'last topic'], chosen: 'last topic', reason: 'Jev: the message refers back to the previous reply' }); }
-  // a lookup strategy (book, quote_trace, term, original, about) runs over the whole turn (graph.js gatherByGraph), not as an executor here:
+  // a lookup strategy (book, quote_trace, term, original, about) with a v1 lookup graph runs over the whole turn (graph.js gatherByGraph), not as an executor here
+  // (its tree, quote_trace@2 etc., IS an executor):
   // an Unmatched recheck that lands on one has nothing to execute, so the researcher answers and the gap is already recorded
-  if (LOOKUP_STRATEGIES.has(name)) { log.record(`${name}:fallthrough`, { by: 'code', chosen: 'ordinary path', reason: 'a lookup strategy runs as the turn gather, not as an executor' }); return null; }
+  if (LOOKUP_STRATEGIES.has(name) && (!strategyGraphOn() || runsOverTurn(name))) { log.record(`${name}:fallthrough`, { by: 'code', chosen: 'ordinary path', reason: 'a lookup strategy runs as the turn gather, not as an executor' }); return null; }
   // the executors are registry strategies (tools.js): comparison, understanding, prayer, guidance, reference, compilation — run by the
   // strategy's graph (activities/graph.js; ANIS_STRATEGY_GRAPH=0 → the registry tool directly, the Phase-1 rollback)
   const viaGraph = strategyGraphOn() ? await runStrategyGraph(name, choice, { ...ctx, decisions: log }) : undefined;

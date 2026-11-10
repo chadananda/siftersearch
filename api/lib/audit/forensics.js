@@ -36,6 +36,7 @@ export const FIX_WHERE = {
   'bare-link': 'api/lib/assistant/prompt.js citation = link text',
   'search-offer': 'api/lib/assistant/prompt.js · lint.js search-offer',
   'search-denial': 'api/lib/assistant/prompt.js HOUSE_STYLE (Anís can always search) · lint.js dropSearchDenial (removed at the exit; counted from path.form)',
+  deflection: 'lint.js dropDeflection (a "try asking…" sentence removed at the exit; counted from path.form) · the strategy that left the writer without passages',
   'wrong-author': 'api/lib/assistant/prompt.js citation author · library metadata',
   'reported-unlabelled': 'api/lib/assistant/prompt.js (a talk is named as spoken)',
   'stage-over-budget': "api/lib/search.js engine stages · the slow stage's own module (search/read-pool.js hydrate, query-embedding.js embed, search/qdrant-layers.js layers, assistant/tools.js originals_search, planned-search.js planned stages); budgets are targets in search/latency-budget.js",
@@ -173,6 +174,7 @@ function writerDefects(reply, cited = [], hits = [], form = null) {
   if (lint.includes('search-offer')) out.push(['search-offer', 'offers a search it could run']);
   // removed at the exit (lint.js dropSearchDenial) but still the writer's defect: the turn's path.form counts what was removed
   if (lint.includes('search-denial') || (form?.search_denial ?? 0) > 0) out.push(['search-denial', `says it cannot search${form?.search_denial ? ` (${form.search_denial} sentence(s) removed at the exit)` : ''}`]);
+  if (lint.includes('deflection') || (form?.deflection ?? 0) > 0) out.push(['deflection', `tells the reader to ask differently${form?.deflection ? ` (${form.deflection} sentence(s) removed at the exit)` : ''}`]);
   for (const c of cited) {
     if (!c.named_author) continue;
     const h = hits.find((x) => sameDoc(x, c)) || c;
