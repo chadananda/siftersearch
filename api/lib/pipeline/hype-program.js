@@ -1,15 +1,23 @@
 // HyPE program: ops job `hype-program` (tier-ordered submit → collect loop on makeHypeBatch, one budget key, per-batch quality ledger,
-// auto-pause against an explicit baseline, 1% grader) and report `hype-quality`. Params: tier, maxUsd, sampleRate, dryRun, setBaseline, resume …
+// auto-pause against an explicit baseline, a fixed-sample quality check) and report `hype-quality`. Params: tier, maxUsd, sampleRate, dryRun, setBaseline, resume …
 // Spend: every call bills to `hype-program` (HyPE, disambiguation, grading, embeddings); ceiling HYPE_PROGRAM_USD_MONTH, pace month/30.
 // A spent ceiling ends the run QUIETLY (status 'budget'); a quality pause ends it as phase 'stopped' (the act-now mail). Deps all injectable.
 import { withAIContext } from '../ai-context.js';
 import { HYPE_VERSION } from '../rag/enrich/retrieval.js';
 import { TIER_ORDER, PASSES, selectTier, countTiers } from './hype-tiers.js';
-import { createStore, measureDoc, sumAcc, rates, gradeSummary, compare, DEFAULT_MIN_SAMPLE } from './hype-ledger.js';
+import { createStore, measureDoc, sumAcc, rates, gradeSummary, compare, DEFAULT_MIN_SAMPLE, GRADE_KEYS } from './hype-ledger.js';
+import { RUBRIC, JUDGE_MODEL, judgeUser } from './hype-rubric.js';
+import { parseJudge } from './hype-judge.js';
 
 export const BUDGET_KEY = 'hype-program';
 export const EST_USD_PER_REQUEST = 0.00018;   // measured 10-28: 38,275 batch requests = $6.94 (Haiku 5.5, Message Batches, 50% off)
-export const EST_FORMULA = 'est $ = requests x $0.18 per 1000 (measured 10-28: 38,275 requests = $6.94); requests = pending paragraphs + extra slices for paragraphs over 4000 chars (ceil(chars/1500) each). HyPE batch only: disambiguation, grading and embeddings bill to the same key but are not in this estimate.';
+export const EST_USD_PER_CHECK = 0.0075;   // ESTIMATE (not yet metered): ~1.1k in + ~0.8k out tokens at Sonnet 4.6 batch prices (50% off); replace with the metered mean after the pilot
+// Quality checks (Chad 11-10): a fixed sample, not a share — enough to catch a drop, small next to generation. Each tier first
+// gets CHECK_TIER_TARGET checked paragraphs (the baseline sample), then CHECK_PER_BATCH in every later batch (drift watch).
+// The checks go as their own Message Batch (half price, Chad 11-10 "even the checks should be done in batches"): submitted when a
+// generation batch settles, collected on a later loop; their grades patch that batch's ledger entry and may pause the program then.
+export const CHECK_TIER_TARGET = 300, CHECK_PER_BATCH = 3;
+export const EST_FORMULA = 'est $ = generation + checks. generation = requests x $0.18 per 1000 (measured 10-28: 38,275 requests = $6.94); requests = pending paragraphs + extra slices for paragraphs over 4000 chars (ceil(chars/1500) each). checks = per tier 300 + 3 per batch of 10,000 paragraphs, x $0.0075 each (estimate, batch price). Both bill to hype-program and obey its monthly ceiling. Disambiguation and embeddings are not in this estimate.';
 const WAIT_CHUNK_MS = 15 * 60_000;   // while waiting for the next UTC day, look again (drain / pause) at least this often
 export const DEFAULT_ROUND_PARAS = 10000, DEFAULT_SAMPLE_RATE = 0.01, DEFAULT_MAX_GRADE = 200;
 
@@ -33,29 +41,38 @@ async function defaults(over) {
     makeHb: async (o) => (await import('./hype-batch-app.js')).makeHypeBatch(o, BUDGET_KEY),
     spend: { month: async () => (await (await spendRepo()).monthSpendByCaller())[BUDGET_KEY] || 0, today: async () => (await (await spendRepo()).dailySpendByCaller())[BUDGET_KEY] || 0 },
     rows: async (ids) => (await import('../repos/hype-program-repo.js')).hypeRows(ids),
-    judge: async (a) => (await import('./hype-judge.js')).judgeHype(a),
+    checks: async () => (await import('./hype-batch-app.js')).makeHypeChecks(BUDGET_KEY),
     log: async (kind, text) => (await import('../repos/activity-repo.js')).logActivity(kind, text),
     draining: async () => (await import('../drain.js')).isDraining(),
     ...over,
   };
 }
 
-/** dryRun: ¶ / requests / estimated $ per tier (plan only, no spend). */
+/** How many sampled paragraphs this batch may check: fill the tier's baseline sample first, then a few per batch. Pure over the ledger. */
+export function checksFor(tier, store, maxGrade = DEFAULT_MAX_GRADE) {
+  const done = store.ledger().filter((e) => e.tier === tier).reduce((n, e) => n + (e.grade?.paragraphs || 0), 0);
+  return Math.min(maxGrade, Math.max(CHECK_PER_BATCH, CHECK_TIER_TARGET - done));
+}
+/** Checks `pending` paragraphs will need (estimate): a few per batch, + the tier's baseline sample when withTarget (once per tier). Pure. */
+export const checksEst = (pending, withTarget = true) => (pending > 0 ? (withTarget ? CHECK_TIER_TARGET : 0) + CHECK_PER_BATCH * Math.ceil(pending / DEFAULT_ROUND_PARAS) : 0);
+
+/** dryRun: ¶ / requests / estimated $ (generation + checks) per tier (plan only, no spend). */
 function dryRunReport(counts, tier, d) {
-  const monthUsd = monthlyUsd(d.env), tiers = {}, total = { pending: 0, requests: 0, usd: 0 };
+  const monthUsd = monthlyUsd(d.env), tiers = {}, total = { pending: 0, requests: 0, checks: 0, generationUsd: 0, checkUsd: 0, usd: 0 };
   for (const t of TIER_ORDER) {
     if (tier && t !== tier) continue;
-    tiers[t] = {};
+    tiers[t] = {}; let target = true;
     for (const p of PASSES) {
-      const c = counts[t][p], usd = r2(c.requests * EST_USD_PER_REQUEST);
-      tiers[t][p] = { docs: c.docs, paragraphs: c.total, done: c.done, pending: c.pending, requests: c.requests, estUsd: usd };
-      total.pending += c.pending; total.requests += c.requests; total.usd += usd;
+      const c = counts[t][p], gen = r2(c.requests * EST_USD_PER_REQUEST), checks = checksEst(c.pending, target), chk = r2(checks * EST_USD_PER_CHECK);
+      if (checks) target = false;
+      tiers[t][p] = { docs: c.docs, paragraphs: c.total, done: c.done, pending: c.pending, requests: c.requests, checks, generationUsd: gen, checkUsd: chk, estUsd: r2(gen + chk) };
+      total.pending += c.pending; total.requests += c.requests; total.checks += checks; total.generationUsd += gen; total.checkUsd += chk;
     }
   }
-  total.usd = r2(total.usd);
+  total.generationUsd = r2(total.generationUsd); total.checkUsd = r2(total.checkUsd); total.usd = r2(total.generationUsd + total.checkUsd);
   const pace = monthUsd / 30;
   return { dryRun: true, version: HYPE_VERSION, formula: EST_FORMULA, estUsdPerRequest: EST_USD_PER_REQUEST, tiers, total,
-    budget: { monthUsd, paceUsdPerDay: r2(pace), daysAtPace: pace ? Math.ceil(total.usd / pace) : null, envSet: monthUsd > 0 } };
+    budget: { monthUsd, paceUsdPerDay: r2(pace), daysAtPace: pace ? Math.ceil(total.usd / pace) : null, monthsAtCeiling: monthUsd ? r2(total.usd / monthUsd) : null, envSet: monthUsd > 0 } };
 }
 
 // summed grade counts of ledger entries → counts + percentages
@@ -96,31 +113,58 @@ export async function hypeProgramJob(params = {}, deps = {}) {
   return withAIContext({ billTo: BUDGET_KEY, stage: 'hype', caller: BUDGET_KEY }, async () => {
     // free measurement of each doc as it settles; the batch's entry (+ the 1% grade, + the auto-pause) when its last doc has
     const measure = async ({ docId, outcomes, result, truncated }) => measureDoc({ outcomes, result, truncated, rows: await d.rows(outcomes.map((o) => o.id)), version: HYPE_VERSION, sampleRate, rand: d.rand });
+    const pauseFor = async (id, t, violations) => {
+      const reason = `batch ${id} (${t}) worse than baseline: ${violations.map((v) => `${v.metric} ${v.value} vs ${v.baseline} (limit ${v.limit})`).join('; ')}`;
+      d.store.setPause({ at: new Date().toISOString(), tier: t, batch: id, reason, violations });
+      await d.log('hype', `⏸ hype-program paused — ${reason}`.slice(0, 200));
+    };
+    let checker = null; const checks = async () => (checker ||= await d.checks());
+    // a settled generation batch: free rates now (may pause at once); the sampled paragraphs go out as one check batch
     const onBatchDone = async ({ id, at, model, version, requests, tag, acc }) => {
       const total = sumAcc(Object.values(acc)), r = rates(total), t = tag?.tier || 'unknown';
-      let graded = [], gradeErrors = 0;
-      const picked = total.sampleIds.slice(0, maxGrade), rows = picked.length ? await d.rows(picked) : [];
+      const picked = total.sampleIds.slice(0, checksFor(t, d.store, maxGrade)), rows = picked.length ? await d.rows(picked) : [];
+      const reqs = [];
       for (const row of rows) {
         let qs = []; try { const q = JSON.parse(row.hyp_questions); qs = Array.isArray(q) ? q : q?.questions || []; } catch { /* none */ }
-        if (!qs.length) continue;
-        try { graded.push(await d.judge({ docId: row.doc_id, paragraph: row.text, original: row.original_text, questions: qs })); } catch (e) { gradeErrors++; if (/cap|budget/i.test(`${e?.name} ${e?.message}`)) break; }   // a refused grade never stops the program
+        if (qs.length) reqs.push({ custom_id: `d${row.doc_id}_p${row.id}`, system: RUBRIC, user: judgeUser(row.text, row.original_text, qs), maxTokens: 4000 });
       }
-      const grade = { ...gradeSummary(graded), sampled: picked.length, errors: gradeErrors };
-      const baseline = d.store.baselineFor(t), violations = compare(r, baseline, { margin, minSample, grade });
+      const grade = { sampled: picked.length, requests: reqs.length };
+      if (reqs.length) try { grade.pending = await (await checks()).create(reqs, { model: JUDGE_MODEL }); } catch (e) { grade.errors = reqs.length; grade.firstError = String(e?.message || e).slice(0, 300); }   // a refused check never stops the program
+      const baseline = d.store.baselineFor(t), violations = compare(r, baseline, { margin, minSample });
       d.store.appendLedger({ id, at: new Date(at).toISOString(), doneAt: new Date().toISOString(), tier: t, pass: tag?.pass || null, model, version, requests, totals: { ...total, sampleIds: undefined, sampled: picked.length }, rates: r, grade, violations, baselineAt: baseline?.at || null });
-      if (violations.length) {
-        const reason = `batch ${id} (${t}) worse than baseline: ${violations.map((v) => `${v.metric} ${v.value} vs ${v.baseline} (limit ${v.limit})`).join('; ')}`;
-        d.store.setPause({ at: new Date().toISOString(), tier: t, batch: id, reason, violations });
-        await d.log('hype', `⏸ hype-program paused — ${reason}`.slice(0, 200));
+      if (violations.length) await pauseFor(id, t, violations);
+    };
+    // check batches that have ended → grades into their ledger entry (+ the grade comparison, which may pause). → how many still pending
+    const collectChecks = async () => {
+      let pending = 0;
+      for (const e of d.store.ledger().filter((x) => x.grade?.pending)) {
+        const c = await checks(), bid = e.grade.pending;
+        let st = null; try { st = await c.status(bid); } catch { /* try again next loop */ }
+        if (!st?.ended) { pending++; continue; }
+        const graded = []; let errors = 0, firstError = null;
+        for await (const x of c.results(bid)) {
+          const docId = Number(/^d(\d+)_/.exec(x.custom_id || '')?.[1]) || null;
+          try { await c.meter({ model: JUDGE_MODEL, docId, ok: x.ok, usage: x.usage, error: x.error }); } catch { /* metering never loses a grade */ }
+          const v = x.ok ? parseJudge(x.text) : null;
+          if (!v || v.unparsed != null) { errors++; firstError ||= (x.error || `unparsed: ${v?.unparsed}`).slice(0, 300); continue; }
+          graded.push(v);
+        }
+        const grade = { ...gradeSummary(graded), sampled: e.grade.sampled, checkBatch: bid, errors, ...(firstError ? { firstError } : {}) };
+        const gv = compare(e.rates, d.store.baselineFor(e.tier), { margin, minSample, grade }).filter((v) => GRADE_KEYS.includes(v.metric));
+        d.store.updateLedger(e.id, { grade, violations: [...(e.violations || []), ...gv], checkedAt: new Date().toISOString() });
+        if (gv.length) await pauseFor(e.id, e.tier, gv);
       }
+      return pending;
     };
     const hb = await d.makeHb({ measure, onBatchDone });
-    const inflightUsd = () => hb.status().batches.reduce((n, b) => n + b.requests, 0) * EST_USD_PER_REQUEST;
+    const inflightUsd = () => hb.status().batches.reduce((n, b) => n + b.requests, 0) * EST_USD_PER_REQUEST
+      + d.store.ledger().reduce((n, e) => n + (e.grade?.pending ? e.grade.requests || 0 : 0), 0) * EST_USD_PER_CHECK;
     // collect until nothing is pending. true = the service is draining (batches stay in hype-batch/state.json: the resume picks them up)
     const settleAll = async () => {
       for (;;) {
         const c = await hb.collect();
         sum.written += c.written; sum.failed += c.failed; sum.exhausted += c.exhausted; sum.errors.push(...c.errors.slice(0, 3));
+        await collectChecks();
         if (!c.pending || d.store.pause()) return false;
         if (await d.draining()) return true;
         await d.sleep(pollMs);
@@ -159,7 +203,13 @@ export async function hypeProgramJob(params = {}, deps = {}) {
         if (sub.paragraphs || bad.length) { sent = true; await d.log('hype', `${tier}/${pass} · ${sub.paragraphs} ¶ in ${sub.batches.length} batch(es) · ${sub.requests} requests · est $${r2(sub.requests * EST_USD_PER_REQUEST)}${bad.length ? ` · ${bad.length} docs skipped` : ''}`); break; }
       }
       if (!sent && refused) { if (await d.draining()) return { ...sum, yielded: true, resume: { ...params } }; await d.sleep(Math.min(pollMs, WAIT_CHUNK_MS)); continue; }   // the gate said not now: re-read the budget and try again
-      if (!sent) { if (progressed) continue; return { ...sum, status: 'complete' }; }
+      if (!sent) {
+        if (progressed) continue;
+        // the tier is written: wait for its last checks (their grades may still pause it), then report
+        while (await collectChecks()) { if (d.store.pause()) break; if (await d.draining()) return { ...sum, yielded: true, resume: { ...params } }; await d.sleep(pollMs); }
+        const p2 = d.store.pause(); if (p2) return stopFor(p2);
+        return { ...sum, status: 'complete' };
+      }
     }
   });
 }

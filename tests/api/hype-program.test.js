@@ -1,10 +1,10 @@
 // pipeline/hype-program — budget (month ceiling, month/30 pace, job cap, in-flight), dryRun estimate, the submit→collect loop, billing key,
-// quiet budget stop vs quality auto-pause, baseline from ledger, 1% grader, hype-quality report. Everything injected; no network, no DB.
+// quiet budget stop vs quality auto-pause, baseline from ledger, batched quality checks, hype-quality report. Everything injected; no network, no DB.
 import { describe, it, expect, beforeEach } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { hypeProgramJob, hypeQualityReport, budgetRoom, monthlyUsd, EST_USD_PER_REQUEST, EST_FORMULA } from '../../api/lib/pipeline/hype-program.js';
+import { hypeProgramJob, hypeQualityReport, budgetRoom, monthlyUsd, checksFor, checksEst, EST_USD_PER_REQUEST, EST_USD_PER_CHECK, EST_FORMULA } from '../../api/lib/pipeline/hype-program.js';
 import { createStore } from '../../api/lib/pipeline/hype-ledger.js';
 import { currentAIContext } from '../../api/lib/ai-context.js';
 
@@ -38,8 +38,9 @@ describe('budgetRoom', () => {
 const row = (id, qs) => ({ id, doc_id: 1, text: 'The soul of man is a sign of God and returns to Him after the passing of the body.', hyp_model: V, hyp_questions: JSON.stringify(qs) });
 const GOOD = ['What is the soul?', 'Where does the soul go after death?'];
 // A fake batch layer: submit records a batch; collect settles it by calling the job's measure + onBatchDone hooks like the real one.
-function fakeWorld({ batchStats = () => ({}), questions = GOOD, select, spend = {}, judge, rowsFor } = {}) {
-  const w = { submits: [], billTo: [], judged: [], logs: [], pending: [], n: 0, selects: [], ...{} };
+const okJudge = async (a) => ({ questions: a.questions.map((_, i) => ({ i, searchable: true, answered: true, distinct: true })), missed: [] });
+function fakeWorld({ batchStats = () => ({}), questions = GOOD, select, spend = {}, judge, rowsFor, checkCreate } = {}) {
+  const w = { submits: [], billTo: [], judged: [], logs: [], pending: [], n: 0, selects: [], checkBatches: new Map(), metered: [] };
   const queue = select || [];
   const env = { HYPE_PROGRAM_USD_MONTH: '1000' };
   const deps = {
@@ -48,7 +49,19 @@ function fakeWorld({ batchStats = () => ({}), questions = GOOD, select, spend = 
     spend: { month: async () => spend.month ?? 0, today: async () => spend.today ?? 0 },
     select: async (a) => { w.selects.push(a); return queue.shift() || { docs: [], paragraphs: 0, cursor: a.after, exhausted: true }; },
     rows: async (ids) => (rowsFor ? rowsFor(ids) : ids.map((id) => row(id, questions))),
-    judge: judge || (async (a) => { w.judged.push(a); return { questions: a.questions.map((_, i) => ({ i, searchable: true, answered: true, distinct: true })), missed: [] }; }),
+    // the check batch: create records the requests; it has ended by the next look; results run the fake judge on each
+    checks: async () => ({
+      create: async (reqs, o) => { if (checkCreate) await checkCreate(reqs, o); const id = `c${w.checkBatches.size + 1}`; w.checkBatches.set(id, reqs); w.judged.push(...reqs); return id; },
+      status: async () => ({ ended: true }),
+      results: async function* (id) {
+        for (const q of w.checkBatches.get(id)) {
+          const qs = q.user.split('QUESTIONS:\n')[1].split('\n').map((l) => l.replace(/^\d+\. /, ''));
+          try { yield { custom_id: q.custom_id, ok: true, text: JSON.stringify(await (judge || okJudge)({ questions: qs })), usage: { input: 1, output: 1, cacheRead: 0, cacheWrite: 0 } }; }
+          catch (e) { yield { custom_id: q.custom_id, ok: false, error: `errored: ${e.message}`, text: null, usage: null }; }
+        }
+      },
+      meter: async (m) => { w.metered.push(m); },
+    }),
     makeHb: async (o) => ({
       status: () => ({ batches: w.pending.map((b) => ({ id: b.id, requests: b.requests })) }),
       submit: async (docIds, opts) => {
@@ -100,15 +113,20 @@ describe('hypeProgramJob: dryRun', () => {
     gray: { primary: { docs: 1, total: 10, done: 0, pending: 10, requests: 10 }, copy: { docs: 0, total: 0, done: 0, pending: 0, requests: 0 } },
     history: { primary: { docs: 0, total: 0, done: 0, pending: 0, requests: 0 }, copy: { docs: 0, total: 0, done: 0, pending: 0, requests: 0 } },
     rest: { primary: { docs: 9, total: 1e6, done: 0, pending: 1e6, requests: 1.2e6 }, copy: { docs: 0, total: 0, done: 0, pending: 0, requests: 0 } } };
-  it('estimates requests x $0.18/1000 per tier, reports the formula and the days at pace; spends nothing', async () => {
+  it('estimates generation (requests x $0.18/1000) + checks per tier, reports the formula, days at pace and months at the ceiling; spends nothing', async () => {
     const { w, deps } = fakeWorld(); deps.count = async () => counts;
     const r = await hypeProgramJob({ dryRun: true }, deps);
     expect(r.dryRun).toBe(true);
     expect(r.formula).toBe(EST_FORMULA);
     expect(r.estUsdPerRequest).toBe(0.00018);
-    expect(r.tiers.core.primary).toMatchObject({ pending: 800, requests: 1000, estUsd: 0.18 });
-    expect(r.tiers.rest.primary.estUsd).toBe(216);
-    expect(r.total).toMatchObject({ requests: 1000 + 100 + 10 + 1.2e6, usd: Math.round((1.2e6 + 1110) * EST_USD_PER_REQUEST * 100) / 100 });
+    const chk = (n) => Math.round(n * EST_USD_PER_CHECK * 100) / 100;
+    expect(r.tiers.core.primary).toMatchObject({ pending: 800, requests: 1000, generationUsd: 0.18, checks: 303, checkUsd: chk(303), estUsd: Math.round((0.18 + chk(303)) * 100) / 100 });
+    expect(r.tiers.core.copy.checks).toBe(3);                    // the tier's baseline sample is counted once
+    expect(r.tiers.history.primary.checks).toBe(0);              // nothing pending, nothing to check
+    expect(r.tiers.rest.primary).toMatchObject({ generationUsd: 216, checks: 300 + 3 * 100 });
+    expect(r.total).toMatchObject({ requests: 1000 + 100 + 10 + 1.2e6, checks: 303 + 3 + 303 + 600 });
+    expect(r.total.usd).toBeCloseTo(r.total.generationUsd + r.total.checkUsd, 2);
+    expect(r.budget.monthsAtCeiling).toBeCloseTo(r.total.usd / 1000, 2);
     expect(r.budget).toMatchObject({ monthUsd: 1000, paceUsdPerDay: 33.33, envSet: true });
     expect(r.budget.daysAtPace).toBe(Math.ceil(r.total.usd / (1000 / 30)));
     expect(w.submits).toHaveLength(0);
@@ -233,13 +251,32 @@ describe('hypeProgramJob: quality auto-pause', () => {
   });
 });
 
-describe('hypeProgramJob: 1% grader', () => {
-  it('grades the sampled paragraphs, bills inside the hype-program context, and stores the grade in the ledger', async () => {
+describe('hypeProgramJob: batched quality checks', () => {
+  it('sends the sampled paragraphs as one check batch, meters each result, and patches the grade into the ledger', async () => {
     const { w, deps } = fakeWorld({ select: [docsOf(4)] });
-    await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 1 }, deps);
+    expect((await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 1 }, deps)).status).toBe('complete');
+    expect(w.checkBatches.size).toBe(1);
     expect(w.judged).toHaveLength(4);
-    expect(w.judged[0]).toMatchObject({ docId: 1, questions: GOOD });
-    expect(store.ledger()[0].grade).toMatchObject({ sampled: 4, paragraphs: 4, questions: 8, searchablePct: 100, answeredPct: 100, distinctPct: 100 });
+    expect(w.judged[0]).toMatchObject({ custom_id: 'd1_p1', maxTokens: 4000 });
+    expect(w.judged[0].user).toContain(GOOD[1]);
+    expect(w.metered).toHaveLength(4);
+    expect(w.metered[0]).toMatchObject({ docId: 1, ok: true });
+    expect(store.ledger()[0].grade).toMatchObject({ sampled: 4, paragraphs: 4, questions: 8, searchablePct: 100, answeredPct: 100, distinctPct: 100, errors: 0 });
+    expect(store.ledger()[0].grade.pending).toBeUndefined();
+  });
+  it('a refused check batch is recorded with its reason and never stops the program', async () => {
+    const { deps } = fakeWorld({ select: [docsOf(3)], checkCreate: async () => { throw new Error('Anthropic not allowed for stage hype-judge'); } });
+    expect((await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 1 }, deps)).status).toBe('complete');
+    expect(store.ledger()[0].grade).toMatchObject({ requests: 3, errors: 3, firstError: expect.stringMatching(/not allowed/) });
+  });
+  it('fills the tier sample first, then a few per batch', async () => {
+    const one = fakeWorld({ select: [docsOf(4)] });
+    expect(checksFor('core', store, 200)).toBe(200);
+    await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 1 }, one.deps);
+    expect(checksFor('core', store, 1000)).toBe(296);
+    store.updateLedger(store.ledger()[0].id, { grade: { paragraphs: 400 } });
+    expect(checksFor('core', store)).toBe(3);
+    expect(checksFor('gray', store)).toBe(200);
   });
   it('sampleRate 0 grades nothing; maxGrade caps a batch', async () => {
     const a = fakeWorld({ select: [docsOf(4)] });
@@ -252,9 +289,11 @@ describe('hypeProgramJob: 1% grader', () => {
   it('a failing judge never stops the program; poor grades against the baseline pause it', async () => {
     const a = fakeWorld({ select: [docsOf(3)], judge: async () => { throw new Error('boom'); } });
     expect((await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 1 }, a.deps)).status).toBe('complete');
-    expect(store.ledger()[0].grade.errors).toBe(3);
+    expect(store.ledger()[0].grade).toMatchObject({ errors: 3, firstError: expect.stringMatching(/boom/) });
     store.setBaseline('core', { questionsPerPara: 2, searchablePct: 95, answeredPct: 95, distinctPct: 95, at: 'pilot' });
     const bad = fakeWorld({ select: [docsOf(200, 1000)], judge: async (x) => ({ questions: x.questions.map((_, i) => ({ i, searchable: false, answered: true, distinct: true })), missed: [] }) });
+    bad.w.n = 10;   // batch ids are unique in life (the ledger keeps one entry per id)
+    bad.w.checkBatches.set('c1', []);
     const r = await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 0.2, maxGrade: 40, resume: true }, { ...bad.deps, rand: () => 0.1 });
     expect(r.phase).toBe('stopped');
     expect(r.reason).toMatch(/searchablePct/);

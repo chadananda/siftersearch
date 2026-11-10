@@ -257,14 +257,14 @@ async function collectBatch(batchId, ids) {
  * above, but fire-and-forget: create() returns the batch id, the caller stores it and may collect hours (or a restart) later.
  * Requests are { custom_id, system, user, maxTokens }; the shared system prefix is cached for an hour (batches finish well after
  * the 5-minute default expires); thinking is off (reasoning tokens bill as output and empty the reply — see DeepSeek 08-27).
- * Same fail-closed spend gate as every Anthropic call.
+ * Same fail-closed spend gate as every Anthropic call. caller = whose cap and policy gate apply (the HyPE program's checks: 'hype-program').
  */
-export function anthropicBatchTransport({ stage = 'hype', client = null } = {}) {
+export function anthropicBatchTransport({ stage = 'hype', caller = 'hype-batch', client = null } = {}) {
   const api = () => client || getAnthropic();
   return {
     async create(requests, { model }) {
-      await assertSpendCap('hype-batch', { provider: 'anthropic' });   // before the batch submit
-      assertAnthropicAllowed({ provider: 'anthropic', model, stage, caller: 'hype-batch' });
+      await assertSpendCap(caller, { provider: 'anthropic' });   // before the batch submit
+      assertAnthropicAllowed({ provider: 'anthropic', model, stage, caller });
       const b = await api().messages.batches.create({ requests: requests.map((r) => ({ custom_id: r.custom_id, params: {
         model, max_tokens: r.maxTokens, thinking: { type: 'disabled' },
         system: [{ type: 'text', text: r.system, cache_control: { type: 'ephemeral', ttl: '1h' } }],

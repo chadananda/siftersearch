@@ -17,6 +17,7 @@
 // new Persian book, pin it lang:'fa' in PROFILE_OVERRIDES and it becomes eligible automatically.
 import { PROFILE_OVERRIDES } from './pipeline/profile.js';
 import { longContextThreshold } from './model-registry.js';
+import { modelFor } from './model-roles.js';
 import { CORE_ROSTER } from './rag/concepts/core-roster.js';
 import { ALL_ORIGINAL_TARGET_IDS } from './rag/concepts/originals-targets.js';
 
@@ -128,6 +129,13 @@ export function isImproveAllowed({ stage, model } = {}) {
   return String(stage || '').startsWith('improve:') && String(model || '') === 'claude-opus-5-5';
 }
 
+// HYPE PROGRAM QUALITY CHECK (Chad 11-10: "so unblock"): a stronger model checks a small sample of the program's questions on
+// ANY book (English-only too). Billed to the program, so it obeys the program's $1000/month like the generation it checks.
+// Only the program's stage + caller, only the hype-judge role model.
+export function isHypeProgramJudgeAllowed({ stage, caller, model } = {}) {
+  return String(stage || '') === 'hype-judge' && String(caller || '') === 'hype-program' && String(model || '') === modelFor('hype-judge').model;
+}
+
 // Haiku 5.5's tokenizer, MEASURED 11-03 (usage.prompt_tokens on real text): English prose/markdown 2.5–2.7 chars per token,
 // Arabic/Persian 1.5. The old flat 3.5 under-counted English by ~40% and Arabic by 2.3×, so a prompt it passed could bill
 // the 5× tier. Env dials: LONG_CONTEXT_CHARS_PER_TOKEN (Latin etc.), LONG_CONTEXT_ARABIC_CHARS_PER_TOKEN.
@@ -187,6 +195,7 @@ export function assertAnthropicAllowed({ provider, model, lang, docId, caller, s
   if (isHaikuAllowed({ model })) return;                                      // Haiku 5.5: any stage, any language
   if (isInteractiveAllowed({ stage, model })) return;                         // Sonnet 5.5 for interactive roles
   if (isImproveAllowed({ stage, model })) return;                             // Opus 5.5 for the improvement cycle (judge + deep analysis)
+  if (isHypeProgramJudgeAllowed({ stage, caller, model })) return;            // the HyPE program's sample check
   const e = new Error(
     `Anthropic spend policy: ${model || 'claude'} REFUSED — Anthropic is authorised only for grounding the ` +
     `approved Persian plan books (Mázandarání Ẓuhúru'l-Ḥaqq). Got lang=${lang || 'none'}, doc=${docId ?? 'none'}, ` +

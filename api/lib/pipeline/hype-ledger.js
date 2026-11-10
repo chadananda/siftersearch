@@ -9,7 +9,7 @@ export const DEFAULT_MARGIN = { rel: 0.25, abs: 0.02, qpp: 0.2, gradePts: 10 }; 
 export const DEFAULT_MIN_SAMPLE = 100, MIN_GRADED_QUESTIONS = 20;
 export const DUP_JACCARD = 0.8;
 const RATE_KEYS = ['faultRate', 'emptyRate', 'exhaustedRate', 'truncationRate', 'failedRate', 'dupRate', 'langMismatchRate'];   // higher is worse
-const GRADE_KEYS = ['searchablePct', 'answeredPct', 'distinctPct'];                                                               // higher is better
+export const GRADE_KEYS = ['searchablePct', 'answeredPct', 'distinctPct'];                                                               // higher is better
 
 const qsOf = (row) => { try { const q = typeof row.hyp_questions === 'string' ? JSON.parse(row.hyp_questions) : row.hyp_questions; return (Array.isArray(q) ? q : q?.questions) || []; } catch { return []; } };
 const words = (s) => new Set(String(s).toLowerCase().match(/[\p{L}\p{N}']+/gu) || []);
@@ -102,6 +102,12 @@ export function createStore(dir = path.join(process.cwd(), 'data', 'run', 'hype-
     dir, ledger,
     /** append one batch entry; a batch id already present is NOT written twice (a re-run collect). → true when written */
     appendLedger(entry) { if (ledger().some((e) => e.id === entry.id)) return false; fs.mkdirSync(dir, { recursive: true }); fs.appendFileSync(f('ledger.jsonl'), `${JSON.stringify(entry)}\n`); return true; },
+    /** patch one batch entry in place (its quality check arrives a round later). → true when found */
+    updateLedger(id, patch) {
+      const all = ledger(), i = all.findIndex((e) => e.id === id); if (i < 0) return false;
+      all[i] = { ...all[i], ...patch }; fs.mkdirSync(dir, { recursive: true });
+      const t = `${f('ledger.jsonl')}.${process.pid}.tmp`; fs.writeFileSync(t, all.map((e) => `${JSON.stringify(e)}\n`).join('')); fs.renameSync(t, f('ledger.jsonl')); return true;
+    },
     baselines: () => readJson('baseline.json', {}),
     /** baseline for a tier; falls back to the '*' (all tiers) one */
     baselineFor(tier) { const b = readJson('baseline.json', {}); return b[tier] || b['*'] || null; },
