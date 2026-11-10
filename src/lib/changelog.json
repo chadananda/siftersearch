@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-10T18:05:57.009Z",
+  "generated": "2026-11-10T18:12:44.380Z",
   "entries": [
+    {
+      "hash": "00d570d8d",
+      "date": "2026-11-10",
+      "type": "Docs",
+      "description": "The tool list is live data (GET /api/v1/tools, /docs/anis-tools), not a static table",
+      "scope": null
+    },
     {
       "hash": "48d8d4677",
       "date": "2026-11-10",
@@ -1141,24 +1148,17 @@
       "type": "Fixed",
       "description": "Bound transfer batches so rental workers stay fed",
       "scope": "media"
-    },
-    {
-      "hash": "c657767c7",
-      "date": "2026-10-25",
-      "type": "Fixed",
-      "description": "Keep GPU work buffered through long postprocessing tails",
-      "scope": "media"
-    },
-    {
-      "hash": "0c8108ba5",
-      "date": "2026-10-25",
-      "type": "Fixed",
-      "description": "Keep rental workers observable during long jobs",
-      "scope": "media"
     }
   ],
   "grouped": {
     "2026-11-10": [
+      {
+        "hash": "00d570d8d",
+        "date": "2026-11-10",
+        "type": "Docs",
+        "description": "The tool list is live data (GET /api/v1/tools, /docs/anis-tools), not a static table",
+        "scope": null
+      },
       {
         "hash": "48d8d4677",
         "date": "2026-11-10",
@@ -2324,20 +2324,6 @@
         "date": "2026-10-25",
         "type": "Fixed",
         "description": "Bound transfer batches so rental workers stay fed",
-        "scope": "media"
-      },
-      {
-        "hash": "c657767c7",
-        "date": "2026-10-25",
-        "type": "Fixed",
-        "description": "Keep GPU work buffered through long postprocessing tails",
-        "scope": "media"
-      },
-      {
-        "hash": "0c8108ba5",
-        "date": "2026-10-25",
-        "type": "Fixed",
-        "description": "Keep rental workers observable during long jobs",
         "scope": "media"
       }
     ]
