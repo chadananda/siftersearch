@@ -72,5 +72,8 @@ describe('title-answer', () => {
   it('namedWork: only a real book (20+ paragraphs)', async () => {
     expect(await namedWork('Gleanings', { find: async () => GPB })).toBe(GPB);
     expect(await namedWork('X', { find: async () => ({ doc: { id: 1, paragraph_count: 3 } }) })).toBeNull();
+    const g = { doc: { id: 2, title: 'Gleanings from the Writings of Bahá’u’lláh', paragraph_count: 900 },
+      others: [{ id: 3, title: 'Gleanings from the Writings of Bahá’u’lláh — original (CTAI paragraphing)' }, { id: 4, title: 'Gleanings among the Sheaves' }] };
+    expect((await namedWork('Gleanings', { find: async () => g })).others.map((o) => o.id)).toEqual([3]);
   });
 });

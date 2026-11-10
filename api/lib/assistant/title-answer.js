@@ -72,5 +72,8 @@ export async function titleAnswer(work, { onEvent = () => {}, links = null, summ
 export async function namedWork(name, { find = findTitled } = {}) {
   if (!name || String(name).length > 120) return null;
   const w = await find([String(name).trim()]);
-  return w?.doc && (w.doc.paragraph_count ?? 0) >= 20 ? w : null;
+  if (!w?.doc || (w.doc.paragraph_count ?? 0) < 20) return null;
+  // other copies are the same work only: a short name also opened unrelated titles ("Gleanings" → Gleanings among the Sheaves)
+  const f = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return { ...w, others: (w.others || []).filter((o) => f(o.title).includes(f(w.doc.title)) || f(w.doc.title).includes(f(o.title))) };
 }
