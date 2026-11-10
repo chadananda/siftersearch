@@ -38,7 +38,7 @@ const CATEGORY = args.find(a => a.startsWith('--category='))?.split('=')[1] || n
 // --multi: run the battery against the MULTI-INDEX path (/api/search/multi, internal) instead of the
 // public /search. The public endpoint is hybridSearch-only — HyPE never contributes there — so measuring
 // HyPE's retrieval value requires this mode. Hits carry _layerRanks {main,hype,entity}; the report gains
-// a `hype` block (touched/led shares). Needs DEPLOY_SECRET (or INTERNAL_API_KEY) in .env-secrets.
+// a `hype` block (touched/led/only shares; --no-hype = the HyPE-off arm). Needs DEPLOY_SECRET (or INTERNAL_API_KEY) in .env-secrets.
 const MULTI = args.includes('--multi');
 // --phrase-boost: ask the API for the opt-in exact-phrase re-rank, so its effect can be MEASURED against
 // the same fixtures before anyone changes what users see.
@@ -49,7 +49,9 @@ const QDRANT = QDRANT_ARG ? (QDRANT_ARG === '--qdrant=only' ? 'only' : QDRANT_AR
 const WEIGHTS = (args.find((a) => a.startsWith('--weights='))?.split('=')[1] || '').split(',').filter(Boolean)
   .reduce((o, kv) => { const [k, v] = kv.split(':'); o[k] = Number(v); return o; }, {});
 if (QDRANT_ARG && !args.includes('--multi')) { console.error('--qdrant needs --multi (/api/search/multi)'); process.exit(2); }
-const AB = { qdrant: QDRANT, ...(Object.keys(WEIGHTS).length ? { weights: WEIGHTS } : {}) };
+// --no-hype: the HyPE-off arm (sends hype:false; meili-off would otherwise always run the Qdrant HyPE layer).
+const NO_HYPE = args.includes('--no-hype');
+const AB = { qdrant: QDRANT, ...(Object.keys(WEIGHTS).length ? { weights: WEIGHTS } : {}), ...(NO_HYPE ? { hype: false } : {}) };
 
 const API_BASE = process.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const API_KEY = process.env.PUBLIC_SIFTER_API_KEY;
@@ -379,13 +381,19 @@ const failBreakdown = (() => {
 const hypeAgg = (() => {
   if (!MULTI) return null;
   const found = results.filter(r => r.matched_layers);
-  const led = (L) => L && L.hype != null && (L.main == null || L.hype < L.main);
-  const touched = (L) => L && L.hype != null;
+  // HyPE = Meili's `hype` rank or Qdrant's `qhype` (the only one since Meili retired 10-21). led = HyPE ranked it best of all
+  // layers; only = no other layer found it.
+  const H = (L) => L?.hype ?? L?.qhype ?? null;
+  const others = (L) => Object.entries(L || {}).filter(([k, v]) => k !== 'hype' && k !== 'qhype' && v != null).map(([, v]) => v);
+  const touched = (L) => H(L) != null;
+  const led = (L) => touched(L) && others(L).every((v) => H(L) <= v);
+  const only = (L) => touched(L) && !others(L).length;
   const withTop1 = results.filter(r => r.top1_layers);
   return {
     matched_hits: found.length,
     matched_hype_touched: found.filter(r => touched(r.matched_layers)).length,
     matched_hype_led: found.filter(r => led(r.matched_layers)).length,
+    matched_hype_only: found.filter(r => only(r.matched_layers)).length,
     top1_hype_touched: withTop1.filter(r => touched(r.top1_layers)).length,
     top1_hype_led: withTop1.filter(r => led(r.top1_layers)).length,
     top1_total: withTop1.length,
@@ -468,7 +476,7 @@ if (JSON_ONLY) {
   if (hypeAgg) {
     console.log('─'.repeat(72));
     const pct = (n, d) => d ? `${Math.round(100 * n / d)}%` : '—';
-    console.log(`  HyPE (multi-index): matched hits touched ${hypeAgg.matched_hype_touched}/${hypeAgg.matched_hits} (${pct(hypeAgg.matched_hype_touched, hypeAgg.matched_hits)}) · led ${hypeAgg.matched_hype_led}/${hypeAgg.matched_hits} (${pct(hypeAgg.matched_hype_led, hypeAgg.matched_hits)})`);
+    console.log(`  HyPE (multi-index): matched hits touched ${hypeAgg.matched_hype_touched}/${hypeAgg.matched_hits} (${pct(hypeAgg.matched_hype_touched, hypeAgg.matched_hits)}) · led ${hypeAgg.matched_hype_led}/${hypeAgg.matched_hits} (${pct(hypeAgg.matched_hype_led, hypeAgg.matched_hits)}) · only ${hypeAgg.matched_hype_only}`);
     console.log(`  HyPE top-1 results: touched ${pct(hypeAgg.top1_hype_touched, hypeAgg.top1_total)} · led ${pct(hypeAgg.top1_hype_led, hypeAgg.top1_total)}`);
   }
   console.log('═'.repeat(72));

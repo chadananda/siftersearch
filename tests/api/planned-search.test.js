@@ -31,6 +31,16 @@ describe('plannedSearch', () => {
     expect(r.plan.shape).toBe('quote');
   });
 
+  it('noHype turns the HyPE layer off and is its own cache entry (the A/B off-arm)', async () => {
+    const e = engine(() => many(10));
+    await plannedSearch('what is the purpose of life', { planner: planOf({}), engine: e.fn });
+    const on = e.calls.length;
+    expect(e.calls[0].hype).not.toBe(false);
+    await plannedSearch('what is the purpose of life', { planner: planOf({}), engine: e.fn, noHype: true });
+    expect(e.calls.length).toBeGreaterThan(on);
+    expect(e.calls.slice(on).every((c) => c.hype === false)).toBe(true);
+  });
+
   it('a typed citation leads with its paragraph and says which reference it is', async () => {
     const e = engine(() => many(5));
     const cited = { id: 999, text: 'Be generous in prosperity…', citation: { work: 'gleanings', pn: 'CXXX' } };

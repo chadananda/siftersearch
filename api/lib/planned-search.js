@@ -195,7 +195,7 @@ export function plannedSearch(query, opts) {
   return withAIContext({ trace: { ...trace, parent: id, planned: id } }, () => plannedSearchRun(query, opts));
 }
 
-async function plannedSearchRun(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, voices, minResults = 3, budgetMs = 1000, targeter, qdrant = qdrantDefault(), weights, vocab, citer, hints, namedScope } = {}) {
+async function plannedSearchRun(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, voices, minResults = 3, budgetMs = 1000, targeter, qdrant = qdrantDefault(), weights, vocab, citer, hints, namedScope, noHype = false } = {}) {
   const t0 = Date.now();
   const deadline = t0 + budgetMs;   // the whole strategy (Chad: 1s); late stages get what is left, then degrade
   // A reader's misspellings are corrected against the library's own vocabulary BEFORE anything searches (search/spell.js):
@@ -240,11 +240,12 @@ async function plannedSearchRun(query, { messages, given = {}, defaults = {}, li
   // the names finds them — so it pays for no query embedding.
   const probe = encounterProbe ?? (engine || people ? null : (await import('./encounters.js')).isEncounterQuestion);
   if (!plan.quote && probe?.(query)) layers = { ...layers, semantic: false, hype: false, encounter: true };
+  if (noHype) layers = { ...layers, hype: false };   // eval A/B: the HyPE-off arm (score-search --no-hype)
   const planMs = Date.now() - t0;
 
   const { SEARCH_VERSION = '' } = engine ? {} : await import('./answer-cache.js').catch(() => ({}));
   const writingsPass = owesWritings(plan);
-  const key = JSON.stringify([SEARCH_VERSION, fold(query), plan.filters, plan.prefer?.author || null, plan.shape, limit, scope_config || null, entityIds || null, qdrant, weights || null, hints || null, scopes.map((x) => x.docIds), plan.lean?.religion || null, writingsPass]);
+  const key = JSON.stringify([SEARCH_VERSION, fold(query), plan.filters, plan.prefer?.author || null, plan.shape, limit, scope_config || null, entityIds || null, qdrant, weights || null, hints || null, scopes.map((x) => x.docIds), plan.lean?.religion || null, writingsPass, noHype]);
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL_MS) {
     return { ...hit.value, cached: true, timings: { plan_ms: planMs, search_ms: 0, total_ms: Date.now() - t0 } };
