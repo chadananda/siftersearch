@@ -1,7 +1,9 @@
 // The Anís tools as an API: POST /api/v1/tools/<name> for every contract tool (api/lib/assistant/tools.js REGISTRY) — the same
 // run(name, input) contract strategies and the researcher use. Input/output JSON Schemas validate + serialize; every error is
 // {error:{code,message,retryable}} (tool-error.js): 400 invalid_input/empty_input, 404 unknown_tool, 503 unavailable, 504 timeout. Auth = public API key.
-import { REGISTRY, publicNames, list, run, ERROR } from '../lib/assistant/tools.js';
+// The list is read live from the catalog (anis-tools-repo): an HTTP tool registered at runtime is listed and callable at
+// POST /tools/{name} (the parametric route; code tools keep their own documented routes) without a restart.
+import { REGISTRY, publicNames, list, run, resolve, ERROR } from '../lib/assistant/tools.js';
 import { plainSchema as apiSchema } from '../lib/assistant/tool-kit.js';
 import { STATUS, errorBody, toToolError } from '../lib/assistant/tool-error.js';
 import { apiKeyAuth } from './public-api.js';
@@ -26,9 +28,16 @@ export default async function anisToolRoutes(fastify) {
         properties: { name: { type: 'string' }, label: { type: 'string' }, kind: { type: 'string' }, purpose: { type: 'string' },
           cost: { type: 'object', properties: { llm: { type: 'boolean' }, embed: { type: 'boolean' }, p50_ms: { type: 'number' } } },
           input: { type: 'object', additionalProperties: true }, output: { type: 'object', additionalProperties: true } } } } } } } },
-  }, async () => ({ tools: list().map((t) => ({ ...t, input: apiSchema(REGISTRY[t.name].input), output: apiSchema(REGISTRY[t.name].output) })) }));
+  }, async () => ({ tools: list().map((t) => ({ ...t, input: apiSchema(resolve(t.name)?.input), output: apiSchema(resolve(t.name)?.output) })) }));
 
-  for (const name of publicNames()) {
+  // runtime-registered (HTTP) tools: one parametric route; a name that is not a contract tool is unknown_tool
+  fastify.post('/tools/:name', { schema: { hide: true } }, async (req, reply) => {
+    const name = String(req.params.name || '');
+    if (!publicNames().includes(name)) return fail(reply, Object.assign(new Error(`unknown tool: ${name}`), { code: 'unknown_tool', retryable: false }));
+    try { return await run(name, req.body || {}); } catch (err) { return fail(reply, err); }
+  });
+
+  for (const name of Object.keys(REGISTRY)) {   // the code tools' documented routes (fixed at boot; a disabled one refuses in run())
     const e = REGISTRY[name];
     fastify.post(`/tools/${name}`, {
       schema: { summary: e.label, tags: ['Anís Tools'], security: [{ apiKey: [] }],

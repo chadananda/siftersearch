@@ -1,18 +1,19 @@
 // PUBLIC reads behind the three docs pages (strategy graph Phase 2), no auth, edge-cached (worker/edge-cache.js API_ROUTES):
-//   GET /api/v1/anis/tools      → the tools.js registry (schemas, the code steps that call each, 7-day calls/p50/p95) merged with
-//                                  the plan's tool rows; plan-only tools as built / planned
+//   GET /api/v1/anis/tools      → the tool catalog (anis-tools-repo: code tools from tools.js + HTTP tools registered at runtime; schemas,
+//                                  the code steps that call each, 7-day calls/p50/p95) merged with its plan rows (built in code / planned)
 //   GET /api/v1/anis/strategies → ONE ordered list of strategies, status built | planned, Unmatched last (a built one with its own
 //                                  graph carries graph, templates, 7-day numbers, branches, candidates), the code building steps
 //                                  (catalog + 7-day runs/p50/$) and the plan's ladder, combining rules and decisions. All of it from
 //                                  the strategy store (strategies + strategy_specs); the plan file is not read here
 //   GET /api/v1/anis/activities → the reader-facing activities from the plan, steps linked to the strategies/tools they use
-// Tools and activities still read the plan = planning/anis-strategies.json (anis-docs-data.js, mtime-cached).
+// Activities read the plan = planning/anis-strategies.json (anis-docs-data.js, mtime-cached); its tool rows come from the catalog.
 // Structure and aggregates only (strategy-docs.js): no turn ids, live questions or prompt text (the plan's curated example
 // phrasings were already public on the retired /docs/anis-strategies page). Each answer is memoised MEMO_MS.
 import { strategiesSnapshot, strategySpecs } from '../lib/repos/strategies-repo.js';
 import { strategyStats, branchStats, activityStats, toolStats, qualityByTurn } from '../lib/repos/strategy-stats-repo.js';
 import { activityCatalog } from '../lib/assistant/activities/catalog.js';
-import { REGISTRY } from '../lib/assistant/tools.js';
+import { contractEntries } from '../lib/assistant/tools.js';
+import { planToolRows } from '../lib/repos/anis-tools-repo.js';
 import { candidatesDb, listPromotions } from '../lib/repos/strategy-candidates-repo.js';
 import { publicStrategies, publicSteps, publicTools, publicStrategyPlan, publicStrategyList, publicReaderActivities } from '../lib/assistant/strategy-docs.js';
 import { loadPlan } from '../lib/assistant/anis-docs-data.js';
@@ -25,8 +26,10 @@ export default async function anisDocsRoutes(fastify, { deps = {} } = {}) {
   const sStats = deps.strategyStats || strategyStats, bStats = deps.branchStats || branchStats, quality = deps.quality || qualityByTurn;
   const aStats = deps.activityStats || activityStats, tStats = deps.toolStats || toolStats;
   const promos = deps.promotions || (() => listPromotions(candidatesDb(), { limit: 500 }));
-  const tools = deps.tools || (() => Object.values(REGISTRY).filter((e) => !e.internal));
-  const plan = deps.plan || loadPlan, specs = deps.specs || strategySpecs;
+  const tools = deps.tools || (() => contractEntries().filter((e) => !e.internal));
+  const planFile = deps.plan || loadPlan, planTools = deps.planTools || planToolRows, specs = deps.specs || strategySpecs;
+  // the plan file (classes, activities) + the catalog's plan rows as its tools
+  const plan = () => { const p = planFile(), t = safe(planTools, []); return p || t.length ? { ...(p || {}), tools: t } : null; };
   const memo = new Map();
   const cached = (key, build) => {
     const hit = memo.get(key);

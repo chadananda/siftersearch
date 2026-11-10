@@ -27,6 +27,7 @@
 //   node scripts/ops/ops.mjs anis-step-stats [--days 7] [--json]  (per step@version: runs, p50/p95, $, edge mix, Jev accuracy)
 //   node scripts/ops/ops.mjs anis-gaps | anis-candidates | anis-promote <id@v> [--dry] [--no-wait] | anis-activate <id@v> [--reason …] | anis-rollback <id> | anis-retire <id@v> [--reason …]  [--json]  (strategy graph Phase 3: gaps → candidates → replay promotion)
 //   node scripts/ops/ops.mjs jev-gates [--days 7] | jev-bank <gate> [--chosen X --q question --wrong|--right|--unlabelled --since 7d --limit n --state] | jev-label <call_id> <answer> [--q question --basis note] | jev-try <gate> <variant> [--n 200 --params '{json}' --chosen X --stored --since 30d --any --max-usd 2]  (Jev decision-gate bank + tuning; --json for JSON)
+//   node scripts/ops/ops.mjs anis-tools [--json] | anis-tool-register <tool.json> | anis-tool-status <name> <built|disabled> | anis-tool-credential <name> [--delete] (secret on stdin) | anis-tool-test <name> ['{json input}']  (the Anís tool catalog; secrets never printed)
 //   (the three print tables; --json prints the API's JSON)
 // Env: SIFTER_API (default: local gateway on tower, public API elsewhere), DEPLOY_SECRET (X-Internal-Key — the key requireInternal checks).
 import { apiBase } from '../lib/api-base.mjs';
@@ -227,6 +228,25 @@ else if (cmd === 'anis-retire' && name?.includes('@')) {   // withdraw a candida
   const [id, v] = name.split('@');
   await out(await call('POST', '/anis/retire', { id, version: Number(v), reason: val('--reason') ?? null }));
 }
+else if (cmd === 'anis-tools') {   // the Anís tool catalog (anis-tools-repo): every tool row + credential names (never a secret)
+  const j = await call('GET', '/ops/tools');
+  if (flag('--json')) await out(j);
+  else await new Promise((r) => process.stdout.write(`TOOLS · rev ${j.rev} · ${j.source} · secrets key ${j.key_set ? 'set' : 'NOT SET (HTTP tools with auth refuse)'}\n`
+    + j.tools.map((t) => `${t.status.padEnd(9)} ${t.executor.padEnd(5)} ${t.name.padEnd(28)} ${t.http ? `${t.http.method} ${t.http.url}${t.http.credential ? ` [cred ${t.http.credential}]` : ''}` : (t.purpose || '').slice(0, 80)}`).join('\n')
+    + `\n-- credentials\n${j.credentials.map((c) => `${c.name.padEnd(24)} ${c.updated_at}  used by ${c.used_by.join(', ') || '–'}`).join('\n') || '(none)'}\n`, r));
+}
+else if (cmd === 'anis-tool-register' && name) await out(await call('POST', '/ops/tools', JSON.parse((await import('node:fs')).readFileSync(name, 'utf8'))));   // an HTTP tool row from a JSON file (register or update)
+else if (cmd === 'anis-tool-status' && name && process.argv[4]) await out(await call('POST', `/ops/tools/${encodeURIComponent(name)}/status`, { status: process.argv[4] }));
+else if (cmd === 'anis-tool-credential' && name) {   // set/rotate: the secret is read from stdin, never from argv (argv shows in ps and shell history)
+  if (flag('--delete')) await out(await call('DELETE', `/ops/tools/credentials/${encodeURIComponent(name)}`));
+  else {
+    let secret = ''; for await (const c of process.stdin) secret += c;
+    secret = secret.replace(/\r?\n$/, '');
+    if (!secret) { console.error('usage: printf %s "$SECRET" | ops.mjs anis-tool-credential <name>'); process.exit(2); }
+    await out(await call('PUT', `/ops/tools/credentials/${encodeURIComponent(name)}`, { secret }));
+  }
+}
+else if (cmd === 'anis-tool-test' && name) await out(await call('POST', `/ops/tools/${encodeURIComponent(name)}/test`, { input: process.argv[4] ? JSON.parse(process.argv[4]) : {} }));   // one real call → output + ms
 else if (cmd === 'jev-gates') {   // every Jev decision gate: calls, answer mix, gold coverage/accuracy, shadow agreement, $ of a 200-call experiment
   const j = await call('GET', `/jev/gates?days=${val('--days') || 7}`);
   if (flag('--json')) await out(j);

@@ -18,6 +18,7 @@ import strategiesAdminRoutes from '../../api/routes/strategies-admin.js';
 import { layoutGraph, END } from '../../src/lib/strategy-graph-layout.js';
 import { strategiesFlat, toolsFlat, show } from '../../src/lib/anis-docs.js';
 import { policyFor } from '../../worker/edge-cache.js';
+import { planToolRows } from '../../api/lib/repos/anis-tools-repo.js';
 
 afterAll(() => resetStrategiesCache());
 
@@ -113,8 +114,8 @@ describe('public shapes', () => {
   });
 });
 
-describe('the plan (planning/anis-strategies.json) on the three pages', () => {
-  const plan = loadPlan();
+describe('the plan (planning/anis-strategies.json + the tool catalog\'s plan rows) on the three pages', () => {
+  const plan = { ...loadPlan(), tools: planToolRows() };   // tool rows live in tools.db (anis-tools-repo), not the plan file
   const tools = Object.values(REGISTRY).filter((e) => !e.internal);
   const strategies = publicStrategies({ snapshot: strategiesSnapshot(), activities: activityCatalog() }).strategies;
 

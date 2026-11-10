@@ -2,6 +2,8 @@
 // REGISTRY = the contract tools (strict input schema, output schema, cost, one error shape {error:{code,message,retryable}}).
 // PROCESS = non-contract tools that may call a model or are Jev's own (web_search, strategy executors): never on the API. (The old planner search lives only in combined-search.js, the respond@3 rollback.)
 // `_search` takes words → ranked, deduped passages; `_lookup` takes one known passage/work/word → facts. run(name, input, ctx); ctx.deps overrides (tests).
+// The CATALOG is data (repos/anis-tools-repo.js, Chad 11-10): HTTP tools registered at runtime join REGISTRY's code tools in resolve()/run()/
+// list()/llmTools() without a restart; a row's 'disabled' status refuses either kind. Store unreachable → the code tools alone.
 
 import Ajv from 'ajv';
 import { CANON } from './work-canon.js';
@@ -10,6 +12,8 @@ import { DOCTRINAL_KEYS } from '../search/doctrinal-rank.js';
 import { currentAIContext, withAIContext } from '../ai-context.js';
 import { FILTERS, PASSAGE, WORK, ERROR, SCHEMAS, PASSAGES, str, LIMIT, PID, nul, engineFilters, translationLabel, letterVariants, toPassage, dedupePassages, plainSchema, dep, layerDep, MOD } from './tool-kit.js';
 import { ToolError, toToolError } from './tool-error.js';
+import { catalog as toolCatalog } from '../repos/anis-tools-repo.js';
+import { runHttpTool } from './http-tool.js';
 export { FILTERS, PASSAGE, WORK, ERROR, SCHEMAS, engineFilters, translationLabel, letterVariants, toPassage, dedupePassages };
 
 // another tradition than the Bahá'í: original_lookup / translation_lookup go to its work family (editions.js)
@@ -527,12 +531,32 @@ const PROCESS_ENTRIES = [
 
 export const REGISTRY = Object.freeze(Object.fromEntries(ENTRIES.map((e) => [e.name, Object.freeze(e)])));
 export const PROCESS = Object.freeze(Object.fromEntries(PROCESS_ENTRIES.map((e) => [e.name, Object.freeze(e)])));
-export const canonical = (name) => (Object.hasOwn(REGISTRY, name) || Object.hasOwn(PROCESS, name) ? name : null);
-export const resolve = (name) => REGISTRY[name] || PROCESS[name] || null;
+// HTTP tools from the catalog, as registry-shaped entries (rebuilt when their row changes)
+const httpEntries = new Map();
+function httpEntry(row) {
+  const hit = httpEntries.get(row.name);
+  if (hit && hit.updatedAt === row.updatedAt) return hit.e;
+  const e = Object.freeze({ name: row.name, label: row.label, kind: 'tool', http: true, purpose: row.purpose, description: row.description || null,
+    input: row.input, output: row.output, outputName: row.outputName, example: row.example, cost: row.cost, version: row.updatedAt,
+    run: (input, ctx) => runHttpTool(row, input, ctx) });
+  httpEntries.set(row.name, { updatedAt: row.updatedAt, e });
+  return e;
+}
+const catalogRows = () => { try { return toolCatalog().tools; } catch { return new Map(); } };
+/** The catalog's status for a runnable tool (built | disabled), or null when the store has no code/http row (plan rows never gate a run). */
+export const toolStatus = (name) => { const r = catalogRows().get(name); return r && r.executor !== 'none' ? r.status : null; };
+const httpTool = (name) => { const r = catalogRows().get(name); return r?.executor === 'http' ? httpEntry(r) : null; };
+const enabledHttp = () => [...catalogRows().values()].filter((r) => r.executor === 'http' && r.status === 'built').map(httpEntry);
+export const canonical = (name) => (Object.hasOwn(REGISTRY, name) || Object.hasOwn(PROCESS, name) || httpTool(name) ? name : null);
+export const resolve = (name) => REGISTRY[name] || PROCESS[name] || httpTool(name) || null;
 export const label = (name) => resolve(name)?.label || null;
-/** The contract tools (the API + the tools page), canonical names. */
-export const publicNames = () => ENTRIES.map((e) => e.name);
-export const list = () => ENTRIES.map(({ name, label: l, kind, purpose, cost }) => ({ name, label: l, kind, purpose, cost }));
+/** The contract tools (the API + the tools page), canonical names: code tools not disabled in the catalog, then enabled HTTP tools. */
+export const contractEntries = () => [...ENTRIES.filter((e) => toolStatus(e.name) !== 'disabled'), ...enabledHttp()];
+export const publicNames = () => contractEntries().map((e) => e.name);
+export const list = () => contractEntries().map(({ name, label: l, kind, purpose, cost }) => ({ name, label: l, kind, purpose, cost }));
+/** The code tools' metadata for the catalog upsert (anis-tools-repo syncCodeTools; Anís instance 0, once per deploy). */
+export const codeToolMeta = () => ENTRIES.map(({ name, label: l, kind, purpose, description, input, output, outputName, example, cost }) =>
+  ({ name, label: l, kind, purpose, description, input, output, outputName, example, cost }));
 
 // CTAI answers cached locally (a concordance changes rarely): term → study, 1 h
 const CTAI_TTL = 3600e3, ctaiMem = new Map();
@@ -558,16 +582,17 @@ export function emptyRequired(e, input = {}) {
 
 const ajv = new Ajv({ strict: false });
 const validators = new Map();
-const validator = (e) => validators.get(e.name) || (validators.set(e.name, ajv.compile(plainSchema(e.input))), validators.get(e.name));
+const validator = (e) => { const k = `${e.name}@${e.version ?? 0}`; return validators.get(k) || (validators.set(k, ajv.compile(plainSchema(e.input))), validators.get(k)); };
 
 /** run(name, input, ctx) → the tool's plain JSON, or a thrown ToolError { code, message, retryable }: unknown_tool, empty_input,
  *  invalid_input (the input does not match the schema), timeout, unavailable, rights_unavailable, tool_failed. Never a silent empty. */
 export async function run(name, input = {}, ctx = {}) {
   const e = resolve(name);
   if (!e) throw new ToolError('unknown_tool', `unknown tool: ${name}`, false);
+  if (toolStatus(e.name) === 'disabled') throw new ToolError('unavailable', `${e.name} is disabled`, false);
   const blank = emptyRequired(e, input);
   if (blank) throw new ToolError('empty_input', `${e.name}: "${blank}" is empty — give the words to search for`, false);
-  if (REGISTRY[e.name] && e.input) { const v = validator(e); if (!v(input)) throw new ToolError('invalid_input', `${e.name}: ${ajv.errorsText(v.errors, { dataVar: 'input' })}`, false); }
+  if ((REGISTRY[e.name] || e.http) && e.input) { const v = validator(e); if (!v(input)) throw new ToolError('invalid_input', `${e.name}: ${ajv.errorsText(v.errors, { dataVar: 'input' })}`, false); }
   // every search the tool makes is traced with its name (search_trace.tool) — ambient, AsyncLocalStorage (ai-context.js)
   const trace = currentAIContext().trace || {}, t0 = performance.now();
   // each call's wall time → tool_runs (strategy-stats-repo; buffered, off the reply path) — the tools page's live numbers

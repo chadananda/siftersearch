@@ -1,7 +1,7 @@
 // The PUBLIC shapes behind the three layered Anís docs pages: /docs/anis-tools (foundation) → /docs/response-strategies (ONE list of
 // strategies, building steps) → /docs/anis-activities (reader activities). The strategy list is the strategies.db alone: graph rows
 // (strategies) + the docs specs (strategy_specs: patterns, planned entries, the plan half); the plan's A1–H2 ids stay as anchors and keys.
-// Plan tools and reader activities still come from planning/anis-strategies.json (anis-docs-data.js).
+// Reader activities come from planning/anis-strategies.json (anis-docs-data.js); plan tool rows from the tool catalog (anis-tools-repo).
 // Pure: rows + stats in, JSON out. What leaves here is structure and aggregates only — never a turn id, a question, a reply
 // or template/prompt text (tests/api/strategy-docs.test.js checks the leak list).
 import { SCHEMAS } from './tools.js';
@@ -115,7 +115,7 @@ const usesOf = (plan) => {   // plan tool id → { classes, reader activities } 
 const planTool = (t, u) => ({ id: t.id, name: t.name, does: t.does, where: t.where, cost: t.cost, status: t.status, status_class: statusClass(t.status),
   classes: u.get(t.id)?.classes || [], reader_activities: u.get(t.id)?.reader_activities || [] });
 
-/** Tools page: REGISTRY entries (tools.js) + the code steps that call them + live 7-day numbers (toolStats()), merged with the
+/** Tools page: the catalog's callable tools (tools.js code tools + runtime HTTP tools) + the code steps that call them + live 7-day numbers (toolStats()), merged with the
  *  plan's tool rows by id (PLAN_TO_REGISTRY); plan tools with no registry entry are listed by status: built in code / planned. */
 export function publicTools({ tools = [], activities = [], live = {}, plan = null }) {
   const callers = new Map();
@@ -134,7 +134,7 @@ export function publicTools({ tools = [], activities = [], live = {}, plan = nul
     planned: rest.filter((t) => t.status_class !== 'live'),    // partial or to build
     counts: { exists: planTools.filter((t) => t.status === 'exists').length, partial: planTools.filter((t) => t.status === 'partial').length,
       to_build: planTools.filter((t) => t.status === 'to build').length, registry: tools.length },
-    plan_source: plan ? { file: 'planning/anis-strategies.json', updated: plan.updated ?? null } : null,
+    plan_source: plan ? { file: 'tools.db (the tool catalog)', store: 'tools.db', updated: plan.updated ?? null } : null,
   };
 }
 const strip = (s) => { if (!s || typeof s !== 'object') return s ?? null; const { $id, ...rest } = s; return rest; };
