@@ -24,10 +24,18 @@ const loadAsset = (file) => { try { return readFileSync(join(STATIC_DIR, file), 
 export const bundleHash = (body) => createHash('md5').update(String(body || '')).digest('hex').slice(0, 10);
 export const versionedLoader = (loader, hash) =>
   String(loader).replace("bundle.src = api + '/widget/sifter-chat.js';", `bundle.src = api + '/widget/sifter-chat.js?v=${hash}';`);
+// Hosts may embed /widget.js from any address of ours (Long Beach used the api tunnel), but Google sign-in only accepts the
+// registered public origin, so the widget always talks to `site` (the worker proxies /api + /widget). Local dev keeps its own.
+export const publicLoader = (loader, hash, site) =>
+  versionedLoader(loader, hash).replace('var api = new URL(script.src).origin;',
+    `var api = new URL(script.src).origin; if (!/^https?:\\/\\/(localhost|127\\.0\\.0\\.1)(:|$)/.test(api)) api = ${JSON.stringify(site)};`);
+// The loader is never kept by a browser: it is 2 KB and the only unversioned piece, so a deploy reaches every page load.
+export const LOADER_CACHE = 'public, no-cache, max-age=0, s-maxage=60';
 const BUNDLE = loadAsset('sifter-chat.js');
 const BUNDLE_HASH = bundleHash(BUNDLE);
 const LOADER = loadAsset('widget.js');
-const ASSETS = { 'widget.js': LOADER ? versionedLoader(LOADER, BUNDLE_HASH) : null, 'sifter-chat.js': BUNDLE };
+const SITE_ORIGIN = (process.env.PUBLIC_WIDGET_ORIGIN || 'https://siftersearch.com').replace(/\/$/, '');
+const ASSETS = { 'widget.js': LOADER ? publicLoader(LOADER, BUNDLE_HASH, SITE_ORIGIN) : null, 'sifter-chat.js': BUNDLE };
 const DEMO_HTML = loadAsset('demo.html');
 const ADMIN_HTML = loadAsset('admin.html');
 
@@ -61,7 +69,7 @@ export default async function widgetRoutes(fastify) {
       // A request for exactly this build (?v=<hash>) is immutable; the loader and unversioned requests stay short.
       const pinned = file === 'sifter-chat.js' && req.query?.v === BUNDLE_HASH;
       return reply.header('content-type', 'application/javascript; charset=utf-8')
-        .header('cache-control', pinned ? 'public, max-age=31536000, immutable' : 'public, max-age=300, s-maxage=300')
+        .header('cache-control', pinned ? 'public, max-age=31536000, immutable' : LOADER_CACHE)
         .header('access-control-allow-origin', '*').send(body);
     });
   }
