@@ -6,6 +6,8 @@
 //   node scripts/ops/ops.mjs search-excluded                 search exclusion list: metadata + retired duplicates, points left per collection
 //   node scripts/ops/ops.mjs report <name> [--days 14 | --ids 1,2,3 | --params '{json}'] [--wait] [--latest]
 //   node scripts/ops/ops.mjs media held | rejudge [id…] | progress | log [--since 6h|ISO --kind k1,k2 --limit n] | gauges [--host h] [--hours n] [--rows] | health-history <machine> [--from --to] | status <id|slug|words> | stage <stage> [--missing] [--status done] [--after N] | add <url|path>… | redo <id> <stage>…
+//   node scripts/ops/ops.mjs hype-program <core|gray|history|rest> [--dry-run] [--max-usd N] [--sample-rate 0.01] [--limit N] [--no-disambig] [--resume] [--wait]   tier-ordered HyPE under budget key hype-program (no tier + --dry-run = every tier); --set-baseline [--last N] sets the quality baseline from the ledger
+//   node scripts/ops/ops.mjs report hype-quality [--params '{"tier":"core","last":20}'] [--wait]   spend, ¶ done/remaining per tier, ledger vs baseline, grades
 //   node scripts/ops/ops.mjs spend-caps                      each caller group's spend today vs. its daily cap, and whether it is blocking
 //   node scripts/ops/ops.mjs qdrant-optimizer [<collection> --threads N|auto]   searched collections' optimizer state; --threads caps merges live (bulk runs)
 //   node scripts/ops/ops.mjs search-latency [--minutes 60] [--slow qsrv:concepts [--over ms]]   per-stage p50/p95 vs the search budget (search/latency-budget.js); --slow lists that stage's slowest trace ids
@@ -45,6 +47,17 @@ const call = async (method, path, body) => {
 };
 // stdout to a pipe is async: process.exit() right after console.log cut results at 64 KB (10-11) — flush first
 const out = (obj) => new Promise((r) => process.stdout.write(`${JSON.stringify(obj, null, 1)}\n`, r));
+// POST a report/job run; --wait polls it to the end (an hour at most — a long job keeps running server-side)
+const runReport = async (name, params) => {
+  let run = await call('POST', `/ops/reports/${name}`, params ? { params } : {});
+  console.error(`run ${run.id} ${run.status}`);
+  const deadline = Date.now() + 60 * 60_000;
+  while (flag('--wait') && ['queued', 'running'].includes(run.status) && Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 10_000));
+    run = await call('GET', `/ops/reports/runs/${run.id}`);
+  }
+  return run;
+};
 const [cmd, name] = process.argv.slice(2);
 const flag = (k) => process.argv.includes(k);
 const val = (k) => (flag(k) ? process.argv[process.argv.indexOf(k) + 1] : undefined);
@@ -56,15 +69,14 @@ else if (cmd === 'report' && name) {
   if (flag('--latest')) await out(await call('GET', `/ops/reports/${name}/latest`));
   else {
     const params = val('--params') ? JSON.parse(val('--params')) : val('--days') ? { days: Number(val('--days')) } : val('--hours') ? { hours: Number(val('--hours')) } : val('--ids') ? { ids: val('--ids').split(',').map(Number) } : null;
-    let run = await call('POST', `/ops/reports/${name}`, params ? { params } : {});
-    console.error(`run ${run.id} ${run.status}`);
-    const deadline = Date.now() + 60 * 60_000;
-    while (flag('--wait') && ['queued', 'running'].includes(run.status) && Date.now() < deadline) {
-      await new Promise((r) => setTimeout(r, 10_000));
-      run = await call('GET', `/ops/reports/runs/${run.id}`);
-    }
-    await out(run);
+    await out(await runReport(name, params));
   }
+} else if (cmd === 'hype-program') {
+  // name = the tier (core|gray|history|rest); none + --dry-run = every tier. All logic runs server-side (ops job hype-program).
+  const tier = name && !name.startsWith('--') ? name : undefined, num = (k) => (val(k) != null ? Number(val(k)) : undefined);
+  const params = Object.fromEntries(Object.entries({ tier, maxUsd: num('--max-usd'), sampleRate: num('--sample-rate'), limit: num('--limit'), dryRun: flag('--dry-run') || undefined,
+    noDisambig: flag('--no-disambig') || undefined, resume: flag('--resume') || undefined, setBaseline: flag('--set-baseline') ? { ...(tier ? { tier } : {}), ...(num('--last') ? { last: num('--last') } : {}) } : undefined }).filter(([, v]) => v !== undefined));
+  await out(await runReport('hype-program', params));
 } else if (cmd === 'run' && name) await out(await call('GET', `/ops/reports/runs/${name}`));   // one run by id (e.g. the media-item jobs a report queued)
 else if (cmd === 'cancel' && name) await out(await call('DELETE', `/ops/reports/runs/${Number(name)}`));
 else if (cmd === 'spend-caps') await out(await call('GET', '/ops/spend-caps'));

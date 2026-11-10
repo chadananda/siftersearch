@@ -9,15 +9,15 @@ import { logger } from '../logger.js';
 import { createHypeBatch } from './hype-batch.js';
 import { queueFollowIndex } from '../ops/index-follow.js';
 
-export const makeHypeBatch = (over = {}) => createHypeBatch({
+export const makeHypeBatch = (over = {}, caller = 'hype-batch') => createHypeBatch({
   rag, transport: anthropicBatchTransport({ stage: 'hype' }), langOf, assertSpend: assertSpendAllowed, log: logger,
   // settled questions go straight to the hype vectors (hype-index on the indexer; the follow loop is the backstop)
   onSettled: (docIds) => queueFollowIndex('hype', docIds, 'hype-settle', { log: logger }),
   budgetOver: async () => ((await budgetStatus().catch(() => [])) || []).some((b) => b.provider === 'anthropic' && b.over),
   meter: ({ model, docId, ok, usage, error }) => logAIUsage(ok
-    ? { provider: 'anthropic', model, serviceType: 'grounding:hype', caller: 'hype-batch', documentId: docId, batch: true, success: true,
+    ? { provider: 'anthropic', model, serviceType: 'grounding:hype', caller, documentId: docId, batch: true, success: true,
         promptTokens: usage.input + usage.cacheRead + usage.cacheWrite, completionTokens: usage.output, cachedTokens: usage.cacheRead,
         cacheWriteTokens: usage.cacheWrite, totalTokens: usage.input + usage.cacheRead + usage.cacheWrite + usage.output }
-    : { provider: 'anthropic', model, serviceType: 'grounding:hype', caller: 'hype-batch', documentId: docId, batch: true, success: false, errorMessage: error }),
+    : { provider: 'anthropic', model, serviceType: 'grounding:hype', caller, documentId: docId, batch: true, success: false, errorMessage: error }),
   ...over,
 });

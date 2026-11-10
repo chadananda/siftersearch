@@ -39,16 +39,7 @@ const DOC = Number(arg('doc', 20911));
 const SAMPLE = Number(arg('sample', 12));
 const KEY = secret('DEPLOY_SECRET');
 
-const RUBRIC = `You are grading SEARCH QUESTIONS written for one passage. They exist so a reader's own wording retrieves this passage.
-
-For EACH question return:
-  "searchable": true only if a real reader might type it into a search box. FALSE for anything referring to the text itself ("what does this passage say/ask", "according to the following"), and FALSE for a topic with a question mark that would match anything ("what did the author say about nature?").
-  "answered": true only if THIS passage answers it — either text. A question about an original-language term is ANSWERED when that term appears in the original passage shown, even though the English does not contain it: that is what the two texts are for. False only if it genuinely needs knowledge from outside both.
-  "distinct": false if another question in the set asks the same thing in different words — name it in "same_as".
-Then for the SET:
-  "missed": short list of things this passage clearly answers that NO question covers. Be strict; this is the most useful field.
-Return ONLY JSON:
-{"questions":[{"i":0,"searchable":true,"answered":true,"distinct":true,"same_as":null,"why":"…"}],"missed":["…"]}`;
+import { RUBRIC, JUDGE_MODEL, judgeUser } from '../../api/lib/pipeline/hype-rubric.js';
 
 async function judge(paragraph, original, questions, model) {
   const body = {
@@ -58,7 +49,7 @@ async function judge(paragraph, original, questions, model) {
     // original-language term "requires outside knowledge" — which would have had me tear out the terms that
     // are the entire reason for the bilingual layer. Judging bilingual questions against monolingual
     // evidence measures the wrong population; that error has cost this project a night before.
-    user: `PASSAGE (English):\n${paragraph}${original ? `\n\nPASSAGE (original language — a question about a term FOUND HERE is answerable):\n${original}` : ''}\n\nQUESTIONS:\n${questions.map((q, i) => `${i}. ${q}`).join('\n')}`,
+    user: judgeUser(paragraph, original, questions),
   };
   const r = await fetch(`${API}/api/admin/concepts/judge-hype`, {
     method: 'POST', headers: { 'X-Internal-Key': KEY, 'Content-Type': 'application/json' },
@@ -107,7 +98,7 @@ const worst = [];
 for (const row of picked) {
   const questions = qsOf(row);
   let v;
-  try { v = await judge(row.text, row.original_text, questions, arg('model', 'claude-sonnet-4-6')); }
+  try { v = await judge(row.text, row.original_text, questions, arg('model', JUDGE_MODEL)); }
   catch (e) { console.error(`  ¶${row.paragraph_index}: ${e.message}`); continue; }
   tally.questions += questions.length;
   for (const q of v.questions || []) {
@@ -123,7 +114,7 @@ for (const row of picked) {
 }
 
 const pct = (n) => (tally.questions ? Math.round((100 * n) / tally.questions) : 0);
-const report = { doc: DOC, model: arg('model', 'claude-sonnet-4-6'), ...tally, ...coverage,
+const report = { doc: DOC, model: arg('model', JUDGE_MODEL), ...tally, ...coverage,
   searchablePct: pct(tally.searchable), answeredPct: pct(tally.answered), distinctPct: pct(tally.distinct),
   missedPerParagraph: tally.paragraphs ? Number((tally.missed / tally.paragraphs).toFixed(2)) : 0 };
 

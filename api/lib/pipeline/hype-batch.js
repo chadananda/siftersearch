@@ -19,14 +19,14 @@ const cid = (docId, paraId, part) => `d${docId}_p${paraId}_s${part}`;
 const parseCid = (c) => { const m = /^d(\d+)_p(\d+)_s(\d+)$/.exec(c); return m ? { docId: +m[1], id: +m[2], part: +m[3] } : null; };
 
 export function createHypeBatch({ rag, transport, budgetOver = async () => false, langOf = async () => null, assertSpend = () => {}, meter = () => {},
-  onSettled = null, dir = DEFAULT_DIR, now = () => Date.now(), log = console, maxRequests = MAX_REQUESTS, maxBytes = MAX_BYTES, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+  onSettled = null, measure = null, onBatchDone = null, dir = DEFAULT_DIR, now = () => Date.now(), log = console, maxRequests = MAX_REQUESTS, maxBytes = MAX_BYTES, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
   const file = path.join(dir, 'state.json');
   const load = () => { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return { batches: {}, attempts: {}, split: [] }; } };
   const save = (st) => { fs.mkdirSync(dir, { recursive: true }); const t = `${file}.${process.pid}.tmp`; fs.writeFileSync(t, JSON.stringify(st)); fs.renameSync(t, file); };
   const inflight = (st) => new Set(Object.values(st.batches).flatMap((b) => Object.values(b.docs).flatMap((d) => d.units.map((u) => u.id))));
 
   /** Plan + submit. docIds in PRIORITY ORDER. limit = max paragraphs this call. Returns what was sent and why anything was not. */
-  async function submit(docIds, { limit = Infinity, noDisambig = false, upgrade = false, model, maxTokens } = {}) {
+  async function submit(docIds, { limit = Infinity, noDisambig = false, upgrade = false, model, maxTokens, idsByDoc = null, tag = null } = {}) {
     const st = load(); const out = { batches: [], paragraphs: 0, requests: 0, gated: [], overCap: 0, spendRefused: [], over_budget: false, docs: 0 };
     if (await budgetOver()) { out.over_budget = true; return out; }
     const exclude = inflight(st), split = new Set(st.split || []);
@@ -34,13 +34,14 @@ export function createHypeBatch({ rag, transport, budgetOver = async () => false
     const flush = async () => {
       if (!cur?.requests.length) { cur = null; return; }
       const id = await transport.create(cur.requests, { model: cur.model });   // reserve nothing before this succeeds: a throw leaves state untouched
-      st.batches[id] = { at: now(), model: cur.model, version: HYPE_VERSION, requests: cur.requests.length, docs: cur.docs, settled: {} };
+      st.batches[id] = { at: now(), model: cur.model, version: HYPE_VERSION, requests: cur.requests.length, docs: cur.docs, settled: {}, ...(tag ? { tag } : {}) };
       save(st); out.batches.push(id); out.requests += cur.requests.length; cur = null;
     };
     for (const docId of docIds) {
       if (left <= 0) break;
       let p;
-      try { p = await rag.retrieval.plan(docId, { limit: left, noDisambig, upgrade, exclude, split, model, maxTokens }); }
+      if (idsByDoc && !idsByDoc[docId]?.length) continue;   // a tier run names its paragraphs: an empty list must never mean "the whole book"
+      try { p = await rag.retrieval.plan(docId, { limit: left, noDisambig, upgrade, exclude, split, model, maxTokens, ...(idsByDoc ? { ids: idsByDoc[docId] } : {}) }); }
       catch (e) { if (e?.fatal) throw e; out.gated.push({ docId, why: String(e.message).slice(0, 120) }); continue; }   // disambiguation gate etc.: skip the doc, keep going
       if (p.skipped.length) out.overCap += p.skipped.length;
       if (!p.units.length) continue;
@@ -90,9 +91,12 @@ export function createHypeBatch({ rag, transport, budgetOver = async () => false
           sum.written += r.written; if (r.written > 0) wrote.add(Number(docId)); sum.exhausted += r.exhausted; sum.alreadyDone += r.alreadyDone; sum.failed += r.failed.length;
           for (const f of r.failed) { st.attempts[f] = (st.attempts[f] || 0) + 1; if (byDoc[docId]?.[f]?.truncated) (st.split ||= []).includes(f) || st.split.push(f); }
           for (const o of outcomes) if (!r.failed.includes(o.id)) { delete st.attempts[o.id]; st.split = (st.split || []).filter((x) => x !== o.id); }
+          // measure: the host's free quality probe of what this doc just wrote → kept on the batch for onBatchDone
+          if (measure) { try { (b.acc ||= {})[docId] = await measure({ batchId: id, docId: Number(docId), outcomes, result: r, truncated: new Set(d.units.filter((u) => byDoc[docId]?.[u.id]?.truncated).map((u) => u.id)) }); } catch (e) { sum.errors.push(`measure doc ${docId}: ${e.message}`); } }
           b.settled[docId] = true; save(st);
         } catch (e) { allSettled = false; sum.errors.push(`settle doc ${docId}: ${e.message}`); if (e?.fatal) throw e; }
       }
+      if (allSettled && onBatchDone) { try { await onBatchDone({ id, at: b.at, model: b.model, version: b.version, requests: b.requests, tag: b.tag || null, acc: b.acc || {} }); } catch (e) { sum.errors.push(`onBatchDone ${id}: ${e.message}`); } }
       if (allSettled) { delete st.batches[id]; save(st); log.info?.({ batch: id, ...sum }, 'hype-batch collected'); }
     }
     if (wrote.size && onSettled) { try { await onSettled([...wrote]); } catch (e) { sum.errors.push(`onSettled: ${e.message}`); } }

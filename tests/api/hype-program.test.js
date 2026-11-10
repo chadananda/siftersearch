@@ -1,0 +1,281 @@
+// pipeline/hype-program — budget (month ceiling, month/30 pace, job cap, in-flight), dryRun estimate, the submit→collect loop, billing key,
+// quiet budget stop vs quality auto-pause, baseline from ledger, 1% grader, hype-quality report. Everything injected; no network, no DB.
+import { describe, it, expect, beforeEach } from 'vitest';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { hypeProgramJob, hypeQualityReport, budgetRoom, monthlyUsd, EST_USD_PER_REQUEST, EST_FORMULA } from '../../api/lib/pipeline/hype-program.js';
+import { createStore } from '../../api/lib/pipeline/hype-ledger.js';
+import { currentAIContext } from '../../api/lib/ai-context.js';
+
+const V = 'hype-v15-seeker';
+let dir, store;
+beforeEach(() => { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hype-program-')); store = createStore(dir); });
+
+describe('budgetRoom', () => {
+  const base = { monthUsd: 1000, spentMonth: 0, spentToday: 0, inflightUsd: 0, jobSpent: 0, maxUsd: 500 };
+  it('daily pace is month/30; the tightest limit binds', () => {
+    expect(budgetRoom(base)).toMatchObject({ binding: 'day', pace: 1000 / 30 });
+    expect(budgetRoom(base).usd).toBeCloseTo(33.33, 2);
+    expect(budgetRoom({ ...base, spentToday: 10 }).usd).toBeCloseTo(23.33, 1);
+    expect(budgetRoom({ ...base, spentMonth: 990, spentToday: 0 })).toMatchObject({ usd: 10, binding: 'month' });
+    expect(budgetRoom({ ...base, maxUsd: 5 })).toMatchObject({ usd: 5, binding: 'job' });
+  });
+  it('counts what is in flight against every limit, never negative', () => {
+    expect(budgetRoom({ ...base, inflightUsd: 30 }).usd).toBeCloseTo(3.33, 1);
+    expect(budgetRoom({ ...base, spentToday: 40 }).usd).toBe(0);
+  });
+  it('monthlyUsd reads HYPE_PROGRAM_USD_MONTH; unset or junk is 0 (fail closed)', () => {
+    expect(monthlyUsd({ HYPE_PROGRAM_USD_MONTH: '1000' })).toBe(1000);
+    expect(monthlyUsd({})).toBe(0);
+    expect(monthlyUsd({ HYPE_PROGRAM_USD_MONTH: 'abc' })).toBe(0);
+  });
+});
+
+// ---- the loop's fakes
+const row = (id, qs) => ({ id, doc_id: 1, text: 'The soul of man is a sign of God and returns to Him after the passing of the body.', hyp_model: V, hyp_questions: JSON.stringify(qs) });
+const GOOD = ['What is the soul?', 'Where does the soul go after death?'];
+// A fake batch layer: submit records a batch; collect settles it by calling the job's measure + onBatchDone hooks like the real one.
+function fakeWorld({ batchStats = () => ({}), questions = GOOD, select, spend = {}, judge, rowsFor } = {}) {
+  const w = { submits: [], billTo: [], judged: [], logs: [], pending: [], n: 0, selects: [], ...{} };
+  const queue = select || [];
+  const env = { HYPE_PROGRAM_USD_MONTH: '1000' };
+  const deps = {
+    env, store, sleep: async () => {}, rand: () => 0, draining: async () => false,
+    log: async (k, t) => { w.logs.push(`${k}: ${t}`); },
+    spend: { month: async () => spend.month ?? 0, today: async () => spend.today ?? 0 },
+    select: async (a) => { w.selects.push(a); return queue.shift() || { docs: [], paragraphs: 0, cursor: a.after, exhausted: true }; },
+    rows: async (ids) => (rowsFor ? rowsFor(ids) : ids.map((id) => row(id, questions))),
+    judge: judge || (async (a) => { w.judged.push(a); return { questions: a.questions.map((_, i) => ({ i, searchable: true, answered: true, distinct: true })), missed: [] }; }),
+    makeHb: async (o) => ({
+      status: () => ({ batches: w.pending.map((b) => ({ id: b.id, requests: b.requests })) }),
+      submit: async (docIds, opts) => {
+        w.billTo.push(currentAIContext().billTo);
+        const ids = Object.values(opts.idsByDoc).flat(), id = `b${++w.n}`;
+        w.submits.push({ docIds, opts });
+        w.pending.push({ id, requests: ids.length, tag: opts.tag, idsByDoc: opts.idsByDoc });
+        return { batches: [id], paragraphs: ids.length, requests: ids.length, gated: [], spendRefused: [], over_budget: false, docs: docIds.length };
+      },
+      collect: async () => {
+        const sum = { written: 0, failed: 0, exhausted: 0, pending: 0, errors: [] };
+        for (const b of w.pending.splice(0)) {
+          const acc = {};
+          for (const [docId, ids] of Object.entries(b.idsByDoc)) {
+            const outcomes = ids.map((id) => ({ id, replies: ['{}'] })), result = { written: ids.length, failed: [], exhausted: 0, alreadyDone: 0, stats: batchStats(b) };
+            acc[docId] = await o.measure({ batchId: b.id, docId: Number(docId), outcomes, result, truncated: new Set() }); sum.written += ids.length;
+          }
+          await o.onBatchDone({ id: b.id, at: Date.now(), model: 'haiku', version: V, requests: b.requests, tag: b.tag, acc });
+        }
+        return sum;
+      },
+    }),
+  };
+  return { w, deps };
+}
+const docsOf = (n, start = 1) => ({ docs: [{ docId: 1, ids: Array.from({ length: n }, (_, i) => start + i) }], paragraphs: n, cursor: 0, exhausted: false });
+
+describe('hypeProgramJob: guards', () => {
+  it('tier and maxUsd are required for a real run; a bad tier is refused', async () => {
+    const { deps } = fakeWorld();
+    expect((await hypeProgramJob({}, deps)).status).toBe('error');
+    expect((await hypeProgramJob({ tier: 'core' }, deps)).error).toMatch(/maxUsd/);
+    expect((await hypeProgramJob({ tier: 'nope', maxUsd: 5 }, deps)).error).toMatch(/tier must be/);
+  });
+  it('without HYPE_PROGRAM_USD_MONTH it spends nothing and says why (no phase stopped)', async () => {
+    const { w, deps } = fakeWorld({ select: [docsOf(5)] });
+    deps.env = {};
+    const r = await hypeProgramJob({ tier: 'core', maxUsd: 5 }, deps);
+    expect(r).toMatchObject({ status: 'budget' });
+    expect(r.phase).toBeUndefined();
+    expect(w.submits).toHaveLength(0);
+  });
+});
+
+describe('hypeProgramJob: dryRun', () => {
+  const counts = { core: { primary: { docs: 3, total: 1000, done: 200, pending: 800, requests: 1000 }, copy: { docs: 1, total: 100, done: 0, pending: 100, requests: 100 } },
+    gray: { primary: { docs: 1, total: 10, done: 0, pending: 10, requests: 10 }, copy: { docs: 0, total: 0, done: 0, pending: 0, requests: 0 } },
+    history: { primary: { docs: 0, total: 0, done: 0, pending: 0, requests: 0 }, copy: { docs: 0, total: 0, done: 0, pending: 0, requests: 0 } },
+    rest: { primary: { docs: 9, total: 1e6, done: 0, pending: 1e6, requests: 1.2e6 }, copy: { docs: 0, total: 0, done: 0, pending: 0, requests: 0 } } };
+  it('estimates requests x $0.18/1000 per tier, reports the formula and the days at pace; spends nothing', async () => {
+    const { w, deps } = fakeWorld(); deps.count = async () => counts;
+    const r = await hypeProgramJob({ dryRun: true }, deps);
+    expect(r.dryRun).toBe(true);
+    expect(r.formula).toBe(EST_FORMULA);
+    expect(r.estUsdPerRequest).toBe(0.00018);
+    expect(r.tiers.core.primary).toMatchObject({ pending: 800, requests: 1000, estUsd: 0.18 });
+    expect(r.tiers.rest.primary.estUsd).toBe(216);
+    expect(r.total).toMatchObject({ requests: 1000 + 100 + 10 + 1.2e6, usd: Math.round((1.2e6 + 1110) * EST_USD_PER_REQUEST * 100) / 100 });
+    expect(r.budget).toMatchObject({ monthUsd: 1000, paceUsdPerDay: 33.33, envSet: true });
+    expect(r.budget.daysAtPace).toBe(Math.ceil(r.total.usd / (1000 / 30)));
+    expect(w.submits).toHaveLength(0);
+  });
+  it('one tier only when asked', async () => {
+    const { deps } = fakeWorld(); deps.count = async () => counts;
+    const r = await hypeProgramJob({ dryRun: true, tier: 'gray' }, deps);
+    expect(Object.keys(r.tiers)).toEqual(['gray']);
+    expect(r.total.requests).toBe(10);
+  });
+});
+
+describe('hypeProgramJob: run', () => {
+  it('runs tier rounds until the tier is done, tags batches, bills the hype-program key, writes a ledger entry per batch', async () => {
+    const { w, deps } = fakeWorld({ select: [docsOf(3), docsOf(2, 10)] });
+    const r = await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 0 }, deps);
+    expect(r).toMatchObject({ status: 'complete', tier: 'core', paragraphs: 5, batches: 2, written: 5 });
+    expect(w.billTo).toEqual(['hype-program', 'hype-program']);
+    expect(w.submits[0].opts).toMatchObject({ tag: { tier: 'core', pass: 'primary' }, idsByDoc: { 1: [1, 2, 3] } });
+    const led = store.ledger();
+    expect(led.map((e) => [e.id, e.tier, e.requests])).toEqual([['b1', 'core', 3], ['b2', 'core', 2]]);
+    expect(led[0].rates).toMatchObject({ sent: 3, questionsPerPara: 2 });
+    expect(w.logs.some((l) => /core\/primary · 3 ¶/.test(l))).toBe(true);
+  });
+  it('never exceeds the round size implied by the budget room', async () => {
+    const { w, deps } = fakeWorld({ select: [docsOf(2)] });
+    await hypeProgramJob({ tier: 'core', maxUsd: 5 * EST_USD_PER_REQUEST * 1.5 }, deps);   // room for 7 requests
+    expect(w.selects[0].limit).toBe(Math.floor((5 * 1.5 * EST_USD_PER_REQUEST) / EST_USD_PER_REQUEST));
+  });
+  it('stops quietly when the month is spent (status budget, no phase stopped, nothing submitted)', async () => {
+    const { w, deps } = fakeWorld({ select: [docsOf(5)], spend: { month: 1000, today: 0 } });
+    const r = await hypeProgramJob({ tier: 'core', maxUsd: 50 }, deps);
+    expect(r).toMatchObject({ status: 'budget', binding: 'month' });
+    expect(JSON.stringify(r)).not.toContain('"phase":"stopped"');
+    expect(w.submits).toHaveLength(0);
+  });
+  it('holds to the daily pace: month/30 spent today ends the run for today', async () => {
+    const { w, deps } = fakeWorld({ select: [docsOf(5)], spend: { month: 100, today: 34 } });
+    const r = await hypeProgramJob({ tier: 'core', maxUsd: 500 }, deps);
+    expect(r).toMatchObject({ status: 'budget', binding: 'day' });
+    expect(w.submits).toHaveLength(0);
+  });
+  it('the job maxUsd caps what this run may spend (spend since the run began)', async () => {
+    let month = 100;
+    const { w, deps } = fakeWorld({ select: [docsOf(100), docsOf(100, 200), docsOf(100, 400)] });
+    deps.spend = { month: async () => month, today: async () => 0 };
+    const sub = deps.makeHb; deps.makeHb = async (o) => { const hb = await sub(o); const c = hb.collect; hb.collect = async () => { month += 0.02; return c(); }; return hb; };
+    const r = await hypeProgramJob({ tier: 'core', maxUsd: 0.03 }, deps);
+    expect(r).toMatchObject({ status: 'budget', binding: 'job' });
+    expect(w.submits.length).toBeGreaterThan(0);
+    expect(w.submits.length).toBeLessThan(3);
+  });
+  it('a docs-only no-op round (the planner sends nothing) skips those docs instead of spinning', async () => {
+    const { w, deps } = fakeWorld({ select: [docsOf(3), docsOf(3)] });
+    const sub = deps.makeHb; deps.makeHb = async (o) => { const hb = await sub(o); hb.submit = async () => ({ batches: [], paragraphs: 0, requests: 0, gated: [], spendRefused: [], over_budget: false, docs: 0 }); return hb; };
+    const r = await hypeProgramJob({ tier: 'core', maxUsd: 5 }, deps);
+    expect(r.status).toBe('complete');
+    expect(r.unplannable).toBeGreaterThan(0);
+    expect(store.cursors()['core:primary:dis'].skip).toContain(1);
+  });
+  it('yields (resumable) when the service drains while batches are pending', async () => {
+    const { deps } = fakeWorld({ select: [docsOf(3)] });
+    const sub = deps.makeHb; deps.makeHb = async (o) => { const hb = await sub(o); hb.collect = async () => ({ written: 0, failed: 0, exhausted: 0, pending: 1, errors: [] }); return hb; };
+    deps.draining = async () => true;
+    const r = await hypeProgramJob({ tier: 'core', maxUsd: 5 }, deps);
+    expect(r).toMatchObject({ yielded: true, resume: { tier: 'core', maxUsd: 5 } });
+  });
+});
+
+describe('hypeProgramJob: quality auto-pause', () => {
+  const baseline = { questionsPerPara: 2, faultRate: 0.05, emptyRate: 0, exhaustedRate: 0, truncationRate: 0, failedRate: 0, dupRate: 0, langMismatchRate: 0, at: 'pilot' };
+  it('a batch worse than the stored baseline pauses the program with the reason, in the ledger, the activity log and the result', async () => {
+    store.setBaseline('core', baseline);
+    const { w, deps } = fakeWorld({ select: [docsOf(200), docsOf(200, 300)], batchStats: () => ({ yesNo: 400 }) });   // 400 dropped of 400 asked + 400 kept
+    const r = await hypeProgramJob({ tier: 'core', maxUsd: 5 }, deps);
+    expect(r.phase).toBe('stopped');
+    expect(r.reason).toMatch(/quality: batch b1 \(core\) worse than baseline: faultRate/);
+    expect(w.submits).toHaveLength(1);   // stopped after ONE batch
+    expect(store.pause()).toMatchObject({ batch: 'b1', tier: 'core' });
+    expect(store.ledger()[0].violations[0]).toMatchObject({ metric: 'faultRate' });
+    expect(w.logs.some((l) => /paused/.test(l))).toBe(true);
+    // a rerun stays stopped until resumed
+    expect((await hypeProgramJob({ tier: 'core', maxUsd: 5 }, deps)).phase).toBe('stopped');
+  });
+  it('resume clears the pause', async () => {
+    store.setPause({ at: 'x', reason: 'old', batch: 'b0', tier: 'core' });
+    const { w, deps } = fakeWorld({ select: [docsOf(3)] });
+    const r = await hypeProgramJob({ tier: 'core', maxUsd: 5, resume: true }, deps);
+    expect(r.status).toBe('complete');
+    expect(w.submits).toHaveLength(1);
+  });
+  it('no baseline set → nothing to pause on (never guessed)', async () => {
+    const { deps } = fakeWorld({ select: [docsOf(200)], batchStats: () => ({ yesNo: 400 }) });
+    expect((await hypeProgramJob({ tier: 'core', maxUsd: 5 }, deps)).status).toBe('complete');
+    expect(store.pause()).toBeNull();
+  });
+  it('a batch inside the margin continues', async () => {
+    store.setBaseline('*', baseline);
+    const { deps } = fakeWorld({ select: [docsOf(200)], batchStats: () => ({ yesNo: 5 }) });   // 5/405 ~ 1%
+    expect((await hypeProgramJob({ tier: 'core', maxUsd: 5 }, deps)).status).toBe('complete');
+  });
+});
+
+describe('hypeProgramJob: 1% grader', () => {
+  it('grades the sampled paragraphs, bills inside the hype-program context, and stores the grade in the ledger', async () => {
+    const { w, deps } = fakeWorld({ select: [docsOf(4)] });
+    await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 1 }, deps);
+    expect(w.judged).toHaveLength(4);
+    expect(w.judged[0]).toMatchObject({ docId: 1, questions: GOOD });
+    expect(store.ledger()[0].grade).toMatchObject({ sampled: 4, paragraphs: 4, questions: 8, searchablePct: 100, answeredPct: 100, distinctPct: 100 });
+  });
+  it('sampleRate 0 grades nothing; maxGrade caps a batch', async () => {
+    const a = fakeWorld({ select: [docsOf(4)] });
+    await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 0 }, a.deps);
+    expect(a.w.judged).toHaveLength(0);
+    const b = fakeWorld({ select: [docsOf(4)] });
+    await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 1, maxGrade: 2 }, b.deps);
+    expect(b.w.judged).toHaveLength(2);
+  });
+  it('a failing judge never stops the program; poor grades against the baseline pause it', async () => {
+    const a = fakeWorld({ select: [docsOf(3)], judge: async () => { throw new Error('boom'); } });
+    expect((await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 1 }, a.deps)).status).toBe('complete');
+    expect(store.ledger()[0].grade.errors).toBe(3);
+    store.setBaseline('core', { questionsPerPara: 2, searchablePct: 95, answeredPct: 95, distinctPct: 95, at: 'pilot' });
+    const bad = fakeWorld({ select: [docsOf(200, 1000)], judge: async (x) => ({ questions: x.questions.map((_, i) => ({ i, searchable: false, answered: true, distinct: true })), missed: [] }) });
+    const r = await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 0.2, maxGrade: 40, resume: true }, { ...bad.deps, rand: () => 0.1 });
+    expect(r.phase).toBe('stopped');
+    expect(r.reason).toMatch(/searchablePct/);
+  });
+});
+
+describe('hypeProgramJob: setBaseline', () => {
+  it('builds the baseline from the last ledger batches of the tier and stores it', async () => {
+    const { deps } = fakeWorld({ select: [docsOf(10), docsOf(10, 50)], batchStats: () => ({ yesNo: 2 }) });
+    await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 1 }, deps);
+    const r = await hypeProgramJob({ tier: 'core', setBaseline: true }, deps);
+    expect(r).toMatchObject({ status: 'baseline-set', tier: 'core' });
+    expect(r.baseline).toMatchObject({ questionsPerPara: 2, searchablePct: 100, sent: 20, from: ['b1', 'b2'] });
+    expect(r.baseline.faultRate).toBeCloseTo(4 / 44, 3);
+    expect(store.baselineFor('core')).toMatchObject({ questionsPerPara: 2 });
+  });
+  it('refuses when there is nothing in the ledger to build from', async () => {
+    const { deps } = fakeWorld();
+    expect((await hypeProgramJob({ tier: 'core', setBaseline: true }, deps)).error).toMatch(/run a pilot first/);
+  });
+  it('last / batches narrow the basis; no tier sets the * fallback', async () => {
+    const { deps } = fakeWorld({ select: [docsOf(10), docsOf(10, 50)] });
+    await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 0 }, deps);
+    const r = await hypeProgramJob({ setBaseline: { last: 1 } }, deps);
+    expect(r).toMatchObject({ tier: '*' });
+    expect(r.baseline.from).toEqual(['b2']);
+    expect((await hypeProgramJob({ setBaseline: { batches: ['b1'] } }, deps)).baseline.from).toEqual(['b1']);
+  });
+});
+
+describe('hype-quality report', () => {
+  it('spend, progress per tier, ledger vs baseline, per-batch rows, pause', async () => {
+    const { deps } = fakeWorld({ select: [docsOf(10)], spend: { month: 123.456, today: 7.891 } });
+    await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 1 }, deps);
+    store.setBaseline('core', { questionsPerPara: 2, at: 'pilot' });
+    const none = { done: 0, pending: 0, total: 0, requests: 0 };
+    deps.count = async () => ({ core: { primary: { done: 10, pending: 990, total: 1000, requests: 1000 }, copy: none }, gray: { primary: none, copy: none }, history: { primary: none, copy: none }, rest: { primary: none, copy: none } });
+    const r = await hypeQualityReport({}, deps);
+    expect(r.budget).toEqual({ monthUsd: 1000, spentMonth: 123.46, spentToday: 7.89, paceUsdPerDay: 33.33, remainingMonth: 876.54 });
+    expect(r.progress.core.primary).toEqual({ done: 10, remaining: 990, total: 1000, estUsdRemaining: 0.18 });
+    expect(r.tiers.core).toMatchObject({ batches: 1, requests: 10, baseline: { at: 'pilot' }, rates: { questionsPerPara: 2 }, grade: { searchablePct: 100 } });
+    expect(r.batches[0]).toMatchObject({ id: 'b1', tier: 'core', grade: { sampled: 10 } });
+    expect(r.paused).toBeNull();
+  });
+  it('counts:false skips the library scan', async () => {
+    const { deps } = fakeWorld(); deps.count = async () => { throw new Error('should not scan'); };
+    expect((await hypeQualityReport({ counts: false }, deps)).progress).toBeNull();
+  });
+});

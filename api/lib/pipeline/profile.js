@@ -154,7 +154,7 @@ export function detectLang(sample, metaLang) {
 }
 
 /** Derive genre from religion/collection/title keywords (fallback when no override). */
-function detectGenre(doc) {
+export function detectGenre(doc) {
   const t = `${doc.title || ''} ${doc.collection || ''}`.toLowerCase();
   if (/divan|poem|poetry|ghazal|masnavi|rumi/.test(t)) return 'poetry';
   if (/commentary|sharh|tafsir|zohar|beur|on shulchan|on zohar/.test(t)) return 'commentary';

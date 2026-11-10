@@ -1,7 +1,7 @@
 // Incremental spend rollups read only the rows added since the last call (the full GROUP BYs stalled the API 37 s, 10-14).
 import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
-import { rollupSpend, pipelineSpendByBook, _resetRollups } from '../../api/lib/repos/ai-usage-repo.js';
+import { rollupSpend, pipelineSpendByBook, monthSpendByCaller, _resetRollups } from '../../api/lib/repos/ai-usage-repo.js';
 
 const db = new Database(':memory:');
 db.exec(`CREATE TABLE ai_usage (id INTEGER PRIMARY KEY, caller TEXT, document_id TEXT, provider TEXT, service_type TEXT, estimated_cost_usd REAL, timestamp TEXT DEFAULT CURRENT_TIMESTAMP)`);
@@ -26,5 +26,17 @@ describe('rollupSpend', () => {
     add(3, 'anthropic', 2);
     const s = await rollupSpend('t', { key: 'service_type' }, deps);
     expect(s.get('grounding:hype')).toEqual({ calls: 1, usd: 2 });
+  });
+});
+
+describe('monthSpendByCaller', () => {
+  it('sums this calendar month per caller, ignoring earlier months, and reads only new rows after', async () => {
+    _resetRollups(); db.exec('DELETE FROM ai_usage'); db.exec('CREATE INDEX IF NOT EXISTS idx_ai_usage_timestamp ON ai_usage(timestamp)');
+    db.prepare(`INSERT INTO ai_usage (caller, provider, service_type, estimated_cost_usd, timestamp) VALUES ('hype-program','anthropic','x',99,'2020-01-05 00:00:00')`).run();
+    db.prepare(`INSERT INTO ai_usage (caller, provider, service_type, estimated_cost_usd) VALUES ('hype-program','anthropic','x',2)`).run();
+    db.prepare(`INSERT INTO ai_usage (caller, provider, service_type, estimated_cost_usd) VALUES ('other','anthropic','x',1)`).run();
+    expect(await monthSpendByCaller(deps)).toEqual({ 'hype-program': 2, other: 1 });
+    db.prepare(`INSERT INTO ai_usage (caller, provider, service_type, estimated_cost_usd) VALUES ('hype-program','anthropic','x',3)`).run();
+    expect((await monthSpendByCaller(deps))['hype-program']).toBe(5);
   });
 });

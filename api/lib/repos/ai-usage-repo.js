@@ -31,15 +31,15 @@ export async function spendByStage(hours = 12) {
 // dropping rows. dayBound rollups restart at the first row of the UTC day.
 const rollups = new Map();
 const CHUNK = 50000;
-export async function rollupSpend(name, { key, where = '1=1', dayBound = false }, deps = {}) {
+export async function rollupSpend(name, { key, where = '1=1', dayBound = false, monthBound = false }, deps = {}) {
   const qa = deps.queryAll || queryAll, qo = deps.queryOne || queryOne;
-  const day = new Date().toISOString().slice(0, 10);
+  const day = new Date().toISOString().slice(0, monthBound ? 7 : 10);   // the period key: UTC day, or UTC month for monthBound
   let r = rollups.get(name);
-  if (!r || (dayBound && r.day !== day)) {
+  if (!r || ((dayBound || monthBound) && r.day !== day)) {
     const top = (await qo('SELECT MAX(rowid) m FROM ai_usage'))?.m ?? 0;
     // today's first row through the timestamp index — MIN(rowid) … WHERE timestamp walked the table from its oldest row
     // until today's (11.7 s measured 10-16)
-    const first = dayBound ? (await qo(`SELECT rowid AS m FROM ai_usage INDEXED BY idx_ai_usage_timestamp WHERE timestamp >= date('now') ORDER BY timestamp LIMIT 1`))?.m : 1;
+    const first = dayBound || monthBound ? (await qo(`SELECT rowid AS m FROM ai_usage INDEXED BY idx_ai_usage_timestamp WHERE timestamp >= date('now'${monthBound ? ", 'start of month'" : ''}) ORDER BY timestamp LIMIT 1`))?.m : 1;
     r = { day, lastId: (first ?? top + 1) - 1, sums: new Map() };
     rollups.set(name, r);
   }
@@ -75,6 +75,12 @@ export async function dailySpendByProvider(deps) {
 /** Today's (UTC) spend per caller (incremental) — the spend caps' input (spend-caps.js). → { [caller or '']: usd } */
 export async function dailySpendByCaller(deps) {
   const sums = await rollupSpend('daily-by-caller', { key: `COALESCE(caller, '')`, dayBound: true }, deps);
+  return Object.fromEntries([...sums].map(([k, v]) => [k, v.usd]));
+}
+
+/** This calendar month's (UTC) spend per caller (incremental) — the hype-program monthly ceiling's input. → { [caller or '']: usd } */
+export async function monthSpendByCaller(deps) {
+  const sums = await rollupSpend('month-by-caller', { key: `COALESCE(caller, '')`, monthBound: true }, deps);
   return Object.fromEntries([...sums].map(([k, v]) => [k, v.usd]));
 }
 

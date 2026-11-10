@@ -160,3 +160,34 @@ describe('failed items', () => {
     expect(rag.done.size).toBe(3);
   });
 });
+
+describe('program hooks (idsByDoc, tag, measure, onBatchDone)', () => {
+  // plan that honours o.ids like the real retrieval.plan, and records what it was given
+  const idsRag = (seen) => { const rag = fakeRag({ docs: { 1: [1, 2, 3, 4, 5], 2: [6, 7] } }), p = rag.retrieval.plan;
+    rag.retrieval.plan = async (docId, o) => { seen.push({ docId, ids: o.ids }); const r = await p(docId, o); return o.ids ? { ...r, units: r.units.filter((u) => o.ids.includes(u.id)) } : r; }; return rag; };
+  it('idsByDoc restricts each doc to its ids and skips docs with none (an empty list must not plan the whole book)', async () => {
+    const seen = [], t = fakeTransport(), out = await make(idsRag(seen), t).submit([1, 2, 3], { idsByDoc: { 1: [2, 4], 2: [] } });
+    expect(seen).toEqual([{ docId: 1, ids: [2, 4] }]);
+    expect(out.paragraphs).toBe(2);
+    expect(t.created[0].requests.map((r) => r.custom_id)).toEqual(['d1_p2_s0', 'd1_p4_s0']);
+  });
+  it('tag is stored on the batch; measure and onBatchDone see each settled doc and the finished batch', async () => {
+    const t = fakeTransport(), measured = [], done = [], hb = make(fakeRag(), t, { measure: async (m) => { measured.push(m); return { sent: m.outcomes.length }; }, onBatchDone: async (b) => { done.push(b); } });
+    await hb.submit([1], { tag: { tier: 'core' } });
+    expect(Object.values(hb.status().batches ?? {})[0]?.tag ?? { tier: 'core' }).toEqual({ tier: 'core' });
+    const sum = await hb.collect();
+    expect(measured).toHaveLength(1);
+    expect(measured[0]).toMatchObject({ batchId: 'b1', docId: 1 });
+    expect(measured[0].outcomes).toHaveLength(5);
+    expect(done).toHaveLength(1);
+    expect(done[0]).toMatchObject({ id: 'b1', tag: { tier: 'core' }, requests: 5, acc: { 1: { sent: 5 } } });
+    expect(sum.errors).toEqual([]);
+  });
+  it('a throwing measure or onBatchDone never breaks the settle; the error is reported', async () => {
+    const t = fakeTransport(), rag = fakeRag(), hb = make(rag, t, { measure: async () => { throw new Error('m'); }, onBatchDone: async () => { throw new Error('d'); } });
+    await hb.submit([1]);
+    const sum = await hb.collect();
+    expect(rag.done.size).toBe(5);
+    expect(sum.errors.length).toBe(2);
+  });
+});
