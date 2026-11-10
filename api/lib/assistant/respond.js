@@ -20,7 +20,7 @@ import { calculateCost } from '../model-registry.js';
 import { preferOwnWork, literalOwnSearch, linkHits } from './own-source.js';
 import { toPassage } from './tools.js';
 import { citeLabel } from '../refs/place.js';
-import { dropUnverified, createSentenceGate, completeIntroducedQuotes, linkQuotes, markQuotes, fixQuoteSpeakers, saidEarlier, earlierLinkFor, exactLink, bookOnlyBlockquotes, restoreElisions } from './quotes.js';
+import { dropUnverified, createSentenceGate, completeIntroducedQuotes, linkQuotes, markQuotes, fixQuoteSpeakers, saidEarlier, earlierLinkFor, exactLink, bookOnlyBlockquotes, restoreElisions, narrowQuoteLinks } from './quotes.js';
 import { referenceHow, ensureWholeReference } from './lookup.js';
 import { guardRows } from '../rights/guard.js';
 import { termQuestion, resolveTerm, ctaiTerm, termEvidence, termFormatHow, placeRenderings } from './ctai-term.js';
@@ -999,7 +999,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     // quoted words look different from Anís's own (Chad 11-04): held quotations italic, long ones a block, originals marked —
     // last, so linkTitles never reads an italic quotation as a book title
     const wl3 = work ? await workLinks([work.doc, ...work.others]).catch(() => null) : null, urlOf3 = (x) => wl3?.get(x.id) ?? workUrl(x);
-    const reply = citeHeldLast(markQuotes(work ? [workLead(work, urlOf3), about, workOffer(work)].filter(Boolean).join('\n\n') : titled.text, conversational ? [] : retrieved).text, conversational || work ? [] : heldLast);
+    const reply = narrowQuoteLinks(citeHeldLast(markQuotes(work ? [workLead(work, urlOf3), about, workOffer(work)].filter(Boolean).join('\n\n') : titled.text, conversational ? [] : retrieved).text, conversational || work ? [] : heldLast));
     return { reply, guarded, introduced, speakers, quoteLinked, firstTokenMs, fmt, writer, writeMs, usage };
   };
   const runs = variantList(variants);

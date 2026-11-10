@@ -65,7 +65,8 @@ export async function inWorkSearch({ work_id, query, from = null, to = null, lit
     const full = new Map((hydrated || []).map((p) => [Number(p.id), p]));
     // a row hydrate drops (a paragraph flagged duplicate) still counts: it is in the book — cited from its own row
     const rows = shown.map((r) => full.get(Number(r.id)) || { id: r.id, doc_id: id, paragraph_index: r.paragraph_index, text: r.text, heading: r.heading, title: work.title, author: work.author });
-    const linked = await link(rows);
+    // the link highlights the words found, not the whole paragraph (Chad 11-10)
+    const linked = await link(rows.map((r) => ({ ...r, quote: query })));
     passages = linked.map((p) => ({ ...toPassage(p), url: p.url ?? null, excerpt: excerptOf(p.text, query), found_by: ['in_work'] }));
   } else if (meaning) {
     let near = [];

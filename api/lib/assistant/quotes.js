@@ -5,6 +5,7 @@
 import { quoteSpans, containsQuote, foldText } from '../quote-text.js';
 import { citeLabel } from '../refs/place.js';
 import { foldVerbatim } from '../search/verbatim.js';
+import { encodeMarker } from '../ool-range.js';
 
 export { quoteSpans };
 
@@ -696,4 +697,27 @@ export function restoreElisions(text, passages, { asked = [] } = {}) {
     return `${open}${whole}${close}`;
   });
   return { text: out, restored };
+}
+
+// ── PHRASE LINKS (Chad 11-10: "the link should highlight the phrase being linked, not the entire paragraph") ──────────────
+const OL_LINK = /\[((?:[^\[\]]|\[[^\]]*\])+)\]\((https:\/\/(?:www\.)?oceanlibrary\.com\/[^)\s]+)\)/g;
+const quotedIn = (s) => { const m = String(s).replace(/[*_]/g, '').match(/["“]([^"”\n]+)["”]/); return m ? m[1] : null; };
+// an elided quotation highlights its longest unbroken piece (OceanLibrary selects one contiguous span)
+const longestPiece = (q) => q.split(/\s*(?:…|\.\.\.)\s*/).map((x) => x.trim()).sort((a, b) => b.length - a.length)[0] || '';
+/** An OceanLibrary paragraph link → the same paragraph with the "#~q=" marker, so the output pass (ocean-links.js) selects
+ *  just those words; words not in the paragraph fall back there to the whole paragraph. Pure. */
+export function narrowOceanLink(url, quote) {
+  const words = longestPiece(String(quote || ''));
+  if (!/paraId=/.test(url) || words.split(/\s+/).length < 2) return url;
+  return `${url.replace(/#.*$/, '').replace(/&selectionString=[^&#]*/, '')}#~q=${encodeMarker(words)}`;
+}
+/** Every OceanLibrary link that carries a quotation — in its own text ([*"…"*](url)) or right before it ("…" ([cite](url)),
+ *  "…" — [cite](url)) — highlights that quotation, not the paragraph. Pure. */
+export function narrowQuoteLinks(text) {
+  return String(text || '').replace(OL_LINK, (m, label, url, off, all) => {
+    const before = all.slice(Math.max(0, off - 400), off);
+    const prior = before.match(/["“]([^"”\n]+)["”][*_]*\s*(?:\(|[—–-]\s*)?$/);
+    const q = quotedIn(label) ?? prior?.[1] ?? null;
+    return q ? `[${label}](${narrowOceanLink(url, q)})` : m;
+  });
 }
