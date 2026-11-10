@@ -103,7 +103,7 @@ export function check(c, r) {
   if (c.cite && !c.cite.test(titles)) f.push(`no expected citation (${titles.slice(0, 80) || 'none'})`);
   if (c.text && !c.text.test(r.text)) f.push('expected words missing');
   // a find that found: the count line and the places, nothing after (Chad 11-10: "leave it at that if found")
-  if (c.only && r.text.split(/\n+/).some((l, i) => i > 0 && l.trim() && !/^\s*[-*\d]/.test(l))) f.push('discusses beyond the reference');
+  if (c.only && r.text.split(/\n+/).some((l, i) => i > 0 && l.trim() && !/^\s*[-*>\d]/.test(l))) f.push('discusses beyond the reference');
   if (c.ms && r.ms > c.ms) f.push(`slow ${r.ms} ms > ${c.ms}`);
   return f;
 }

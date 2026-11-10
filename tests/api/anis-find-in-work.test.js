@@ -34,13 +34,19 @@ describe('in_work_search: every place in one work, literal and folded', () => {
     expect(r.passages[0].excerpt).toContain('on the institution of **private property**');
     expect(r.passages[0].text).toContain('on the institution of private property');
   });
-  it('the code-built reply: count line, each place linked, the words bold — no writer', async () => {
+  it('the code-built reply: one place = the passage quoted, its linked citation under it, the words bold — no count line, no writer', async () => {
     const r = await inWorkSearch({ work_id: 21310, query: 'private property' }, { deps: deps() });
     const reply = inWorkReply(r);
-    expect(reply).toMatch(/^One place in \*God Passes By\* mentions “private property”:/);
-    expect(reply).toContain(`[God Passes By, #868](${URL868})`);
+    expect(reply).toMatch(/^> “…?.*\*\*private property\*\*.*”\n>\n> — Shoghi Effendi, \[\*God Passes By\*/);
+    expect(reply).toContain(`[*God Passes By*, #868](${URL868})`);
+    expect(reply).not.toMatch(/One place|mentions/);
     expect(reply).toContain('**private property**');
     expect(reply).not.toMatch(/can['’]?t|cannot|unable/i);
+  });
+  it('a long one-sentence paragraph narrows to the clause with the words, cut only at a clause mark (Chad 11-10: a passage, not the context)', () => {
+    const P = 'The courage, the fervor and the spiritual vitality evinced by these communities; the highly organized state of their administrative institutions; the facilities provided for the religious education and training of their youth; the conversion of a number of broad-minded Russian citizens, imbued with ideas closely related to the tenets of the Faith; the growing realization of the implications of its principles, with their emphasis on religion, on the sanctity of family life, on the institution of private property, and their repudiation of all discrimination between classes and of the doctrine of the absolute equality of men — these combined to excite the suspicion, and later to arouse the fierce antagonism, of the ruling authorities, and to precipitate one of the gravest crises in the history of the first Bahá’í century.';
+    expect(excerptOf(P, 'private property')).toBe('…the growing realization of the implications of its principles, with their emphasis on religion, on the sanctity of family life, on the institution of **private property**, and their repudiation of all discrimination between classes and of the doctrine of the absolute equality of men…');
+    expect(excerptOf('A short sentence holds private property here; and more.', 'private property')).toBe('A short sentence holds **private property** here; and more.');
   });
   it('accents, case and curly apostrophes never hide an occurrence; headings are not hits', () => {
     expect(holdsWords('the Báb’s declaration', "bab's declaration")).toBe(true);
@@ -109,7 +115,7 @@ describe('the turn: Jev\'s lookup in_work routes to the find, even when the stra
     const h = turn();
     const r = await h.run();
     expect(h.calls.respond).toBe(0);
-    expect(r.reply).toMatch(/^One place in \*God Passes By\* mentions “private property”:/);
+    expect(r.reply).toMatch(/^> “…?.*\*\*private property\*\*.*”\n>\n> — Shoghi Effendi, \[\*God Passes By\*/);
     expect(r.reply).toContain(URL868);
     expect(h.closed[0].path).toMatchObject({ route: 'in_work', work: 21310, find: 'private property', mode: 'literal', total: 1, strategy_timed_out: true });
     expect(h.d.lookup).not.toHaveBeenCalled();

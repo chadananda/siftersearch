@@ -49,7 +49,7 @@ describe('Jev timed out → Haiku decides the same typed options; "it" = the wor
     expect(h.calls.respond).toBe(0);
     expect(h.calls.book).toBe(0);   // the work in focus: no book finder
     expect(h.calls.backup[0]).toMatchObject({ triage: true, strategy: true, focus: { id: 21310, title: 'God Passes By' } });
-    expect(r.reply).toMatch(/^One place in \*God Passes By\* mentions “private property”:/);
+    expect(r.reply).toMatch(/^> “…?.*\*\*private property\*\*.*”\n>\n> — Shoghi Effendi, \[\*God Passes By\*/);
     expect(r.reply).toContain(URL868);
     expect(r.reply).not.toMatch(/discuss|essay/i);
     const p = h.closed[0].path;
@@ -74,7 +74,7 @@ describe('Jev timed out → Haiku decides the same typed options; "it" = the wor
     h.d.bookPick = async () => { h.calls.book++; return { kind: 'work', work: { doc: GPB } }; };
     const r = await h.run();
     expect(h.calls.respond).toBe(0);
-    expect(r.reply).toMatch(/^One place in \*God Passes By\* mentions “private property”:/);
+    expect(r.reply).toMatch(/^> “…?.*\*\*private property\*\*.*”\n>\n> — Shoghi Effendi, \[\*God Passes By\*/);
   });
   it('in_work with no work in focus and none named → the book finder as before', async () => {
     const h = turn({ backup: HAIKU_IN_WORK, state: emptyState() });

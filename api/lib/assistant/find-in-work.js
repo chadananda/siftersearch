@@ -25,13 +25,26 @@ export function boldWords(text, words) {
   const nfd = String(text || '').normalize('NFD');
   return (re ? nfd.replace(re, (m) => `**${m}**`) : nfd).normalize('NFC');
 }
-/** The whole sentence(s) of a paragraph that hold the words, words in bold; "…" marks the paragraph's elided sentences. Never a
- *  clipped sentence: words spanning two sentences → the whole paragraph. Pure. */
+/** The passage that holds the words, words in bold: the sentence(s) with them; a long sentence (Chad 11-10: "I was looking for a
+ *  passage, not a long-winded interpretation of the context") narrows to its clause(s) with them, cut only at a clause mark (; — – :).
+ *  "…" marks what was left out. Words spanning two sentences → the whole paragraph. Pure. */
+const LONG_WORDS = 45;
+const clauseOf = (sent, words) => {
+  if (sent.split(' ').length <= LONG_WORDS) return null;
+  const cl = sent.split(/(?<=;)\s+|\s+(?=[—–]\s)|(?<=\s[—–])\s+|(?<=:)\s+/u);
+  const hit = cl.map((c, i) => (holdsWords(c, words) ? i : -1)).filter((i) => i >= 0);
+  if (!hit.length || cl.length < 2) return null;
+  const tidy = (c) => c.replace(/^[—–]\s*/, '').replace(/[;:,]?\s*[—–]?\s*$/, '');
+  const body = cl.slice(hit[0], hit.at(-1) + 1).map((c, i, a) => (i === a.length - 1 ? tidy(c) : c)).join(' ').replace(/^[—–]\s*/, '');
+  const fullEnd = hit.at(-1) === cl.length - 1;
+  return `${hit[0] > 0 ? '…' : ''}${body}${fullEnd ? '' : '…'}`;
+};
 export function excerptOf(text, words) {
   const t = String(text || '').replace(/\s+/g, ' ').trim();
   const sents = t.split(/(?<=[.!?]["”’)\]]*)\s+(?=["“‘(\[]?\p{Lu})/u);
   const idx = sents.map((s, i) => (holdsWords(s, words) ? i : -1)).filter((i) => i >= 0);
   if (!idx.length) return boldWords(t, words);
+  if (idx.length === 1) { const c = clauseOf(sents[idx[0]], words); if (c) return boldWords(c, words); }
   const parts = [];
   idx.forEach((i, k) => { if (k > 0 && i !== idx[k - 1] + 1) parts.push('…'); parts.push(sents[i]); });
   return `${idx[0] > 0 ? '… ' : ''}${boldWords(parts.join(' '), words)}${idx.at(-1) < sents.length - 1 ? ' …' : ''}`;
@@ -80,22 +93,25 @@ export async function inWorkSearch({ work_id, query, from = null, to = null, lit
   return { work, query, mode, total: mode === 'literal' ? total : passages.length, passages };
 }
 
-/** The reply, built by code (no writer): a count line, then each place as its linked citation and the sentence(s) with the words. Pure. */
+/** The reply, built by code (no writer): each place as a quoted passage with its linked citation; a count line only when there are several. Pure. */
 export function inWorkReply(r, { section = null } = {}) {
   const name = section || r.work.title || 'this work';
   const title = `*${name}*`;
   const q = `“${r.query}”`;
+  // each place is the passage itself, quoted, with its citation (the link) under it — no list, no paraphrase (Chad 11-10)
   const item = (p) => {
-    const cite = p.place ? `${name}, ${p.place}` : name;
-    return `- ${p.url ? `[${cite}](${p.url})` : cite}: ${p.excerpt}`;
+    const cite = p.place ? `*${name}*, ${p.place}` : `*${name}*`;
+    const by = p.author ?? r.work.author ?? null;
+    return `> “${p.excerpt}”\n>\n> — ${by ? `${by}, ` : ''}${p.url ? `[${cite}](${p.url})` : cite}`;
   };
   if (r.mode === 'literal') {
-    const head = r.total === 1 ? `One place in ${title} mentions ${q}:` : `${r.total} places in ${title} mention ${q}:`;
+    // one place: the passage is the answer, nothing before it; several: one count line, then each passage
     const more = r.total > r.passages.length ? `\n\nThose are the first ${r.passages.length} of the ${r.total}; ask for the rest and I will continue from there.` : '';
-    return `${head}\n\n${r.passages.map(item).join('\n')}${more}`;
+    if (r.total === 1) return item(r.passages[0]);
+    return `${r.total} places in ${title} mention ${q}:\n\n${r.passages.map(item).join('\n\n')}${more}`;
   }
   if (r.mode === 'meaning') {
-    return `No passage in ${title} has the exact words ${q}. ${r.passages.length === 1 ? 'This passage is' : `These ${r.passages.length} passages are`} the closest to them in meaning:\n\n${r.passages.map(item).join('\n')}`;
+    return `No passage in ${title} has the exact words ${q}. ${r.passages.length === 1 ? 'This passage is' : `These ${r.passages.length} passages are`} the closest to them in meaning:\n\n${r.passages.map(item).join('\n\n')}`;
   }
   return `I searched all of ${title} for ${q}: the words are not in it, and no passage in it comes close in meaning.`;
 }
