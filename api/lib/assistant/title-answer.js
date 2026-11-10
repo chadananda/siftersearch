@@ -18,6 +18,9 @@ let cache = null;
 const load = () => { if (!cache) { try { cache = new Map(Object.entries(JSON.parse(readFileSync(FILE(), 'utf8')))); } catch { cache = new Map(); } } return cache; };
 const save = () => { try { mkdirSync(dirname(FILE()), { recursive: true }); const tmp = `${FILE()}.${process.pid}`; writeFileSync(tmp, JSON.stringify(Object.fromEntries(load()))); renameSync(tmp, FILE()); } catch { /* the cache is a convenience */ } };
 
+// warm the title index a few seconds after a chat process starts (off the boot path), so the FIRST bare title is as instant as the rest
+if (!process.env.VITEST) setTimeout(() => import('../dewey/title-index.js').then((m) => m.titleIndex()).catch(() => {}), 8000).unref?.();
+
 const PROMPT = (doc, opening) => `Write a short summary of the book "${doc.title}"${doc.author ? ` by ${doc.author}` : ''} for a reader who has just asked for it by name.
 2 to 4 sentences, at most 90 words, plain prose: what the work is, who wrote it and when if known, what it covers, and why readers turn to it.
 Use the opening pages below and only well-established facts about this work; never guess, never quote, no preamble, no heading.
