@@ -649,15 +649,15 @@
   }
   .avatar svg { width: 100%; height: 100%; display: block; }
   .bubblewrap { max-width: 84%; min-width: 0; }
-  .book { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 8px; padding: 12px; background: #fffdf8;
+  .book { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 8px; padding: 12px; background: #fffdf8; color: #2a2620;
     border: 1px solid #e9e2d2; border-left: 3px solid var(--gold); border-radius: 12px; }
   .book-cover { flex: 0 0 auto; display: block; line-height: 0; }
   .book-cover img { width: 88px; height: auto; border-radius: 4px; box-shadow: 0 2px 8px rgba(60, 40, 10, .18); }
   .book-meta { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-  .book-title { font-family: var(--serif); font-style: italic; font-size: 1.08em; line-height: 1.25; color: inherit; text-decoration: none; }
+  .book-title { font-family: var(--serif); font-style: italic; font-size: 1.12em; line-height: 1.25; color: #2a2620; text-decoration: none; }
   .book-title:hover { color: var(--accent-deep); text-decoration: underline; }
-  .book-by { font-size: .85em; opacity: .7; }
-  .book-desc { margin: 2px 0 0; font-size: .9em; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+  .book-by { font-size: .85em; color: #6b6253; }
+  .book-desc { margin: 2px 0 0; font-size: .9em; line-height: 1.45; display: -webkit-box; color: #3d372d; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
   .book-read { align-self: flex-start; margin-top: 6px; padding: 5px 12px; border-radius: 999px; font-size: .85em; text-decoration: none;
     color: #fff; background: var(--accent); }
   .book-read:hover { background: var(--accent-deep); }
