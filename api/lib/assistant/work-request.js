@@ -59,6 +59,8 @@ const workRank = (d, asked) => Math.log10((d.paragraph_count || 0) + 1) + (AUTHO
   - (derived(d.title, asked) ? 2 : 0)
   // the work itself — its tradition's scripture/primary text — outranks a study whose title merely contains the name (11-09: "Gita" → Gita and Gospel)
   + (d.religion && doctrinalTier(d) === 'core' ? 3 : 0);
+// the byline names the book's author: folded and unspaced ("baha u llah" = Bahá’u’lláh), else authorMatch's surname test
+const byAuthor = (by, author, am) => foldTitle(by).replace(/ /g, '') === foldTitle(author).replace(/ /g, '') || !!am?.(by, author);
 const derived = (title, asked) => { const w = DERIVED.exec(title || '')?.[0]; return !!w && !new RegExp(`\\b${w}\\b`, 'i').test(asked); };
 
 const foldTitle = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/^the /, '');
@@ -76,10 +78,12 @@ export async function findWork(text, { named = null, index = null, match = null,
   // tower's index: they match "Justice: The Best Beloved…", "On Love", "World Peace: Warwick Leaflets")
   const bare = bareTitle(text);
   if (!bare) return null;
-  const w = await findTitled([bare], { index, match, listDocs, min: 0.95, prefix: false });
+  const { authorMatch: am } = await import('../dewey/title-index.js');
+  const w = await findTitled([bare], { index, match, listDocs, min: 0.95, prefix: false, byline: true, authorMatch: am });
   const sq = (t) => foldTitle(t).replace(/ /g, '');
   // the whole title, or one whole part of it: "The Book of Certitude (Kitáb-i-Íqán)" is named by either half
-  const parts = (t) => [t, ...String(t || '').split(/\s*[:()\[\]—]\s*/)].map((x) => String(x || '').trim()).filter(Boolean);
+  const unby = (t) => { const f = foldTitle(t), i = f.lastIndexOf(' of '); return i > 0 && byAuthor(f.slice(i + 4), w?.doc.author || '', am) ? f.slice(0, i) : null; };
+  const parts = (t) => [t, unby(t), ...String(t || '').split(/\s*[:()\[\]—]\s*/)].map((x) => String(x || '').trim()).filter(Boolean);
   const hitPart = w && parts(w.doc.title).find((p) => sq(p) === sq(bare));
   const whole = !!hitPart && (bare.includes(' ') || bare.includes('-') || foldTitle(w.doc.title).includes(' '));
   // and a BOOK: a word that happens to title a leaflet or a one-paragraph tablet ("True Seeker", "Spiritual Assemblies") is a topic
@@ -98,11 +102,11 @@ export function bareTitle(text) {
 }
 
 /** Title phrases → { doc, others } (the researcher's find_work calls this with the title it chose), or null. */
-export async function findTitled(cands, { index = null, match = null, listDocs = null, min = 0.86, prefix = true } = {}) {
+export async function findTitled(cands, { index = null, match = null, listDocs = null, min = 0.86, prefix = true, byline = false, authorMatch = null } = {}) {
   if (!cands.length) return null;
   if (!index || !match || !listDocs) {
     const [ti, docs] = await lib();
-    index ??= await ti.titleIndex(); match ??= ti.matchTitle; listDocs ??= docs.listDocs;
+    index ??= await ti.titleIndex(); match ??= ti.matchTitle; listDocs ??= docs.listDocs; authorMatch ??= ti.authorMatch;
   }
   // every candidate against the index; the best title score wins (a word slip in one phrase costs nothing). A wide net: a talk
   // ON a book carries its title exactly ("Gleanings (part 14)", Hooper Dunbar), so dozens tie with the book at 1.0.
@@ -110,6 +114,18 @@ export async function findTitled(cands, { index = null, match = null, listDocs =
   for (const c of cands) for (const h of match(index, c, { min, limit: 60 })) if ((hits.get(h.doc.id)?.score ?? 0) < h.score) hits.set(h.doc.id, h);
   // the BOOK, not a talk about it, a tag page or a page-range fragment (11-01 live: "Gleanings" and "Seven Valleys" linked
   // Hooper Dunbar talks, "Find Seven Valleys … the complete text" got "the library does not contain the full writing")
+  // a title that adds only its author's byline IS that title ("The Hidden Words" = The Hidden Words of Bahá’u’lláh): it joins the
+  // exact matches at their score, so the canonical copy competes on rank instead of losing to a byline-less duplicate (11-09)
+  if (byline && index.docs && authorMatch) {
+    const top = Math.max(min, ...[...hits.values()].map((h) => h.score));
+    for (const c of cands) {
+      const q = foldTitle(c);
+      if (q.length >= 4) for (const d of index.docs) {
+        const t = foldTitle(d.title);
+        if (t.startsWith(`${q} of `) && byAuthor(t.slice(q.length + 4), d.author || '', authorMatch) && !hits.has(d.id)) hits.set(d.id, { doc: d, score: top });
+      }
+    }
+  }
   const all = [...hits.values()];
   let books = all.filter((h) => !notBook(h.doc));
   // a short title that OPENS the book's ("Gleanings" → Gleanings from the Writings of Bahá'u'lláh): the title matcher scores a

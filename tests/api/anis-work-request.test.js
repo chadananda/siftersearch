@@ -136,6 +136,13 @@ describe('a bare title is a request for the book (Chad 11-01: "Dawnbreakers" got
     const w = await findWork(q, { index: buildIndex(rows), match: matchTitle, listDocs: async ({ ids }) => ({ docs: rows.filter((r) => ids.includes(r.id)) }) });
     expect(w.doc.id).toBe(id);
   });
+  it('a title that adds only its byline is that title ("The Hidden Words" = The Hidden Words of Bahá’u’lláh, 11-09)', async () => {
+    const rows = [{ id: 50, title: 'Hidden Words', author: 'bahaullah', religion: "Bahá'í", collection: 'c', slug: 'hw', language: 'en', source_site: 'bahai-library.com', paragraph_count: 160 },
+      { id: 51, title: 'The Hidden Words of Bahá’u’lláh', author: 'Bahá’u’lláh', religion: "Bahá'í", collection: 'Core', slug: 'hwb', language: 'en', source_site: 'oceanlibrary.com', paragraph_count: 155 },
+      { id: 52, title: 'The Hidden Words of Wisdom', author: 'Someone Else', religion: "Bahá'í", collection: 'c', slug: 'x', language: 'en', paragraph_count: 900 }];
+    const w = await findWork('The Hidden Words', { index: buildIndex(rows), match: matchTitle, listDocs: async ({ ids }) => ({ docs: rows.filter((r) => ids.includes(r.id)) }) });
+    expect(w.doc.id).toBe(51);
+  });
   it('a topic word or a question stays a search', async () => {
     const rows = [{ id: 7, title: 'Prayers', author: 'x', religion: "Bahá'í", collection: 'c', slug: 'p', language: 'en', paragraph_count: 600 }, ...ROWS];
     const o = { index: buildIndex(rows), match: matchTitle, listDocs: async ({ ids }) => ({ docs: rows.filter((r) => ids.includes(r.id)) }) };
