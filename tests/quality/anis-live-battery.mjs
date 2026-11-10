@@ -25,6 +25,8 @@ export const CASES = [
   { id: 'tao', q: 'Tao Te Ching', book: /tao te ching/i, card_ms: 3000 },
   { id: 'quran', q: "Do you have the Qur'an?", book: /qur.?[aá]n|koran/i, card_ms: 4000 },
   { id: 'find-gpb', q: 'can you search for "private property" in God Passes By?', text: /private property/i, cite: /god passes by/i, ms: 6000, phrase: 'private property' },
+  // Chad 11-10: the card's offer answered with words to find → only the reference, no discussion
+  { id: 'find-gpb-thread', before: ['God Passes By'], q: 'yes, can you search it for "private property"?', text: /private property/i, cite: /god passes by/i, ms: 6000, phrase: 'private property', only: true },
   { id: 'find-gleanings', q: 'where in Gleanings does it say "ray of the sun"?', cite: /gleanings/i, ms: 8000 },
   { id: 'find-dhammapada', q: 'find "hatred ceases" in the Dhammapada', text: /hatred/i, cite: /dhammapada/i, ms: 8000 },
   { id: 'prayer-healing', q: 'a prayer for healing', ms: 15000 },
@@ -39,13 +41,20 @@ export const CASES = [
   { id: 'hi', q: 'hi', ms: 4000 },
 ];
 
-async function turn(q) {
+async function turn(q, { before = [] } = {}) {
+  // a case with `before` is a thread: those turns first (same reader, same conversation), the last one measured
+  const uid = `user_${crypto.randomUUID()}`, messages = []; let cid = null;
+  for (const p of before) { const r = await send(p, messages, uid, cid); cid = r.cid; messages.push({ role: 'user', content: p }, { role: 'assistant', content: r.text }); }
+  return send(q, messages, uid, cid);
+}
+
+async function send(q, history, uid, cid) {
   const t0 = Date.now(), at = {};
-  const out = { text: '', chunks: '', events: {}, book: null, sources: [], citations: [], error: null };
+  const out = { text: '', chunks: '', events: {}, book: null, sources: [], citations: [], error: null, cid };
   try {
     const r = await fetch(`${API}/api/chat/stream`, { method: 'POST', signal: AbortSignal.timeout(180000),
-      headers: { 'content-type': 'application/json', 'x-user-id': `battery-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, 'x-sifter-test': '1' },
-      body: JSON.stringify({ messages: [{ role: 'user', content: q }] }) });
+      headers: { 'content-type': 'application/json', 'x-user-id': uid, 'x-sifter-test': '1' },
+      body: JSON.stringify({ messages: [...history, { role: 'user', content: q }], ...(cid ? { conversationId: cid } : {}) }) });
     if (!r.ok) return { ...out, error: `http ${r.status}`, ms: Date.now() - t0, at };
     const dec = new TextDecoder(); let buf = '';
     for await (const part of r.body) {
@@ -59,7 +68,8 @@ async function turn(q) {
         else if (e.type === 'book') out.book = e.book;
         else if (e.type === 'sources') out.sources = e.sources?.length ? e.sources : out.sources;
         else if (e.type === 'citations') out.citations = e.citations || [];
-        else if (e.type === 'complete') out.complete = e.meta || {};
+        else if (e.type === 'complete') { out.complete = e.meta || {}; out.cid = e.meta?.conversation_id || out.cid; }
+        else if (e.type === 'session') out.cid = e.conversation_id || out.cid;
         else if (e.type === 'error') out.error = e.message || 'stream error';
       }
     }
@@ -92,6 +102,8 @@ export function check(c, r) {
   const titles = [...r.citations, ...r.sources].map((x) => `${x.title ?? ''} ${x.author ?? ''}`).join(' | ');
   if (c.cite && !c.cite.test(titles)) f.push(`no expected citation (${titles.slice(0, 80) || 'none'})`);
   if (c.text && !c.text.test(r.text)) f.push('expected words missing');
+  // a find that found: the count line and the places, nothing after (Chad 11-10: "leave it at that if found")
+  if (c.only && r.text.split(/\n+/).some((l, i) => i > 0 && l.trim() && !/^\s*[-*\d]/.test(l))) f.push('discusses beyond the reference');
   if (c.ms && r.ms > c.ms) f.push(`slow ${r.ms} ms > ${c.ms}`);
   return f;
 }
@@ -100,7 +112,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const only = arg('only')?.split(','), conc = Number(arg('concurrency') || 3);
   const cases = CASES.filter((c) => !only || only.includes(c.id));
   const res = []; let i = 0;
-  await Promise.all(Array.from({ length: conc }, async () => { while (i < cases.length) { const c = cases[i++]; const r = await turn(c.q); res.push({ c, r, f: check(c, r) }); } }));
+  await Promise.all(Array.from({ length: conc }, async () => { while (i < cases.length) { const c = cases[i++]; const r = await turn(c.q, c); res.push({ c, r, f: check(c, r) }); } }));
   res.sort((a, b) => cases.indexOf(a.c) - cases.indexOf(b.c));
   for (const { c, r, f } of res) {
     const first = Math.min(...['book', 'chunk', 'text'].map((k) => r.at[k] ?? Infinity));

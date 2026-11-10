@@ -257,7 +257,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && ['book', 'quote', 'in_work', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.8) Object.assign(route, { action: 'research', overridden: route.kind });
   // Jev's refers_back (strategy call, read with the history): a message pointing at the previous reply is never 'unclear' and never a literal quote lookup
   if (strat?.refersBack && route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind)) Object.assign(route, { action: 'research', overridden: route.kind, by: 'refers_back' });
-  const focusFind = tri?.lookup?.choice === 'in_work' && !!focus;   // "search it for X": refers back to the book in focus — that IS the in-work find
+  // "search it for X": refers back to the book in focus, or to the work Jev names from the history — that IS the in-work find
+  const focusFind = tri?.lookup?.choice === 'in_work' && (!!focus || !!strat?.units?.named_work);
   const lkIntent = lookupOn && (!strat?.refersBack || focusFind) && route.action === 'research' && ['book', 'quote', 'in_work', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
   // THE BOOK FAST PATH (Chad 11-10): Jev chose the book strategy (or his lookup says book) → code gathers title + section candidates for
   // the name he gave (his named_work; a person he named beside it is the byline: author or compiler) → ONE typed Jev pick → the card.

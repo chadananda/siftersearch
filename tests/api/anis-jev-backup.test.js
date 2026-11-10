@@ -37,7 +37,7 @@ const turn = ({ backup, state = stateAfterCard, triageOk = null } = {}) => {
     findInWork: async (a) => { calls.find.push(a); return findInWorkAnswer({ ...a, search: (x) => inWorkSearch(x, { deps: searchDeps }) }); },
     respond: async () => { calls.respond++; return { reply: 'researched', citations: [], retrieved: [], plan: { shape: 'topic' }, timings: {} }; },
     open: async () => ({ conversationId: 'c', round: 1 }), close: async (x) => { closed.push(x); }, fail: async () => {}, card: async () => null, outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {} };
-  return { calls, closed, run: () => anisTurn({ messages: [...THREAD], participant: { id: 's', authed: true }, clientKey: 's', onEvent: () => {}, deps: d }) };
+  return { calls, closed, d, run: () => anisTurn({ messages: [...THREAD], participant: { id: 's', authed: true }, clientKey: 's', onEvent: () => {}, deps: d }) };
 };
 const HAIKU_IN_WORK = { tri: readBackup({ kind: { choice: 'research', confidence: 0.9 }, lookup: { choice: 'in_work', confidence: 0.92 }, outcome: { choice: 'search', confidence: 0.9 }, depth: { choice: 'answer', confidence: 0.9 } },
   { questions: backupQuestions({ triage: true, first: false }), messages: THREAD }).tri, strategy: null, ms: 900 };
@@ -67,6 +67,14 @@ describe('Jev timed out → Haiku decides the same typed options; "it" = the wor
     const h = turn({ backup: HAIKU_IN_WORK, triageOk: tri });
     await h.run();
     expect(h.calls.backup[0]).toMatchObject({ triage: false, strategy: true });
+  });
+  it('no work in focus (an older thread), Jev refers back and names the work → in_work through the book finder, not research', async () => {
+    const h = turn({ backup: null, state: emptyState(), triageOk: { ...HAIKU_IN_WORK.tri, by: undefined } });
+    h.d.strategy = async () => ({ strategy: { choice: 'unmatched', confidence: 0.4 }, refersBack: true, units: { named_work: 'God Passes By' } });
+    h.d.bookPick = async () => { h.calls.book++; return { kind: 'work', work: { doc: GPB } }; };
+    const r = await h.run();
+    expect(h.calls.respond).toBe(0);
+    expect(r.reply).toMatch(/^One place in \*God Passes By\* mentions “private property”:/);
   });
   it('in_work with no work in focus and none named → the book finder as before', async () => {
     const h = turn({ backup: HAIKU_IN_WORK, state: emptyState() });
