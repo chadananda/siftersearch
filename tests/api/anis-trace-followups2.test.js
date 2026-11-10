@@ -24,6 +24,12 @@ describe('trace names what ran', () => {
     const txt = turnText(t);
     expect(txt).toMatch(/strategy phrase_usage_trace@1  shape quote/); expect(txt).toMatch(/refers-back \[jev\] -> "previous"/);
   });
+  it('turnTrace carries the strategy steps with their ms; the text view lists the slowest first', async () => {
+    const path = { steps: [{ graph: 'prayer@6', node: 'find', step: 'fetch.prayer@1', ms: 12500.4, edge: 'several' }, { graph: 'prayer@6', node: 'pick', step: 'judge.prayer@1', ms: 900, edge: 'one' }] };
+    const t = await turnTrace({ thread: async () => ({}), messages: async () => [{ round_index: 0, role: 'user', content: 'q' }, { round_index: 0, role: 'assistant', content: 'a', path_json: JSON.stringify(path) }], traces: async () => [], titles: async () => new Map() }, 'conv_x:0');
+    expect(t.steps).toEqual([{ graph: 'prayer@6', node: 'find', step: 'fetch.prayer@1', ms: 12500.4, edge: 'several' }, { graph: 'prayer@6', node: 'pick', step: 'judge.prayer@1', ms: 900, edge: 'one' }]);
+    expect(turnText(t)).toMatch(/steps \(slowest first\):\n\s+12500 ms  prayer@6 find fetch\.prayer@1 -> several\n\s+900 ms/);
+  });
 });
 
 describe('search plan: refers-back rule', () => {

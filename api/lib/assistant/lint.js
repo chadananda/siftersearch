@@ -2,7 +2,7 @@
 // final reply; LOGS hits, never blocks (a false positive must not censor an answer — the soul battery is the gate).
 // Pure. Deps: md-valid. One rule BLOCKS: a reply ending in an offer to search loses that offer (dropSearchOffer); finalForm applies it,
 // with safeLinkText, at every reply's exit.
-import { safeLinkText } from './md-valid.js';
+import { safeLinkText, repairEmphasis } from './md-valid.js';
 
 // An offer to run a lookup Anís could run himself: "would you like me to look…", "I can look up X if you'd like", "shall I
 // search…". Not a statement of what was found ("all I could find", "I could find no…") and not an offer to READ with the reader.
@@ -161,7 +161,9 @@ export function finalForm(text) { return formPass(text).text; }
 /** finalForm with what it repaired, for the turn's path (forensics counts form.search_denial as a WRITER defect). Pure. */
 export function formPass(text, { sources = [] } = {}) {
   const den = dropSearchDenial(text), def = dropDeflection(den.text), off = dropSearchOffer(def.text), lk = checkLinks(off.text, sources);
-  return { text: safeLinkText(lk.text), repairs: { search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}) } };
+  const ct = citeLinks(lk.text, sources), lr = lastResortLast(ct.text), em = repairEmphasis(safeLinkText(lr.text));
+  return { text: em.text, repairs: { search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
+    ...(ct.fixed ? { cite_links: ct.fixed } : {}), ...(lr.fixed ? { last_resort: lr.fixed } : {}), ...(em.fixed ? { emphasis: em.fixed } : {}) } };
 }
 
 // THE LINK CHECK — BLOCKING (battery 11-10 "main book of the Hindus": `[*Bhagavad-Gita*](…) [https://…](https://…)`, a Mahabharata
@@ -213,6 +215,83 @@ export function checkLinks(text, sources = []) {
     return `${ws}${label}`;
   });
   return { text: fixed ? out : src, fixed };
+}
+
+// CITATION LINKS — BLOCKING (battery 11-10): one citation, one link, one source.
+//  · "[*Gleanings*](book) ([link](paragraph))" → "[*Gleanings*](paragraph)": a bare "link" label after a link to the same book
+//    merges into it (the citation text IS the link); a "[link]" elsewhere takes its source's title, else its host;
+//  · a quotation linked to a whole book takes the paragraph link of a source of that book whose text holds the quoted words;
+//  · "[*"…"*](U1) — [*Title*](U2)" with U1 and U2 on different sites: the title opens U1's book (justice: the Hidden Words quote
+//    on oceanlibrary.com, its title on bahai-library.com).
+// sources: [{ title, url, text }]. Pure.
+const paraLevel = (u) => /[?&]paraId=|selectionString=|#p\d+|#\(/.test(u || '');
+const hostOf = (u) => { try { return new URL(u).host.replace(/^www\./, ''); } catch { return null; } };
+const bookUrl = (u) => String(u || '').replace(/[?#].*$/, '').replace(/(\.[a-z]+\/.+?)\/$/, '$1');
+const quoteWords = (label) => foldT(label.replace(/[*_]/g, '').replace(/^\s*["“]|["”]\s*$/g, ''));
+export function citeLinks(text, sources = []) {
+  let src = String(text || ''), fixed = 0;
+  const srcs = (sources || []).filter((x) => x?.url);
+  // (0) our own reader link (siftersearch.com/library) where a source of the same title has a public link → that link
+  src = src.replace(/\[([^\[\]\n]+)\]\((https?:\/\/(?:www\.)?siftersearch\.com\/library\/[^\s)]+)\)/g, (m, label, u) => {
+    const own = srcs.find((x) => x.url === u) || srcs.find((x) => bookOf(x.url) === bookOf(u));
+    const t = own?.title && foldT(own.title);
+    const pub = t && srcs.find((x) => foldT(x.title) === t && !/siftersearch\.com/.test(x.url));
+    if (!pub) return m;
+    fixed += 1;
+    return `[${label}](${pub.url})`;
+  });
+  // (1) "[X](U1) ([link](U2))", same book → "[X](U2)"
+  src = src.replace(/\[([^\[\]\n]+)\]\((https?:\/\/[^\s)]+)\)\s*\(\[(?:link|source|here)\]\((https?:\/\/[^\s)]+)\)\)/gi, (m, label, u1, u2) => {
+    if (bookOf(u1) !== bookOf(u2)) return m;
+    fixed += 1;
+    return `[${label}](${paraLevel(u2) || !paraLevel(u1) ? u2 : u1})`;
+  });
+  // (1b) a lone "[link]": its source's title, else its host
+  src = src.replace(/\[(?:link|source|here)\]\((https?:\/\/[^\s)]+)\)/gi, (m, u) => {
+    const s = srcs.find((x) => x.url === u) || srcs.find((x) => bookOf(x.url) === bookOf(u));
+    const label = s?.title ? `*${s.title}*` : hostOf(u);
+    if (!label) return m;
+    fixed += 1;
+    return `[${label}](${u})`;
+  });
+  // (2) a quotation linked to a whole book → the paragraph of that book holding the words
+  src = src.replace(/\[([*_\s]*["“][^\[\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, label, u) => {
+    if (paraLevel(u)) return m;
+    const q = quoteWords(label);
+    if (q.split(' ').length < 4) return m;
+    const s = srcs.find((x) => bookOf(x.url) === bookOf(u) && paraLevel(x.url) && foldT(x.text).includes(q));
+    if (!s) return m;
+    fixed += 1;
+    return `[${label}](${s.url})`;
+  });
+  // (3) a quotation's citation title on another site than the quotation → the quotation's book
+  src = src.replace(/(\[[*_\s]*["“][^\[\]\n]+\]\((https?:\/\/[^\s)]+)\)\s*[—–-]\s*)\[([^\[\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, head, u1, title, u2) => {
+    if (hostOf(u1) === hostOf(u2)) return m;
+    fixed += 1;
+    return `${head}[${title}](${bookUrl(u1)})`;
+  });
+  return { text: fixed ? src : String(text || ''), fixed };
+}
+
+// LAST-RESORT SOURCE LAST (feedback citation source order: the same passage in several sources → the best published first; Shoghi
+// Effendi's *Uncompiled Published Letters* is the last resort). In a table cell listing several sources ("A; B; C"), a citation
+// of the Uncompiled Published Letters moves to the end (battery 11-10 timeline: it led the 1844 row). Pure.
+export const LAST_RESORT = /Uncompiled Published Letters/i;
+export function lastResortLast(text) {
+  let fixed = 0;
+  const out = String(text || '').split('\n').map((line) => {
+    if (!/^\s*\|/.test(line) || !LAST_RESORT.test(line)) return line;
+    return line.split('|').map((cell) => {
+      const parts = cell.split(/;\s+/);
+      if (parts.length < 2) return cell;
+      const lead = parts.filter((x) => !LAST_RESORT.test(x)), last = parts.filter((x) => LAST_RESORT.test(x));
+      if (!lead.length || !last.length || parts.indexOf(last[0]) > parts.indexOf(lead[lead.length - 1])) return cell;
+      fixed += 1;
+      const pad = /\s*$/.exec(cell)[0];
+      return [...lead.map((x) => x.replace(/\s+$/, '')), ...last.map((x) => x.trim())].join('; ').replace(/^(?!\s)/, cell.match(/^\s*/)[0]) + pad;
+    }).join('|');
+  });
+  return { text: fixed ? out.join('\n') : String(text || ''), fixed };
 }
 
 // THE SEARCH DENIAL — BLOCKING, ABSOLUTE (Chad 11-10: '"I cannot search from here" is never correct'). Anywhere in the reply, a

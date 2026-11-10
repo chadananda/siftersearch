@@ -136,6 +136,12 @@ describe('a bare title is a request for the book (Chad 11-01: "Dawnbreakers" got
     const w = await findWork(q, { index: buildIndex(rows), match: matchTitle, listDocs: async ({ ids }) => ({ docs: rows.filter((r) => ids.includes(r.id)) }) });
     expect(w.doc.id).toBe(id);
   });
+  it('a bare Gospel name is that Gospel (round 4: "Matthew" went to Unmatched → Loulie Matthews, 24.7 s) — config/work-names.json', async () => {
+    const rows = [{ id: 20992, title: 'The Gospel of Matthew', author: 'Matthew', religion: 'Christian', collection: 'Bible', slug: 'mt', language: 'en', paragraph_count: 1071 },
+      { id: 30, title: 'From Copper to Gold: The Life of Dorothy Baker', author: 'Dorothy Freeman', religion: "Bahá'í", collection: 'c', slug: 'cg', language: 'en', paragraph_count: 900 }];
+    const o = { index: buildIndex(rows), match: matchTitle, listDocs: async ({ ids }) => ({ docs: rows.filter((r) => ids.includes(r.id)) }) };
+    expect((await findWork('Matthew', { ...o, coreOnly: true }))?.doc.id).toBe(20992);
+  });
   it('a title that adds only its byline is that title ("The Hidden Words" = The Hidden Words of Bahá’u’lláh, 11-09)', async () => {
     const rows = [{ id: 50, title: 'Hidden Words', author: 'bahaullah', religion: "Bahá'í", collection: 'c', slug: 'hw', language: 'en', source_site: 'bahai-library.com', paragraph_count: 160 },
       { id: 51, title: 'The Hidden Words of Bahá’u’lláh', author: 'Bahá’u’lláh', religion: "Bahá'í", collection: 'Core', slug: 'hwb', language: 'en', source_site: 'oceanlibrary.com', paragraph_count: 155 },
@@ -222,5 +228,15 @@ describe('the work itself outranks a study whose title contains its name (11-09 
   it('picks the scripture, lists the study after it', async () => {
     const w = await findWork('Where can I read Gita?', { index: buildIndex(rows), match: matchTitle, listDocs: async ({ ids }) => ({ docs: rows.filter((r) => ids.includes(r.id)) }) });
     expect(w.doc.id).toBe(91);
+  });
+});
+
+describe('workLead (battery 11-10 "hindus")', () => {
+  it('no "by Unknown" byline and no second read link to the page the title already opens', async () => {
+    const { workLead } = await import('../../api/lib/assistant/work-request.js');
+    const lead = workLead({ doc: { id: 1, title: 'Rig Veda. Book 1', author: 'Unknown' } }, () => 'https://oceanlibrary.com/rig-veda-book-1');
+    expect(lead).not.toMatch(/Unknown/);
+    expect(lead.match(/\]\(https:\/\/oceanlibrary\.com\/rig-veda-book-1\)/g)).toHaveLength(1);
+    expect(workLead({ doc: { id: 2, title: 'Paris Talks', author: '‘Abdu’l-Bahá' } }, () => 'https://oceanlibrary.com/paris-talks_abdul-baha')).toMatch(/by ‘Abdu’l-Bahá/);
   });
 });

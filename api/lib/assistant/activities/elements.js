@@ -256,7 +256,9 @@ E['search.fanout'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', 'a
 E['search.compare'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', 'all_none', 'error'], scope: 'strategy', params: ['by', 'k', 'tiers', 'stage'], reads: SCOPE, writes: ['found_passages', ...OUT],
   async run(s, p = {}) {   // compare_search: ONE call for every side (the same query held to each side's filters); items tagged with their side. No judge inside — the tree decides once after.
     const u = U(s), values = u[p.by ?? 'compare_sides'] ?? [];
-    let r; try { r = await call(s, 'compare_search', { query: text(s, u, p.query, '{{follows_topic}}', '{{topic}}'),
+    // the reader's quoted words, when given, ARE what each side is searched for ("how is the phrase "kingdom of heaven" used across the sacred texts?":
+    // the whole question found Romans and the Book of Mormon, nothing holding the phrase)
+    let r; try { r = await call(s, 'compare_search', { query: text(s, u, p.query, '{{quoted_words}}', '{{follows_topic}}', '{{topic}}'),
       sides: values.map((v) => { const work = u.side_sources?.[flat(v)] ?? u.side_sources?.[canonicalTradition(flat(v))]; return { label: flat(v), filters: { tradition: canonicalTradition(flat(v)), ...(work ? { work } : {}) } }; }),   // a side's book Jev named (the Gita) is that side's work filter
       k: kOf(p, u) ?? 3, ...(p.tiers ? { tiers: p.tiers } : {}) }); } catch (e) { return finish(s, p, 'error', { error: e?.message }); }
     const sides = r?.sides ?? []; let n = 0;
@@ -382,11 +384,19 @@ E['judge.passages'] = { kind: 'decision', cls: 'jev', edges: ['answers', 'mentio
     const u = U(s);
     if (!u.found_passages.length) return 'empty';
     const options = [{ edge: 'answers', when: 'the passage answers the question' }, { edge: 'mentions_only', when: 'the passage only mentions the subject' }, { edge: 'contradicts', when: 'the passage contradicts another of the passages' }];
+    // a passage found for ONE PART of the request (a comparison side, a compilation heading) is judged on its part: no single passage
+    // "answers" "compare the Bible and the Qur'an" or "compile passages under headings" (round 4: every Qur'an verse on forgiveness was
+    // mentions_only → the side went missing; the justice compilation kept Leviticus alone)
+    const roleOptions = [{ edge: 'answers', when: 'the passage itself teaches or states something on the subject for its own part (one piece of the answer)' }, { edge: 'mentions_only', when: 'the passage only names the subject in passing' }, options[2]];
     const ask = s.jev || ((q) => defaultJev(s, q)), q = sub(u, p.question ?? 'Does this passage answer {{current_user_question}}?');
-    const verdicts = await Promise.all(u.found_passages.map((x) => Promise.resolve(ask({ question: q, options, state: String(x.text).slice(0, 400), units: u })).then((r) => r?.choice ?? 'answers', () => 'answers')));
+    const roleOf = (x) => (p.question ? null : x.side != null ? ['side', flat(x.side)] : x.sub_theme != null ? ['heading', flat(x.sub_theme)] : null);
+    const askOf = (x) => { const r = roleOf(x); return r ? sub(u, `The reader asked: "{{current_user_question}}". This passage was found for one ${r[0]} of that answer: "${r[1]}". Judged for that ${r[0]} alone (not the whole request), does it speak to the subject?`) : q; };
+    const verdicts = await Promise.all(u.found_passages.map((x) => Promise.resolve(ask({ question: askOf(x), options: roleOf(x) ? roleOptions : options, state: String(x.text).slice(0, 400), units: u })).then((r) => r?.choice ?? 'answers', () => 'answers')));
     u.found_passages.forEach((x, i) => { x.verdict = verdicts[i]; });
     const edge = verdicts.includes('contradicts') ? 'conflict' : verdicts.includes('answers') ? 'answers' : 'mentions_only';
-    if (edge !== 'mentions_only') u.found_passages = u.found_passages.filter((x) => x.verdict !== 'mentions_only');
+    // mentions-only passages drop where their OWN part (side / heading; the whole list when untagged) has an answer — one side's answer never empties another side
+    const part = (x) => { const r = roleOf(x); return r ? r.join(':') : ''; }, answered = new Set(u.found_passages.filter((x) => x.verdict !== 'mentions_only').map(part));
+    if (edge !== 'mentions_only') u.found_passages = u.found_passages.filter((x) => x.verdict !== 'mentions_only' || !answered.has(part(x)));
     s.note = { read: { question: q }, params: p, count: u.found_passages.length, scope_excluded: 0, verdicts };
     return edge;
   } };

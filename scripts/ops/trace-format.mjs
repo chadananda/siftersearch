@@ -26,6 +26,8 @@ export function turnText(t) {
     ` Q: ${cut(t.question, 200)}`, ` A: ${cut(t.reply, 200)}`,
     ...(t.route?.plan?.stages?.strategy?.strategy !== undefined ? [` strategy ${t.route.plan.stages.strategy.strategy ?? '-'}${t.route.plan.stages.strategy.version != null ? `@${t.route.plan.stages.strategy.version}` : ''}  shape ${t.route.plan.stages.strategy.shape ?? '-'}  jev ${JSON.stringify(t.route.plan.stages.strategy.jev ?? null)}`] : []),
     ...(t.decisions?.length ? [' decisions:', ...t.decisions.map((d) => `   ${d.point} [${d.by}] -> ${cut(JSON.stringify(d.chosen), 80)}${d.reason ? `  (${cut(d.reason, 80)})` : ''}`)] : []),
+    ...(t.steps?.length ? [' steps (slowest first):', ...[...t.steps].sort((x, y) => (y.ms ?? 0) - (x.ms ?? 0)).slice(0, 12)
+      .map((x) => `   ${String(Math.round(x.ms ?? 0)).padStart(6)} ms  ${x.graph ? `${x.graph} ` : ''}${x.node} ${x.step}${x.edge != null ? ` -> ${x.edge}` : ''}`)] : []),
     ` searches (${t.searches?.length || 0}):`,
     ...(t.searches || []).flatMap((s) => searchBlock(s, 20)), ...writerLines(t)].join('\n');
 }

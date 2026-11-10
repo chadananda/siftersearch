@@ -245,7 +245,10 @@ const term = tree('term', 't1', [
 //   o1 thin/error → o2 → o2j → o3 → o4 → o5  : code + ≤1 Jev (judge.holds) + writer
 //   o3 none → o6 (names the missing language) : code + writer · o1 none / o2 none / o2j none → $absence : code
 const original = tree('original', 'o1', [
-  ['o1', 'fetch.anchor', {}, 'tool', ['referent', 'reader_position', 'previous_evidence', 'quoted_words'], ['found_passages'], { one: 'o3', thin: 'o2', none: '$absence', error: 'o2' }],
+  ['o1', 'fetch.anchor', {}, 'tool', ['referent', 'reader_position', 'previous_evidence', 'quoted_words'], ['found_passages'], { one: 'o3', thin: 'o2', none: 'o1w', error: 'o2' }],
+  // no anchor, no quoted words, but a named work ("the Arabic of the opening chapter of the Qur'an"): the passage asked for, searched INSIDE that work,
+  // is the anchor whose original edition o3 fetches (round 4: o1 none went straight to absence while the library holds the Arabic Qur'an)
+  ['o1w', 'search.shelf', { in_named: true, query: '{{topic}}', k: 3 }, 'tool', ['named_work', 'topic'], ['found_passages'], { one: 'o3', several: 'o3', thin: 'o3', none: '$absence', error: '$fallback' }],
   ['o2', 'fetch.phrase', { mode: 'close' }, 'tool', ['quoted_words', 'quoted_clean', 'religions_specified'], ['found_passages'], { one: 'o2j', several: 'o2j', thin: 'o2j', none: '$absence', error: '$fallback' }],
   ['o2j', 'judge.holds', {}, 'decide', ['found_passages', 'quoted_clean', 'quoted_words'], ['found_passages'], { holds: 'o3', partial: 'o3', none: '$absence' }],
   // its work → the work family's original-language edition, aligned by reference, else by meaning (recorded Bahá'í links first)
@@ -253,7 +256,7 @@ const original = tree('original', 'o1', [
   ['o4', 'fetch.edition', { want: 'translations' }, 'tool', ['found_passages'], ['found_passages', 'found_records'], { one: 'o5', several: 'o5', none: 'o5', error: 'o5' }],
   ['o5', 'shape', { template: 'original.side_by_side', shared: 'tpl.one_passage', format: 'original' }, 'synthesize', ['found_passages', 'found_records'], [], { done: END }],
   ['o6', 'shape', { template: 'original.none', shared: 'tpl.one_passage', format: 'original' }, 'synthesize', ['found_passages', 'found_records'], [], { done: END }],
-], { needs: ['quoted_words', 'referent'], units: { absence_template: 'original.absence' } });
+], { needs: ['quoted_words', 'referent', 'named_work', 'topic'], units: { absence_template: 'original.absence' } });
 
 // the lookup trees: seeded as v2 CANDIDATES above their v1 lookup graphs (strategy-seed.js LOOKUP_GRAPHS)
 const L = { quote_trace, term, original };

@@ -421,7 +421,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     // text made parens (writer residuals 11-05: titles like "Book of Common Prayer [King's Chapel]" broke their links)
     // and (11-10, absolute) a sentence saying Anís can't search is removed — counted in path.form for forensics' search-denial class
     // (battery 11-10) and every link's label names what it opens — checked against the turn's own sources
-    const sources = [...(r.citations || []), ...(r.retrieved || [])].map((x) => ({ title: x?.title, url: x?.url ?? x?.source_url ?? null }));
+    const sources = [...(r.citations || []), ...(r.retrieved || [])].map((x) => ({ title: x?.title, url: x?.url ?? x?.source_url ?? null, text: x?.text ?? null }));
     const formed = typeof r.reply === 'string' ? formPass(r.reply, { sources }) : null;
     let reply = formed ? formed.text : r.reply;
     // Output check: a reply that abandons the persona or leaks instructions is replaced (the widget reconciles its
