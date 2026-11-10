@@ -121,3 +121,10 @@ export const markStructureRefused = (docId) => transaction([{ sql: `UPDATE doc_s
 /** A document's sections in order: [{ level, title, start_index, end_index }]. */
 export const sectionsOf = (docId) =>
   queryAll('SELECT level, title, start_index, end_index FROM doc_sections WHERE doc_id = ? ORDER BY ord', [Number(docId)], 'sections:of-doc');
+
+/** Section titles in keyset pages (id order) for the in-memory book finder (assistant/book-finder.js): sections of live,
+ *  non-duplicate documents with at least `minParagraphs`, each with its book's title, author and size. */
+export const sectionTitlePage = ({ afterId = 0, limit = 5000, minParagraphs = 2 } = {}) =>
+  queryAll(`SELECT s.id AS section_id, s.doc_id, s.title, s.start_index, s.end_index, s.paragraphs, s.first_para_id, d.title AS book, d.author, d.religion, d.collection
+    FROM doc_sections s JOIN docs d ON d.id = s.doc_id
+    WHERE s.id > ? AND s.paragraphs >= ? AND d.deleted_at IS NULL AND d.duplicate_of IS NULL ORDER BY s.id LIMIT ?`, [Number(afterId), Number(minParagraphs), Math.min(Number(limit) || 5000, 10000)], 'sections:title-page');

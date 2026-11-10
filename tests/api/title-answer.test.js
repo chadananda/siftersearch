@@ -60,7 +60,7 @@ describe('title-answer', () => {
     const calls = { respond: 0, named: [] }, tri = { malicious: 0.01, complete: 0.99, stop_request: 0, stance: { choice: 'curious' }, kind: { choice: 'research', confidence: 0.9 },
       outcome: { choice: 'search', confidence: 0.9 }, features: { first: true, turn: 0, words: 1, short: true } };
     const deps = { titleOnly: async () => null, triage: async () => tri, strategy: async () => strat, state: { load: async () => emptyState(), append: async () => {} },
-      namedWork: async (n) => { calls.named.push(n); return named; }, titleAnswer: async (w) => ({ reply: `CARD ${w.doc.id}`, citations: [] }),
+      bookPick: async ({ names }) => { calls.named.push(...names); return named ? { kind: 'work', work: named } : null; }, titleAnswer: async (w) => ({ reply: `CARD ${w.doc.id}`, citations: [] }),
       respond: async () => { calls.respond++; return { reply: 'researched', citations: [], retrieved: [], plan: { shape: 'topic' }, timings: {} }; },
       open: async () => ({ conversationId: 'c', round: 0 }), close: async () => {}, fail: async () => {}, card: async () => null, outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {} };
     return { calls, run: () => anisTurn({ messages: [{ role: 'user', content: 'Gleanings' }], participant: { id: 's', authed: true }, clientKey: 's', onEvent: () => {}, deps }) };
@@ -70,11 +70,10 @@ describe('title-answer', () => {
     const r = await h.run();
     expect(r.reply).toBe('CARD 21310'); expect(h.calls.named).toEqual(['Gleanings']); expect(h.calls.respond).toBe(0);
   });
-  it('a named person or topic beside the work, or no copy found → the strategy runs as before', async () => {
-    for (const [units, named] of [[{ named_work: 'Gleanings', topic: 'justice' }, GPB], [{ named_work: 'Gleanings' }, null]]) {
-      const h = jevTurn({ strategy: { choice: 'book', confidence: 0.9 }, sides: [], sources: {}, decisions: [], units }, named);
-      expect((await h.run()).reply).toBe('researched');
-    }
+  it('no copy found, or another strategy → the research runs as before; a topic beside the work does not block the card (11-10)', async () => {
+    expect((await jevTurn({ strategy: { choice: 'book', confidence: 0.9 }, sides: [], sources: {}, decisions: [], units: { named_work: 'Gleanings' } }, null).run()).reply).toBe('researched');
+    expect((await jevTurn({ strategy: { choice: 'understanding', confidence: 0.9 }, sides: [], sources: {}, decisions: [], units: { named_work: 'Gleanings' } }, GPB).run()).reply).toBe('researched');
+    expect((await jevTurn({ strategy: { choice: 'book', confidence: 0.9 }, sides: [], sources: {}, decisions: [], units: { named_work: 'Gleanings', topic: 'do you have it' } }, GPB).run()).reply).toBe('CARD 21310');
   });
   it('namedWork: only a real book (20+ paragraphs)', async () => {
     expect((await namedWork('Gleanings', { find: async () => GPB })).doc).toBe(GPB.doc);

@@ -11,6 +11,7 @@ export const JEV_LIMITS = Object.freeze({
   strategy: { timeoutMs: 1000, budgetMs: 2000 },
   occasion: { timeoutMs: 1000, budgetMs: 2000 },
   lookup: { timeoutMs: 1000, budgetMs: 2000 },
+  book: { timeoutMs: 1000, budgetMs: 2000 },
 });
 
 const isTimeout = (e) => e?.name === 'TimeoutError' || (e?.name === 'AbortError' && /time/i.test(String(e?.message || e?.cause || '')));

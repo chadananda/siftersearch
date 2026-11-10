@@ -130,7 +130,7 @@ async function loadIndex({ list, file }) {
   const listDocs = list || (await import('../docs-repo.js')).listDocs;
   const rows = [];
   for (let afterId = 0; ;) {
-    const { docs } = await listDocs({ fields: ['id', 'title', 'author', 'paragraph_count', 'language', 'collection'], afterId, limit: 1000, count: false });
+    const { docs } = await listDocs({ fields: ['id', 'title', 'author', 'paragraph_count', 'language', 'collection', 'religion'], afterId, limit: 1000, count: false });
     if (!docs.length) break;
     rows.push(...docs);
     afterId = docs.at(-1).id;

@@ -8,7 +8,7 @@
 import { readFileSync, writeFileSync, mkdirSync, renameSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { bareTitle, findWork, findTitled, workLead, workOffer } from './work-request.js';
+import { bareTitle, findWork, findTitled, workLead } from './work-request.js';
 import { modelFor } from '../model-roles.js';
 import { workUrl, SITE } from '../source-links.js';
 
@@ -19,7 +19,8 @@ const load = () => { if (!cache) { try { cache = new Map(Object.entries(JSON.par
 const save = () => { try { mkdirSync(dirname(FILE()), { recursive: true }); const tmp = `${FILE()}.${process.pid}`; writeFileSync(tmp, JSON.stringify(Object.fromEntries(load()))); renameSync(tmp, FILE()); } catch { /* the cache is a convenience */ } };
 
 // warm the title index a few seconds after a chat process starts (off the boot path), so the FIRST bare title is as instant as the rest
-if (!process.env.VITEST) setTimeout(() => import('../dewey/title-index.js').then((m) => m.titleIndex()).catch(() => {}), 8000).unref?.();
+// …and the book finder's index beside it (works + sections; book-finder.js), built from the same rows
+if (!process.env.VITEST) setTimeout(() => import('../dewey/title-index.js').then((m) => m.titleIndex()).then(() => import('./book-finder.js')).then((m) => m.warmBookFinder()).catch(() => {}), 8000).unref?.();
 
 const PROMPT = (doc, opening) => `Write a short summary of the book "${doc.title}"${doc.author ? ` by ${doc.author}` : ''} for a reader who has just asked for it by name.
 2 to 4 sentences, at most 90 words, plain prose: what the work is, who wrote it and when if known, what it covers, and why readers turn to it.
@@ -45,6 +46,17 @@ export async function workSummary(doc, { read = null, complete = null } = {}) {
   return text;
 }
 
+/** The summary the card can show NOW: the document's own description, else one already written. Never a model call. */
+export function cachedSummary(doc) {
+  const own = String(doc?.description || '').trim();
+  return own || load().get(String(doc?.id)) || null;
+}
+/** No summary yet: write it AFTER the reply (Haiku, once), so the next reader's card has it. Never awaited on the reply path. */
+export function summaryLater(doc, write = workSummary) {
+  if (!doc?.id || cachedSummary(doc)) return null;
+  return Promise.resolve().then(() => write(doc)).catch(() => null);
+}
+
 /** The message is only a book's title → { work } (resolved in code), else null. Cheap for anything that is not a short bare title. */
 // core works only (Chad 11-03: "the earth is but one country" is a quotation, not Hugh Adamson's book); other titles go through Jev's book route
 export const WORK_FOLLOW_UP = 'Is there something particular I can help you find in the book, or would you like to discuss it?';
@@ -56,9 +68,12 @@ export async function titleOnly(text, { find = findWork } = {}) {
 }
 
 /** Stream the answer: the summary, then the book (a `book` card event + its linked lead line), then the offer. → { reply, citations, book } */
-export async function titleAnswer(work, { onEvent = () => {}, links = null, summary = workSummary } = {}) {
+// The card is on the hot path (Chad 11-10: "the book card should be almost immediate"): only the description or the cached summary;
+// a book with neither gets its summary written in the background (`later`), after the reply.
+export async function titleAnswer(work, { onEvent = () => {}, links = null, summary = async (doc) => cachedSummary(doc), later = summaryLater } = {}) {
   const all = [work.doc, ...(work.others || [])], d = work.doc;
   const [wl, sum] = await Promise.all([(links || (async (xs) => (await import('../hit-links.js')).workLinks(xs)))(all).catch(() => null), summary(d).catch(() => null)]);
+  if (!sum && later) later(d);
   const urlOf = (x) => wl?.get?.(x.id) ?? workUrl(x);
   // cover_url absolute: widgets embed anywhere, and images live on the site, never the api host.
   const book = { id: d.id, title: d.title, author: d.author || null, year: d.year ?? null, url: urlOf(d) || null, cover_url: d.cover_url ? (/^https?:/.test(d.cover_url) ? d.cover_url : `${SITE}${d.cover_url}`) : null, description: sum || null, encumbered: d.encumbered === 1, sufficient: true };   // the card IS the answer where a card can show (widget); text stays for history and other channels
@@ -81,4 +96,33 @@ export async function namedWork(name, { find = findTitled } = {}) {
   // other copies are the same work only: a short name also opened unrelated titles ("Gleanings" → Gleanings among the Sheaves)
   const f = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   return { ...w, others: (w.others || []).filter((o) => f(o.title).includes(f(w.doc.title)) || f(w.doc.title).includes(f(o.title))) };
+}
+
+/** A SUB-DOCUMENT was asked for ("The Dispensation of Bahá’u’lláh", "Matthew"): its card — the section's title, the work it is part of,
+ *  the link to where it starts. sec = { doc_id, book, author, title, start_index, end_index, paragraphs, first_para_id }; doc = its book's row.
+ *  → { reply, citations, book }. No model: the section's own words are not summarised on the hot path. */
+export async function sectionAnswer({ sec, doc = null }, { onEvent = () => {}, link = null } = {}) {
+  const parent = doc || { id: sec.doc_id, title: sec.book, author: sec.author };
+  const url = await (link || sectionLink)(sec, parent).catch(() => null) || workUrl(parent) || null;
+  const by = parent.author || sec.author || null;
+  const book = { id: parent.id ?? sec.doc_id, title: sec.title, author: by, year: parent.year ?? null, url, cover_url: parent.cover_url ? (/^https?:/.test(parent.cover_url) ? parent.cover_url : `${SITE}${parent.cover_url}`) : null,
+    description: null, encumbered: parent.encumbered === 1, sufficient: true, section: { title: sec.title, of: parent.title ?? sec.book, start_index: sec.start_index, end_index: sec.end_index, paragraphs: sec.paragraphs ?? null } };
+  book.follow_up = WORK_FOLLOW_UP;
+  onEvent({ type: 'book', book });
+  const t = url ? `[*${sec.title}*](${url})` : `*${sec.title}*`;
+  const lead = `${t} is in the library, part of *${parent.title ?? sec.book}*${by ? ` by ${by}` : ''}${sec.paragraphs ? ` (${sec.paragraphs} paragraphs)` : ''}.`;
+  const reply = [lead, WORK_FOLLOW_UP].join('\n\n');
+  onEvent({ type: 'text', content: reply });
+  const citations = [{ title: parent.title ?? sec.book, author: by, url, religion: parent.religion ?? null, document_id: parent.id ?? sec.doc_id, paragraph_index: sec.start_index ?? null, text: '' }];
+  return { reply, citations, book };
+}
+
+/** The link to where a section starts: its first paragraph by the citation policy (OceanLibrary range → … → our reader #p). Reads only. */
+export async function sectionLink(sec, parent) {
+  const [{ paragraphsInRange }, { withLinks }] = await Promise.all([import('../paragraphs-repo.js'), import('../hit-links.js')]);
+  const [first] = await paragraphsInRange(sec.doc_id, sec.start_index, sec.start_index, { limit: 1 }).catch(() => []);
+  const hit = { id: first?.id ?? sec.first_para_id, doc_id: sec.doc_id, paragraph_index: sec.start_index, text: first?.text ?? null, block_attrs: first?.block_attrs ?? null,
+    external_para_id: first?.external_para_id ?? null, title: parent?.title ?? sec.book };
+  const [linked] = await withLinks([hit]);
+  return linked?.url ?? null;
 }

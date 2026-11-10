@@ -16,7 +16,8 @@ import { narrate } from './narrate.js';
 import { turnMeta } from './turn-meta.js';
 import { progressText } from './progress.js';
 import { chooseStrategy, strategyOf } from './strategy-choice.js';
-import { titleOnly, titleAnswer, namedWork } from './title-answer.js';
+import { titleOnly, titleAnswer, sectionAnswer } from './title-answer.js';
+import { bookFastPath } from './book-pick.js';
 import { timeoutDecision, jevTimeoutsOf } from './jev-call.js';   // W3: Jev chooses the strategy from context
 import { restate, understoodText, tarpitPhrase } from './understanding.js';   // W3: the "what I understood" line
 import { decisionLog } from './decision-log.js';
@@ -58,6 +59,13 @@ export async function defaultDeps() {   // exported for the strategy dry run (st
  */
 // Every turn runs under a per-turn METER (ai-context): each model call's model and cost land in the turn's path.meta
 // (type · models · usd · latency) — what the daily conversation digest shows (Chad 10-22). An outer meter is reused.
+// the "something new" option Jev weighs beside the existing works when his strategy would MAKE or chat rather than open a book
+const PROBE_ALT = {
+  compilation: 'a NEW compilation gathered on this topic (not an existing work in the library)',
+  about: 'a question or conversation about Anís or the library itself, not a particular work',
+  unmatched: 'a question or search on this topic, not a particular existing work',
+};
+
 export async function anisTurn(args) {
   const outer = currentAIContext().meter, timeline = currentAIContext().timeline || [];
   // a TEST turn (args.test, or a scope already billed elsewhere: draft batteries, replays) bills to the improve budget and stops
@@ -130,6 +138,18 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     return { reply, status: 'answered', citations, retrieved: [], plan: { shape: 'work', work: work.doc.id }, conversationId: ex?.conversationId ?? null,
       timings: { total_ms: Date.now() - t0 } };
   };
+  // a SUB-DOCUMENT's card (a letter, chapter or book of scripture inside a larger work): its title, the work, the link to where it starts
+  const sectionCard = async ({ sec, doc }, ex, extra = {}) => {
+    const plan = { shape: 'work', work: doc?.id ?? sec.doc_id, section: sec.title };
+    onEvent({ type: 'sources', sources: [], plan, ms: Date.now() - t0 });
+    onEvent({ type: 'stage', stage: 'craft' });
+    const { reply, citations } = await (d.sectionAnswer ?? sectionAnswer)({ sec, doc }, { onEvent });
+    onEvent({ type: 'sources', sources: citations, plan, ms: Date.now() - t0 });
+    const path = { gate: 'title', route: 'title', strategy: 'book', work: plan.work, section: { title: sec.title, start_index: sec.start_index }, ...extra, meta: turnMeta({ status: 'answered', meter, ms: Date.now() - t0 }),
+      timeline: timelineOf(timeline, t0), llm: meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null })) };
+    if (ex) await d.close({ ...ex, reply, status: 'answered', path, channel: channel.id }).catch(() => {});
+    return { reply, status: 'answered', citations, retrieved: [], plan, conversationId: ex?.conversationId ?? null, timings: { total_ms: Date.now() - t0 } };
+  };
   if (titled) {
     const ex = await d.open(logArgs).catch(() => null);
     if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
@@ -185,15 +205,24 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   // Jev's refers_back (strategy call, read with the history): a message pointing at the previous reply is never 'unclear' and never a literal quote lookup
   if (strat?.refersBack && route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind)) Object.assign(route, { action: 'research', overridden: route.kind, by: 'refers_back' });
   const lkIntent = lookupOn && !strat?.refersBack && route.action === 'research' && ['book', 'quote', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
-  const lk = lkIntent ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent, profile, decisions, onJev: (info) => decisions.record('jev:timeout', timeoutDecision(info)) }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
-  // Jev chose the BOOK strategy and named only a work (no person, no topic): the same card answer, code resolving the name he gave
-  // (11-09: "The Dawn-Breakers" took 3 s with no card, "“Gleanings”" opened talks titled after it)
+  // THE BOOK FAST PATH (Chad 11-10): Jev chose the book strategy (or his lookup says book) → code gathers title + section candidates for
+  // the name he gave (his named_work; a person he named beside it is the byline: author or compiler) → ONE typed Jev pick → the card.
+  // Nothing fits → one Haiku names the work, then candidates + Jev again; still nothing → the research below. A topic or person
+  // beside the work no longer blocks it: the strategy is Jev's ("do you have the Research Department's “Deepening” compilation?").
   const u = strat?.units || {};
-  if (strategyOf(strat) === 'book' && u.named_work && !u.named_person && !u.topic && !strat.refersBack && route.action === 'research'
-    && engine === undefined && research === undefined && !variants && !llm) {
-    const named = await (d.namedWork ?? (deps ? async () => null : namedWork))(u.named_work).catch(() => null);
-    if (named) return bookAnswer(named, ex, { gate: 'strategy', decisions: decisions.list() });
+  const bookFn = d.bookPick ?? (deps ? null : bookFastPath);
+  const bookGate = bookFn && !strat?.refersBack && route.action === 'research' && engine === undefined && research === undefined && !variants && !llm;
+  const bookOn = bookGate && (strategyOf(strat) === 'book' || lkIntent === 'book');
+  // PROBE (Chad 11-10, "Deepening Compilation" built a compilation): Jev chose to MAKE something (a compilation) or to talk, but
+  // his phrase may BE a library title — the same one pick, with "make it new" as an option; code only checks the title is near-exact
+  const probe = bookGate && !bookOn ? PROBE_ALT[strategyOf(strat)] : null;
+  if (bookOn || probe) {
+    const found = await timed('book', () => bookFn({ messages, names: [u.named_work, ...(probe ? [u.topic] : [])].filter(Boolean), by: u.named_person ?? null, profile, decisions, ...(probe ? { alt: probe } : {}) }),
+      (r) => (r ? { kind: r.kind, via: r.via } : null)).catch(() => null);
+    if (found?.kind === 'work') return bookAnswer(found.work, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
+    if (found?.kind === 'section') return sectionCard(found, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
   }
+  const lk = lkIntent ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent, profile, decisions, onJev: (info) => decisions.record('jev:timeout', timeoutDecision(info)) }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
   // a SHORT turn Jev read as a search ("more", "and the Báb?", "in Persian") gets its self-contained query from the history
   // and the card (short-turn.js) — respond.js searches those words, not the bare message
   const resolved = route.action === 'research' && outcome === 'search' && tri?.features?.short && !tri.features.first && d.resolve

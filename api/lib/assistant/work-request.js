@@ -54,7 +54,9 @@ const notBook = (d) => /^media$/i.test(d.collection || '') || /^tag:/i.test(d.ti
 const DERIVED = /\b(?:study guide|guide|notes|interview|commentary|reflections?|meditation|principles|class|lecture|talks?|review|outline|questions|introduction|tag)\b/i;
 const AUTHORS = /bah[aá].?u.?ll[aá]h|abdu.?l.?bah[aá]|\bthe b[aá]b\b|shoghi effendi/i;
 // the fullest text by its own author: size first (an excerpt is not the book), the canonical author, the canonical site, English
-const workRank = (d, asked) => Math.log10((d.paragraph_count || 0) + 1) + (AUTHORS.test(d.author || '') ? 1 : 0)
+const workRank = (d, asked, by = null) => Math.log10((d.paragraph_count || 0) + 1) + (AUTHORS.test(d.author || '') ? 1 : 0)
+  // the byline the reader gave ("the Research Department's Deepening"): the compiler / author named outranks size (11-10)
+  + (bylineHit(d.author, by) ? 3 : 0)
   // the canonical reader and the reader's language outweigh size (11-09: "The Hidden Words" opened the Persian edition on oceanoflights)
   + (d.source_site === 'oceanlibrary.com' ? 1.5 : 0) + (/^en/i.test(d.language || 'en') ? 1 : 0)
   - (derived(d.title, asked) ? 2 : 0)
@@ -64,6 +66,8 @@ const workRank = (d, asked) => Math.log10((d.paragraph_count || 0) + 1) + (AUTHO
 const byAuthor = (by, author, am) => foldTitle(by).replace(/ /g, '') === foldTitle(author).replace(/ /g, '') || !!am?.(by, author);
 const derived = (title, asked) => { const w = DERIVED.exec(title || '')?.[0]; return !!w && !new RegExp(`\\b${w}\\b`, 'i').test(asked); };
 
+// the reader's byline names this book's author/compiler: folded, either contains the other ("Research Department" ⊂ "Universal House of Justice, Research Department")
+const bylineHit = (author, by) => { const a = foldTitle(author), b = foldTitle(by); return !!a && b.length >= 3 && (a.includes(b) || b.includes(a)); };
 const foldTitle = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/^the /, '');
 
 const lib = async () => Promise.all([import('../dewey/title-index.js'), import('../docs-repo.js')]);
@@ -114,9 +118,12 @@ export function bareTitle(text) {
   return t;
 }
 
-/** Title phrases → { doc, others } (the researcher's find_work calls this with the title it chose), or null. */
-export async function findTitled(cands, { index = null, match = null, listDocs = null, min = 0.86, prefix = true, byline = false, authorMatch = null } = {}) {
-  if (!cands.length) return null;
+/** Title phrases → the library's books under those titles, best first: { sorted, books, asked } (sorted = listDocs rows by workRank).
+ *  The ranked list without a pick — findTitled takes the first; the book fast path (book-pick.js) hands the top few to Jev.
+ *  by = a byline the reader gave (author or compiler), ranked up; widen = also the titles a short name OPENS or ENDS
+ *  ("Deepening" → "Deepening: …", "Gita" → "Bhagavad Gita") even when exact matches exist (a talk can carry the bare name). */
+export async function rankTitled(cands, { index = null, match = null, listDocs = null, min = 0.86, prefix = true, byline = false, authorMatch = null, by = null, widen = false, limit = 40 } = {}) {
+  if (!cands.length) return { sorted: [], books: false, asked: '' };
   if (!index || !match || !listDocs) {
     const [ti, docs] = await lib();
     index ??= await ti.titleIndex(); match ??= ti.matchTitle; listDocs ??= docs.listDocs; authorMatch ??= ti.authorMatch;
@@ -143,25 +150,39 @@ export async function findTitled(cands, { index = null, match = null, listDocs =
   let books = all.filter((h) => !notBook(h.doc));
   // a short title that OPENS the book's ("Gleanings" → Gleanings from the Writings of Bahá'u'lláh): the title matcher scores a
   // one-word query 0 against a longer title (right for the librarian's duplicate checks), so when no book matched, look for one
-  if (!books.length && prefix && index.docs) {
+  if ((!books.length || widen) && prefix && index.docs) {
     const qs = cands.map(foldTitle).filter((q) => q.length >= 4);
-    books = index.docs.filter((d) => !notBook(d) && qs.some((q) => foldTitle(d.title).startsWith(`${q} `) || foldTitle(d.title).endsWith(` ${q}`))).slice(0, 200).map((doc) => ({ doc, score: min }));
+    const top = Math.max(min, ...books.map((h) => h.score));
+    // the reader's byline first, then the title closest to the name (fewest extra words), before the window is cut
+    const opened = index.docs.filter((d) => !notBook(d) && !hits.has(d.id) && qs.some((q) => foldTitle(d.title).startsWith(`${q} `) || foldTitle(d.title).endsWith(` ${q}`)))
+      .sort((a, b) => Number(bylineHit(b.author, by)) - Number(bylineHit(a.author, by)) || foldTitle(a.title).length - foldTitle(b.title).length)
+      .slice(0, 200).map((doc) => ({ doc, score: widen ? top : min }));
+    books = [...books, ...opened];
   }
   const pool = books.length ? books : all;
-  if (!pool.length) return null;
+  if (!pool.length) return { sorted: [], books: false, asked: '' };
   const top = Math.max(...pool.map((h) => h.score));
-  const ids = pool.filter((h) => h.score >= top - 0.06).sort((a, b) => b.score - a.score).map((h) => h.doc.id).slice(0, 40);
-  const { docs } = await listDocs({ ids, fields: ['id', 'title', 'author', 'religion', 'collection', 'slug', 'language', 'source_site', 'paragraph_count', 'encumbered', 'source_url', 'external_id', 'description', 'cover_url', 'year'], limit: 40, count: false });
+  const ids = pool.filter((h) => h.score >= top - 0.06).sort((a, b) => b.score - a.score || Number(bylineHit(b.doc.author, by)) - Number(bylineHit(a.doc.author, by))).map((h) => h.doc.id).slice(0, limit);
+  const { docs } = await listDocs({ ids, fields: ['id', 'title', 'author', 'religion', 'collection', 'slug', 'language', 'source_site', 'paragraph_count', 'encumbered', 'source_url', 'external_id', 'description', 'cover_url', 'year'], limit, count: false });
   const asked = cands.join(' ');
   const sorted = docs.filter((d) => (d.paragraph_count ?? 1) > 0 && (books.length ? !notBook(d) : true))
-    .sort((a, b) => workRank(b, asked) - workRank(a, asked) || (b.paragraph_count || 0) - (a.paragraph_count || 0));
+    .sort((a, b) => workRank(b, asked, by) - workRank(a, asked, by) || (b.paragraph_count || 0) - (a.paragraph_count || 0));
+  return { sorted, books: books.length > 0, asked };
+}
+
+/** Title phrases → { doc, others } (the researcher's find_work calls this with the title it chose), or null. */
+export async function findTitled(cands, opts = {}) {
+  const { sorted, asked } = await rankTitled(cands, opts);
   if (!sorted.length) return null;
+  return { doc: sorted[0], others: otherCopies(sorted, asked) };
+}
+/** Other copies worth offering beside the first. Pure. */
+export function otherCopies(sorted, asked) {
   const seen = new Set([sorted[0].title]);
   // other copies worth offering: not a foreword / introduction stub split off a book (11-01 live: GPB's "also holds" listed two)
   const stub = (d) => /\b(?:foreword|introduction|preface|afterword|glossary|notes|index|bibliography)\b/i.test(d.title) || (d.paragraph_count ?? 99) < 20;
   // …and not a work ABOUT the book ("God Passes By: Outline and cross-reference of chapters")
-  const others = sorted.slice(1).filter((d) => !stub(d) && !derived(d.title, asked) && !seen.has(d.title) && seen.add(d.title)).slice(0, 2);
-  return { doc: sorted[0], others };
+  return sorted.slice(1).filter((d) => !stub(d) && !derived(d.title, asked) && !seen.has(d.title) && seen.add(d.title)).slice(0, 2);
 }
 
 /** The reply's first lines: the work, linked (and other copies). Pure. */
