@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bareTitle, findWork, findTitled, workLead, workOffer } from './work-request.js';
 import { modelFor } from '../model-roles.js';
-import { workUrl } from '../source-links.js';
+import { workUrl, SITE } from '../source-links.js';
 
 const DEFAULT = join(dirname(fileURLToPath(import.meta.url)), '../../../data/run/work-summaries.json');
 const FILE = () => process.env.ANIS_WORK_SUMMARIES || DEFAULT;   // tests point it at a temp file
@@ -58,7 +58,8 @@ export async function titleAnswer(work, { onEvent = () => {}, links = null, summ
   const all = [work.doc, ...(work.others || [])], d = work.doc;
   const [wl, sum] = await Promise.all([(links || (async (xs) => (await import('../hit-links.js')).workLinks(xs)))(all).catch(() => null), summary(d).catch(() => null)]);
   const urlOf = (x) => wl?.get?.(x.id) ?? workUrl(x);
-  const book = { id: d.id, title: d.title, author: d.author || null, year: d.year ?? null, url: urlOf(d) || null, cover_url: d.cover_url || null, description: sum || null, encumbered: d.encumbered === 1 };
+  // cover_url absolute: widgets embed anywhere, and images live on the site, never the api host.
+  const book = { id: d.id, title: d.title, author: d.author || null, year: d.year ?? null, url: urlOf(d) || null, cover_url: d.cover_url ? (/^https?:/.test(d.cover_url) ? d.cover_url : `${SITE}${d.cover_url}`) : null, description: sum || null, encumbered: d.encumbered === 1 };
   onEvent({ type: 'book', book });
   const lead = workLead(work, urlOf), offer = workOffer(work);
   const reply = [sum, lead, offer].filter(Boolean).join('\n\n');

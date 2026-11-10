@@ -7,7 +7,7 @@ import { slugifyPath } from './slug.js';
 import { rangeUrl, quoteUrl } from './ocean-range.js';
 import { encodeMarker } from './ool-range.js';
 
-const SITE = 'https://siftersearch.com';
+export const SITE = 'https://siftersearch.com';   // the site worker: pages + the image service (/img/*); never the api tunnel
 const TIERS = [['oceanlibrary.com', 1], ['oceanoflights.org', 2], ['portlandiator.github.io', 3], ['bahai-library.com', 4]];
 const OURS = 'siftersearch.com';
 export const PUBLISHER_TIER = 5, SIFTER_TIER = 6;   // consumers compare against these, never against literals

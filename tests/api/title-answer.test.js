@@ -33,6 +33,12 @@ describe('title-answer', () => {
     expect(await workSummary({ id: 1, title: 'X', description: 'Its own summary.' }, { complete })).toBe('Its own summary.');
     expect(complete).not.toHaveBeenCalled();
   });
+  it('the card cover is absolute on the site (the image service), never relative to the api host a widget calls', async () => {
+    const ev = [];
+    const doc = { ...GPB.doc, cover_url: '/img/covers/21310?v=3aebc7aba314' };
+    await titleAnswer({ doc, others: [] }, { onEvent: (e) => ev.push(e), links: async () => new Map(), summary: async () => null });
+    expect(ev[0].book.cover_url).toBe('https://siftersearch.com/img/covers/21310?v=3aebc7aba314');
+  });
   it('the summary is written once per book, then served from the cache', async () => {
     const doc = { id: 990000001 + Math.floor(Math.random() * 1e6), title: 'T', author: 'A' };
     const complete = vi.fn(async () => ({ content: 'Short summary.' }));
