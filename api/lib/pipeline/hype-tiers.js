@@ -7,11 +7,13 @@ import { doctrinalTier } from '../authority.js';
 import { paragraphAuthor } from '../authorship/effective.js';
 import { detectGenre, PROFILE_OVERRIDES } from './profile.js';
 import { HYPE_VERSION } from '../rag/enrich/retrieval.js';
+import { canonicalTradition } from '../assistant/tradition-name.js';
 
 export const TIER_ORDER = ['core', 'gray', 'history', 'rest'];
 export const PASSES = ['primary', 'copy'];
 /** Within every tier, Bahá'í docs first, then every other tradition (Chad 11-10: "Bahá'í core first"). Order, never a filter. */
 export const FAITHS = ['bahai', 'other'];
+export const DOCTRINAL_TIERS = ['core', 'gray'];
 export const SLICE_TARGET = 1500, SLICE_OVER = 4000;   // retrieval.js: a ¶ over 4000 chars goes out as ~1500-char slices
 const DOC_FIELDS = ['id', 'title', 'author', 'religion', 'collection', 'scope'];
 const isBahai = (d) => /^bah/i.test(String(d.religion || '').trim());
@@ -61,20 +63,31 @@ export async function selectTier({ tier, pass = 'primary', faith = null, limit =
 }
 
 /** ¶ and requests per tier × pass: { tier: { primary|copy: { docs, total, done, pending, requests } } }. Aggregates for single-tier docs,
- *  row level (with authors) for Bahá'í docs. Whole-library scan: an ops job (heavy lane), never a request path. */
+ *  row level (with authors) for Bahá'í docs. Whole-library scan: an ops job (heavy lane), never a request path.
+ *  Also `traditions`: { tradition: { total, done, pending, ready } } over the DOCTRINAL tiers (core + gray, primary + copy) — the signal that
+ *  a tradition's doctrinal works have their HyPE, so its question testing may start (Chad 11-10). */
 export async function countTiers({ version = HYPE_VERSION } = {}, deps = {}) {
   const { docs: docsOf = listDocs, paras = hypeParagraphs, totals = paragraphTotals } = deps;
   const res = Object.fromEntries(TIER_ORDER.map((t) => [t, Object.fromEntries(PASSES.map((p) => [p, { docs: 0, total: 0, done: 0, pending: 0, requests: 0 }]))]));
+  const trad = {};
+  const doctrinal = (d, tier, total, done, pending) => {
+    if (!DOCTRINAL_TIERS.includes(tier)) return;
+    const k = canonicalTradition(d.religion) || 'Other', e = trad[k] ||= { total: 0, done: 0, pending: 0 };
+    e.total += total; e.done += done; e.pending += pending;
+  };
   for (let afterId = 0; ;) {
     const page = (await docsOf({ scope: 'live', afterId, fields: DOC_FIELDS, limit: 1000, count: false })).docs || [];
-    if (!page.length) return res;
+    if (!page.length) {
+      res.traditions = Object.fromEntries(Object.entries(trad).sort((a, b) => b[1].total - a[1].total).map(([k, e]) => [k, { ...e, ready: e.pending === 0 }]));
+      return res;
+    }
     afterId = page[page.length - 1].id;
     const bah = page.filter(isBahai), rest = page.filter((d) => !isBahai(d));
     const tot = rest.length ? await totals(rest.map((d) => d.id), version) : new Map();
     for (const d of rest) {
       const t = tot.get(d.id); if (!t) continue;
       const b = res[paraTier(d)][isCopy(d) ? 'copy' : 'primary'];
-      b.docs++; b.total += t.total; b.done += t.done; b.pending += t.pending;
+      b.docs++; b.total += t.total; b.done += t.done; b.pending += t.pending; doctrinal(d, paraTier(d), t.total, t.done, t.pending);
       b.requests += t.pending - t.longN + (t.longChars ? Math.ceil(t.longChars / SLICE_TARGET) : 0);
     }
     const rows = bah.length ? await paras(bah.map((d) => d.id), version, { authors: true }) : [];
@@ -84,6 +97,7 @@ export async function countTiers({ version = HYPE_VERSION } = {}, deps = {}) {
       const k = `${r.doc_id}|${paraTier(d, r.authors)}`;
       if (!seen.has(k)) { seen.add(k); b.docs++; }
       b.total++; if (r.done) b.done++; else { b.pending++; b.requests += requestsFor(r.len); }
+      doctrinal(d, paraTier(d, r.authors), 1, r.done ? 1 : 0, r.done ? 0 : 1);
     }
   }
 }

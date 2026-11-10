@@ -240,6 +240,6 @@ export async function hypeQualityReport(params = {}, deps = {}) {
   const c = counts ? await d.count({ version: HYPE_VERSION }) : null;
   const progress = c && Object.fromEntries(TIER_ORDER.filter((t) => !tier || t === tier).map((t) => [t, Object.fromEntries(PASSES.map((p) => [p, { done: c[t][p].done, remaining: c[t][p].pending, total: c[t][p].total, estUsdRemaining: r2(c[t][p].requests * EST_USD_PER_REQUEST) }]))]));
   return { version: HYPE_VERSION, budget: { monthUsd, spentMonth: r2(spentMonth), spentToday: r2(spentToday), paceUsdPerDay: r2(monthUsd / 30), remainingMonth: r2(monthUsd - spentMonth) },
-    paused: d.store.pause(), baselines: d.store.baselines(), progress, tiers: perTier,
+    paused: d.store.pause(), baselines: d.store.baselines(), progress, doctrinalByTradition: c?.traditions ?? null, tiers: perTier,
     batches: ledger.slice(-last).map((e) => ({ id: e.id, at: e.doneAt || e.at, tier: e.tier, pass: e.pass, requests: e.requests, rates: e.rates, grade: e.grade && { sampled: e.grade.sampled, questions: e.grade.questions, searchablePct: e.grade.searchablePct, answeredPct: e.grade.answeredPct, distinctPct: e.grade.distinctPct, missedPerParagraph: e.grade.missedPerParagraph }, violations: e.violations })) };
 }

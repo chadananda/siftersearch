@@ -96,5 +96,9 @@ describe('countTiers', () => {
     expect(c.history.primary).toMatchObject({ total: 1, pending: 1 });
     expect(c.rest.primary).toMatchObject({ docs: 2, pending: 4 + 1, requests: 3 + 4 + 1 });   // essay: 4 pending, 1 long (6000 chars → 4 slices) → 3+4; LoG compiler 1
     expect(TIER_ORDER).toEqual(['core', 'gray', 'history', 'rest']);
+    // doctrinal (core + gray, both passes) per tradition: Islam = quran 2 + bukhari 1 done + copy 1; Bahá'í = LoG core 101/103 + dawn 132
+    expect(c.traditions.Islam).toEqual({ total: 4, done: 1, pending: 3, ready: false });
+    expect(c.traditions["Baha'i"]).toMatchObject({ total: 3, done: 1, pending: 2, ready: false });
+    expect(c.traditions.Christian).toBeUndefined();   // the essay is 'rest' only
   });
 });
