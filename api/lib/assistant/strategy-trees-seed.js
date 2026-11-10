@@ -170,7 +170,7 @@ const timeline = tree('timeline', 'l1', [
     { element: 'search.shelf', params: { query: '{{value}}', k: 4 } }, { element: 'search.hype', params: { query: '{{value}}', k: 3 } }] } }, stage: 'Finding the dates…' }, 'tool', ['entries', 'religions_specified'], ['found_passages', 'missing'],
     { all: 'l3', some_thin: 'l3', all_none: '$absence', error: '$fallback' }],
   ['l3', 'judge.timeline', { query: '{{topic}}' }, 'decide', ['found_passages', 'entries', 'topic'], ['found_passages', 'undated_entries'], { matched: 'l4', none: 'l6', unjudged: 'l4' }],
-  ['l4', 'rank', { by: ['history'], k: { default: 12, research: 30 }, dedupe: true }, 'process', ['found_passages'], ['found_passages'], { done: 'l5', empty: '$absence' }],
+  ['l4', 'rank', { by: ['history'], k: { default: 12, research: 30 }, spread: 'side', dedupe: true }, 'process', ['found_passages'], ['found_passages'], { done: 'l5', empty: '$absence' }],
   ['l5', 'shape', { template: 'timeline.table', shared: 'tpl.passages', format: 'timeline', theme_by: 'date', offers: ['the timeline with every source in full by email'] }, 'synthesize', ['topic', 'found_passages', 'undated_entries'], ['offers'], { done: END }],
   ['l6', 'shape', { template: 'timeline.undated', shared: 'tpl.passages', format: 'timeline', theme_by: 'side' }, 'synthesize', ['topic', 'entries', 'found_passages'], [], { done: END }],
 ], { needs: ['topic', 'named_person', 'audience'] });

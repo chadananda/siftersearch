@@ -96,6 +96,26 @@ describe('timeline: dated claims about any subject', () => {
   });
 });
 
+describe('timeline spans the whole range asked (round 5: three ministries, only the Báb and early Bahá’u’lláh reached the writer)', () => {
+  it('rank spread: the top k taken in turns across the planned entries, so an early entry with many dated finds cannot crowd out the later ones', () => {
+    const many = Array.from({ length: 14 }, (_, i) => ({ id: `b${i}`, year: 1844 + i, side: 'the ministry of the Báb', text: `b${i}` }));
+    const late = [{ id: 'a1', year: 1892, side: "'Abdu'l-Bahá's ministry", text: 'a1' }, { id: 'a2', year: 1921, side: "the passing of 'Abdu'l-Bahá", text: 'a2' }];
+    const st = () => ({ node: 'l4', units: { found_passages: [...many, ...late] }, ctx: {} });
+    const plain = st(); ELEMENTS.rank.run(plain, { by: ['history'], k: 12 });
+    expect(plain.units.found_passages.map((x) => x.id)).not.toContain('a2');   // the global top 12 (oldest first) is all the Báb
+    const spread = st(); ELEMENTS.rank.run(spread, { by: ['history'], k: 12, spread: 'side' });
+    const ids = spread.units.found_passages.map((x) => x.id);
+    expect(ids.length).toBe(12); expect(ids).toContain('a1'); expect(ids).toContain('a2');
+    expect(spread.units.found_passages.map((x) => x.year)).toEqual([...spread.units.found_passages.map((x) => x.year)].sort((a, b) => a - b));   // still oldest first
+    expect(JSON.stringify(TREE_STEPS.find((x) => x.id === 'tree.timeline.l4'))).toContain('"spread":"side"');
+  });
+  it('the entries generator is told to cover the whole span, each named figure or period its share', async () => {
+    let sys = '';
+    await generateList({ kind: 'entries', subject: "the ministries of the Báb, Bahá'u'lláh and 'Abdu'l-Bahá", n: 8, complete: async (m) => { sys = m[0].content; return { content: '{"items":["a"]}' }; } });
+    expect(sys).toMatch(/WHOLE span/); expect(sys).toMatch(/fair share/);
+  });
+});
+
 describe('history_fact', () => {
   it('no library history: the web path reads web_found and the writer gets the web finds, labelled', async () => {
     const s = await run('history_fact', 'when was the Brahmo Samaj founded', { tools: { web_search: async () => ({ text: 'Founded in 1828 in Calcutta.', citations: ['https://example.org/brahmo'] }) }, units: { topic: 'founding of the Brahmo Samaj', fact_asked: 'date' } });
