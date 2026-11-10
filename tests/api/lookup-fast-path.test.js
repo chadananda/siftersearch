@@ -204,7 +204,7 @@ describe('Jev lookup guidance', () => {
     const { LOOKUP_Q, LOOKUP_KINDS } = await import('../../api/lib/assistant/triage.js');
     expect(LOOKUP_Q).toMatch(/strong prior/i);
     expect(LOOKUP_Q).toMatch(/scare quotes/i);
-    expect(Object.keys(LOOKUP_KINDS)).toEqual(['none', 'book', 'quote', 'reference']);
+    expect(Object.keys(LOOKUP_KINDS)).toEqual(['none', 'book', 'quote', 'in_work', 'reference']);
     const { readFileSync } = await import('node:fs');
     const rows = readFileSync(new URL('../quality/questions/anis-lookup-intent.jsonl', import.meta.url), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
     expect(rows.filter((r) => /["“]/.test(r.text) && r.lookup === 'none').length).toBeGreaterThanOrEqual(3);

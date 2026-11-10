@@ -313,7 +313,7 @@ export function turnFromPath({ question, reply, path = {}, traces = [] }) {
   // the model's own search queries (before any subject anchor rebuilt one) and Jev's resolved subject: forensics' query-drift
   const model_queries = steps.filter((s) => MODEL_SEARCH.has(s.tool)).map((s) => s.rebuilt_from ?? s.args?.query).filter(Boolean);
   return { route: routeOf(p.recipe || p.plan?.shape), strategy: p.strategy?.choice ?? null, nodes: (Array.isArray(p.steps) ? p.steps : []).map((x) => ({ node: x.node, edge: x.edge, ms: x.ms, ...(x.count != null ? { count: x.count } : {}), ...(x.search ? { query: x.search.query, filters: x.search.filters } : {}), ...(Array.isArray(x.members) ? { members: x.members } : {}) })), question, reply, searches, writer_passages: evidence, cited,
-    subject: p.triage?.query ?? null, model_queries };
+    subject: p.triage?.query ?? null, model_queries, ...(p.form ? { form: p.form } : {}) };
 }
 
 /** Forensic + judge item for a reply; one per search (each trace gets its own verdict). */

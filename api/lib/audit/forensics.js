@@ -35,6 +35,7 @@ export const FIX_WHERE = {
   'malformed-markdown': 'api/lib/assistant/respond.js the post-writer step that produced it (quotes.js linkQuotes/markQuotes, linkTitles) · md-valid.js names the defect',
   'bare-link': 'api/lib/assistant/prompt.js citation = link text',
   'search-offer': 'api/lib/assistant/prompt.js · lint.js search-offer',
+  'search-denial': 'api/lib/assistant/prompt.js HOUSE_STYLE (Anís can always search) · lint.js dropSearchDenial (removed at the exit; counted from path.form)',
   'wrong-author': 'api/lib/assistant/prompt.js citation author · library metadata',
   'reported-unlabelled': 'api/lib/assistant/prompt.js (a talk is named as spoken)',
   'stage-over-budget': "api/lib/search.js engine stages · the slow stage's own module (search/read-pool.js hydrate, query-embedding.js embed, search/qdrant-layers.js layers, assistant/tools.js originals_search, planned-search.js planned stages); budgets are targets in search/latency-budget.js",
@@ -162,7 +163,7 @@ export function assessSearch(s = {}, { route = null, question = '' } = {}) {
 const PROCESS_TALK = /\b(?:search results?|the results (?:show|above)|as (?:my|the) search(?:es)? (?:show|found)|in (?:the|my) hits|the evidence (?:shows|given))\b/i;
 const CLIPPED = /(?:[“"][^”"\n]{20,}?(?:…|\.\.\.)\s*[”"])|(?:^\s*>[^\n]*(?:…|\.\.\.)\s*$)/m;
 const BARE_LINK = /(^|[^(<\w])https?:\/\/[^\s)>\]]+/m;
-function writerDefects(reply, cited = [], hits = []) {
+function writerDefects(reply, cited = [], hits = [], form = null) {
   const out = [], text = String(reply || '');
   const lint = lintReply(text).map((x) => x.id);
   if (PROCESS_TALK.test(text) || lint.some((id) => ['machinery', 'authority-layers', 'method-narration'].includes(id))) out.push(['process-talk', (text.match(PROCESS_TALK) || [lint[0]])[0]]);
@@ -170,6 +171,8 @@ function writerDefects(reply, cited = [], hits = []) {
   for (const m of markdownDefects(text).slice(0, 1)) out.push(['malformed-markdown', `${m.id}: ${m.at}`]);
   if (BARE_LINK.test(text.replace(/\]\([^)]*\)/g, ''))) out.push(['bare-link', text.replace(/\]\([^)]*\)/g, '').match(BARE_LINK)[0].trim()]);
   if (lint.includes('search-offer')) out.push(['search-offer', 'offers a search it could run']);
+  // removed at the exit (lint.js dropSearchDenial) but still the writer's defect: the turn's path.form counts what was removed
+  if (lint.includes('search-denial') || (form?.search_denial ?? 0) > 0) out.push(['search-denial', `says it cannot search${form?.search_denial ? ` (${form.search_denial} sentence(s) removed at the exit)` : ''}`]);
   for (const c of cited) {
     if (!c.named_author) continue;
     const h = hits.find((x) => sameDoc(x, c)) || c;
@@ -228,7 +231,7 @@ export function forensicPass(turn = {}) {
     if (!tc.reported_labelled) defects.push({ stage: 'WRITER', class: 'reported-unlabelled', detail: 'a talk or pilgrim note cited without saying it is spoken', fix_where: FIX_WHERE['reported-unlabelled'], evidence: {} });
   }
 
-  for (const [cls, detail] of writerDefects(turn.reply, turn.cited || [], hits)) add('WRITER', cls, detail);
+  for (const [cls, detail] of writerDefects(turn.reply, turn.cited || [], hits, turn.form ?? null)) add('WRITER', cls, detail);
 
   // RETRIEVAL / HOLDINGS: nothing authoritative in the hits — the replay says whether the library holds one
   if (DOCTRINAL.has(route) && hits.length && !hits.some(AUTHORITATIVE)) {

@@ -10,6 +10,17 @@ const OFFER_VERB = String.raw`(?:search\w*|look(?:\s+(?:up|for|into|further|thro
 export const SEARCH_OFFER = new RegExp(String.raw`\b(?:would\s+you\s+like|do\s+you\s+want|(?:like|want|wish)\s+me|shall\s+i|should\s+i)\b[^.?!\n]{0,100}?\b${OFFER_VERB}\b`
   + String.raw`|(?<!\b(?:all|what|as|that|which|where)\s)\bi(?:\s+(?:can|could)|['’]d\s+be\s+(?:glad|happy)\s+to|\s+would\s+be\s+(?:glad|happy)\s+to|['’]m\s+happy\s+to|\s+am\s+happy\s+to)`
   + String.raw`\s+(?:also\s+|then\s+|next\s+|gladly\s+|further\s+)?${OFFER_VERB}\b(?!\s+(?:no|nothing|none|only|it\s+in\s+no)\b)`, 'i');
+// A DENIAL that Anís can search (Chad 11-10: '"I cannot search from here" is never correct'): any sentence saying he can't search,
+// look up or run a search of the library or a book — "I can't run a literal text search of the book from here", "I'm unable to
+// search the text", "I don't have a way to search", "searching the full text isn't something I can do". Not an absence report
+// ("I could not find …": find is not a search verb here) and not an offer ("I can search …": no negation).
+const DENY_VERB = String.raw`(?:search\w*|look(?:ing)?\s+(?:up|through|it\s+up|that\s+up)|scan\w*|query\w*|full[-\s]text|text\s+search|grep)`;
+const I_CANT = String.raw`\bI(?:\s+(?:can(?:no|['’])t|cannot|could(?:\s+not|n['’]t)|am\s+(?:not\s+able|unable)|(?:do|did)(?:\s+not|n['’]t)\s+have\s+(?:a\s+(?:way|tool|means)|any\s+(?:way|tool|means)|the\s+(?:ability|means|tools?|capability|access)|(?:direct\s+)?access)|have\s+no\s+(?:way|means|ability|tool|access))|['’]m\s+(?:not\s+able|unable))`;
+export const SEARCH_DENIAL = new RegExp(String.raw`${I_CANT}\b[^.!?\n]{0,80}?\b${DENY_VERB}`
+  + String.raw`|\b${DENY_VERB}\b[^.!?\n]{0,80}\b(?:isn['’]t|is\s+not|aren['’]t|are\s+not)\s+(?:something|a\s+thing)\s+I\s+can\b`
+  + String.raw`|\b(?:no|without\s+(?:a|any))\s+(?:way|means|ability|tool)\s+(?:for\s+me\s+)?to\s+${DENY_VERB}`
+  + String.raw`|\b(?:beyond|outside)\s+what\s+I\s+can\s+(?:search|look\s+up)\b`, 'i');
+export const isSearchDenial = (s) => SEARCH_DENIAL.test(String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '));
 export const LINT = [
   { id: 'we-bahais', re: /\bwe\s+bah[aá]['’]?[ií]s?\b/i, why: 'speaks for a community' },
   { id: 'the-position', re: /\bthe\s+(bah[aá]['’]?[ií]|christian|muslim|islamic|jewish|buddhist|hindu)\s+position\s+is\b/i, why: 'a reading presented as a tradition\'s position' },
@@ -25,6 +36,8 @@ export const LINT = [
   { id: 'authority-layers', re: /\b(authority layers?|the provided evidence|ground every claim)\b/i, why: 'pipeline vocabulary in a letter' },
   // 11-04: "if you like, I can search the tablets for…" — the research is Anís's to run, never the reader's to approve
   { id: 'search-offer', re: SEARCH_OFFER, why: 'offers a search it could run itself' },
+  // 11-10 (Chad: "I cannot search from here" is never correct): BLOCKING — dropSearchDenial removes the sentence at every reply's exit
+  { id: 'search-denial', re: SEARCH_DENIAL, why: 'says it cannot search the library or a book' },
   { id: 'human-claim', re: /\bas\s+a\s+(human|person|believer\s+myself)\b|\bi\s+am\s+(a\s+)?human\b/i, why: 'claims to be human' },
 ];
 
@@ -133,4 +146,35 @@ export function mixedScript(text) {
 
 /** The form pass at every reply's one exit (turn.js; the /outreach letter): a closing offer to search dropped, brackets inside a
  *  link's text made parens. By form only — it never decides what the reply says. Pure. */
-export function finalForm(text) { return safeLinkText(dropSearchOffer(text).text); }
+export function finalForm(text) { return formPass(text).text; }
+/** finalForm with what it repaired, for the turn's path (forensics counts form.search_denial as a WRITER defect). Pure. */
+export function formPass(text) {
+  const den = dropSearchDenial(text), off = dropSearchOffer(den.text);
+  return { text: safeLinkText(off.text), repairs: { search_denial: den.dropped, search_offer: off.dropped } };
+}
+
+// THE SEARCH DENIAL — BLOCKING, ABSOLUTE (Chad 11-10: '"I cannot search from here" is never correct'). Anywhere in the reply, a
+// sentence saying Anís can't search / look up / run a search goes; the rest of its paragraph stays. A denial that leads into the
+// answer ("I can't run a literal search from here, but the book does speak of …") keeps what follows the "but". Blockquotes,
+// tables and headings are never touched; quoted words never count; the reply is never emptied. Pure.
+const BUT = /^(.*?),?\s+(?:but|however|though|although|still)\s*,?\s+(.+)$/is;
+export function dropSearchDenial(text) {
+  const src = String(text || '');
+  if (!isSearchDenial(src.split('\n').filter((l) => !/^\s*(?:>|\||#)/.test(l)).join('\n'))) return { text: src, dropped: 0 };
+  let dropped = 0;
+  const lines = src.split('\n').map((line) => {
+    if (/^\s*(?:>|\||#)/.test(line) || !isSearchDenial(line)) return line;
+    const lead = (line.match(/^\s*(?:[-*+]\s+|\d+[.)]\s+)?/) || [''])[0];
+    const sents = line.slice(lead.length).match(/[^.!?]+(?:[.!?]+["”’)*_]*|$)\s*/g) || [line.slice(lead.length)];
+    const kept = sents.map((x) => {
+      if (!isSearchDenial(x)) return x;
+      dropped += 1;
+      const b = x.match(BUT);
+      if (b && isSearchDenial(b[1]) && !isSearchDenial(b[2])) return `${b[2].charAt(0).toUpperCase()}${b[2].slice(1)}`;
+      return '';
+    }).join('').replace(/\s{2,}/g, ' ').trim();
+    return kept ? `${lead}${kept}` : '';
+  });
+  const out = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  return out ? { text: out, dropped } : { text: src, dropped: 0 };
+}

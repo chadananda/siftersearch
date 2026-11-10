@@ -7,10 +7,11 @@ import { assertSpendCap, isSpendCap, TEST_BILL_TO } from '../spend-caps.js';
 import { loadReaderCard } from './reader-card.js';
 import { resolveQuery } from './short-turn.js';
 import { openExchange, closeExchange, failExchange } from './exchange-log.js';
+import { findInWorkAnswer } from './find-in-work.js';
 import { triageMessage, routeTriage, outputBreaksPersona, T } from './triage.js';
 import { cannedReply } from './canned.js';
 import { strikes as liveStrikes, tarpitResponse } from './strikes.js';
-import { lintReply, finalForm } from './lint.js';
+import { lintReply, formPass } from './lint.js';
 import { channelFor } from './channels.js';
 import { narrate } from './narrate.js';
 import { turnMeta } from './turn-meta.js';
@@ -150,6 +151,21 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     if (ex) await d.close({ ...ex, reply, status: 'answered', path, channel: channel.id }).catch(() => {});
     return { reply, status: 'answered', citations, retrieved: [], plan, conversationId: ex?.conversationId ?? null, timings: { total_ms: Date.now() - t0 } };
   };
+  // the in-work find's list (find-in-work.js inWorkReply: built by code, no writer), links upgraded to OceanLibrary ranges like any reply
+  const inWorkAnswer = async (got, ex, extra = {}) => {
+    const r = got.result, plan = { shape: 'work', work: got.work.id, ...(got.section ? { section: got.section.title } : {}), find: r.query, mode: r.mode };
+    const citations = r.passages.map((p) => ({ id: p.id, title: p.title, author: p.author, document_id: p.document_id, paragraph_index: p.paragraph_index, place: p.place ?? null, url: p.url ?? null, text: p.text }));
+    onEvent({ type: 'sources', sources: citations, plan, ms: Date.now() - t0 });
+    onEvent({ type: 'stage', stage: 'craft' });
+    const up = d.upgradeLinks ?? (deps ? null : async (x) => (await import('../ocean-links.js')).upgradeOceanLinks(x));
+    const reply = (up ? await Promise.resolve().then(() => up(got.reply)).catch(() => got.reply) : got.reply) || got.reply;
+    onEvent({ type: 'text', content: reply });
+    const path = { gate: 'lookup', route: 'in_work', work: got.work.id, ...(got.section ? { section: { title: got.section.title, start_index: got.section.start_index } } : {}),
+      find: r.query, mode: r.mode, total: r.total, ...extra, meta: turnMeta({ status: 'answered', meter, ms: Date.now() - t0 }),
+      timeline: timelineOf(timeline, t0), llm: meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null })) };
+    if (ex) await d.close({ ...ex, reply, status: 'answered', path, channel: channel.id }).catch(() => {});
+    return { reply, status: 'answered', citations, retrieved: [], plan, conversationId: ex?.conversationId ?? null, timings: { total_ms: Date.now() - t0 } };
+  };
   if (titled) {
     const ex = await d.open(logArgs).catch(() => null);
     if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
@@ -201,10 +217,10 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && outcome === 'search' && outcomeC >= T.outcome) Object.assign(route, { action: 'research', overridden: route.kind, by: 'outcome' });
   if (route.action === 'research' && outcome === 'ask_back' && outcomeC >= T.askBack) Object.assign(route, { action: 'canned', kind: 'unclear', overridden: 'research', by: 'outcome' });
   // Jev's own confident call that this fetches something exact outranks his "unclear" (a bare "Gleanings 1" reads as unclear to the message-kind question)
-  if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && ['book', 'quote', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.8) Object.assign(route, { action: 'research', overridden: route.kind });
+  if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && ['book', 'quote', 'in_work', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.8) Object.assign(route, { action: 'research', overridden: route.kind });
   // Jev's refers_back (strategy call, read with the history): a message pointing at the previous reply is never 'unclear' and never a literal quote lookup
   if (strat?.refersBack && route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind)) Object.assign(route, { action: 'research', overridden: route.kind, by: 'refers_back' });
-  const lkIntent = lookupOn && !strat?.refersBack && route.action === 'research' && ['book', 'quote', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
+  const lkIntent = lookupOn && !strat?.refersBack && route.action === 'research' && ['book', 'quote', 'in_work', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
   // THE BOOK FAST PATH (Chad 11-10): Jev chose the book strategy (or his lookup says book) → code gathers title + section candidates for
   // the name he gave (his named_work; a person he named beside it is the byline: author or compiler) → ONE typed Jev pick → the card.
   // Nothing fits → one Haiku names the work, then candidates + Jev again; still nothing → the research below. A topic or person
@@ -213,6 +229,16 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   const bookFn = d.bookPick ?? (deps ? null : bookFastPath);
   const bookGate = bookFn && !strat?.refersBack && route.action === 'research' && engine === undefined && research === undefined && !variants && !llm;
   const bookOn = bookGate && (strategyOf(strat) === 'book' || lkIntent === 'book');
+  // IN-WORK FIND (Chad 11-10, 'search for "private property" in God Passes By' got "I can't run a literal search from here"):
+  // Jev's lookup says in_work (the triage call — it still answers when the strategy call times out, so the request is never lost)
+  // → the work by the one book finder (his named_work when the strategy answered, else the message) → in_work_search → a
+  // code-built list (count line, each place linked, the words bold). No writer. No work or no words resolved → research as before.
+  const inWorkFn = d.findInWork ?? (deps ? null : findInWorkAnswer);
+  if (inWorkFn && lkIntent === 'in_work' && !strat?.refersBack && engine === undefined && research === undefined && !variants && !llm) {
+    const got = await timed('in_work', () => inWorkFn({ messages, names: [u.named_work].filter(Boolean), by: u.named_person ?? null, topic: u.topic ?? null, profile, decisions,
+      deps: { ...(bookFn ? { bookFastPath: bookFn } : {}) } }), (r) => (r ? { work: r.work?.id, mode: r.result?.mode, total: r.result?.total } : null)).catch(() => null);
+    if (got?.reply) return inWorkAnswer(got, ex, { gate: 'lookup', strategy_timed_out: !strat, decisions: decisions.list() });
+  }
   // PROBE (Chad 11-10, "Deepening Compilation" built a compilation): Jev chose to MAKE something (a compilation) or to talk, but
   // his phrase may BE a library title — the same one pick, with "make it new" as an option; code only checks the title is near-exact
   const probe = bookGate && !bookOn ? PROBE_ALT[strategyOf(strat)] : null;
@@ -222,7 +248,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     if (found?.kind === 'work') return bookAnswer(found.work, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
     if (found?.kind === 'section') return sectionCard(found, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
   }
-  const lk = lkIntent ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent, profile, decisions, onJev: (info) => decisions.record('jev:timeout', timeoutDecision(info)) }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
+  const lk = lkIntent && lkIntent !== 'in_work' ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent, profile, decisions, onJev: (info) => decisions.record('jev:timeout', timeoutDecision(info)) }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
   // a SHORT turn Jev read as a search ("more", "and the Báb?", "in Persian") gets its self-contained query from the history
   // and the card (short-turn.js) — respond.js searches those words, not the bare message
   const resolved = route.action === 'research' && outcome === 'search' && tri?.features?.short && !tri.features.first && d.resolve
@@ -303,7 +329,9 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     streaming = false;
     // the form pass on EVERY reply path (agent, craft, sourcehunt, strategies): a closing search offer dropped, brackets in link
     // text made parens (writer residuals 11-05: titles like "Book of Common Prayer [King's Chapel]" broke their links)
-    let reply = typeof r.reply === 'string' ? finalForm(r.reply) : r.reply;
+    // and (11-10, absolute) a sentence saying Anís can't search is removed — counted in path.form for forensics' search-denial class
+    const formed = typeof r.reply === 'string' ? formPass(r.reply) : null;
+    let reply = formed ? formed.text : r.reply;
     // Output check: a reply that abandons the persona or leaks instructions is replaced (the widget reconciles its
     // streamed text to the final reply; email sends only this).
     const broken = await timed('output-check', () => d.outputCheck(reply, { persona: name })).catch(() => null);
@@ -352,7 +380,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
           format: r.format ? { choice: r.format.id, by: r.format.by } : null } },
       retrieved: r.retrieved?.length ?? 0,
       format: r.format ?? null, profile: r.profile ?? null,
-      output_check: broken, replaced, lint, timings: r.timings, search_detail: r.plan?.timings ?? null });
+      output_check: broken, replaced, lint, ...(formed && (formed.repairs.search_denial || formed.repairs.search_offer) ? { form: formed.repairs } : {}), timings: r.timings, search_detail: r.plan?.timings ?? null });
     return { ...r, reply, status: 'answered', conversationId: ex?.conversationId ?? null, path, ...(deepReport ? { deep_report: deepReport } : {}) };
   } catch (err) {
     if (ex) await d.fail({ ...ex, error: err?.message }).catch(() => {});

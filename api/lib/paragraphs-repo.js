@@ -204,6 +204,14 @@ export async function paragraphsInRange(docId, from, to, { limit = 400 } = {}) {
     AND paragraph_index BETWEEN ? AND ? ORDER BY paragraph_index LIMIT ?`, [Number(docId), Number(from), Number(to), Math.min(Number(limit) || 400, 2000)], 'paragraphs-repo:in-range');
 }
 
+/** Every live paragraph's text in a document (or one index range of it: a section), in reading order — the in-work word find
+ *  (assistant/find-in-work.js) folds and matches these in code, so accents and curly quotes never hide an occurrence. One
+ *  doc-scoped read; capped at 20000 rows (the largest works). → [{ id, paragraph_index, text, heading, blocktype }] */
+export async function paragraphTexts(docId, { from = 0, to = 1e9, limit = 20000 } = {}) {
+  return queryAll(`SELECT id, paragraph_index, text, heading, blocktype FROM content WHERE doc_id = ? AND deleted_at IS NULL
+    AND paragraph_index BETWEEN ? AND ? ORDER BY paragraph_index LIMIT ?`, [Number(docId), Number(from), Number(to), Math.min(Number(limit) || 20000, 20000)], 'paragraphs-repo:texts');
+}
+
 /** For each live paragraph of a document: another live, canonical document holding the same words (normalized_hash), or
  *  null — the doc-overlap report (is a compilation of compilations already held piece by piece?). → [{ id, pidx, other }] */
 export async function paragraphsHeldElsewhere(docId) {

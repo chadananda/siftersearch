@@ -158,6 +158,27 @@ const ENTRIES = [
       }
       return { passages, query_used: query, relaxed: passages.some((p) => p.tier && p.tier !== 'strict') ? dropped : [] };
     } },
+  // every place ONE work (or a section of it: from/to) has the words — literal, accent-folded, reading order, each with its place + link;
+  // no literal hit → the closest in meaning inside that work, labelled mode 'meaning' (Chad 11-10: 'search for "private property" in God Passes By')
+  { name: 'in_work_search', label: 'In-Work Search', kind: 'tool', outputName: 'Passage[]', cost: C(true, 200),   // embed: only the meaning fallback
+    description: 'Find every place in one work where given words occur: all its paragraphs holding the words (literal, accents folded), in reading order, each with its place (#n) and link. No literal hit → the passages closest in meaning inside that work, labelled.',
+    purpose: 'Answers "search for X in <work>" / "where does <work> mention X": the complete list for that one work, not a ranked sample from the library.',
+    input: { type: 'object', additionalProperties: false, required: ['query', 'work_id'], properties: { query: str('The words to find, as written (a phrase or a word)'),
+      work_id: { type: 'integer', minimum: 1, description: 'The work (document id), resolved by the book finder' },
+      from: { type: 'integer', minimum: 0, description: 'A section: first paragraph_index' }, to: { type: 'integer', minimum: 0, description: 'A section: last paragraph_index' },
+      literal: { type: 'boolean', default: true, description: 'false = skip the literal pass, meaning search inside the work only' }, limit: LIMIT(200, 1000) } },
+    output: { type: 'object', required: ['work', 'mode', 'total', 'passages'], properties: { work: { type: 'object', properties: { id: { type: 'integer' }, title: nul('string'), author: nul('string') } },
+      query: { type: 'string' }, mode: { type: 'string', enum: ['literal', 'meaning', 'none'], description: 'literal = the exact words; meaning = no literal hit, closest in meaning; none = neither' },
+      total: { type: 'integer', description: 'Every literal occurrence in the work (passages may list fewer: limit)' }, passages: { type: 'array', items: PASSAGE } } },
+    llmOmit: ['limit'],
+    example: { input: { query: 'private property', work_id: 21310 }, output: { work: { id: 21310, title: 'God Passes By', author: 'Shoghi Effendi' }, query: 'private property', mode: 'literal', total: 1,
+      passages: [{ ...P_EX, id: 868, document_id: 21310, paragraph_index: 867, title: 'God Passes By', author: 'Shoghi Effendi', place: '#868', found_by: ['in_work'],
+        text: '… on the institution of private property …', excerpt: '… on the institution of **private property** …' }] } },
+    async run(a, ctx = {}) {
+      const { inWorkSearch } = await import('./find-in-work.js');
+      const meaning = async (q, id) => (await run('fused_search', { query: q, limit: 8, filters: { documentId: id }, layers: ['phrase', 'hype'] }, ctx)).passages;
+      return inWorkSearch(a, ctx, meaning);
+    } },
   // ONE call for a comparison: the same query held to each side's filters, per-side results deduped; the understanding judge runs once at tree level
   { name: 'compare_search', label: 'Compare Search', kind: 'tool', outputName: 'Side[]', cost: C(true, 400),
     description: 'Search the same question inside each side of a comparison (a tradition, an author, a work…) in one call; results come back per side, each deduped.',
