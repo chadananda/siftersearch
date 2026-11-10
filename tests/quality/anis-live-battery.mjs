@@ -69,6 +69,8 @@ async function send(q, history, uid, cid) {
         if (e.type === 'chunk') out.chunks += e.text || '';
         else if (e.type === 'text') out.text += e.content || '';   // the live stream; the chunk replay at the end is the canonical reply (SifterChat.svelte)
         else if (e.type === 'book') out.book = e.book;
+        else if (e.type === 'quote_cards') out.quote_cards = [...(out.quote_cards || []), ...(e.cards || [])];   // passage cards (quote-cards.js)
+        else if (e.type === 'books') out.books = [...(out.books || []), ...(e.books || [])];   // the named work's book card
         else if (e.type === 'sources') out.sources = e.sources?.length ? e.sources : out.sources;
         else if (e.type === 'citations') out.citations = e.citations || [];
         else if (e.type === 'complete') { out.complete = e.meta || {}; out.cid = e.meta?.conversation_id || out.cid; }

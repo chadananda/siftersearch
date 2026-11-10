@@ -10,10 +10,13 @@ describe('presentation (code, free)', () => {
   it('counts cards, OceanLibrary links and works, bad and bare links, quote blocks, words and seconds', () => {
     const text = 'Jesus was born in Bethlehem, see [*The Gospel of Luke*](https://oceanlibrary.com/luke/2#1) and [Luke](https://oceanlibrary.com/luke/2#7).\n\n'
       + '> For unto you is born this day\n> a Saviour\n\nAlso [here]() and https://example.com/raw and [https://x.org](https://x.org).';
-    const p = presentation({ text, events: { passage: 2 }, book: { id: 1 }, citations: [{}, {}], ms: 4321 });
+    const p = presentation({ text, events: { passage: 1 }, quote_cards: [{}], book: { id: 1 }, citations: [{}, {}], ms: 4321 });
     expect(p).toMatchObject({ passage_cards: 2, book_card: true, quote_blocks: 1, links: 4, ocean_links: 2, ocean_works: 1, bad_links: 2, bare_urls: 1,
       names_site: false, citations: 2, seconds: 4.3 });
     expect(p.words).toBeGreaterThan(10);
+  });
+  it('a named-work books event is a book card', () => {
+    expect(presentation({ text: 'x', books: [{ id: 1 }] }).book_card).toBe(true);
   });
   it('flags the site named in prose, not in a link target', () => {
     expect(presentation({ text: 'Ask at siftersearch.com' }).names_site).toBe(true);

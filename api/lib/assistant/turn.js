@@ -32,6 +32,7 @@ import { resolveLookup } from './lookup.js';
 import { createHash } from 'node:crypto';
 import { makeDocuments, DOC_TEXT } from './pdf/documents.js';   // Jev document = pdf_* → a branded PDF, link or mail
 import { makeReports, renderReport, emailIn, REPORT_TEXT } from './deep-report.js';   // Jev depth = deep_report → a queued job + mail
+import { cacheDeps, cacheKey, cacheEligible, CARD_EVENTS } from './precache.js';   // precached common questions: opening site-chat turns, warm job writes
 
 const OUTPUT_BREAK = 0.8;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -63,7 +64,7 @@ export const workPatch = ({ turn, strategy, id, title }) => sanitizePatch({ thre
 export async function defaultDeps() {   // exported for the strategy dry run (strategy-try.js), which swaps the thread/mail deps out
   const { anisRespond } = await import('./respond.js');
   return { respond: anisRespond, triage: triageMessage, outputCheck: outputBreaksPersona, open: openExchange, close: closeExchange,
-    fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup, limits: liveLimits, spendCap: assertSpendCap, card: loadReaderCard, resolve: resolveQuery, reports: makeReports(), documents: makeDocuments(),
+    fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup, limits: liveLimits, spendCap: assertSpendCap, card: loadReaderCard, resolve: resolveQuery, reports: makeReports(), documents: makeDocuments(), cache: cacheDeps(),
     state: await import('../repos/conversation-state-repo.js').then((m) => ({ load: m.getConversationState, append: m.appendStatePatch })) };
 }
 
@@ -97,10 +98,11 @@ export async function anisTurn(args) {
 }
 
 async function turnBody({ messages, channel: channelName = 'widget-chat', trusted = false, profile = {}, participant = {},
-  conversationId = null, clientKey = null, onEvent: rawEvent = () => {}, research = undefined, engine = undefined, llm = undefined, variants = undefined, deps }, meter = [], timeline = []) {
+  conversationId = null, clientKey = null, onEvent: rawEvent = () => {}, research = undefined, engine = undefined, llm = undefined, variants = undefined, deps, test = false, warm = false }, meter = [], timeline = []) {
   const d = { ...(deps ? {} : await defaultDeps()), ...(deps || {}) };
   // every stage event also says, in words, what Anís is doing (the site chat shows it)
-  const onEvent = (ev) => { rawEvent(ev); const p = ev?.type === 'stage' ? progressText(ev.stage) : null; if (p) rawEvent({ type: 'progress', stage: ev.stage, text: p }); };
+  const shown = [];   // the cards the reader saw (book, passage, quote_cards, books): a warmed answer replays them
+  const onEvent = (ev) => { if (CARD_EVENTS.has(ev?.type)) shown.push(ev); rawEvent(ev); const p = ev?.type === 'stage' ? progressText(ev.stage) : null; if (p) rawEvent({ type: 'progress', stage: ev.stage, text: p }); };
   const channel = channelFor(channelName, { trusted });
   const text = lastUser(messages);
   const name = profile.persona_name || 'Anís';
@@ -138,6 +140,26 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     if (ex) await d.close({ ...ex, reply: tp.text, status: 'tarpit', path: { gate: 'tarpit', meta: turnMeta({ status: 'tarpit', meter, ms: Date.now() - t0 }) }, channel: channel.id }).catch(() => {});
     return { reply: tp.text, status: 'tarpit', citations: [], retrieved: [], plan: null, conversationId: ex?.conversationId ?? null,
       timings: { total_ms: Date.now() - t0 } };
+  }
+
+  // PRECACHED (precache.js): an opening site-chat question the warm job (ops anis-precache) answered at the current SEARCH_VERSION is served
+  // at once — reply, cards, sources — with the turn logged as gate 'cache'. Test turns never read it (they measure the pipeline); a stale row is a miss.
+  const cacheable = !!d.cache && cacheEligible({ messages, channel: channel.id, profile, overrides: [research, engine, llm, variants] });
+  if (cacheable && !test && !warm) {
+    const hit = await timed('answer-cache', () => d.cache.lookup(text, cacheKey(name, channel.id))).catch(() => null);
+    if (hit) {
+      const ex = await d.open(logArgs).catch(() => null);
+      if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
+      onEvent({ type: 'sources', sources: hit.citations, plan: { shape: 'cache', strategy: hit.strategy }, ms: Date.now() - t0 });
+      for (const ev of hit.events) onEvent(ev);
+      const path = { gate: 'cache', route: 'cache', strategy: hit.strategy, cache: { id: hit.id, version: hit.version, warmed_at: hit.warmed_at }, meta: turnMeta({ status: 'answered', meter, ms: Date.now() - t0 }),
+        timeline: timelineOf(timeline, t0), llm: [] };
+      if (ex) await d.close({ ...ex, reply: hit.reply, status: 'answered', path, channel: channel.id }).catch(() => {});
+      Promise.resolve(d.cache.served?.(hit, Date.now() - t0)).catch(() => {});
+      const qcards = hit.events.filter((e) => e.type === 'quote_cards').flatMap((e) => e.cards || []), qbooks = hit.events.filter((e) => e.type === 'books').flatMap((e) => e.books || []);
+      return { reply: hit.reply, status: 'answered', citations: hit.citations, retrieved: hit.retrieved, plan: { shape: 'cache', strategy: hit.strategy }, conversationId: ex?.conversationId ?? null,
+        timings: { total_ms: Date.now() - t0 }, ...(qcards.length ? { quote_cards: qcards } : {}), ...(qbooks.length ? { books: qbooks } : {}) };
+    }
   }
 
   // A message that is ONLY a library book's title → that book at once (title-answer.js): link, cached summary, offer; no Jev, no
@@ -493,6 +515,11 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       retrieved: r.retrieved?.length ?? 0,
       format: r.format ?? null, profile: r.profile ?? null,
       output_check: broken, replaced, lint, ...(formed && (formed.repairs.search_denial || formed.repairs.search_offer || formed.repairs.deflection) ? { form: formed.repairs } : {}), timings: r.timings, search_detail: r.plan?.timings ?? null });
+    // the warm job (precache.js) stores the finished answer: the reply as sent, the cards shown, the sources — nothing per reader
+    if (warm && cacheable && !replaced && !deepReport && !documentInfo && typeof reply === 'string' && reply.trim()) {
+      await d.cache.store(text, cacheKey(name, channel.id), { reply, citations: r.citations, retrieved: r.retrieved, events: shown, strategy: strategyOf(strat) ?? r.plan?.shape ?? null })
+        .catch((err) => console.warn(`[precache] store failed: ${err?.message}`));
+    }
     return { ...r, reply, status: 'answered', conversationId: ex?.conversationId ?? null, path, ...(deepReport ? { deep_report: deepReport } : {}),
       ...(present?.cards?.length ? { quote_cards: present.cards } : {}), ...(present?.books?.length ? { books: present.books } : {}) };
   } catch (err) {

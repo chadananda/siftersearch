@@ -13,7 +13,7 @@ export function oceanWork(url) {
 }
 /**
  * How the answer LOOKS, measured in code from the stream (battery send(): text, events counts, book, citations, ms):
- * passage cards (stream `passage` events), book card (`book` event), quote blocks left as markdown, links — OceanLibrary links and the
+ * passage cards (stream `quote_cards` cards + `passage` events), book card (`book` or `books` event), quote blocks left as markdown, links — OceanLibrary links and the
  * distinct works they open, bad links (no http(s) target or no label), bare URLs outside a link — words, seconds. Pure.
  */
 export function presentation(r) {
@@ -24,8 +24,8 @@ export function presentation(r) {
   const bare = (text.replace(MD_LINK, ' ').match(/https?:\/\/[^\s)>\]]+/g) || []).length;
   const quoteBlocks = text.split('\n').reduce((n, line, i, a) => n + (/^\s*>/.test(line) && !/^\s*>/.test(a[i - 1] ?? '') ? 1 : 0), 0);
   return {
-    passage_cards: r?.events?.passage || 0,
-    book_card: !!r?.book,
+    passage_cards: (r?.quote_cards?.length || 0) + (r?.events?.passage || 0),   // quoted passages rendered as cards (+ find-in-work passage cards)
+    book_card: !!r?.book || !!r?.books?.length,
     quote_blocks: quoteBlocks,
     links: links.length,
     ocean_links: ocean.length,
