@@ -12,7 +12,7 @@ const SINGLE = /(?<!\{)\{(\w+)\}(?!\})/g, DOUBLE = /\{\{(\w+)\}\}/g;
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 const strs = (v) => Array.isArray(v) && v.length > 0 && v.every((x) => typeof x === 'string' && x.trim());
 const kinds = (v) => [v].flat().every((x) => AUTH_KINDS.includes(x));
-const BOOL = ['doctrinal', 'wide', 'quoted', 'by_person', 'in_named', 'spell', 'inside', 'dedupe'];
+const BOOL = ['doctrinal', 'wide', 'quoted', 'by_person', 'in_named', 'spell', 'inside'];
 
 /** param name → check(value, activity) → true | the reason it is wrong. */
 const RULES = {
@@ -29,6 +29,7 @@ const RULES = {
   tiers: (v) => strs(v) || 'must be a list of tier names',
   per: (v, a) => a !== 'rank' || [v].flat().length > 0 && [v].flat().every((x) => typeof x === 'string' && !!x.trim()) || 'rank per must be a FIELD NAME or a list of them (k for each value); a number is not a per-group count - use k for a total',
   by: (v, a) => a !== 'rank' || ([v].flat().length > 0 && [v].flat().every((x) => RANK_BY.includes(x))) || `rank by must be ${RANK_BY.join('|')} (or a list)`,
+  dedupe: (v) => typeof v === 'boolean' || v === 'text' || 'must be true, false or "text" (the same passage in several copies: the best-ranked copy only)',
   ...Object.fromEntries(BOOL.map((n) => [n, (v) => typeof v === 'boolean' || 'must be true or false'])),
 };
 // the light generators (elements.js plan.*): one per planned unit, the same cheap tier and contract (params n, stage; default = the subject itself)
