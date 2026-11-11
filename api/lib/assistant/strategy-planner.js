@@ -7,6 +7,7 @@
 import { createHash } from 'node:crypto';
 import { catalog } from '../repos/strategies-repo.js';
 import { activities as registry } from './activities/index.js';
+import { repairTemplate } from './activities/contract.js';
 import { DESIGN_SYSTEM, DESIGN_ROLE, DESIGN_CALLER, parseCandidate, validateCandidate, nearestStrategies, dedupeTarget, opusCall } from './strategy-design.js';
 import { IMPROVE_CFG, jaccardWords } from './strategy-gaps.js';
 import { UNITS } from './units.js';
@@ -248,6 +249,8 @@ export async function planCandidate(challenge, { context = {}, cat = catalog(), 
       errors = [`"of" must name an existing strategy for a ${j.verdict}, or the verdict is new`]; continue;
     }
     if (j && !String(j.difference || '').trim()) { errors = ['difference: one sentence saying what this does that the cards do not (or the verdict is setting_of/duplicate)']; continue; }
+    // brace slips are mechanical: repaired here, not sent back (11-11: two 105 s plans rejected for {part_title})
+    if (j && Array.isArray(j.templates)) j.templates = j.templates.map((x) => (x && typeof x.text === 'string' ? { ...x, text: repairTemplate(x.text) } : x));
     const v = validatePlan(j, { cat, acts, pending });
     if (!v.ok) { errors = v.errors; continue; }
     const t = type || j.type || null, d = dedupeTarget(v.normalized, { cat, pending });

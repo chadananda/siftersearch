@@ -73,6 +73,19 @@ export function sectionNamed(text, sections = []) {
   const same = (a) => a.size === msg.size && [...a].every((w) => msg.has(w));
   return [...sections].sort((x, y) => (x.level ?? 1) - (y.level ?? 1)).find((s) => same(bag(s.title))) || null;
 }
+// "which one talks about the golden age?" with the book in focus: the message's own words (its asking frame, the kind of text and the book's
+// own title set aside) all sit in exactly ONE top-level section title → that section (11-11: WOB's "The Golden Age of the Cause of
+// Bahá'u'lláh" was missed and the turn ran 110 s of research). Ties or no match → null (the search runs). Word resolution, not intent. Pure.
+const FRAME = new Set(['which', 'one', 'ones', 'what', 'where', 'who', 'talks', 'talk', 'talking', 'speaks', 'speak', 'about', 'is', 'are', 'was', 'does', 'do', 'did',
+  'mention', 'mentions', 'discuss', 'discusses', 'deals', 'deal', 'with', 'it', 'part', 'parts', 'chapter', 'chapters', 'section', 'sections', 'there', 'describe', 'describes', 'covers', 'cover']);
+export function sectionAbout(text, sections = [], workTitle = '') {
+  const own = new Set(toks(workTitle));
+  const want = [...new Set(toks(text).filter((w) => !GENRE.has(w) && !FRAME.has(w) && !own.has(w)))];
+  if (!want.length || !sections.length) return null;
+  const top = Math.min(...sections.map((x) => x.level ?? 1));
+  const hits = sections.filter((x) => (x.level ?? 1) === top && x.title).filter((x) => { const t = new Set(toks(x.title)); return want.every((w) => t.has(w)); });
+  return hits.length === 1 ? hits[0] : null;
+}
 export function namesTheWork(topic, titles = []) {
   const own = new Set(titles.filter(Boolean).flatMap(toks));
   const rest = toks(topic).filter((w) => !GENRE.has(w));
@@ -84,7 +97,7 @@ export function namesTheWork(topic, titles = []) {
  * sections) → quote_search (works:[id]) → the code-built reply. null when no work resolves or there are no words (the turn researches as before).
  * LLM calls: the book pick only (one Jev call; a Haiku title extraction only when nothing fit).
  */
-export async function findInWorkAnswer({ messages, names = [], by = null, topic = null, profile = {}, decisions = null, deps = {}, search = null }) {
+export async function findInWorkAnswer({ messages, names = [], by = null, topic = null, profile = {}, decisions = null, deps = {}, search = null, focus = null }) {
   const text = [...(messages || [])].reverse().find((m) => m.role === 'user')?.content || '';
   const quotedSpans = deps.quotedSpans || (await import('./request-features.js')).quotedSpans;
   const quoted = quotedSpans(text) || [];
@@ -96,9 +109,9 @@ export async function findInWorkAnswer({ messages, names = [], by = null, topic 
   if (!doc?.id) return null;
   if (!sec) {
     const secs = await (deps.sectionsOf || (async (id) => (await import('../repos/sections-repo.js')).sectionsOfDoc(id)))(Number(doc.id)).catch(() => []);
-    const named = sectionNamed(text, secs);
+    const named = sectionNamed(text, secs) || (focus ? sectionAbout(text, secs, doc.title) : null);
     if (named) {
-      decisions?.record?.('in-work:section', { by: 'code', saw: { text, work: doc.id }, chosen: named.title, reason: 'the message is this section\'s title: its card, not a search for it' });
+      decisions?.record?.('in-work:section', { by: 'code', saw: { text, work: doc.id }, chosen: named.title, reason: focus ? 'the message\'s words are in this one part\'s title (book in focus): its card' : 'the message is this section\'s title: its card, not a search for it' });
       return { book: { kind: 'section', via: 'in-work:section', sec: { ...named, doc_id: doc.id, book: doc.title, author: doc.author ?? null }, doc }, work: doc };
     }
   }

@@ -317,7 +317,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     if (got?.reply) return inWorkAnswer(got, ex, { gate: 'lookup', strategy_timed_out: !strat || strat.by === 'haiku', ...(jevFallback ? { jev_fallback: jevFallback } : {}), ...(useFocus ? { via: 'focus' } : {}), decisions: decisions.list() });
     // the words named only the work ("world order letters?") → the book card, never a search of the work for its own title
     if (!useFocus && got?.book?.kind === 'work') return bookAnswer(got.book.work, ex, { gate: 'lookup', via: got.book.via, decisions: decisions.list() });
-    if (!useFocus && got?.book?.kind === 'section') return sectionCard(got.book, ex, { gate: 'lookup', via: got.book.via, decisions: decisions.list() });
+    if (got?.book?.kind === 'section') return sectionCard(got.book, ex, { gate: 'lookup', via: got.book.via, decisions: decisions.list() });
   }
   // FIND A PASSAGE (Chad 11-10: "Find quote is the tool; the strategy and context provide the filters"): Jev's lookup says find_passage (the passage
   // that says X, no book named) → quote_search held to Jev's units: the religions he scoped (this turn / conversation, never a host default),

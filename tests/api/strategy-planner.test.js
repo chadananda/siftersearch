@@ -151,6 +151,12 @@ describe('planCandidate + planTests', () => {
     const d = await P.planCandidate('q', { ...ctx(), call: opus({ compare: { verdict: 'setting_of', of: 'understanding', sets: { a: 1 } } }) });
     expect(d).toMatchObject({ ok: false, settingOf: 'understanding', verdict: 'setting_of' });
   });
+  it('a brace slip in a template ({word}) is repaired, not a rejected plan (11-11)', async () => {
+    fresh(); const slip = PLAN(); slip.templates = slip.templates.map((t) => ({ ...t, text: `${t.text} Name the part as {part_title}.` }));
+    const call = vi.fn(async (r, system) => { if (/abstract/i.test(system.slice(0, 60))) return reply(TYPE); if (/compare a challenge TYPE/.test(system)) return reply({ verdict: 'new', difference: 'x' }); return reply(slip); });
+    const r = await P.planCandidate('q', { ...ctx(), call, mode: 'fast' });
+    expect(r.ok).toBe(true); expect(r.attempts).toBe(1);
+  });
   it('fast mode: one Opus call that returns the plan', async () => {
     const db = fresh(); const call = opus();
     const r = await P.planCandidate('q', { ...ctx(), call, db, mode: 'fast' });

@@ -52,3 +52,28 @@ describe('brief meaning matches', () => {
     expect(reply.match(/\]\(https:\/\/x\//g)).toHaveLength(3);
   });
 });
+
+describe('sectionAbout: which part of the book in focus (11-11 golden age)', () => {
+  const WOB = [
+    { level: 1, title: 'The World Order of Bahá’u’lláh', start_index: 0 }, { level: 1, title: 'The Golden Age of the Cause of Bahá’u’lláh', start_index: 100 },
+    { level: 1, title: 'America and the Most Great Peace', start_index: 200 }, { level: 1, title: 'The Goal of a New World Order', start_index: 300 },
+    { level: 2, title: 'Golden thoughts', start_index: 110 },
+  ];
+  it('the one top-level title holding all the asked words', async () => {
+    const { sectionAbout } = await import('../../api/lib/assistant/find-in-work.js');
+    expect(sectionAbout('which one talks about the golden age?', WOB, 'The World Order of Bahá’u’lláh')?.title).toBe('The Golden Age of the Cause of Bahá’u’lláh');
+    expect(sectionAbout('which letter is about America?', WOB, 'The World Order of Bahá’u’lláh')?.title).toBe('America and the Most Great Peace');
+  });
+  it('ties, title-only words and misses → null (the search runs)', async () => {
+    const { sectionAbout } = await import('../../api/lib/assistant/find-in-work.js');
+    expect(sectionAbout('which one talks about world order?', WOB, 'The World Order of Bahá’u’lláh')).toBeNull();
+    expect(sectionAbout('which one talks about the covenant?', WOB, 'The World Order of Bahá’u’lláh')).toBeNull();
+  });
+  it('findInWorkAnswer with the book in focus → the section card, no search', async () => {
+    const { findInWorkAnswer } = await import('../../api/lib/assistant/find-in-work.js');
+    const search = vi.fn();
+    const got = await findInWorkAnswer({ messages: [{ role: 'user', content: 'which one talks about the golden age?' }], focus: { id: 20894, title: 'The World Order of Bahá’u’lláh' }, search,
+      deps: { quotedSpans: () => [], bookFastPath: async () => ({ kind: 'work', work: { doc: { id: 20894, title: 'The World Order of Bahá’u’lláh' } } }), sectionsOf: async () => WOB } });
+    expect(got.book.kind).toBe('section'); expect(got.book.sec.title).toBe('The Golden Age of the Cause of Bahá’u’lláh'); expect(search).not.toHaveBeenCalled();
+  });
+});
