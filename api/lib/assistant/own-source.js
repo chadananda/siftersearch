@@ -78,7 +78,11 @@ const betterCopy = (q, j, provisional) => !!q && Number(q.document_id) !== Numbe
 // work of the same writer holding the same words (battery 11-10 timeline: the 1844 declaration cited from it first)
 export const LAST_RESORT = /\bUncompiled Published Letters\b/i;
 const published = (q, j, provisional) => ownHolder(q, j.writer, j.span, provisional) && Number(q.document_id) !== Number(j.p.document_id) && !LAST_RESORT.test(q.title || '');
-const fits = (q, j, provisional) => (j.kind === 'copy' ? betterCopy(q, j, provisional) : j.kind === 'self' ? selfOrigin(q, j, provisional)
+// a SCRAPE-HOST edition (r17 11-11: Nabíl's opening of The Dawn-Breakers cited as "The Seven Proofs #610" from the Nicolas/Terry
+// edition on bahai-library.com, which carries his narrative): the same words in a published book (not another scrape, not a study)
+export const SCRAPE_HOST = /^https?:\/\/(?:www\.)?(?:bahai-library\.com|oceanoflights\.org)\//i;
+const hostCopy = (q, j, provisional) => betterCopy(q, j, provisional) && !SCRAPE_HOST.test(String(q.source_url || q.url || '')) && q.authority !== 'scholarship';
+const fits = (q, j, provisional) => (j.kind === 'copy' ? betterCopy(q, j, provisional) : j.kind === 'host' ? hostCopy(q, j, provisional) : j.kind === 'self' ? selfOrigin(q, j, provisional)
   : j.kind === 'published' ? published(q, j, provisional) : ownHolder(q, j.writer, j.span, provisional));
 
 /**
@@ -100,12 +104,12 @@ export async function preferOwnWork(passages, { search = null, link = null, budg
   // letters quoted in Lights of Guidance → the published message)
   const DOCTRINAL = writers.length ? new Set([...CORE, ...writers.map(canon)]) : CORE;
   // four kinds: 'elsewhere' (a writer quoted in another's book), 'self' (a writer quoting his own other work, in marks),
-  // 'copy' (a passage of a poor copy: a slug-titled scrape), 'published' (a last-resort source: the writer's published work instead)
+  // 'copy' (a passage of a poor copy: a slug-titled scrape), 'host' (a scrape-host edition: the words in a published book), 'published' (a last-resort source: the writer's published work instead)
   const kindOf = (p) => (keep?.(p) ? null : quotedElsewhere(p, DOCTRINAL) ? 'elsewhere' : slugTitle(p.title) ? 'copy'
     : LAST_RESORT.test(p.title || '') && canon(p.author) ? 'published'
-    : DOCTRINAL.has(canon(p.author)) && canon(p.author) === canon(p.book_author || p.author) && quotedOnly(p.text).length ? 'self' : null);
+    : DOCTRINAL.has(canon(p.author)) && canon(p.author) === canon(p.book_author || p.author) && quotedOnly(p.text).length ? 'self' : SCRAPE_HOST.test(String(p.source_url || '')) ? 'host' : null);
   const jobs = passages.map((p, i) => ({ p, i, kind: kindOf(p) })).filter((j) => j.kind)
-    .map((j) => ({ ...j, writer: j.kind === 'copy' ? null : canon(j.p.author), span: j.kind === 'self' ? quotedOnly(j.p.text)[0] : j.kind === 'copy' || j.kind === 'published' ? (words(j.p.text).length >= MIN_WORDS ? clip(j.p.text) : null) : quotedSpan(j.p.text) })).filter((j) => j.span);
+    .map((j) => ({ ...j, writer: j.kind === 'copy' || j.kind === 'host' ? null : canon(j.p.author), span: j.kind === 'self' ? quotedOnly(j.p.text)[0] : j.kind === 'copy' || j.kind === 'host' || j.kind === 'published' ? (words(j.p.text).length >= MIN_WORDS ? clip(j.p.text) : null) : quotedSpan(j.p.text) })).filter((j) => j.span);
   if (!jobs.length) return done();
   for (const j of jobs) j.own = passages.find((q) => q !== j.p && fits(q, j, isProvisional)) || null;
   const need = jobs.filter((j) => !j.own && search);
@@ -119,7 +123,7 @@ export async function preferOwnWork(passages, { search = null, link = null, budg
       const hits = await search(j.span, { author: j.writer }, { timeoutMs: left() });
       // a copy is any work (history included), so the search order stands; a writer's words are ranked as quotations (rankOrigins)
       // (an added writer is not core literature, which quoteCandidates ranks alone: search order too)
-      const ranked = j.kind === 'copy' || j.kind === 'published' || !CORE.has(j.writer) ? (Array.isArray(hits) ? hits : []) : await quoteCandidates(Array.isArray(hits) ? hits : [], j.span);
+      const ranked = j.kind === 'copy' || j.kind === 'host' || j.kind === 'published' || !CORE.has(j.writer) ? (Array.isArray(hits) ? hits : []) : await quoteCandidates(Array.isArray(hits) ? hits : [], j.span);
       const hit = ranked.find((h) => fits(h, j, isProvisional));
       if (!hit) return null;
       const [linked] = link ? await link([hit]).catch(() => [hit]) : [hit];

@@ -70,3 +70,29 @@ describe('own source: the last-resort source gives way (battery round 4 timeline
     expect(r.passages.map((p) => p.id)).toEqual([4601]);
   });
 });
+
+describe('own source: a scrape-host edition gives way to the published book holding the same words (r17 Shaykh Aḥmad)', () => {
+  const N = 'there appeared above the horizon of the East that luminous Star of Divine guidance, Shaykh Aḥmad-i-Aḥsá’í, who set out to prepare the way.';
+  const proofs = toPassage({ id: 610, document_id: 4100, paragraph_index: 610, title: "The Seven Proofs (Dalá'il-i-Sab'ih)", author: 'The Báb', book_author: 'The Báb', religion: B,
+    source_url: 'https://bahai-library.com/bab_nicolas_terry_proofs', text: N });
+  const dawn = { id: 132, document_id: 21308, paragraph_index: 132, title: 'The Dawn-Breakers', author: 'Nabil Zarandi', book_author: 'Nabil Zarandi', religion: B,
+    source_url: 'https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_132', text: `The light of the Faith had been obscured; ${N}` };
+  it('the bahai-library edition → The Dawn-Breakers, searched with no author filter', async () => {
+    const asked = [];
+    const r = await preferOwnWork([proofs], { search: async (span, f) => { asked.push(f); return [proofs, dawn]; }, shape: toPassage });
+    expect(r.passages[0]).toMatchObject({ id: 132, title: 'The Dawn-Breakers', author: 'Nabil Zarandi' });
+    expect(r.swapped[0]).toMatchObject({ from: 610, to: 132, kind: 'host' });
+    expect(asked[0].author).toBeNull();
+  });
+  it('another scrape, a study, or no holder → kept', async () => {
+    for (const q of [{ ...dawn, source_url: 'https://oceanoflights.org/x' }, { ...dawn, authority: 'scholarship' }, { ...dawn, text: 'unrelated words entirely here' }]) {
+      const r = await preferOwnWork([proofs], { search: async () => [q], shape: (h) => h });
+      expect(r.swapped).toEqual([]);
+    }
+  });
+  it('an oceanlibrary passage is never a host job', async () => {
+    let n = 0;
+    await preferOwnWork([{ ...proofs, source_url: 'https://oceanlibrary.com/seven-proofs/?paraId=para_1' }], { search: async () => { n++; return []; } });
+    expect(n).toBe(0);
+  });
+});
