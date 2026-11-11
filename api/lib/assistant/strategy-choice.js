@@ -56,7 +56,7 @@ const FRAME = /^(?:according to|as (?:stated|explained|written|said) (?:in|by)|p
 const FUNCTION_WORDS = /^(?:who|what|whom|whose|which|when|where|why|how|was|were|is|are|am|be|did|do|does|the|a|an|of|to|in|on|and|or|about|tell|me)\W*$/i;   // question/function words carry no search content
 const ASK_WORDS = /^(?:can|could|would|will|you|please|i|know|like|more|some|anything|something|give|explain|describe|say|said)\W*$/i;   // an asking frame's words ("can you tell me about …")
 const frameless = (n) => String(n).replace(FRAME, '').trim();
-/** Jev's span kinds → { named_work, named_person, topic } (units for the tree's `request`). Pure. */
+/** Jev's span kinds → { named_work, named_person, named_subjects (his "neither" spans), topic } (units for the tree's `request`). Pure. */
 export function namedUnits(a = {}, spans = [], question = '', min = MIN_CONFIDENCE) {
   const kinds = spans.map((n, i) => ({ name: frameless(n), raw: n, ...choice(a[`kind_${i + 1}`]) })).filter((k) => k.name && ['work', 'person'].includes(k.choice) && (k.confidence ?? 0) >= min);
   const best = (c) => kinds.filter((k) => k.choice === c).sort((x, y) => (y.confidence ?? 0) - (x.confidence ?? 0))[0];   // the highest-confidence span of each kind
@@ -69,7 +69,7 @@ export function namedUnits(a = {}, spans = [], question = '', min = MIN_CONFIDEN
   // the whole question as the topic sent "tell me about" to the literal layer (11-11: Sutta Nipata, Mahabharata for Vaḥíd)
   const subjects = spans.filter((n, i) => { const k = choice(a[`kind_${i + 1}`]); return k?.choice === 'neither' && (k.confidence ?? 0) >= min; }).map(frameless).filter(Boolean);
   const bare = subjects.length && !kinds.length && !subjects.reduce((q, n) => q.split(n).join(' '), String(question)).split(/\s+/).some((w) => /[\p{L}\p{N}]{2,}/u.test(w) && !FUNCTION_WORDS.test(w) && !ASK_WORDS.test(w));
-  return { ...(work ? { named_work: work.name } : {}), ...(person ? { named_person: person.name } : {}), ...(kinds.length && words.length >= 2 ? { topic: rest } : bare ? { topic: subjects.join(' ') } : {}) };
+  return { ...(work ? { named_work: work.name } : {}), ...(person ? { named_person: person.name } : {}), ...(subjects.length ? { named_subjects: subjects } : {}), ...(kinds.length && words.length >= 2 ? { topic: rest } : bare ? { topic: subjects.join(' ') } : {}) };
 }
 
 const choice = (a) => a && { choice: a.choice ?? a.value ?? null, confidence: a.confidence ?? a.distribution?.[a.choice ?? a.value] ?? null, distribution: a.distribution ?? null };

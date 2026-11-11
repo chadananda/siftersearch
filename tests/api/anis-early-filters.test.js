@@ -18,7 +18,7 @@ describe('Jev fills the filter units in the same call', () => {
     expect(namedUnits(a, ["According to 'Abdu'l-Bahá", 'Some Answered Questions'], Q)).toEqual({ named_person: "'Abdu'l-Bahá", named_work: 'Some Answered Questions', topic: 'what happens to the soul after death?' });
   });
   it('namedUnits: below-confidence or "neither" kinds set nothing (topic stays the question)', () => {
-    expect(namedUnits({ kind_1: ans('work', 0.3), kind_2: ans('neither') }, ['Rumi', 'fana'], 'Rumi on fana')).toEqual({});
+    expect(namedUnits({ kind_1: ans('work', 0.3), kind_2: ans('neither') }, ['Rumi', 'fana'], 'Rumi on fana')).toEqual({ named_subjects: ['fana'] });   // a subject is carried (about_person), never a hard filter
   });
   it('chooseStrategy returns the units, asks kind_N + subject_religion in ONE call, and the subject tradition is a turn-only scope', async () => {
     let body;
@@ -68,6 +68,13 @@ describe('hard filters first, widening when thin', () => {
     expect(seen[0].filters.author).toBeUndefined(); expect(seen[0].filters.authority).toEqual(['history', 'scholarship']); expect(seen[0].query).toContain('Káẓim');
     const s2 = mk({}, { tools: { fused_search: fused } }); seen.length = 0;
     await ELEMENTS['search.shelf'].run(s2, { about_person: true }); expect(seen.length).toBe(0); expect(s2.units.found_outcome.n).toBe('skipped');
+  });
+  it('search.shelf about_person: also runs for a subject Jev read as "neither" (11-11 Quddús got only scripture)', async () => {
+    const seen = [];
+    const fused = async (i) => { seen.push(i); return { passages: [P(1, { authority: 'history' })] }; };
+    const s = mk({ named_subjects: ['Quddús', 'Letter of the Living'], current_user_question: 'Why is Quddús considered the highest-ranking Letter of the Living?' }, { tools: { fused_search: fused } });
+    expect(await ELEMENTS['search.shelf'].run(s, { about_person: true, authority: ['history', 'scholarship'] })).toBe('one');
+    expect(seen[0].query).toContain('Quddús'); expect(seen[0].filters.author).toBeUndefined();
   });
   it('wide: runs with no filters, only when a hard filter was applied', async () => {
     const seen = [];
@@ -171,12 +178,12 @@ describe('namedUnits: topic remnants after a removed span (11-09 widget turns)',
     expect(namedUnits(p(), ["'Abdu'l-Bahá"], 'Trace how \'Abdu\'l-Bahá uses "Most Great Justice" across his talks').topic).toBe('Trace how uses "Most Great Justice" across his talks');
   });
   it('a person the question is ABOUT is "neither" (Jev); a bare asking frame around it → the person is the topic', () => {
-    expect(namedUnits({ kind_1: ans('neither') }, ['Ṭáhirih'], 'Who was Ṭáhirih?')).toEqual({ topic: 'Ṭáhirih' });
-    expect(namedUnits({ kind_1: ans('neither') }, ['Vaḥíd'], 'Tell me about Vaḥíd')).toEqual({ topic: 'Vaḥíd' });
-    expect(namedUnits({ kind_1: ans('neither') }, ['Vaḥíd'], 'Can you tell me about Vaḥíd?')).toEqual({ topic: 'Vaḥíd' });
+    expect(namedUnits({ kind_1: ans('neither') }, ['Ṭáhirih'], 'Who was Ṭáhirih?')).toEqual({ topic: 'Ṭáhirih', named_subjects: ['Ṭáhirih'] });
+    expect(namedUnits({ kind_1: ans('neither') }, ['Vaḥíd'], 'Tell me about Vaḥíd')).toEqual({ topic: 'Vaḥíd', named_subjects: ['Vaḥíd'] });
+    expect(namedUnits({ kind_1: ans('neither') }, ['Vaḥíd'], 'Can you tell me about Vaḥíd?')).toEqual({ topic: 'Vaḥíd', named_subjects: ['Vaḥíd'] });
   });
   it('a question with its own content beyond the subject keeps the whole question (no topic)', () => {
-    expect(namedUnits({ kind_1: ans('neither') }, ['Báb'], 'When did the Báb declare His mission?')).toEqual({});
+    expect(namedUnits({ kind_1: ans('neither') }, ['Báb'], 'When did the Báb declare His mission?')).toEqual({ named_subjects: ['Báb'] });
     expect(namedUnits({ kind_1: ans('neither', 0.3) }, ['Vaḥíd'], 'Tell me about Vaḥíd')).toEqual({});
   });
 });

@@ -16,7 +16,7 @@ const ROWS = [
   ['last_topic', 'text', 'code', null, null], ['last_passages', 'items', 'code', [], null], ['refers_back', 'bool', 'code', false, null], ['follows_topic', 'text', 'code', null, null], ['side_sources', 'map', 'code', {}, null],
   ['incipit', 'text', 'jev', null, null], ['named_person', 'id', 'jev+code', null, 'conversation'], ['named_work', 'id', 'jev+code', null, 'conversation'], ['translation_wanted', 'id', 'jev+code', 'authorized', null],
   ['parallel_direction', 'enum', 'jev', 'to_original', null], ['target_lang', 'lang', 'jev', null, null], ['scripture_reference', 'ref', 'code', null, null], ['term', 'word', 'jev', null, 'conversation'],
-  ['fact_asked', 'enum', 'jev', null, null], ['occasion', 'text', 'jev', null, null], ['compare_sides', 'list', 'jev', null, null], ['audience', 'enum', 'jev', null, 'conversation'],
+  ['fact_asked', 'enum', 'jev', null, null], ['occasion', 'text', 'jev', null, null], ['compare_sides', 'list', 'jev', null, null], ['named_subjects', 'list', 'jev', null, null], ['audience', 'enum', 'jev', null, 'conversation'],
   ['output_form', 'enum', 'jev', null, null], ['amount_wanted', 'amount', 'jev', null, null], ['delivery', 'enum', 'jev', 'here', null], ['challenged_claim', 'text', 'jev', null, null],
   ['challenge_kind', 'enum', 'jev', 'support', null], ['contested', 'bool', 'jev', false, null], ['about_what', 'enum', 'jev', 'library', null], ['plan_action', 'enum', 'jev', null, null],
   ['reader_state', 'enum', 'jev', 'curious', 'conversation'], ['institution', 'text', 'code', 'a qualified teacher of your tradition', null],
