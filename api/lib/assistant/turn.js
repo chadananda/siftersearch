@@ -269,6 +269,9 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   let codePatch = null;
   const decisions = decisionLog(strat?.decisions || []);   // every strategy decision of the turn (inputs, options, probabilities, branch) → path.decisions
   for (const info of jevTimeouts) decisions.record('jev:timeout', timeoutDecision(info));
+  // Jev's triage answer on every turn's record (11-11: a follow-up skipped the in-book path and the trace could not say what lookup he gave)
+  if (tri) decisions.record('triage', { by: tri.by || (backup?.tri === tri ? 'llm' : 'jev'), chosen: { kind: tri.kind?.choice ?? null, lookup: tri.lookup?.choice ?? null, outcome: tri.outcome?.choice ?? null },
+    probabilities: { kind: tri.kind?.confidence ?? null, lookup: tri.lookup?.confidence ?? null, outcome: tri.outcome?.confidence ?? null }, reason: focus ? `in focus: ${focus.title}` : null });
   const jevFallback = needTri || needStrat ? { calls: [needTri && 'triage', needStrat && 'strategy'].filter(Boolean), by: backup ? 'haiku' : 'fail open',
     lookup: backup?.tri?.lookup?.choice ?? null, strategy: backup?.strategy?.strategy?.choice ?? null, ms: backup?.ms ?? null } : null;
   if (jevFallback) decisions.record('jev:fallback', { by: backup ? 'llm' : 'code', saw: jevFallback.calls.join('+'), options: ['haiku', 'fail open'], chosen: jevFallback.by,

@@ -270,7 +270,15 @@ export function fixStrategySlots(db, id, { version = null, by = 'ops-slot-fix' }
 }
 
 /** near_misses ({example|text}) folded into a description as "Not for: ..." (Jev reads only description + exemplars). Pure. */
-export const foldNearMisses = (description, misses = []) => `${String(description ?? '').trim()} Not for: ${misses.map((m) => String(m.example || m.text).trim().replace(/[.?!]+$/, '')).join('; ')}.`;
+// the near misses fill what is left of the 600-character description, whole ones only (11-11: a full fold overran it and a 110 s plan was thrown away)
+export const DESC_MAX = 600;
+export function foldNearMisses(description, misses = []) {
+  const base = String(description ?? '').trim();
+  const items = misses.map((m) => String(m.example || m.text || '').trim().replace(/[.?!]+$/, '')).filter(Boolean);
+  let out = base;
+  for (let n = items.length; n > 0; n--) { const s = `${base} Not for: ${items.slice(0, n).join('; ')}.`; if (s.length <= DESC_MAX) { out = s; break; } }
+  return out;
+}
 
 // ── card edit (description / exemplars / near_misses of a saved strategy, graph untouched) ──
 /** Strategy `id`'s newest (or `version`) graph + a rewritten CARD as a NEW candidate version. near_misses are not stored anywhere (Jev reads only
