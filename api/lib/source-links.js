@@ -6,7 +6,7 @@
 import { slugifyPath } from './slug.js';
 import { rangeUrl, quoteUrl } from './ocean-range.js';
 import { encodeMarker } from './ool-range.js';
-import { sowMarkerUrl, SOW_BASE } from './sow-links.js';
+import { sowMarkerUrl, SOW_BASE, isSowWork } from './sow-links.js';
 
 export const SITE = 'https://siftersearch.com';   // the site worker: pages + the image service (/img/*); never the api tunnel
 const TIERS = [['oceanlibrary.com', 1], ['oceanoflights.org', 2], ['portlandiator.github.io', 3], ['bahai-library.com', 4]];
@@ -103,7 +103,8 @@ export function linkFor(doc, paragraphIndex, { quote = null } = {}) {
     return range(u.replace(/[?#].*$/, '')) || marker(`${u}${u.includes('?') ? '&' : '?'}paraId=${encodeURIComponent(doc.external_para_id)}`);
   };
   // Star of the West issues: the page scan on bahai-education.org, the passage highlighted (lib/sow-links.js; resolved at output)
-  const sow = sowMarkerUrl(doc, paragraphIndex, quote);
+  // the magazine itself (or a compilation of it) → its home there, never our reader (Chad 11-11)
+  const sow = sowMarkerUrl(doc, paragraphIndex, quote) ?? (isSowWork(doc) ? `${SOW_BASE}/` : null);
   const candidates = [doc.source_url, ...metaSourceUrls(doc.metadata)]
     .filter((u) => typeof u === 'string' && /^https?:\/\//.test(u))
     .map(oolPageUrl)

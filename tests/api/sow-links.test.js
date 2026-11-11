@@ -120,3 +120,11 @@ describe('Star of the West as one work (Chad 11-11: "There need only be one Star
     expect(asked.works).toEqual([11, 12, 13]);
   });
 });
+
+describe('Star of the West book link (Chad 11-11: "we are still linking to siftersearch!!")', () => {
+  it('the magazine or a compilation of it links to its home on bahai-education.org, not our reader', async () => {
+    const { workUrl } = await import('../../api/lib/source-links.js');
+    expect(workUrl({ id: 13234, title: 'Star of the West', religion: "Baha'i", collection: 'News' })).toBe('https://bahai-education.org/sifter-star-of-the-west/');
+    expect(workUrl({ id: 2291, title: 'Star of the West - Selected Content from Volumes VIII-X', source_url: 'https://bahai-library.com/x' })).toBe('https://bahai-education.org/sifter-star-of-the-west/');
+  });
+});
