@@ -301,7 +301,14 @@ export function checkLinks(text, sources = []) {
   const titleLike = (label) => { const t = label.replace(/[*_]/g, '').trim(), w = t.split(/\s+/); return /^[*_]/.test(label.trim()) && !/^["“]/.test(t) && w.length <= 10 && w.filter((x) => /^\p{Lu}/u.test(x)).length * 2 >= w.length; };
   const wrong = new Set();
   for (const m of out.matchAll(MD_LINK)) if (/(^|\.)oceanlibrary\.com\//.test(m[3].replace(/^https?:\/\//, '')) && titleLike(m[2]) && !slugAgrees(m[3], m[2].replace(/,?\s*Vol(?:ume)?\.?\s*\d+.*$/i, ''))) wrong.add(bookOf(m[3]));
-  const out2 = wrong.size ? out.replace(MD_LINK, (m, ws, label, url) => (wrong.has(bookOf(url)) ? (fixed += 1, `${ws}${label}`) : m)) : out;
+  // a GLOSS link (r17 11-11 Letters: "the first [*Váḥid*](bahai-library.com/momen_iranica_sayyed_darabi) (unity)" — the concept word
+  // linked to an article on the man Vaḥíd): a one- or two-word label on a bahai-library.com page whose slug shares no word with it
+  const gloss = (label, url) => { let u; try { u = new URL(url); } catch { return false; }
+    const t = words(label.replace(/[*_"“”]/g, '')), slug = words(decodeURIComponent(u.pathname).replace(/[-_/.]/g, ' '));
+    return /(^|\.)bahai-library\.com$/.test(u.host) && label.replace(/[*_]/g, '').trim().split(/\s+/).length <= 2 && t.length >= 1 && slug.length >= 2
+      && !slug.some((w) => t.some((x) => x.startsWith(w.slice(0, 4)) || w.startsWith(x.slice(0, 4)))); };
+  const out2 = wrong.size || [...out.matchAll(MD_LINK)].some((m) => gloss(m[2], m[3]))
+    ? out.replace(MD_LINK, (m, ws, label, url) => (wrong.has(bookOf(url)) || gloss(label, url) ? (fixed += 1, `${ws}${label}`) : m)) : out;
   return { text: fixed ? out2 : src, fixed };
 }
 

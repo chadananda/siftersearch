@@ -56,3 +56,12 @@ describe('checkLinks — a title proves its OceanLibrary URL is another book (no
     expect(checkLinks(t, []).fixed).toBe(0);
   });
 });
+
+describe('a gloss link to an unrelated bahai-library page is unlinked (r17 Letters)', () => {
+  it('Váḥid → an article on the man Vaḥíd: unlinked; a matching title stays', () => {
+    const t = 'They formed the first [*Váḥid*](https://bahai-library.com/momen_iranica_sayyed_darabi) (unity).';
+    expect(checkLinks(t).text).toBe('They formed the first *Váḥid* (unity).');
+    const ok = 'See [*Paradise of Justice*](https://bahai-library.com/buck_masumian_paradise_justice), #25, and [*Proofs*](https://bahai-library.com/bab_nicolas_terry_proofs).';
+    expect(checkLinks(ok).fixed).toBe(0);
+  });
+});
