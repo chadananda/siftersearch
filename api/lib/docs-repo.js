@@ -128,6 +128,16 @@ export async function docIdsInYearRange({ yearFrom, yearTo, scope = 'live' } = {
   return rows.map((r) => r.id);
 }
 
+/** Ids + titles + filenames of documents filed under one library folder (file_path prefix) — a serial filed as one document per
+ *  issue (Star of the West: Baha'i/News/Star of the West/v1/…) read as ONE work. Live, non-duplicate by default. */
+export async function docsInFolder(prefix, { scope = 'live' } = {}) {
+  if (!prefix) return [];
+  const where = scopeSql(scope);
+  where.push("d.file_path LIKE ? ESCAPE '\\'");
+  return queryAll(`SELECT d.id, d.title, d.filename FROM docs d WHERE ${where.join(' AND ')}`,
+    [`${String(prefix).replace(/[\\%_]/g, (c) => `\\${c}`)}%`], 'docs-repo:in-folder');
+}
+
 /** Live documents whose metadata leaves search unable to tier them (source-tier tier_gap 'no-religion'): religion missing, an
  *  author that is only digits (a bahai-library.com page id, e.g. '4461' — 11-05: 65 books), or a lowercase slug ('pdf-h-hatcher',
  *  'bahaullah': a file locator, not a name). Canonical (oceanlibrary + library) by default — the

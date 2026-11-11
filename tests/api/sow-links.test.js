@@ -1,6 +1,6 @@
 // Star of the West range links: issue parse, hl words, page choice, linkFor marker, output pass (map + block_attrs).
 import { describe, it, expect, beforeEach } from 'vitest';
-import { sowCoverUrl, sowIssue, sowHl, sowPage, sowMarkerUrl, upgradeSowLinks, resetSowPageMap, sowPageMap } from '../../api/lib/sow-links.js';
+import { sowCoverUrl, sowIssue, sowHl, sowPage, sowMarkerUrl, upgradeSowLinks, resetSowPageMap, sowPageMap, isSowWork, sowIssueIds } from '../../api/lib/sow-links.js';
 import { linkFor } from '../../api/lib/source-links.js';
 import { coverAt } from '../../api/lib/quote-blocks.js';
 import { upgradeOceanLinks, needsUpgrade } from '../../api/lib/ocean-links.js';
@@ -85,5 +85,38 @@ describe('Star of the West issue thumbnails (in place on bahai-education.org)', 
   it('coverAt sizes their worker by w= and ours by tr=', () => {
     expect(coverAt(sowCoverUrl({ title: 'Star of the West, v1, i1' }), 240)).toMatch(/descreen=1&w=240$/);
     expect(coverAt('https://siftersearch.com/img/covers/5?v=ab', 96)).toBe('https://siftersearch.com/img/covers/5?v=ab&tr=w-96,q-80,e-sharpen');
+  });
+});
+
+describe('Star of the West as one work (Chad 11-11: "There need only be one Star of the West")', () => {
+  it('isSowWork: the magazine and its compilations, never one issue or another title', () => {
+    expect(isSowWork({ title: 'Star of the West' })).toBe(true);
+    expect(isSowWork({ title: 'Star of the West - Selected Content from Volumes VIII-X' })).toBe(true);
+    expect(isSowWork({ title: 'Star of the West, v1, i17 Sultan, January 19 1911' })).toBe(false);
+    expect(isSowWork({ title: 'Star of the East' })).toBe(false);
+  });
+  it('sowIssueIds: issue docs only, in volume/issue order', async () => {
+    const list = async () => [
+      { id: 9, title: 'Star of the West, v2, i1 x' }, { id: 3, title: 'Star of the West, v1, i10 y' },
+      { id: 5, title: 'Star of the West, v1, i2 z' }, { id: 7, title: 'Notes', filename: 'readme.md' }];
+    expect(await sowIssueIds({ list })).toEqual([5, 3, 9]);
+  });
+  it('book pick: two Star of the West compilations are one option', async () => {
+    const { groupCopies } = await import('../../api/lib/assistant/book-pick.js');
+    const g = groupCopies([
+      { kind: 'work', doc: { id: 1, title: 'Star of the West', author: 'US Bahá’í News Service' } },
+      { kind: 'work', doc: { id: 2, title: 'Star of the West - Selected Content from Volumes VIII-X', author: 'Mary Hanford Ford' } },
+      { kind: 'work', doc: { id: 3, title: 'The Promised Day Is Come', author: 'Shoghi Effendi' } }]);
+    expect(g.length).toBe(2);
+    expect(g[0].members.map((m) => m.doc.id)).toEqual([1, 2]);
+  });
+  it('find in work: the magazine named → every issue searched', async () => {
+    const { findInWorkAnswer } = await import('../../api/lib/assistant/find-in-work.js');
+    let asked = null;
+    await findInWorkAnswer({ messages: [{ role: 'user', content: 'find "five diamonds" in star of the west' }], deps: {
+      quotedSpans: () => ['five diamonds'], bookFastPath: async () => ({ kind: 'work', work: { doc: { id: 13234, title: 'Star of the West' } } }),
+      sectionsOf: async () => [], sowIssueIds: async () => [11, 12, 13] },
+    search: async (a) => { asked = a; return { total: 0, passages: [], works: [] }; } });
+    expect(asked.works).toEqual([11, 12, 13]);
   });
 });

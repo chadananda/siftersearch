@@ -14,6 +14,22 @@ export function sowIssue(doc) {
   return m ? { vol: Number(m[1]), issue: Number(m[2]) } : null;
 }
 
+// the magazine as a whole: one document per issue under this folder (the compilations titled "Star of the West…" are copies)
+export const SOW_FOLDER = "Baha'i/News/Star of the West/";
+/** A title naming the magazine (or a compilation of it), not one issue: "Star of the West", "Star of the West - Volumes X-XI …". */
+export const isSowWork = (doc) => /^(the )?star of the west\b/i.test(String(doc?.title || '')) && !sowIssue(doc);
+
+/** The magazine's issue document ids in reading order (volume, issue); one folder read, kept an hour. Deps: docs-repo (lazy). */
+let issues = null;
+export async function sowIssueIds({ list = null, now = Date.now() } = {}) {
+  if (!list && issues && now - issues.at < 3600000) return issues.ids;
+  const rows = await (list || (async () => (await import('./docs-repo.js')).docsInFolder(SOW_FOLDER)))();
+  const ids = (rows || []).map((d) => ({ id: Number(d.id), at: sowIssue(d) })).filter((d) => d.at)
+    .sort((a, b) => a.at.vol - b.at.vol || a.at.issue - b.at.issue).map((d) => d.id);
+  if (!list) issues = { ids, at: now };
+  return ids;
+}
+
 /** An issue's thumbnail: its page 1 scan on bahai-education.org's image worker, referenced in place (sized by `w=`, see coverAt). */
 export function sowCoverUrl(doc) {
   const at = sowIssue(doc);

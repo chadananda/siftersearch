@@ -7,6 +7,7 @@
 // Deps (injectable): book-finder bookCandidates, work-request otherCopies/bareTitle, systemone jevFetch, ai chatCompletion.
 import { otherCopies, bareTitle } from './work-request.js';
 import { bookCandidates } from './book-finder.js';
+import { isSowWork } from '../sow-links.js';
 import { jevFetch } from '../systemone.js';
 import { modelFor } from '../model-roles.js';
 import { ENDPOINT, MIN_CONFIDENCE } from '../scope-extract.js';
@@ -32,7 +33,8 @@ const authorOf = (c) => String((c.kind === 'section' ? c.sec.author : c.doc.auth
 const edition = (a) => /\b(?:tr|ed|transl|trans)\.|\btranslat|\bedited\b|^various\b/i.test(a);
 // two candidates are COPIES of one text: the same title, and the same author, a translator/editor's copy, or two anthologies' sections of it.
 // A talk or study that merely shares the title (Hooper Dunbar's talk "The Dispensation of Bahá'u'lláh") has its own author: never a copy.
-const copies = (a, b) => coreTitle(a) === coreTitle(b) && (fold(authorOf(a)) === fold(authorOf(b)) || edition(authorOf(a)) || edition(authorOf(b)) || (a.kind === 'section' && b.kind === 'section'));
+// Star of the West: every work titled for the magazine (its compilations, whatever their subtitle) is one text — searched as all its issues
+const copies = (a, b) => (a.kind === 'work' && b.kind === 'work' && isSowWork(a.doc) && isSowWork(b.doc)) || coreTitle(a) === coreTitle(b) && (fold(authorOf(a)) === fold(authorOf(b)) || edition(authorOf(a)) || edition(authorOf(b)) || (a.kind === 'section' && b.kind === 'section'));
 
 /**
  * Copies and translations of ONE text become ONE option (live 11-10: five Dhammapadas split Jev's choice, none reached the confidence

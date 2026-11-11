@@ -1,7 +1,7 @@
 // In-book / quote shaping (Chad 11-10): turns a quote_search result into the reply by CODE (no LLM): 1 hit = the passage quoted + linked
 // citation (+ a card), n = count line + passages, meaning = labelled. Deps: quote-search.js (the search + text helpers, re-exported here).
 import { SITE } from '../source-links.js';
-import { sowCoverUrl } from '../sow-links.js';
+import { sowCoverUrl, isSowWork, sowIssueIds } from '../sow-links.js';
 import { foldText, holdsWords, boldWords, excerptOf } from './quote-search.js';
 export { foldText, holdsWords, boldWords, excerptOf };
 
@@ -139,7 +139,9 @@ export async function findInWorkAnswer({ messages, names = [], by = null, topic 
   decisions?.record?.('in-work:resolve', { by: 'code', saw: { quoted, topic, work: doc.id, section: sec?.title ?? null }, chosen: words || 'none', reason: words ? null : 'no words to find: the work itself (its card)' });
   if (!words) return { book: found, work: doc };   // the work itself was asked for → the turn gives its card
   const run = search || (async (a) => (await import('./tools.js')).run('quote_search', a, { deps: deps.toolDeps || {} }));
-  const res = await run({ query: words, works: [Number(doc.id)], ...(sec ? { from: sec.start_index, to: sec.end_index ?? sec.start_index } : {}) });
+  // Star of the West is filed one document per issue: the magazine named → every issue searched (Chad 11-11)
+  const sow = !sec && isSowWork(doc) ? await (deps.sowIssueIds || sowIssueIds)().catch(() => []) : [];
+  const res = await run({ query: words, works: sow.length ? sow : [Number(doc.id)], ...(sec ? { from: sec.start_index, to: sec.end_index ?? sec.start_index } : {}) });
   if (!res) return null;
   const r = asWorkResult(res, words, doc);
   return { result: r, reply: inWorkReply(r, { section: sec?.title ?? null }), cards: passageCards(r, { cover: doc.cover_url ?? null }), work: doc, section: sec };
