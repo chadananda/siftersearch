@@ -132,6 +132,21 @@ export function quoteReply(r, { scope = null } = {}) {
   return `I searched ${where} for ${q}: the words are not there, and no passage comes close in meaning.`;
 }
 
+// Jev's named person → the library's author(s) whose name it holds (11-11: Jev named "Somewhere Abdu'l-Baha" — the reader's "Somewhere"
+// read as part of the name — and the author filter matched nothing, so "no passage comes close"). Longest library name contained in
+// his wording wins; none → no author filter (recorded), never a filter that can only return nothing. Pure.
+const authKey = (a) => foldText(a).replace(/[^\p{L}\p{N}]+/gu, '');
+export function resolveAuthors(named = [], library = []) {
+  const keys = [...new Set(library.filter(Boolean))].map((a) => [a, authKey(a)]).filter(([, k]) => k.length >= 4);
+  return [...new Set(named.flatMap((n) => {
+    const nk = authKey(n);
+    const exact = keys.filter(([, k]) => k === nk).map(([a]) => a);
+    if (exact.length) return exact;
+    const held = keys.filter(([, k]) => nk.includes(k)).sort((x, y) => y[1].length - x[1].length);
+    return held.length ? [held[0][0]] : [];
+  }))];
+}
+
 /**
  * The turn path for "find the passage that says X" (Jev's lookup = find_passage; no book named): the filters are Jev's units (religions he
  * scoped, the person he named as author, a work he named) → quote_search → quoteReply. The words = a quoted span, else Jev's topic.
@@ -143,9 +158,19 @@ export async function findPassageAnswer({ messages, religions = [], authors = []
   const words = wordsToFind({ quoted, topic, titles: works });
   decisions?.record?.('find-passage:resolve', { by: 'code', saw: { quoted, topic, religions, authors, works }, chosen: words || 'none', reason: words ? null : 'no words to find: research instead' });
   if (!words) return null;
+  if (authors.length) {
+    const library = deps.libraryAuthors ? await deps.libraryAuthors() : await import('../dewey/title-index.js').then(async (m) => (await m.titleIndex()).docs.map((d) => d.author)).catch(() => null);
+    if (library?.length) {   // no author list to hand (an empty index) → his names stand as given
+      const got = resolveAuthors(authors, library);
+      decisions?.record?.('find-passage:author', { by: 'code', saw: { named: authors }, chosen: got.length ? got : 'none', reason: got.length ? null : 'no library author by that name: no author filter' });
+      authors = got;
+    }
+  }
   const run = search || (async (a) => (await import('./tools.js')).run('quote_search', a, { deps: deps.toolDeps || {} }));
   const res = await run({ query: words, ...(religions.length ? { religions } : {}), ...(authors.length ? { authors } : {}), ...(works.length ? { works } : {}) });
   if (!res) return null;
+  // nothing at all under the reader's filters is not "nothing close in meaning": research takes it (it reads, rephrases, widens)
+  if (!res.total && !res.passages?.length) { decisions?.record?.('find-passage:empty', { by: 'code', chosen: 'research', reason: 'no passage under these filters' }); return null; }
   const r = { work: null, query: words, mode: res.mode_used, total: res.total, passages: res.passages };
   const scope = [...authors, ...(works.length ? works.map((w) => `*${w}*`) : []), ...(!authors.length && !works.length ? religions : [])].join(', ') || null;
   return { result: r, reply: quoteReply(r, { scope: scope && (authors.length || works.length ? `${scope}` : `the ${scope} texts`) }), cards: passageCards({ ...r, work: {} }), work: null, section: null };
