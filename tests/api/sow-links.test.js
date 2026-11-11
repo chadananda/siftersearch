@@ -151,3 +151,23 @@ describe('passageCards — a Star of the West hit', () => {
     expect(c.author).toBeNull();
   });
 });
+
+describe('creditOf — whose words a Star of the West hit is (Chad 11-11: an eyewitness reports the Master)', async () => {
+  const { creditOf, withVoices } = await import('../../api/lib/assistant/find-in-work.js');
+  const text = 'One of the first questions Mr. Ellis asked was: "How many Bahais are there?" The answer was: "Five diamonds are worth more than five million stones."';
+  it('words inside the quotation of the one quoted voice are that voice, as reported by the speaker', () => {
+    expect(creditOf({ text, voice: { speaker: 'Sidney Sprague', quoted: ['‘Abdu’l-Bahá'] } }, 'five diamonds')).toBe('‘Abdu’l-Bahá, as reported by Sidney Sprague');
+  });
+  it('words in the narration stay the speaker\'s; a placeholder speaker is no one', () => {
+    expect(creditOf({ text, voice: { speaker: 'Sidney Sprague', quoted: ['‘Abdu’l-Bahá'] } }, 'Mr. Ellis asked')).toBe('Sidney Sprague');
+    expect(creditOf({ text, voice: { speaker: 'Unknown', quoted: ['‘Abdu’l-Bahá'] } }, 'five diamonds')).toBe('‘Abdu’l-Bahá');
+    expect(creditOf({ text, author: 'Unknown', voice: { speaker: 'Unknown', quoted: [] } }, 'five diamonds')).toBe(null);
+  });
+  it('withVoices reads the shown hit\'s writer record; no record leaves it alone', async () => {
+    const r = { mode: 'literal', query: 'five diamonds', work: { author: 'Unknown' }, passages: [{ para_id: 7, text, author: 'Unknown' }, { para_id: 8, text, author: 'X' }] };
+    const authors = JSON.stringify([{ name: 'Sidney Sprague', role: 'author', basis: 'byline' }, { name: '‘Abdu’l-Bahá', role: 'quoted' }]);
+    await withVoices(r, { paragraphsByIds: async () => [{ id: 7, authors }] });
+    expect(r.passages[0].credit).toBe('‘Abdu’l-Bahá, as reported by Sidney Sprague');
+    expect(r.passages[1].credit).toBeUndefined();
+  });
+});

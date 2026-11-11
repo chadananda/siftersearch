@@ -36,7 +36,7 @@ export function inWorkReply(r, { section = null } = {}) {
   // each place is the passage itself, quoted, with its citation (the link) under it — no list, no paraphrase (Chad 11-10)
   const item = (p) => {
     const cite = p.place ? `*${name}*, ${p.place}` : `*${name}*`;
-    const by = named(p.author) ?? named(r.work.author);
+    const by = p.credit ?? named(p.author) ?? named(r.work.author);
     return `> “${p.excerpt}”\n>\n> — ${by ? `${by}, ` : ''}${p.url ? `[${cite}](${p.url})` : cite}`;
   };
   if (r.mode === 'literal') {
@@ -54,12 +54,42 @@ export function inWorkReply(r, { section = null } = {}) {
 
 // a placeholder author is no author (11-11: "— Unknown, Star of the West…"): the citation names the issue, never "Unknown"
 const named = (a) => (a && !/^(?:unknown|anonymous|n\/?a|none|various|-+|\?+)$/i.test(String(a).trim()) ? a : null);
+// WHOSE words the hit is (Chad 11-11: an eyewitness reports 'Abdu'l-Bahá's answer): the paragraph's stored voices (content.authors —
+// speaker + quoted, the paragraph-authors job) decide; words inside quotation marks in a paragraph quoting ONE person are that person's,
+// "as reported by" the speaker. Pure.
+const QUOTED_SPAN = /[“"]([^”"]{3,})[”"]/g;
+export function creditOf(p, phrase) {
+  const v = p?.voice;
+  const speaker = named(v?.speaker) ?? named(p?.author);
+  const quoted = (v?.quoted || []).map(named).filter(Boolean);
+  if (quoted.length === 1 && phrase && p?.text) {
+    const want = foldText(String(phrase).replace(/\*\*/g, ''));
+    const inQuote = [...String(p.text).matchAll(QUOTED_SPAN)].some((m) => foldText(m[1]).includes(want));
+    if (inQuote) return speaker && speaker !== quoted[0] ? `${quoted[0]}, as reported by ${speaker}` : quoted[0];
+  }
+  return speaker;
+}
+/** The shown literal hits' voices from their paragraphs' writer records (one batched read); a failed read leaves the author as it was. */
+export async function withVoices(r, deps = {}) {
+  const shown = r?.mode === 'literal' ? (r.passages || []).slice(0, 10).filter((p) => p.para_id) : [];
+  if (!shown.length) return r;
+  const rows = await (deps.paragraphsByIds || (async (ids) => (await import('../paragraphs-repo.js')).paragraphsByIds(ids)))(shown.map((p) => p.para_id)).catch(() => []);
+  const { voiceOf } = await import('../authorship/voice.js');
+  const byId = new Map((rows || []).map((x) => [Number(x.id), x]));
+  for (const p of shown) {
+    const row = byId.get(Number(p.para_id));
+    if (!row?.authors) continue;
+    p.voice = voiceOf({ authors: row.authors, author: r.work?.author ?? p.doc_author ?? null });
+    p.credit = creditOf(p, r.query);
+  }
+  return r;
+}
 /** The passage card(s) for the chat widget: exactly ONE literal hit → [{work_id,title,author,cover_url,url,place,excerpt,phrase}] (excerpt keeps
  *  the **phrase** marks; the client splits on them, never injects HTML); several hits or a meaning match → none (the text list stays). Pure. */
 export function passageCards(r, { cover = null } = {}) {
   if (r?.mode !== 'literal' || r.total !== 1 || r.passages?.length !== 1) return [];
   const p = r.passages[0], c = sowCoverUrl({ title: p.work ?? p.title }) ?? cover ?? r.work?.cover_url ?? null;   // the hit's own issue scan before the magazine's cover
-  return [{ work_id: r.work?.id ?? p.document_id ?? null, title: r.work?.title ?? p.work ?? p.title ?? null, author: named(p.author) ?? named(r.work?.author), cover_url: c ? (/^https?:/.test(c) ? c : `${SITE}${c}`) : null,
+  return [{ work_id: r.work?.id ?? p.document_id ?? null, title: r.work?.title ?? p.work ?? p.title ?? null, author: p.credit ?? named(p.author) ?? named(r.work?.author), cover_url: c ? (/^https?:/.test(c) ? c : `${SITE}${c}`) : null,
     url: p.url ?? null, place: p.place ?? null, excerpt: p.excerpt, phrase: r.query }];
 }
 
@@ -145,7 +175,7 @@ export async function findInWorkAnswer({ messages, names = [], by = null, topic 
   const sow = !sec && isSowWork(doc) ? await (deps.sowIssueIds || sowIssueIds)().catch(() => []) : [];
   const res = await run({ query: words, works: sow.length ? sow : [Number(doc.id)], ...(sec ? { from: sec.start_index, to: sec.end_index ?? sec.start_index } : {}) });
   if (!res) return null;
-  const r = asWorkResult(res, words, doc);
+  const r = await withVoices(asWorkResult(res, words, doc), deps);
   return { result: r, reply: inWorkReply(r, { section: sec?.title ?? null }), cards: passageCards(r, { cover: doc.cover_url ?? null }), work: doc, section: sec };
 }
 
@@ -159,7 +189,8 @@ export const asWorkResult = (res, query, doc = null) => {
 export function quoteReply(r, { scope = null, described = false } = {}) {
   const q = `“${r.query}”`, where = scope || 'the library';
   const item = (p) => { const name = p.work || p.title || 'this work', cite = p.place ? `*${name}*, ${p.place}` : `*${name}*`;
-    return `> “${p.excerpt}”\n>\n> — ${named(p.author) ? `${named(p.author)}, ` : ''}${p.url ? `[${cite}](${p.url})` : cite}`; };
+    const by = p.credit ?? named(p.author);
+    return `> “${p.excerpt}”\n>\n> — ${by ? `${by}, ` : ''}${p.url ? `[${cite}](${p.url})` : cite}`; };
   if (r.mode === 'literal') {
     const more = r.total > r.passages.length ? `\n\nThose are the first ${r.passages.length} of the ${r.total}; ask for the rest and I will continue from there.` : '';
     return r.total === 1 ? item(r.passages[0]) : `${r.total} passages in ${where} hold ${q}:\n\n${r.passages.map(item).join('\n\n')}${more}`;
@@ -214,7 +245,7 @@ export async function findPassageAnswer({ messages, religions = [], authors = []
   }
   // nothing at all under the reader's filters is not "nothing close in meaning": research takes it (it reads, rephrases, widens)
   if (!res.total && !res.passages?.length) { decisions?.record?.('find-passage:empty', { by: 'code', chosen: 'research', reason: 'no passage under these filters' }); return null; }
-  const r = { work: null, query: words, mode: res.mode_used, total: res.total, passages: res.passages };
+  const r = await withVoices({ work: null, query: words, mode: res.mode_used, total: res.total, passages: res.passages }, deps);
   const scope = [...oneSpelling(authors), ...(works.length ? works.map((w) => `*${w}*`) : []), ...(!authors.length && !works.length ? religions : [])].join(', ') || null;
   return { result: r, reply: quoteReply(r, { scope: scope && (authors.length || works.length ? `${scope}` : `the ${scope} texts`), described: !quoted.length }), cards: passageCards({ ...r, work: {} }), work: null, section: null };
 }
