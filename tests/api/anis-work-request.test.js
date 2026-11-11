@@ -94,6 +94,21 @@ describe('every italicised book is a link to the library, and the reply never an
     expect(out).toContain(' *Manṭiqu’ṭ-Ṭayr*.');
     expect(out).toContain('[*Gleanings*](https://x/g)');
   });
+  // 11-11 Quddús: "Balyuzi's *The Báb*" linked to bahai-library.com/russian/bab/selections.htm — a title is evidence, not identity
+  const RU = { id: 9, title: 'The Báb', author: 'Unknown', slug: 'ru-bab', source_url: 'https://bahai-library.com/russian/bab/selections.htm', language: 'en' };
+  const findBab = async (t) => (/^the b[aá]b$/i.test(t) ? { doc: RU, others: [] } : null);
+  const links = async () => new Map();
+  it('a title the turn\'s own passages hold is that work — never a catalogue namesake', async () => {
+    const text = "He brought the Báb's uncle to the Faith, as Balyuzi's *The Báb* relates.";
+    const sources = [{ title: 'The Báb - The Herald of the Days', author: 'H.M. Balyuzi' }];
+    const { linked } = await linkTitles(text, { find: findBab, links, sources });
+    expect(linked).toBe(0);
+  });
+  it('an author named beside the title must be the found copy\'s author', async () => {
+    for (const text of ["as Balyuzi's *The Báb* relates.", 'see *The Báb* by H. M. Balyuzi.']) expect((await linkTitles(text, { find: findBab, links })).linked).toBe(0);
+    expect((await linkTitles('see *The Báb* here.', { find: findBab, links })).linked).toBe(1);
+    expect((await linkTitles("Bahá'u'lláh's *The Seven Valleys* is short.", { find, links })).linked).toBe(1);
+  });
   it('drops "To answer your question directly about what this work is:"', () => {
     expect(dropPreamble('Dear friend,\n\nTo answer your question directly about what this work is: The Seven Valleys is a treatise.'))
       .toBe('Dear friend,\n\nThe Seven Valleys is a treatise.');

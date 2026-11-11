@@ -1014,7 +1014,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     // …and a closing offer to search is the research left undone: it goes (11-04 #163)
     const bare = dropSearchOffer(dropPreamble(linked)).text;
     // every book named in italics links to the library's copy (Chad 11-01)
-    const titled = conversational ? { text: bare } : await (d.linkTitles || (deps ? async (t) => ({ text: t }) : linkTitles))(bare).catch(() => ({ text: bare }));
+    const titled = conversational ? { text: bare } : await (d.linkTitles || (deps ? async (t) => ({ text: t }) : linkTitles))(bare, { sources: retrieved }).catch(() => ({ text: bare }));
     // the middle of a book reply is what the sources say about it, linked — or nothing (11-01 live: "Dawnbreakers" got "I didn't
     // find a passage… could you tell me more?" between the link and the offer)
     const about = work && /\]\(https?:\/\/[^)]+\)/.test(titled.text.replace(/\[\*[^\]]*\*\]\([^)]*\)/g, '')) ? titled.text.trim() : '';

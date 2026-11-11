@@ -230,13 +230,29 @@ export const WORK_HOW = ({ doc }) => `The reader asked for the book *${doc.title
 // the name of a book to the book in the library" — "The Seven Valleys" was italicised and linked nowhere). First mention only;
 // italics already inside a link, and titles whose copy the reply already links, are left alone. No match → left as written.
 const ITALIC = /(?<![*\w])\*(?!\*)([^*\n]{3,90}?)\*(?![*\w])/g;
-export async function linkTitles(text, { find = (t, min) => findTitled([t], { min }), links = async (docs) => (await import('../hit-links.js')).workLinks(docs) } = {}) {
+// A title is EVIDENCE, not identity (11-11: "Balyuzi's *The Báb*" linked to a Russian selections page titled "The Báb"):
+// a work the turn's own passages hold under that title (title or its opening) is the work meant — no catalogue lookup; and an
+// author named beside the title ("Balyuzi's *X*", "*X* by Balyuzi") must be the found copy's author.
+const surname = (a) => foldT(a).split(' ').filter((w) => w.length > 2).pop() || '';
+export function titleContext(s, m) {
+  const before = s.slice(Math.max(0, m.index - 60), m.index), after = s.slice(m.index + m[0].length, m.index + m[0].length + 60);
+  const by = before.match(/([\p{Lu}][\p{L}.'’-]+)['’]s\s+$/u)?.[1] || after.match(/^,?\s+by\s+(?:[\p{Lu}][\p{L}.]*\s+){0,3}?([\p{Lu}][\p{L}'’-]+)/u)?.[1] || null;
+  return by && !/^(?:God|Bahá|Baha|Christ|Jesus|Muhammad|Muḥammad)/u.test(by) ? foldT(by) : null;
+}
+const sourceHolds = (sources, title) => {
+  const t = foldT(String(title).replace(/^the\s+/i, ''));
+  return t.length >= 3 && (sources || []).some((x) => { const st = foldT(String(x?.title ?? x?.source_title ?? '').replace(/^the\s+/i, '')); return st === t || st.startsWith(`${t} `); });
+};
+export async function linkTitles(text, { find = (t, min) => findTitled([t], { min }), links = async (docs) => (await import('../hit-links.js')).workLinks(docs), sources = [] } = {}) {
   const s = String(text || '');
   const inLink = [...s.matchAll(/\[[^\]\n]*\]\([^)\s]*\)/g)].map((m) => [m.index, m.index + m[0].length]);
   const seen = new Set();
   const hits = [...s.matchAll(ITALIC)].filter((m) => !inLink.some(([a, b]) => m.index >= a && m.index < b) && /\p{Lu}/u.test(m[1])
-    && !seen.has(m[1].toLowerCase()) && seen.add(m[1].toLowerCase())).slice(0, 8);
-  const found = await Promise.all(hits.map((m) => find(m[1], m[1].trim().includes(' ') ? 0.9 : 0.95).catch(() => null)));
+    && !seen.has(m[1].toLowerCase()) && seen.add(m[1].toLowerCase()) && !sourceHolds(sources, m[1])).slice(0, 8);
+  const found = await Promise.all(hits.map(async (m) => {
+    const f = await find(m[1], m[1].trim().includes(' ') ? 0.9 : 0.95).catch(() => null), by = titleContext(s, m);
+    return f?.doc && by && surname(f.doc.author) !== by && !foldT(f.doc.author).split(' ').includes(by) ? null : f;
+  }));
   // the online publisher beats our own page: resolve link meta for the found works (a listDocs row has none)
   const urls = await links(found.map((f) => f?.doc).filter(Boolean)).catch(() => null);
   let out = s, shift = 0, linked = 0;
