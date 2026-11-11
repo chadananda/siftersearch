@@ -4,7 +4,7 @@
 import { UNITS } from '../units.js';
 
 export const AUTH_KINDS = Object.freeze(['scripture', 'guardian', 'interpretation', 'guidance', 'law', 'prayer', 'history', 'scholarship']);
-export const RANK_BY = Object.freeze(['authority', 'standing', 'date', 'history', 'score', 'length', 'marked', 'occasion', 'audience', 'named', 'attributed', 'copy', 'verdict']);
+export const RANK_BY = Object.freeze(['authority', 'standing', 'date', 'history', 'score', 'length', 'marked', 'occasion', 'audience', 'named', 'attributed', 'copy', 'verdict', 'phrased']);
 // slots a param or template may name: registry units, what elements write onto the units, and what the writer adds
 export const PARAM_SLOTS = Object.freeze([...Object.keys(UNITS), 'found_passages', 'found_records', 'web_found', 'missing', 'path', 'defects', 'offers', 'value', 'base']);
 export const TEMPLATE_SLOTS = Object.freeze([...PARAM_SLOTS, 'scope_clause', 'widened_clause', 'missing_sides', 'missing_line', 'authority_order']);   // authority_order: the writer fills it (tradition-authority)

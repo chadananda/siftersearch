@@ -156,6 +156,14 @@ describe('history_fact: the narrative history reaches the writer (11-10 "How was
     expect(queries).toContainEqual(['the martyrdom of the Báb at Tabríz', 'history,scholarship']);
     expect(queries).toContainEqual(['How was the Báb martyred?', 'history,scholarship']);
   });
+  it('within one authority kind, a passage found on the texts\' own wording outranks one found on the reader\'s words (Star of the West took the one history slot)', async () => {
+    const P = (id, title) => ({ id, title, authority: 'scholarship', score: 0.5, text: `passage ${id}`, religion: "Bahá'í", document_id: id, paragraph_index: 1 });
+    const tools = { fused_search: async (i) => ({ passages: !/history/.test([i.filters?.authority].flat().join()) ? []
+      : i.query === 'the martyrdom of the Báb' ? [P(10, 'The Dawn-Breakers')] : [1, 2, 3, 4, 5, 6, 7, 8].map((n) => P(n, `Star of the West ${n}`)) }) };
+    const s = await run('history_fact', 'How was the Báb martyred?', { tools, units: {}, jev: async () => ({ choice: 'answers' }),
+      extra: { judges: { generate: async ({ kind }) => ({ ok: true, items: kind === 'phrasings' ? ['the martyrdom of the Báb'] : [] }) } } });
+    expect(s.units.found_passages[0].title).toBe('The Dawn-Breakers');
+  });
   it('the histories are searched apart from the Guardian, and the top k spreads across kinds so a lower-scoring Dawn-Breakers passage survives', async () => {
     const auths = [], P = (id, title, authority, score) => ({ id, title, authority, score, text: `passage ${id}`, religion: "Bahá'í", document_id: id, paragraph_index: 1 });
     const tools = { fused_search: async (i) => { const a = [i.filters?.authority].flat().filter(Boolean); auths.push(a);

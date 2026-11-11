@@ -498,6 +498,7 @@ export const COMPARE = {
   standing: () => (a, b) => standingRank(a) - standingRank(b) || translationRank(a) - translationRank(b),   // tradition-authority: each passage by its own tradition's tiers (Bahá’í: writings > guardian > compilation > reported > house > secondary)
   authority: () => (a, b) => (ORDER.indexOf(kindOf(a) ?? 'other') + 1 || 99) - (ORDER.indexOf(kindOf(b) ?? 'other') + 1 || 99),
   verdict: () => (a, b) => (a.verdict === 'mentions_only' ? 1 : 0) - (b.verdict === 'mentions_only' ? 1 : 0),   // judge.passages: what states the fact before what only sets it
+  phrased: () => (a, b) => (b.phrasing ? 1 : 0) - (a.phrasing ? 1 : 0),   // found on the texts' own wording (plan.phrasings fan-out) before found on the reader's words
   date: () => (a, b) => yearOf(b) - yearOf(a), history: () => (a, b) => yearOf(a) - yearOf(b), score: () => (a, b) => (b.score ?? 0) - (a.score ?? 0),
   length: () => (a, b) => String(a.text ?? '').length - String(b.text ?? '').length, marked: () => (a, b) => (b.marked ? 1 : 0) - (a.marked ? 1 : 0),
   occasion: (u) => (a, b) => (b.occasion === u.occasion ? 1 : 0) - (a.occasion === u.occasion ? 1 : 0), audience: (u) => (a, b) => (b.audience === u.audience ? 1 : 0) - (a.audience === u.audience ? 1 : 0),
