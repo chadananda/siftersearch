@@ -14,7 +14,7 @@
   import { styleQuotes } from '../../api/lib/quote-style.js';
   import { quoteSegments } from '../../api/lib/quote-blocks.js';
   import { BUILD, tagFor } from './version.js';
-  let { token = '', api = 'https://siftersearch.com', accent = '', name = '', mission = '', opened = '', samples = '' } = $props();
+  let { token = '', api = 'https://siftersearch.com', accent = '', name = '', mission = '', opened = '', samples = '', fullscreen = '' } = $props();
   // "Try a sample" menu (one showcase question per strategy): on by default (Chad 11-10); a host turns it off with
   // samples="off"/"false", a reader with ?anis-samples=0 (remembered on this browser; ?anis-samples brings it back)
   let showSamples = $state(true);
@@ -447,7 +447,7 @@
 {/snippet}
 
 {#if cfg && !denied}
-  <div class="root {cfg.position === 'bottom-left' ? 'left' : 'right'}" style="--accent:{cfg.accent}">
+  <div class="root {cfg.position === 'bottom-left' ? 'left' : 'right'}" class:full={!!fullscreen && fullscreen !== '0'} style="--accent:{cfg.accent}">
     {#if open}
       <section class="panel" aria-label="{cfg.name} chat" onkeydown={isolateKey} onkeyup={isolate} onkeypress={isolate} use:contain>
         <header>
@@ -904,6 +904,9 @@
     .body { scrollbar-color: rgba(140,150,170,.35) transparent; }
     .body::-webkit-scrollbar-thumb { background: rgba(140,150,170,.3); }
     }
+
+  /* ── fullscreen host (siftersearch.com/anis): the panel is the page at every size ── */
+  .root.full .panel { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; border-radius: 0; }
 
   /* ── Small screens: the panel becomes a full sheet. ── */
   @media (max-width: 640px) {

@@ -5,6 +5,8 @@
 //   data-name="Anís"        the assistant's display + self-reference name
 //   data-mission="…"        a short mission/steering prompt (≤400 chars)
 //   data-samples="true"    show the "Try a sample" menu (one showcase question per strategy; site owners, not yet the public)
+//   data-opened="1"        start with the panel open
+//   data-fullscreen="1"    the panel fills the window at every size (siftersearch.com/anis)
 // Reads its own script tag for the profile token, loads the custom-element bundle from the same origin,
 // and mounts <sifter-chat>. Hand-written (no build); the element bundle is built via `npm run build:widget`.
 (function () {
@@ -29,7 +31,7 @@
     el.setAttribute('token', key);
     el.setAttribute('api', api);
     // Pass through optional data-* overrides to the element.
-    ['accent', 'name', 'mission', 'samples'].forEach(function (a) {
+    ['accent', 'name', 'mission', 'samples', 'opened', 'fullscreen'].forEach(function (a) {
       var v = script.getAttribute('data-' + a);
       if (v) el.setAttribute(a, v);
     });

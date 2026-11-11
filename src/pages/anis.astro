@@ -1,0 +1,13 @@
+---
+// /anis — Anís alone, full screen (Chad 11-11: test the chat on a phone). The site widget, opened, filling the window; no site chrome.
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Anís — Ocean AI Research Assistant" description="Ask Anís, the Ocean AI Research Assistant, about the world's sacred and scholarly texts." anis={false} noindex>
+  <main class="anis-page"></main>
+  <script is:inline src="https://siftersearch.com/widget.js" data-key="wgt_house_siftersearch" data-name="Anís" data-opened="1" data-fullscreen="1" async></script>
+</Layout>
+
+<style>
+  .anis-page { min-height: 100vh; min-height: 100dvh; background: var(--surface-0); }
+</style>
