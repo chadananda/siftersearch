@@ -10,6 +10,7 @@
   // token/api from the loader; accent/name/mission are optional per-page overrides (data-* attrs)
   // that tune the widget without touching the DB profile. ONE public domain; the edge worker proxies /api.
   import { ANIS_SAMPLES } from '../lib/anis-samples.js';
+  import { richLinks } from './rich-link.js';
   import { styleQuotes } from '../../api/lib/quote-style.js';
   import { quoteSegments } from '../../api/lib/quote-blocks.js';
   import { BUILD, tagFor } from './version.js';
@@ -256,8 +257,7 @@
   // comprehension — blockquoted passages, bulleted lists, bolded key facts).
   function renderRich(t) {
     const esc = String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const inline = (s) => s
-      .replace(/\[([^\]]{1,600})\]\((https:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    const inline = (s) => richLinks(s)
       .replace(/\*\*([^*\n]{1,200})\*\*/g, '<strong>$1</strong>')
       .replace(/\*([^*\n]{1,600})\*/g, '<em>$1</em>');   // 600: a ~30-word quotation fits (quotes.js LONG_QUOTE_WORDS)
     const lines = esc.split('\n');
