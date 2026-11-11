@@ -65,9 +65,12 @@ export function readBackup(j, { questions, messages = [] }) {
   return tri || strategy ? { tri, strategy } : null;
 }
 
-const defaultLlm = async ({ system, user }) => {
-  const r = await roleCreate(BACKUP_ROLE, { messages: [{ role: 'system', content: system }, { role: 'user', content: user }], max_tokens: 300, temperature: 0,
-    response_format: { type: 'json_object' } }, { timeout: BACKUP_TIMEOUT_MS });
+export const CREDIT_ROLE = 'anis-jev-backup-credit';
+// Anthropic refusing for NO CREDIT (its billing, not our caps) → the same question once to CREDIT_ROLE; any other error throws.
+export const defaultLlm = async ({ system, user }, create = roleCreate) => {
+  const params = { messages: [{ role: 'system', content: system }, { role: 'user', content: user }], max_tokens: 300, temperature: 0, response_format: { type: 'json_object' } };
+  const r = await create(BACKUP_ROLE, params, { timeout: BACKUP_TIMEOUT_MS })
+    .catch((err) => { if (!err?.credit) throw err; return create(CREDIT_ROLE, params, { timeout: BACKUP_TIMEOUT_MS }); });
   return { text: r?.choices?.[0]?.message?.content || '' };
 };
 

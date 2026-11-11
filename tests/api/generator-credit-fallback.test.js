@@ -14,3 +14,15 @@ describe('creditFallback', () => {
     await expect(creditFallback(async () => { throw new Error('boom'); }, second)()).rejects.toThrow('boom');
   });
 });
+
+describe('Jev backup when Anthropic is out of credit', () => {
+  it('asks the credit role once; a group cap still throws', async () => {
+    const { defaultLlm, BACKUP_ROLE, CREDIT_ROLE } = await import('../../api/lib/assistant/jev-backup.js');
+    const asked = [];
+    const create = async (role) => { asked.push(role); if (role === BACKUP_ROLE) throw new SpendCapError({ group: 'anthropic-credit', spent: 0, cap: 0, caller: 'anthropic', credit: true }); return { choices: [{ message: { content: '{"a":1}' } }] }; };
+    expect((await defaultLlm({ system: 's', user: 'u' }, create)).text).toBe('{"a":1}');
+    expect(asked).toEqual([BACKUP_ROLE, CREDIT_ROLE]);
+    const capped = async () => { throw new SpendCapError({ group: 'anis', spent: 20, cap: 20, caller: 'x' }); };
+    await expect(defaultLlm({ system: 's', user: 'u' }, capped)).rejects.toThrow(/spend cap/);
+  });
+});
