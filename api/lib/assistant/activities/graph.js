@@ -165,8 +165,20 @@ export async function gatherByGraph(s) {
 export async function runStrategyGraph(name, choice, ctx) {
   const g = graphFor(name);
   if (!g) return undefined;   // no such graph: the caller runs the registry tool directly
-  const s = await runGraph(g, { choice, ctx, trace: [], question: ctx?.query ?? ctx?.question ?? '', messages: ctx?.messages, state: ctx?.state ?? undefined, onEvent: ctx?.onEvent ?? (() => {}), ...(g.needs ? { units: entryUnits(g, choice, ctx) } : {}) });
+  const units = g.needs ? entryUnits(g, choice, ctx) : null, trace = [];
+  if (units) await quotedByJev(g, units, trace, ctx);
+  const s = await runGraph(g, { choice, ctx, trace, question: ctx?.query ?? ctx?.question ?? '', messages: ctx?.messages, state: ctx?.state ?? undefined, onEvent: ctx?.onEvent ?? (() => {}), ...(units ? { units } : {}) });
   return s.out === undefined && !s.done ? undefined : (s.out ?? null);   // the research agent answered (a tree's $fallback): nothing to execute, the ordinary path has the reply
+}
+
+// a quotation tree whose reader used no quotation marks: Jev picks the attributed wording among the message's structural spans (judges.js);
+// none → the unit stays as it was (the question). Recorded as a step so the turn trace shows what was searched.
+export async function quotedByJev(g, u, trace, ctx = {}) {
+  if (!g.needs?.includes('quoted_words') || String(u.quoted_words ?? '').trim()) return;
+  const t = performance.now(), judge = ctx.judgeQuotedWords || (await import('../judges.js')).judgeQuotedWords;
+  const r = await judge({ question: u.current_user_question ?? ctx.query ?? '' }).catch(() => null);
+  if (r?.words) { u.quoted_words = r.words; if (!String(u.quoted_clean ?? '').trim()) u.quoted_clean = r.words; }
+  trace.push({ graph: `${g.id}@${g.version}`, node: 'quoted', step: 'units.quoted_words@1', ms: Math.round((performance.now() - t) * 100) / 100, edge: r?.words ? 'found' : 'none', ...(r?.words ? { saw: r.words } : {}) });
 }
 
 /** The term a term question names, from structure only (quotes, script, transliteration marks); null when none. Pure. */

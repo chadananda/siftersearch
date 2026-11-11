@@ -38,6 +38,35 @@ export async function judgeHolds({ quotation, passages = [], decide = null } = {
   return { passages: final, judged: !ask.length || !!answers, asked: ask.length };
 }
 
+// QUOTED WORDS the reader gives without quotation marks (11-11: "My grandmother used to quote 'Abdu'l-Bahá saying that the mind and spirit of man
+// advance when he is tried by suffering. Is that a real quote?"): the whole message went to quotation_candidates and the trace named a diary over
+// Paris Talks. Code offers the spans by STRUCTURE only (every tail of every sentence, 5–40 words); Jev says which is the wording the reader
+// attributes, or none. One System-1 call, only when a quotation tree runs and the reader's own quotation marks found nothing.
+const MAX_TAIL_SPANS = 24;
+export function tailSpans(question) {
+  const out = [];
+  for (const sent of String(question || '').split(/(?<=[.?!])\s+/)) {
+    const words = sent.trim().split(/\s+/).filter(Boolean);
+    for (let i = 0; i + 5 <= words.length && out.length < MAX_TAIL_SPANS; i++) {
+      const span = words.slice(i).join(' ').replace(/[?!.,;:]+$/, '');
+      if (words.length - i <= 40 && !out.includes(span)) out.push(span);
+    }
+  }
+  return out;
+}
+/** → { words, confidence } | null. decide(task, state, questions) → { answers } (default systemone.ask, task anis-quoted-words). */
+export async function judgeQuotedWords({ question, decide = null, min = 0.5 } = {}) {
+  const spans = tailSpans(question);
+  if (!spans.length) return null;
+  const criteria = Object.fromEntries([...spans.map((t, i) => [`s${i + 1}`, `"${t}"`]), ['none', 'the message gives no words it attributes to anyone']]);
+  const questions = { quoted: { type: 'choice', instructions: 'Which span is exactly the wording the reader says someone said or wrote (the quotation itself, without "X said that", "saying that" or the reader\'s own question around it)? "none" when the message attributes no words.', criteria } };
+  const d = decide || (async (task, st, qs) => (await import('../systemone.js')).ask(task, st, qs, { timeoutMs: 4000, retries: 0 }));
+  const a = (await Promise.resolve(d('anis-quoted-words', `user: ${question}`, questions)).catch(() => null))?.answers?.quoted;
+  const key = a?.choice ?? a?.value, conf = a?.confidence ?? a?.distribution?.[key] ?? 0;
+  const i = /^s(\d+)$/.exec(String(key || ''))?.[1];
+  return i && conf >= min && spans[i - 1] ? { words: spans[i - 1], confidence: conf } : null;
+}
+
 const TL_SYS = `You answer a question about people in early Bábí/Bahá'í history from a CATALOG of cited claims — one person per line: "id|name: • statement « verbatim proof » [period] • …" (from God Passes By and The Dawn-Breakers).
 A person qualifies ONLY if one of their claims, AS SHOWN BY ITS VERBATIM PROOF, DIRECTLY satisfies the QUERY — the right act AND place AND period. Reject mere group membership. Reject "promised/prophesied/expected" when the query asks who actually DID or MET something. For a place/period query the proof must name that place/period.
 For each qualifying person output {"id":<number>, "clause":"<a SHORT phrase answering the query for this person — PREFER the book's OWN wording taken verbatim from their « proof », lightly trimmed to a clean phrase>"}.
