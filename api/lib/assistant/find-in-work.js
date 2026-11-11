@@ -36,7 +36,7 @@ export function inWorkReply(r, { section = null } = {}) {
   // each place is the passage itself, quoted, with its citation (the link) under it — no list, no paraphrase (Chad 11-10)
   const item = (p) => {
     const cite = p.place ? `*${name}*, ${p.place}` : `*${name}*`;
-    const by = p.author ?? r.work.author ?? null;
+    const by = named(p.author) ?? named(r.work.author);
     return `> “${p.excerpt}”\n>\n> — ${by ? `${by}, ` : ''}${p.url ? `[${cite}](${p.url})` : cite}`;
   };
   if (r.mode === 'literal') {
@@ -52,12 +52,14 @@ export function inWorkReply(r, { section = null } = {}) {
   return `I searched all of ${title} for ${q}: the words are not in it, and no passage in it comes close in meaning.`;
 }
 
+// a placeholder author is no author (11-11: "— Unknown, Star of the West…"): the citation names the issue, never "Unknown"
+const named = (a) => (a && !/^(?:unknown|anonymous|n\/?a|none|various|-+|\?+)$/i.test(String(a).trim()) ? a : null);
 /** The passage card(s) for the chat widget: exactly ONE literal hit → [{work_id,title,author,cover_url,url,place,excerpt,phrase}] (excerpt keeps
  *  the **phrase** marks; the client splits on them, never injects HTML); several hits or a meaning match → none (the text list stays). Pure. */
 export function passageCards(r, { cover = null } = {}) {
   if (r?.mode !== 'literal' || r.total !== 1 || r.passages?.length !== 1) return [];
-  const p = r.passages[0], c = cover ?? r.work?.cover_url ?? sowCoverUrl({ title: p.work ?? p.title }) ?? null;
-  return [{ work_id: r.work?.id ?? p.document_id ?? null, title: r.work?.title ?? p.work ?? p.title ?? null, author: p.author ?? r.work?.author ?? null, cover_url: c ? (/^https?:/.test(c) ? c : `${SITE}${c}`) : null,
+  const p = r.passages[0], c = sowCoverUrl({ title: p.work ?? p.title }) ?? cover ?? r.work?.cover_url ?? null;   // the hit's own issue scan before the magazine's cover
+  return [{ work_id: r.work?.id ?? p.document_id ?? null, title: r.work?.title ?? p.work ?? p.title ?? null, author: named(p.author) ?? named(r.work?.author), cover_url: c ? (/^https?:/.test(c) ? c : `${SITE}${c}`) : null,
     url: p.url ?? null, place: p.place ?? null, excerpt: p.excerpt, phrase: r.query }];
 }
 
@@ -157,7 +159,7 @@ export const asWorkResult = (res, query, doc = null) => {
 export function quoteReply(r, { scope = null, described = false } = {}) {
   const q = `“${r.query}”`, where = scope || 'the library';
   const item = (p) => { const name = p.work || p.title || 'this work', cite = p.place ? `*${name}*, ${p.place}` : `*${name}*`;
-    return `> “${p.excerpt}”\n>\n> — ${p.author ? `${p.author}, ` : ''}${p.url ? `[${cite}](${p.url})` : cite}`; };
+    return `> “${p.excerpt}”\n>\n> — ${named(p.author) ? `${named(p.author)}, ` : ''}${p.url ? `[${cite}](${p.url})` : cite}`; };
   if (r.mode === 'literal') {
     const more = r.total > r.passages.length ? `\n\nThose are the first ${r.passages.length} of the ${r.total}; ask for the rest and I will continue from there.` : '';
     return r.total === 1 ? item(r.passages[0]) : `${r.total} passages in ${where} hold ${q}:\n\n${r.passages.map(item).join('\n\n')}${more}`;

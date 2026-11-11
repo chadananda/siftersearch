@@ -140,3 +140,14 @@ describe('book pick follows a retired copy to the work (11-11: duplicate SoW com
     expect(r.work.doc.cover_url).toBe('/img/covers/13234?v=1');
   });
 });
+
+describe('passageCards — a Star of the West hit', () => {
+  it("shows the issue's own page-1 scan, not the magazine cover, and never 'Unknown' as author", async () => {
+    const { passageCards } = await import('../../api/lib/assistant/find-in-work.js');
+    const [c] = passageCards({ mode: 'literal', total: 1, query: 'five diamonds', work: { id: 13234, title: 'Star of the West', author: 'Unknown', cover_url: 'https://x/cover.webp' },
+      passages: [{ document_id: 15396, work: 'Star of the West, v1, i17 Sultan, January 19 1911', author: 'Unknown', excerpt: '**Five diamonds** are worth more', url: null }] }, { cover: 'https://x/cover.webp' });
+    expect(c.cover_url).not.toBe('https://x/cover.webp');
+    expect(c.cover_url).toMatch(/bahai-education\.org/);
+    expect(c.author).toBeNull();
+  });
+});
