@@ -60,6 +60,15 @@ describe('hard filters first, widening when thin', () => {
     const s2 = mk({}, { tools: { fused_search: fused } }); seen.length = 0;
     await ELEMENTS['search.shelf'].run(s2, { by_person: true }); expect(seen.length).toBe(0); expect(s2.units.found_outcome.n).toBe('skipped');
   });
+  it('search.shelf about_person: the histories ABOUT the named person — no author filter, whole question, gated free when none', async () => {
+    const seen = [];
+    const fused = async (i) => { seen.push(i); return { passages: [P(1, { authority: 'history' })] }; };
+    const s = mk({ named_person: 'Siyyid Káẓim', topic: 'What did teach his students?', current_user_question: 'What did Siyyid Káẓim teach his students?' }, { tools: { fused_search: fused } });
+    expect(await ELEMENTS['search.shelf'].run(s, { about_person: true, authority: ['history', 'scholarship'] })).toBe('one');
+    expect(seen[0].filters.author).toBeUndefined(); expect(seen[0].filters.authority).toEqual(['history', 'scholarship']); expect(seen[0].query).toContain('Káẓim');
+    const s2 = mk({}, { tools: { fused_search: fused } }); seen.length = 0;
+    await ELEMENTS['search.shelf'].run(s2, { about_person: true }); expect(seen.length).toBe(0); expect(s2.units.found_outcome.n).toBe('skipped');
+  });
   it('wide: runs with no filters, only when a hard filter was applied', async () => {
     const seen = [];
     const fused = async (i) => { seen.push(i.filters || {}); return { passages: [P(1)] }; };

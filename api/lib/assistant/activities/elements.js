@@ -105,6 +105,7 @@ const namedWork = (u) => (typeof u.named_work === 'string' && u.named_work.trim(
   : Array.isArray(u.named_sources) && u.named_sources.length ? { documentId: u.named_sources[0] } : null);
 const personOf = (u) => { const n = flat(u.named_person); return typeof n === 'string' && n.trim() && !Number.isFinite(Number(n)) ? n.trim() : null; };
 // HARD filters first (Chad 11-09): the tradition, the named work, the named author. `wide` = the widening pass: none of them (run when the filtered pass was thin)
+// about_person: runs only when Jev named a person, no author filter, whole question (the histories and studies ABOUT them — 11-11 Siyyid Káẓim)
 // by_person: Jev named the person; the author_lookup tool resolves the library's spellings of the name (array = any), the raw name when none resolve
 const authorsOf = async (s, who) => { try { const a = ((await call(s, 'author_lookup', { name: who }))?.authors || []).map((x) => x.author); return a.length ? a : who; } catch { return who; } };
 // inside: the books the gather already found, searched inside with the whole question (one call, documentId = any of them) —
@@ -206,8 +207,8 @@ const E = {
       for (const { x, l } of res) if (l?.original || l?.translations?.length) { n++; x.original = l.original ?? x.original; x.translations = l.translations; }
       return finish(s, p, classify(n, ['one', 'several']), { count: n });
     } },
-  'search.shelf': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'fused_search', params: ['authority', 'doctrinal', 'language', 'author', 'work', 'layers', 'tiers', 'spell', 'in_named', 'by_person', 'wide', 'quoted', 'inside', 'books'], reads: ['topic', 'named_work', 'named_person', 'quoted_words', 'found_passages'], input: searchInput, take: passages,
-    gate: (s, u, p) => (!p.in_named || !!namedWork(u)) && (!p.by_person || !!personOf(u)) && (!p.wide || hardFiltered(u)) && (!p.quoted || !!String(flat(u.quoted_words) ?? '').trim()) && (!p.inside || booksOf(u).length > 0) }),
+  'search.shelf': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'fused_search', params: ['authority', 'doctrinal', 'language', 'author', 'work', 'layers', 'tiers', 'spell', 'in_named', 'by_person', 'about_person', 'wide', 'quoted', 'inside', 'books'], reads: ['topic', 'named_work', 'named_person', 'quoted_words', 'found_passages'], input: searchInput, take: passages,
+    gate: (s, u, p) => (!p.in_named || !!namedWork(u)) && (!p.by_person || !!personOf(u)) && (!p.about_person || !!personOf(u)) && (!p.wide || hardFiltered(u)) && (!p.quoted || !!String(flat(u.quoted_words) ?? '').trim()) && (!p.inside || booksOf(u).length > 0) }),
   'search.hype': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'hype_search', params: ['authority', 'doctrinal', 'language', 'wide'], reads: ['topic'], input: searchInput, take: passages,
     gate: (s, u, p) => !p.wide || hardFiltered(u) }),
   'search.originals': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'originals_search', reads: ['topic', 'search_originals'], input: searchInput, take: passages,
