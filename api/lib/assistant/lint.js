@@ -166,10 +166,39 @@ export function mixedScript(text) {
 export function finalForm(text) { return formPass(text).text; }
 /** finalForm with what it repaired, for the turn's path (forensics counts form.search_denial as a WRITER defect). Pure. */
 export function formPass(text, { sources = [] } = {}) {
-  const uw = unwrapLinks(text), den = dropSearchDenial(uw.text), cov = dropCoverageDisclaimer(den.text), def = dropDeflection(cov.text), off = dropSearchOffer(def.text), lk = checkLinks(off.text, sources);
+  const uw = unwrapLinks(text), den = dropSearchDenial(uw.text), cov = dropCoverageDisclaimer(den.text), def = dropDeflection(cov.text), off = dropSearchOffer(def.text), uc = dropUnsupportedCount(off.text, sources), lk = checkLinks(uc.text, sources);
   const ct = citeLinks(lk.text, sources), lr = lastResortLast(ct.text), la = dropLinkAside(lr.text), rt = plainSources(la.text), nm = dropNumberMarkers(rt.text), rq0 = dropRepeatedQuote(nm.text), da = dropDoubleAttribution(rq0.text), rc = dropRepeatedCite(da.text), rq = { text: rc.text, fixed: rq0.fixed }, em = repairEmphasis(safeLinkText(rq.text));
-  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), ...(cov.dropped ? { coverage_disclaimer: cov.dropped } : {}), ...(rq.fixed ? { repeated_quote: rq.fixed } : {}), ...(da.fixed ? { double_attribution: da.fixed } : {}), ...(rc.fixed ? { repeated_cite: rc.fixed } : {}), ...(nm.fixed ? { number_markers: nm.fixed } : {}), ...(la.fixed ? { link_aside: la.fixed } : {}), ...(rt.fixed ? { retrieval_talk: rt.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
+  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), ...(cov.dropped ? { coverage_disclaimer: cov.dropped } : {}), ...(uc.fixed ? { unsupported_count: uc.fixed } : {}), ...(rq.fixed ? { repeated_quote: rq.fixed } : {}), ...(da.fixed ? { double_attribution: da.fixed } : {}), ...(rc.fixed ? { repeated_cite: rc.fixed } : {}), ...(nm.fixed ? { number_markers: nm.fixed } : {}), ...(la.fixed ? { link_aside: la.fixed } : {}), ...(rt.fixed ? { retrieval_talk: rt.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
     ...(ct.fixed ? { cite_links: ct.fixed } : {}), ...(lr.fixed ? { last_resort: lr.fixed } : {}), ...(em.fixed ? { emphasis: em.fixed } : {}) } };
+}
+
+// An UNSUPPORTED COUNT in an aside (11-11 Quddús letter: "the last of the Letters of the Living—the Báb's nineteen chosen
+// disciples—": there were eighteen; the writer glossed from memory). A prose aside (between dashes or in parentheses, no link,
+// no quotation) stating a count that NO passage of the turn holds (as a word or a figure) is dropped — an aside removed never
+// breaks its sentence. Years and other 4-digit figures are not counts. Needs passage text; without it nothing changes. Pure.
+const NUM_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen',
+  'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+const TENS = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
+const countsIn = (s) => {
+  const out = new Set(), t = String(s || '').toLowerCase();
+  for (const m of t.matchAll(/\b(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)(?:[-\s](one|two|three|four|five|six|seven|eight|nine))?\b/g)) out.add(TENS[m[1]] + (m[2] ? NUM_WORDS.indexOf(m[2]) : 0));
+  for (const m of t.matchAll(/\b([a-z]+)\b/g)) { const i = NUM_WORDS.indexOf(m[1]); if (i >= 2) out.add(i); }
+  for (const m of t.matchAll(/(?<![\d.,#§:])(\d{1,3})(?![\d.,:]?\d)(?=\s+[a-z])/g)) out.add(Number(m[1]));   // "18 disciples", not "p. 52"
+  return out;
+};
+export function dropUnsupportedCount(text, sources = []) {
+  const held = new Set(); let any = false;
+  for (const s of sources) if (s?.text) { any = true; for (const n of countsIn(s.text)) held.add(n); }
+  if (!any) return { text, fixed: 0 };
+  let fixed = 0;
+  const lines = String(text).split('\n').map((line) => (/^\s*>/.test(line) ? line : line.replace(/\s*(?:—|–| -- )([^—–()\n]{3,140}?)(?:—|–| -- )|\s*\(([^()\n]{3,140})\)/g, (all, dash, par) => {
+    const aside = dash ?? par;
+    if (/\]\(|https?:|["“”*]|\b(?:chapter|ch|vol|volume|p|pp|page|verse|sura|súra|no|para)\b\.?\s*\d|#/i.test(aside)) return all;   // a citation or a quotation, never a gloss
+    const counts = [...countsIn(aside)].filter((n) => n >= 2);
+    if (!counts.length || counts.every((n) => held.has(n))) return all;
+    fixed++; return dash != null ? ' ' : '';
+  })));
+  return { text: fixed ? lines.join('\n').replace(/ {2,}/g, ' ').replace(/ ([,.;:])/g, '$1') : text, fixed };
 }
 
 // A REPEATED QUOTE (11-11 suffering: the same Unfolding Destiny passage as a block quote with a whole-book link, then again as a
