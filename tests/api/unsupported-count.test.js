@@ -1,6 +1,6 @@
 // An aside stating a count no passage holds is dropped (11-11 Quddús letter: "the Báb's nineteen chosen disciples").
 import { describe, it, expect } from 'vitest';
-import { dropUnsupportedCount, formPass } from '../../api/lib/assistant/lint.js';
+import { dropUnsupportedCount, dropQuoteInCite, formPass } from '../../api/lib/assistant/lint.js';
 
 const nabil = [{ title: 'The Dawn-Breakers', text: 'Quddús was the last of the Letters of the Living to attain His presence; eighteen in number, they were the first to believe.' }];
 const reply = "He was only twenty-two years old, yet he became the last of the Letters of the Living—the Báb's nineteen chosen disciples—to complete that designated number.";
@@ -25,5 +25,18 @@ describe('dropUnsupportedCount', () => {
     const r = formPass(reply, { sources: nabil });
     expect(r.repairs.unsupported_count).toBe(1);
     expect(r.text).not.toMatch(/nineteen/);
+  });
+});
+
+describe('dropQuoteInCite', () => {
+  const url = 'https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_268&selectionString=a.0~a.98';
+  it('moves a quotation out of a citation parenthesis, its link onto the title', () => {
+    const t = `he was a direct descendant of the Imám Ḥasan (*The Dawn-Breakers*, CHAPTER III, [*"The acceptance by Quddús of the truth of the Báb’s Revelation completed the assigned number."*](${url})). Born in Bárfurúsh`;
+    const r = dropQuoteInCite(t);
+    expect(r.fixed).toBe(1);
+    expect(r.text).toBe(`he was a direct descendant of the Imám Ḥasan ([*The Dawn-Breakers*](${url}), CHAPTER III). Born in Bárfurúsh`);
+  });
+  it('leaves quotes in prose and plain citations alone', () => {
+    for (const t of [`Nabíl writes [*"He was the last to arrive and the first to depart."*](${url}) of him.`, '(*The Dawn-Breakers*, CHAPTER III)']) expect(dropQuoteInCite(t).fixed).toBe(0);
   });
 });

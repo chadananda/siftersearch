@@ -166,9 +166,9 @@ export function mixedScript(text) {
 export function finalForm(text) { return formPass(text).text; }
 /** finalForm with what it repaired, for the turn's path (forensics counts form.search_denial as a WRITER defect). Pure. */
 export function formPass(text, { sources = [] } = {}) {
-  const uw = unwrapLinks(text), den = dropSearchDenial(uw.text), cov = dropCoverageDisclaimer(den.text), def = dropDeflection(cov.text), off = dropSearchOffer(def.text), uc = dropUnsupportedCount(off.text, sources), lk = checkLinks(uc.text, sources);
+  const uw = unwrapLinks(text), den = dropSearchDenial(uw.text), cov = dropCoverageDisclaimer(den.text), def = dropDeflection(cov.text), off = dropSearchOffer(def.text), uc = dropUnsupportedCount(off.text, sources), qc = dropQuoteInCite(uc.text), lk = checkLinks(qc.text, sources);
   const ct = citeLinks(lk.text, sources), lr = lastResortLast(ct.text), la = dropLinkAside(lr.text), rt = plainSources(la.text), nm = dropNumberMarkers(rt.text), rq0 = dropRepeatedQuote(nm.text), da = dropDoubleAttribution(rq0.text), rc = dropRepeatedCite(da.text), rq = { text: rc.text, fixed: rq0.fixed }, em = repairEmphasis(safeLinkText(rq.text));
-  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), ...(cov.dropped ? { coverage_disclaimer: cov.dropped } : {}), ...(uc.fixed ? { unsupported_count: uc.fixed } : {}), ...(rq.fixed ? { repeated_quote: rq.fixed } : {}), ...(da.fixed ? { double_attribution: da.fixed } : {}), ...(rc.fixed ? { repeated_cite: rc.fixed } : {}), ...(nm.fixed ? { number_markers: nm.fixed } : {}), ...(la.fixed ? { link_aside: la.fixed } : {}), ...(rt.fixed ? { retrieval_talk: rt.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
+  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), ...(cov.dropped ? { coverage_disclaimer: cov.dropped } : {}), ...(uc.fixed ? { unsupported_count: uc.fixed } : {}), ...(qc.fixed ? { quote_in_cite: qc.fixed } : {}), ...(rq.fixed ? { repeated_quote: rq.fixed } : {}), ...(da.fixed ? { double_attribution: da.fixed } : {}), ...(rc.fixed ? { repeated_cite: rc.fixed } : {}), ...(nm.fixed ? { number_markers: nm.fixed } : {}), ...(la.fixed ? { link_aside: la.fixed } : {}), ...(rt.fixed ? { retrieval_talk: rt.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
     ...(ct.fixed ? { cite_links: ct.fixed } : {}), ...(lr.fixed ? { last_resort: lr.fixed } : {}), ...(em.fixed ? { emphasis: em.fixed } : {}) } };
 }
 
@@ -199,6 +199,17 @@ export function dropUnsupportedCount(text, sources = []) {
     fixed++; return dash != null ? ' ' : '';
   })));
   return { text: fixed ? lines.join('\n').replace(/ {2,}/g, ' ').replace(/ ([,.;:])/g, '$1') : text, fixed };
+}
+
+// A QUOTATION TUCKED INTO A CITATION (11-11 Quddús letter: "…descendant of the Imám Ḥasan (*The Dawn-Breakers*, CHAPTER III,
+// [*"The acceptance by Quddús … completed the assigned number…"*](…paraId=para_268…))" — a quote that says something else,
+// filed as the sentence's evidence). A citation parenthesis is title + place; the quote leaves and its link moves onto the
+// title: "([*The Dawn-Breakers*](…para_268…), CHAPTER III)". Quotes belong in prose, where the reader sees what they claim. Pure.
+const QUOTE_IN_CITE = /\((\*[^*\n]{2,120}\*)([^()\[\]\n]{0,80}?),\s*\[[*_]*["“][^\]\n]{10,}["”][*_]*\]\((\S+?)\)\)/g;
+export function dropQuoteInCite(text) {
+  let fixed = 0;
+  const out = String(text).replace(QUOTE_IN_CITE, (all, title, place, url) => { fixed++; return `([${title}](${url})${place})`; });
+  return { text: fixed ? out : text, fixed };
 }
 
 // A REPEATED QUOTE (11-11 suffering: the same Unfolding Destiny passage as a block quote with a whole-book link, then again as a
