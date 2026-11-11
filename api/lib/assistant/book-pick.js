@@ -51,7 +51,8 @@ export function groupCopies(cands) {
 
 /** A phrase that IS a work's title, or the title plus words at one end ("Deepening Compilation" ~ "Deepening"). Pure. */
 export function strongTitle(phrase, title) {
-  const a = fold(phrase), b = fold(title);
+  const lead = (x) => fold(x).replace(/^(the|a|an) /, '');   // "Dispensation of Baha'u'llah" names "The Dispensation of Bahá'u'lláh"
+  const a = lead(phrase), b = lead(title);
   if (!a || !b) return false;
   return a === b || a.startsWith(`${b} `) || a.endsWith(` ${b}`);   // the phrase holds the WHOLE title at one end
 }
@@ -103,7 +104,7 @@ export async function bookFastPath({ messages, names = [], by = null, profile = 
     const all = groupCopies(found?.cands || []);
     // probe mode asks Jev only when a phrase IS (or holds at one end) a library work's title — a near-exact title, not a shared word
     // (Jev's phrases only — the whole message holds a one-word title too easily: "what is justice" ⊃ "Justice")
-    const cands = alt ? (all.some((c) => c.kind === 'work' && named.some((n) => strongTitle(n, c.doc.title))) ? all : []) : all;
+    const cands = alt ? (all.some((c) => named.some((n) => strongTitle(n, c.kind === 'section' ? c.sec.title : c.doc.title))) ? all : []) : all;
     decisions.record('book:candidates', { by: 'code', saw: { message: msg, also, by, via, ms: found?.ms ?? null, ...(alt ? { probe: alt } : {}) }, chosen: `${cands.length} candidates`, reason: cands.map((c) => `${c.key} ${c.label}`).join('; ') || null });
     if (!cands.length) return null;
     const p = await pick(messages, cands, { profile, onJev, ...(alt ? { alt } : {}), ...(via === 'extracted' ? { resolved: msg.split('\n') } : {}), ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });

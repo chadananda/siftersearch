@@ -193,6 +193,14 @@ describe('turn: book strategy and the compilation probe', () => {
     expect((await h.run()).reply).toBe('CARD 20820'); expect(h.calls.respond).toBe(0);
     expect(h.seen[0].alt).toMatch(/NEW compilation/);
   });
+  it('\'"Dispensation of Baha\'u\'llah"\' with Jev\'s Unmatched → the probe (unmatched option) → the SECTION card, no research (11-11)', async () => {
+    const h = turn('unmatched', { topic: "Dispensation of Baha'u'llah" }, user('"Dispensation of Baha\'u\'llah"'), null);
+    h.j.fetchImpl.mockImplementation(async (url, init) => { const c = JSON.parse(init.body).questions.book.criteria; h.j.calls.push(c);
+      return { ok: true, json: async () => ({ answers: { book: { choice: keyOf(h.j.calls, /a section of “The World Order/), confidence: 0.9 } } }) }; });
+    const r = await h.run();
+    expect(h.calls.respond).toBe(0); expect(h.seen[0].alt).toMatch(/question or search/); expect(r.reply).toMatch(/Dispensation/);
+    expect(strongTitle("Dispensation of Baha'u'llah", 'The Dispensation of Bahá’u’lláh')).toBe(true);
+  });
   it('…Jev: a new compilation → the compilation strategy runs as before', async () => {
     const h = turn('compilation', { topic: 'Deepening Compilation' }, user('Deepening Compilation'), { choice: 'new', confidence: 0.9 });
     expect((await h.run()).reply).toBe('researched'); expect(h.calls.respond).toBe(1); expect(h.j.fetchImpl).toHaveBeenCalledTimes(1);

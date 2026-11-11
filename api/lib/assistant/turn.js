@@ -17,6 +17,7 @@ import { narrate } from './narrate.js';
 import { turnMeta } from './turn-meta.js';
 import { progressText } from './progress.js';
 import { chooseStrategy, strategyOf } from './strategy-choice.js';
+import { isUnmatched as unmatchedName } from './strategy-seed.js';
 import { titleOnly, titleAnswer, sectionAnswer } from './title-answer.js';
 import { bookFastPath } from './book-pick.js';
 import { timeoutDecision, jevTimeoutsOf } from './jev-call.js';   // W3: Jev chooses the strategy from context
@@ -331,7 +332,10 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   }
   // PROBE (Chad 11-10, "Deepening Compilation" built a compilation): Jev chose to MAKE something (a compilation) or to talk, but
   // his phrase may BE a library title — the same one pick, with "make it new" as an option; code only checks the title is near-exact
-  const probe = bookGate && !bookOn ? PROBE_ALT[strategyOf(strat)] : null;
+  // strategyOf() is null for Unmatched (and a timed-out strategy call), so those turns take the unmatched option by name (11-11:
+  // '"Dispensation of Baha'u'llah"' — Unmatched, lookup quote — never reached the probe and got a quote search of its own title)
+  const probeKey = strategyOf(strat) ?? (unmatchedName(strat?.strategy?.choice) || (!strat && lkIntent === 'quote') ? 'unmatched' : null);
+  const probe = bookGate && !bookOn ? PROBE_ALT[probeKey] : null;
   if (bookOn || probe) {
     const found = await timed('book', () => bookFn({ messages, names: [u.named_work, ...(probe ? [u.topic] : [])].filter(Boolean), by: u.named_person ?? null, profile, decisions, ...(probe ? { alt: probe } : { onHeld: (f) => { held = f; } }) }),
       (r) => (r ? { kind: r.kind, via: r.via } : null)).catch(() => null);
