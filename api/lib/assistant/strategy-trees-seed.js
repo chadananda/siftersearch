@@ -213,7 +213,7 @@ const historyRows = (name, o) => [
   ['h7', 'switch', { on: { unit: 'web_found' }, cases: { filled: 'web', empty: 'nothing' }, default: 'nothing' }, 'decide', ['web_found'], [], { web: 'h8', nothing: '$absence' }],
   ['h8', 'shape', { template: `${name}.web`, shared: 'tpl.passages', format: 'history_fact' }, 'synthesize', ['topic', 'web_found'], [], { done: END }],
 ];
-const history_fact = tree('history_fact', 'h0', historyRows('history_fact', { inWork: 3, asks: 'state {{topic}}', k: { default: 7, research: 9 }, kc: { default: 8, research: 10 }, write: 'fact', reads: ['topic', 'fact_asked', 'found_passages', 'web_found'] }),
+const history_fact = tree('history_fact', 'h0', historyRows('history_fact', { inWork: 6, asks: 'state {{topic}}', k: { default: 7, research: 9 }, kc: { default: 8, research: 10 }, write: 'fact', reads: ['topic', 'fact_asked', 'found_passages', 'web_found'] }),
   { needs: ['topic', 'fact_asked', 'audience'] });
 // ── history_event (11-10 manual Dawn-Breakers round): WHAT HAPPENED in one event (how the Báb was martyred, Badasht, the siege of Ṭabarsí). history_fact and
 // person_profile both exclude "the story of how Quddús was martyred", so these turns went Unmatched → a live plan (110 s, failed) → general_research,
