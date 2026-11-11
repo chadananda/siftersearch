@@ -45,6 +45,14 @@ describe('sow-links', () => {
     expect(linkFor({ ...doc, title: 'Gleanings', slug: 'g' }, 9).url).toMatch(/siftersearch\.com/);
   });
 
+  it('bahai-education.org outranks every other copy of a SoW issue (OceanLibrary, bahai-library) — the only complete text', () => {
+    for (const source_url of ['https://bahai-library.com/sow_v11_i12', 'https://oceanlibrary.com/star-of-the-west_v11']) {
+      const l = linkFor({ ...doc, source_url }, 9, { quote: 'an edifice of nine sides' });
+      expect(l.url).toMatch(/^https:\/\/bahai-education\.org\/sifter-star-of-the-west\/v11\.12#/);
+      expect(l.tier).toBe(0);
+    }
+  });
+
   it('output pass resolves page + hl from the paragraph file id and the page map', async () => {
     const loadRows = async () => rows;
     const out = await upgradeSowLinks(`see ${sowMarkerUrl(doc, 9, 'one hundred and fifty feet in diameter')} and ${sowMarkerUrl(doc, 0)}`, { loadRows, fetchImpl });

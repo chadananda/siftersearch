@@ -6,18 +6,19 @@
 import { slugifyPath } from './slug.js';
 import { rangeUrl, quoteUrl } from './ocean-range.js';
 import { encodeMarker } from './ool-range.js';
-import { sowMarkerUrl } from './sow-links.js';
+import { sowMarkerUrl, SOW_BASE } from './sow-links.js';
 
 export const SITE = 'https://siftersearch.com';   // the site worker: pages + the image service (/img/*); never the api tunnel
 const TIERS = [['oceanlibrary.com', 1], ['oceanoflights.org', 2], ['portlandiator.github.io', 3], ['bahai-library.com', 4]];
 const OURS = 'siftersearch.com';
 export const PUBLISHER_TIER = 5, SIFTER_TIER = 6;   // consumers compare against these, never against literals
 
-/** Site tier of a URL: 1 OceanLibrary, 2 OceanofLights, 3 Phelps collection, 4 BahaiLibrary, 5 another publisher, 6 SifterSearch. */
+/** Site tier of a URL: 0 Star of the West on bahai-education.org (the only complete text, Chad 11-11: first for every SoW citation), 1 OceanLibrary, 2 OceanofLights, 3 Phelps collection, 4 BahaiLibrary, 5 another publisher, 6 SifterSearch. */
 export function tierOf(url) {
   let host;
   try { host = new URL(url).hostname.replace(/^www\./, ''); } catch { return { site: null, tier: 9 }; }
   if (host === OURS || host.endsWith(`.${OURS}`)) return { site: OURS, tier: SIFTER_TIER };
+  if (String(url).startsWith(`${SOW_BASE}/`)) return { site: 'bahai-education.org', tier: 0 };
   const hit = TIERS.find(([d]) => host === d || host.endsWith(`.${d}`));
   return hit ? { site: hit[0], tier: hit[1] } : { site: host, tier: PUBLISHER_TIER };
 }
