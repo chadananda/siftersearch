@@ -155,6 +155,17 @@ describe('fold loop: when to fold', () => {
     expect(q.res.verdict).toBe('fold-after-run');
     expect(JSON.parse(readFileSync(q.wantedFile, 'utf8'))).toEqual({});
   });
+  it('wherever the indexer would stop for space, the fold is now (stop rule and fold rule agree, 11-11)', async () => {
+    // 64 GB tmpfs, 33 GB used: fill ~0.6 (< 2/3) outside quiet hours, yet free 31 GB < max(6, data 33) → indexer 'full'
+    const r = { free: 31 * GB, used: 33 * GB, memAvail: 120 * GB };
+    const { res, queued } = await pass(r);
+    expect(res.full).toBe(true);
+    expect(res.verdict).toBe('fold-now');
+    expect(queued).toEqual(['phrase-hot-fold', 'hype-hot-fold']);
+    const ok = await pass({ free: 44 * GB, used: 10 * GB, memAvail: 120 * GB });
+    expect(ok.res.full).toBe(false);
+    expect(ok.res.verdict).not.toBe('fold-now');
+  });
   it('a snapshot copy in tmp is not data', async () => {
     const { res } = await pass({ free: 24 * GB, used: 40 * GB, tmp: 30 * GB, memAvail: 60 * GB });
     expect(res.data_gb).toBe(10);
@@ -180,13 +191,18 @@ describe('indexer hot-full → fold, never a stall', () => {
     expect(r).toEqual({ fold: 'phrase-hot-fold', continued: true });
     expect(q).toEqual([['phrase-hot-fold', {}], ['phrase-index', { tier: 'core', maxUsd: 5, hotRetry: 0 }]]);
   });
+  it('logs one activity line (visible, not an alarm)', async () => {
+    const logs = [];
+    await afterHotFull({ tier: 'core', maxUsd: 5 }, full(), async () => {}, async (m) => logs.push(m));
+    expect(logs).toEqual(['RAM tier full → phrase-hot-fold queued, indexing resumes after']);
+  });
   it('hype/follow runs: fold only (the follow loop re-queues); no progress past the retry limit stops loudly', async () => {
     const q = [], logs = [];
     expect(await afterHotFull({ field: 'hype', follow: true }, full(), async (n) => q.push(n))).toEqual({ fold: 'hype-hot-fold', continued: false });
     expect(q).toEqual(['hype-hot-fold']);
     const r = await afterHotFull({ tier: 'core', hotRetry: HOT_RETRY_MAX }, full(0), async (n) => q.push(n), async (m) => logs.push(m));
     expect(r.continued).toBe(false);
-    expect(logs[0]).toMatch(/still full/);
+    expect(logs.at(-1)).toMatch(/still full/);
     expect(await afterHotFull({}, { phase: 'done' }, async () => { throw new Error('no'); })).toBeNull();
   });
   it('the continuation is queued BEFORE the job resolves (a draining service exits on resolve — 11-10 lost two tier runs)', async () => {

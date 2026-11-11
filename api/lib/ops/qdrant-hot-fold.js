@@ -190,11 +190,13 @@ export async function hotFoldPass({ env = process.env, now = new Date(), deps = 
   let r; try { r = read(); } catch (err) { return { error: `cannot read ${path}: ${err.message}` }; }
   const cap = hs.hotCapacity({ ...r, minFree });
   const quiet = hs.inQuietHours(now, env.QDRANT_HOT_QUIET_HOURS || '2-7');
-  let verdict = hs.foldVerdict(cap, { quiet });
+  // the indexer's stop rule and this fold rule must agree: whenever the indexer would stop for space, fold now (11-11)
+  const full = hs.hotVerdict({ ...r, minFree }) === 'full';
+  let verdict = hs.foldVerdict(cap, { quiet, full });
   const wantedFile = deps.wantedFile || join(process.cwd(), 'data', 'run', 'hot-fold-wanted.json');
   let wanted = {}; try { wanted = JSON.parse(readFileSync(wantedFile, 'utf8')); } catch { /* none */ }
   if (verdict !== 'fold-now' && verdict !== 'fold-quiet' && quiet && Object.keys(wanted).length && cap.data > 0) verdict = 'fold-after-run';
-  const res = { verdict, quiet, data_gb: +(cap.data / 1e9).toFixed(1), capacity_gb: +(cap.capacity / 1e9).toFixed(1), fill: +cap.fill.toFixed(2), queued: [] };
+  const res = { verdict, quiet, full, data_gb: +(cap.data / 1e9).toFixed(1), capacity_gb: +(cap.capacity / 1e9).toFixed(1), fill: +cap.fill.toFixed(2), queued: [] };
   if (verdict === 'ok' || verdict === 'wait-quiet') return res;
   const enqueue = deps.enqueue || (await import('../repos/ops-report-repo.js')).enqueue;
   const jobs = foldable(env);

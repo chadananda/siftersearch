@@ -50,6 +50,8 @@ export async function afterHotFull(params = {}, last, enqueue = null, log = null
   const q = enqueue || (await import('../repos/ops-report-repo.js')).enqueue;
   const fold = params.field === 'hype' ? 'hype-hot-fold' : 'phrase-hot-fold';
   await q(fold, {}, 'hot-full');
+  // by design, not broken: one activity line, no alarm. Same lane (1 worker, claimed oldest-first): the fold runs before the continuation
+  if (log) await log(`RAM tier full → ${fold} queued, indexing resumes after`);
   const retry = (Number(params.hotRetry) || 0) + 1;
   const moved = Number(last.upserted ?? last.sent ?? 0) > 0;
   // follow runs (hype) are re-queued by the follow loop; reconcile runs are prebuilt (no params to continue)

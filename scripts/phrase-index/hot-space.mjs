@@ -57,9 +57,10 @@ export function inQuietHours(date = new Date(), spec = process.env.QDRANT_HOT_QU
   return a <= b ? h >= a && h < b : h >= a || h < b;
 }
 
-/** capacity reading + clock → 'fold-now' | 'fold-quiet' (fold now: it is quiet) | 'wait-quiet' (worth folding, not yet) | 'ok'. */
-export function foldVerdict({ fill }, { quiet = false, at = FOLD_AT } = {}) {
-  if (fill >= at.now) return 'fold-now';
+/** capacity reading + clock (+ full: the indexer's own stop rule) → 'fold-now' | 'fold-quiet' (fold now: it is quiet) | 'wait-quiet' (worth folding, not yet) | 'ok'. */
+export function foldVerdict({ fill }, { quiet = false, at = FOLD_AT, full = false } = {}) {
+  // full = hotVerdict(reading) === 'full': the indexer would stop for space right now, so waiting for quiet hours would idle it
+  if (full || fill >= at.now) return 'fold-now';
   if (fill >= at.quiet) return quiet ? 'fold-quiet' : 'wait-quiet';
   return 'ok';
 }
