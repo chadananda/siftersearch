@@ -39,6 +39,8 @@ export const MODEL_ROLES = {
     why: 'legacy choice' },
   'anis-jev-backup': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-10', needs: ['fast', 'json'],
     why: 'Jev triage/strategy timed out → the same typed options answered once from the history, so the turn never fails open to research (11-10)' },
+  'anis-tree-generator-credit': { provider: 'gemini', model: 'gemini-3.5-flash-lite', reviewed: '2026-11-10', needs: ['fast', 'json'],
+    why: 'the plan generators (phrasings, histories, sub-themes…) when Anthropic refuses for no credit (11-10 night); only then' },
   'anis-jev-backup-credit': { provider: 'gemini', model: 'gemini-3.5-flash-lite', reviewed: '2026-11-10', needs: ['fast', 'json'],
     why: 'the Jev backup when Anthropic refuses for no credit (11-10 night: every Jev timeout failed open while Haiku was unpaid); only then' },
   'turn-resolver': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-03', needs: ['fast', 'json'],

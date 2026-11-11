@@ -104,9 +104,15 @@ Write the items in the language of the SUBJECT. Return ONLY JSON: {"items":["…
 
 /** A tree's light generator: kind ∈ subthemes|criteria|entries → { items (≤ n distinct short strings), ok }. ONE model call (role anis-tree-generator),
  *  billed to the turn's caller like every chat call (ai.js meters it; ai-context meter gets its cost). Failure / empty / unparsable → { items: [], ok: false, error }. */
-const roleCall = (role, caller = null) => async (messages, opts) => {
+const roleCall = (role) => async (messages, opts) => {
   const [{ chatCompletion }, { modelFor }] = await Promise.all([import('../ai.js'), import('../model-roles.js')]);
-  return chatCompletion(messages, { ...modelFor(role), ...(caller ? { caller } : {}), ...opts });
+  return chatCompletion(messages, { ...modelFor(role), ...opts });
+};
+// the credit fallback goes through role-client (ai.js has no gemini provider: "Unknown AI provider: gemini", 11-10)
+const creditCall = (role) => async (messages, opts = {}) => {
+  const { roleCreate } = await import('../role-client.js');
+  const r = await roleCreate(role, { messages, temperature: opts.temperature ?? 0, max_tokens: opts.maxTokens ?? 4000, ...(opts.responseFormat ? { response_format: opts.responseFormat } : {}) });
+  return { content: r?.choices?.[0]?.message?.content || '' };
 };
 // A provider that refuses for NO CREDIT (its own billing, not our caps) never empties the plan (11-10: Anthropic out of credit →
 // no phrasings → "Who were the Letters of the Living?" lost Nabíl's list): the call goes to the second model. Group caps still throw.
@@ -117,7 +123,7 @@ export async function generateList({ kind, subject, n = 4, tradition = null, com
   if (!GEN_ASK[kind]) throw new Error(`generateList: unknown kind ${kind}`);
   const subj = cl(subject), size = Number.isInteger(n) && n > 0 ? n : 4;
   if (!subj) return { items: [], ok: false, error: 'no subject' };
-  const call = complete || creditFallback(roleCall('anis-tree-generator'), roleCall('assistant-answer', 'anis-tree-generator-capped'));
+  const call = complete || creditFallback(roleCall('anis-tree-generator'), creditCall('anis-tree-generator-credit'));
   try {
     const r = await call([{ role: 'system', content: GEN_SYS(kind, size, tradition) }, { role: 'user', content: `SUBJECT: ${subj}` }], { temperature: 0, maxTokens: 4000, responseFormat: { type: 'json_object' } });   // Haiku thinks first: ≥ 4000
     const j = r?.content?.trim() ? looseParse(r.content) : null, list = Array.isArray(j) ? j : j?.items;
