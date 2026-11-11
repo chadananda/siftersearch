@@ -67,6 +67,20 @@ describe('each search tool calls only its own layer', () => {
     expect(search).toHaveBeenCalledWith(expect.objectContaining({ query: 'q', mode: 'passages', limit: 8, author: 'X', document_id: 9, yearFrom: 1900 }));
     expect(r.passages).toEqual([{ id: 1, text: 't' }]);
   });
+  it('an authority shelf without scripture excludes the Writings IN the engine, before ranking (history shelf, 11-10)', async () => {
+    const fastSearch = vi.fn(async () => [{ id: 3, text: 'Mullá Ḥusayn', title: 'The Dawn-Breakers', author: 'Nabil Zarandi', religion: "Baha'i", document_id: 21308 }]);
+    const f = await tools.run('fused_search', { query: 'death of Mullá Ḥusayn', filters: { tradition: "Baha'i", authority: ['history', 'scholarship', 'interpretation'] } }, { fastSearch });
+    const extra = fastSearch.mock.calls[0][3];
+    expect(extra.notAuthor).toEqual(expect.arrayContaining(['bahaullah', 'thebab', 'abdulbaha']));
+    expect(extra.notAuthor).not.toContain('shoghieffendi');   // interpretation asked: God Passes By stays
+    expect(f.passages.map((p) => p.document_id)).toEqual([21308]);
+    fastSearch.mockClear();
+    await tools.run('fused_search', { query: 'q', filters: { tradition: "Baha'i", authority: ['scripture'] } }, { fastSearch });
+    expect(fastSearch.mock.calls[0][3]?.notAuthor).toEqual(['shoghieffendi']);
+    fastSearch.mockClear();
+    await tools.run('fused_search', { query: 'q', filters: { tradition: "Baha'i" } }, { fastSearch });
+    expect(fastSearch.mock.calls[0][3]?.notAuthor).toBeUndefined();
+  });
   it('originals_search is the fast engine held to the doctrinal writers in the ar-fa group (11-04)', async () => {
     const fastSearch = vi.fn(async () => [{ id: 5, text: 'يا معشر الملوك', language: 'ar' }]);
     const r = await tools.run('originals_search', { query: 'kings burden their subjects' }, { fastSearch });

@@ -71,6 +71,16 @@ describe('executor level: the active v1 strategies use the last topic, not the g
     expect(side?.saw?.source).toBe('Bhagavad Gita');
     expect(decisions.list().some((d) => d.point === 'refers-back:query')).toBe(true);
   });
+  it('a non-comparison follow-up searches the last topic WITH its own ask ("How did he die?", 11-10)', async () => {
+    const queries = [], decisions = decisionLog([]);
+    const search = async (a) => { queries.push(a.query); return { passages: [] }; };
+    await runStrategy({ strategy: { choice: 'understanding', confidence: 0.9 }, refersBack: true },
+      { messages: thread('How did he die?'), question: 'How did he die?', query: 'glued', search, state, profile: {}, decisions, sourceTools: { search: async () => ({ passages: [] }) } }).catch(() => null);
+    const d = decisions.list().find((x) => x.point === 'refers-back:query');
+    expect(d?.chosen).toBe('last topic + this message');
+    expect(queries.length).toBeGreaterThan(0);
+    expect(queries.some((q) => q.includes(Q1) && q.includes('How did he die?'))).toBe(true);
+  });
   it('withAnchors: the last turn\'s cited passages lead and are not repeated; a failed load costs only itself', async () => {
     const tools = { context_lookup: async (i) => (i.document_id === 20915 ? Promise.reject(new Error('down')) : { passages: [{ document_id: i.document_id, paragraph_index: i.paragraph_index, text: 'the words' }] }) };
     const out = await withAnchors([{ document_id: 20910, paragraph_index: 42, text: 'dup' }, { document_id: 1, paragraph_index: 1, text: 'other' }], state, { tools }, decisionLog([]));

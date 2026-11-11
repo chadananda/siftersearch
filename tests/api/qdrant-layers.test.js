@@ -23,6 +23,7 @@ describe('toQdrantFilter', () => {
       { key: 'religion', match: { value: "Baha'i" } }, { key: 'collection', match: { value: 'Makátíb-i-‘Abdu’l-Bahá, vol. 3' } }] });
     expect(toQdrantFilter({ documentId: ['7', 9] })).toEqual({ must: [{ key: 'doc_id', match: { any: [7, 9] } }] });
     expect(toQdrantFilter({})).toBeUndefined();
+    expect(toQdrantFilter({ notAuthor: ["Bahá'u'lláh", 'abdulbaha'] })).toEqual({ must_not: [{ key: 'author_fold', match: { any: ['bahaullah', 'abdulbaha'] } }] });
   });
   it('library scope = not supplemental (old points carry no scope); supplemental = stamped scraped points', () => {
     expect(toQdrantFilter({ scope: 'primary' })).toEqual({ must_not: [{ key: 'scope', match: { value: 'supplemental' } }] });

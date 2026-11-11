@@ -58,8 +58,15 @@ async function scope(filters = {}, ctx = {}) {
     if (!w?.doc) return { f, none: true };
     f.documentId = w.doc.id;
   }
-  return { f, authority: filters?.authority?.length ? new Set(filters.authority) : null };
+  const authority = filters?.authority?.length ? new Set(filters.authority) : null;
+  // kinds known from the WRITER are filtered in the engine, before ranking: a history shelf post-filtered from 18 generic hits
+  // got only Writings, so The Dawn-Breakers never reached "how was the Báb martyred?" (11-10)
+  const notAuthor = authority ? Object.entries(WRITERS_OF_KIND).filter(([k]) => !authority.has(k)).flatMap(([, keys]) => keys) : [];
+  if (notAuthor.length && f.author == null && f.documentId == null) f.notAuthor = notAuthor;
+  return { f, authority };
 }
+// the authority kinds a passage has by its writer alone (source-tier.js): their author_fold keys
+const WRITERS_OF_KIND = { scripture: ['bahaullah', 'thebab', 'bab', 'abdulbaha'], interpretation: ['shoghieffendi'] };
 // over-fetch when an authority post-filter will thin the list
 const want = (limit, authority) => (authority ? limit * 3 : limit);
 const finish = (list, limit, authority) => dedupePassages(list).filter((p) => !authority || authority.has(p.authority)).slice(0, limit);

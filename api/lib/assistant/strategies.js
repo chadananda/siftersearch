@@ -246,7 +246,10 @@ export async function runStrategy(choice, ctx) {
   }
   // Jev read the message as pointing at the LAST reply (refers_back): search the last turn's topic, not the glued/literal follow-up, and keep the passages it cited as the anchor
   const topic = choice?.refersBack ? lastTopic(ctx.state || undefined, ctx.messages || []) : null;
-  if (topic) { ctx = { ...ctx, query: topic }; log.record('refers-back:query', { by: 'jev', saw: { topic }, options: ['glued follow-up', 'last topic'], chosen: 'last topic', reason: 'Jev: the message refers back to the previous reply' }); }
+  // a comparison's sides carry the new part ("…compare with the Gita"); any other follow-up asks something new OF the topic: "How did he die?"
+  // after "Who was Mullá Ḥusayn?" searched the biography alone and missed his death (11-10)
+  const asked = String(ctx.question || '').trim(), withAsk = topic && name !== 'comparison' && asked && !topic.includes(asked);
+  if (topic) { ctx = { ...ctx, query: withAsk ? `${topic} ${asked}` : topic }; log.record('refers-back:query', { by: 'jev', saw: { topic, asked: withAsk ? asked : null }, options: ['glued follow-up', 'last topic', 'last topic + this message'], chosen: withAsk ? 'last topic + this message' : 'last topic', reason: 'Jev: the message refers back to the previous reply' }); }
   // a lookup strategy (book, quote_trace, term, original, about) with a v1 lookup graph runs over the whole turn (graph.js gatherByGraph), not as an executor here
   // (its tree, quote_trace@2 etc., IS an executor):
   // an Unmatched recheck that lands on one has nothing to execute, so the researcher answers and the gap is already recorded

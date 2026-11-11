@@ -160,6 +160,7 @@ export function toQdrantFilter(filters = {}) {
     must.push(filters.writerOnly ? { key: 'author_fold', match: { any: keys } }
       : { should: [{ key: 'author_fold', match: { any: keys } }, { key: 'voices_fold', match: { any: keys } }] });
   }
+  if (filters.notAuthor?.length) must_not.push({ key: 'author_fold', match: { any: [].concat(filters.notAuthor).map(authorKey) } });   // e.g. a history shelf: not the Writings
   const excl = filters.documentId == null ? excludedDocIds() : [];
   if (excl.length) must_not.push({ key: 'doc_id', match: { any: excl } });   // metadata indexes are not passages
   if (filters.documentId != null) eq('doc_id', Array.isArray(filters.documentId) ? filters.documentId.map(Number) : Number(filters.documentId));

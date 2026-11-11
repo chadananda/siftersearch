@@ -1351,7 +1351,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
     const r = ids.length ? await timed('canon', searchPhrases(query, { limit: 12, filters: { ...qfilters, documentId: ids }, timeoutMs: 1500 })) : { hits: [] };
     return { hits: await originalFirst(r.hits || []) };
   })().catch((err) => { logger.warn({ err: err.message }, 'multiIndexSearch: canon layer failed'); return { hits: [] }; });
-  const doctrinalP = !(phraseRan && !filters.author && bahaiScope) ? null : (async () => {
+  const doctrinalP = !(phraseRan && !filters.author && !filters.notAuthor?.length && bahaiScope) ? null : (async () => {
     const { DOCTRINAL_KEYS } = await import('./search/doctrinal-rank.js');
     // phrases AND the doctrinal HyPE questions (a question finds the passage that answers it), writer filter only
     const af = { ...qfilters, author: DOCTRINAL_KEYS, writerOnly: true, scope: 'primary' };
