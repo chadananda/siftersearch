@@ -254,7 +254,7 @@ const evidence = (s) => {
       plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {}, ...(hints ? { hints } : {}) } }));
   })
     // Jev read the message as pointing at the last reply: the passages it cited lead (the actual words), also in a fresh conversation (the reply's own links)
-    .then(async (r) => { if (direction.strategy?.refersBack && !f && r?.passages) r.passages = await withAnchors(r.passages, direction.state, { messages }, direction.decisions); return r; })
+    .then(async (r) => { if (direction.strategy?.aboutReply && !f && r?.passages) r.passages = await withAnchors(r.passages, direction.state, { messages }, direction.decisions); return r; })
     .then((r) => done(r, 'search'));
 };
 

@@ -207,6 +207,8 @@ export function entryUnits(g, choice, ctx = {}) {
   if (!g.needs?.includes('compare_sides') && choice?.sides?.length && ['site', 'default', undefined].includes(u.scope_sources?.religions_specified)) u.religions_specified = [...choice.sides];
   if (choice?.sources && Object.keys(choice.sources).length) { u.named_sources = Object.values(choice.sources); u.side_sources = choice.sources; }   // side_sources: tradition → the book Jev named for that side
   // Jev says the message takes its subject from the last turn: searches use that topic, never the follow-up's own words (follows_topic), and the anchor loads the last turn's passages
-  if (choice?.refersBack) { u.refers_back = true; if (u.last_topic) u.follows_topic = String(u.last_topic).slice(0, 300); }
+  // …except a new question about the same subject ("How did he die?"): the executor glued it to the last topic (strategies.js) and that is what is searched
+  if (choice?.refersBack) { u.refers_back = true; const q = String(ctx.query ?? ''), glued = !choice.aboutReply && u.last_topic && q.includes(String(u.last_topic)) && q.length > String(u.last_topic).length;
+    if (u.last_topic) u.follows_topic = (glued ? q : String(u.last_topic)).slice(0, 300); }
   return u;
 }

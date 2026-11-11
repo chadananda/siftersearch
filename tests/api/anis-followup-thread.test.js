@@ -44,6 +44,19 @@ describe('Jev decides what a follow-up refers to', () => {
     await chooseStrategy([{ role: 'user', content: Q1 }], { apiKey: 'k', fetchImpl, options: { unmatched: 'x' } });
     expect(body.questions.refers_back).toBeUndefined();
   });
+  it('"How did he die?" asks something new about the same subject: refersBack without aboutReply; "that quote" is about the reply (11-10)', async () => {
+    const mkF = (a) => async () => ({ ok: true, json: async () => ({ answers: { strategy: ans('history_fact'), refers_back: a } }) });
+    const sub = await chooseStrategy(thread('How did he die?'), { apiKey: 'k', fetchImpl: mkF(ans('subject')), options: { history_fact: 'h', unmatched: 'x' } });
+    expect(sub.refersBack).toBe(true); expect(sub.aboutReply).toBeUndefined();
+    expect(sub.decisions.find((d) => d.point === 'refers-back')).toMatchObject({ chosen: 'subject', options: ['own', 'subject', 'previous'] });
+    const rep = await chooseStrategy(thread('is that quote authentic?'), { apiKey: 'k', fetchImpl: mkF(ans('previous')), options: { history_fact: 'h', unmatched: 'x' } });
+    expect(rep.refersBack).toBe(true); expect(rep.aboutReply).toBe(true);
+  });
+  it('entryUnits: a new question about the same subject searches the last topic glued to the new question; a message about the reply searches the last topic', () => {
+    const g = graphFor('comparison', 2), glued = `${Q1} How did she die?`, ctx = { query: glued, question: 'How did she die?', messages: thread('How did she die?'), state, channel: { id: 'site-chat' } };
+    expect(entryUnits(g, { refersBack: true }, ctx).follows_topic).toBe(glued);
+    expect(entryUnits(g, { refersBack: true, aboutReply: true }, ctx).follows_topic).toBe(Q1);
+  });
   it('below-confidence or "own" = no refersBack (the message keeps its own subject)', async () => {
     const mkF = (a) => async () => ({ ok: true, json: async () => ({ answers: { strategy: ans('unmatched'), refers_back: a } }) });
     expect((await chooseStrategy(thread('x'), { apiKey: 'k', fetchImpl: mkF(ans('previous', 0.2)), options: { unmatched: 'x' } })).refersBack).toBeUndefined();

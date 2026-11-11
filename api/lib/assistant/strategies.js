@@ -265,7 +265,7 @@ export async function runStrategy(choice, ctx) {
   // strategy's graph (activities/graph.js; ANIS_STRATEGY_GRAPH=0 → the registry tool directly, the Phase-1 rollback)
   const viaGraph = strategyGraphOn() ? await runStrategyGraph(name, choice, { ...ctx, decisions: log }) : undefined;
   const out = viaGraph !== undefined ? viaGraph : await runTool(name, choice, { ...ctx, decisions: log });
-  if (out && topic && name !== 'comparison') out.passages = await withAnchors(out.passages, ctx.state, ctx, log);
+  if (out && topic && name !== 'comparison' && choice?.aboutReply) out.passages = await withAnchors(out.passages, ctx.state, ctx, log);   // a new question about the same subject is not anchored
   if (!out) log.record(`${name}:fallthrough`, { by: 'code', chosen: 'ordinary path', reason: 'executor found nothing to execute' });
   return out;
 }

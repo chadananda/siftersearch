@@ -764,7 +764,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
         plan: { messages, defaults: (direction.scope ? direction.scope.religion : profile.default_tradition) ? { religion: direction.scope ? direction.scope.religion : profile.default_tradition } : {}, ...(hints ? { hints } : {}) } }));
     });
   // no strategy ran but Jev read the message as pointing at the last reply: its cited passages lead (the actual words)
-  if (direction.strategy?.refersBack && !strat && !fast && res?.passages) res.passages = await withAnchors(res.passages, direction.state, { messages }, direction.decisions);
+  if (direction.strategy?.aboutReply && !strat && !fast && res?.passages) res.passages = await withAnchors(res.passages, direction.state, { messages }, direction.decisions);
   if (phrased && res?._plan && !res._plan.quote) res._plan = { ...res._plan, phrases: phrased };
   // OWN SOURCE (own-source.js; Chad's standing rule): the passages are final here — a Central Figure's or Shoghi Effendi's
   // words quoted inside another author's book (production 11-04: "Ye are the fruits of one tree" linked to The Promised Day

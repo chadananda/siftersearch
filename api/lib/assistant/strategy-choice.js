@@ -33,7 +33,11 @@ export const STRATEGIES = new Proxy({}, {
   getOwnPropertyDescriptor: (_, k) => (k in strategyOptions() ? { value: strategyOptions()[k], enumerable: true, configurable: true, writable: false } : undefined),
 });
 const SIDES = { ...Object.fromEntries(Object.entries(TRADITIONS).filter(([k]) => k !== 'none')), none: 'no such tradition in the question' };
-const REFERS = { own: 'the message states its own subject, whole', previous: 'its subject is the previous turn\'s question or the passages the previous reply gave' };
+// 11-10: "How did he die?" after "Who was Mullá Ḥusayn?" asks something NEW about the same subject; anchoring it on the last reply's passages put the
+// biography's sources ahead of Nabíl's account of his death. Only a message about the reply itself (its quote, its passages) is anchored on them.
+const REFERS = { own: 'the message states its own subject, whole',
+  subject: 'it asks something new about the person, event, book or topic the previous turn was about ("how did he die?", "when was it written?", "what happened next?")',
+  previous: 'it asks about the previous reply itself or the passages it gave ("that quote", "the actual words", "the second one", "is that authentic?", "how does that compare with …")' };
 const SIDE_KEYS = ['side_a', 'side_b', 'side_c'];
 const ORD = ['FIRST', 'SECOND', 'THIRD'];
 // the BOOKS a comparison names ("the Book of Mormon", "the Gospels", "the Torah"): each name span of the thread
@@ -144,9 +148,9 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
     const patch = { jev: jevPatch.patch, turnOnly, continues: jevPatch.continues, offer: jevPatch.offer };
     if (Object.keys(patch.jev).length || patch.turnOnly || patch.continues || patch.offer) decisions.push({ point: 'state-patch', by: 'jev', saw: state, options: ['unchanged', 'patch'], chosen: 'patch', reason: JSON.stringify({ ...patch.jev, ...(patch.turnOnly ? { turn_only: patch.turnOnly } : {}), ...(patch.continues ? { continues: lastStrategy } : {}), ...(patch.offer ? { offer: patch.offer } : {}) }).slice(0, 400), ms });
     // the message takes its subject from the last turn (Jev's answer): the tree searches the last turn's topic and anchors on its passages (units.js last_topic / last_passages)
-    const rb = choice(a.refers_back), refersBack = rb?.choice === 'previous' && (rb.confidence ?? 0) >= min;
-    if (rb?.choice) decisions.push({ point: 'refers-back', by: 'jev', saw: state, options: Object.keys(REFERS), probabilities: jevProbabilities(rb), chosen: refersBack ? 'previous' : 'own', reason: refersBack ? 'subject from the last turn' : null, ms });
-    return { strategy, sides, sources, units, ms, decisions, patch, ...(refersBack ? { refersBack: true } : {}) };
+    const rb = choice(a.refers_back), refersBack = ['previous', 'subject'].includes(rb?.choice) && (rb.confidence ?? 0) >= min, aboutReply = refersBack && rb.choice === 'previous';
+    if (rb?.choice) decisions.push({ point: 'refers-back', by: 'jev', saw: state, options: Object.keys(REFERS), probabilities: jevProbabilities(rb), chosen: refersBack ? rb.choice : 'own', reason: aboutReply ? 'about the last reply and its passages' : refersBack ? 'subject from the last turn' : null, ms });
+    return { strategy, sides, sources, units, ms, decisions, patch, ...(refersBack ? { refersBack: true } : {}), ...(aboutReply ? { aboutReply: true } : {}) };
   }
 }
 
