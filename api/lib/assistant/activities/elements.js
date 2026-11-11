@@ -384,6 +384,8 @@ E.judge = { kind: 'decision', cls: 'jev', edges: [], edgesFor: (p) => (p?.option
     s.note = { read: { question }, params: { options: options.map((o) => o.edge) }, count: 0, scope_excluded: 0, confidence: r?.confidence ?? null };
     return chosen;
   } };
+// one passage in a trace note: its source, paragraph and verdict (round db-r3: Nabíl's martyrdom paragraphs were found and vanished, judge untraced)
+const brief = (x, v) => `${String(x.title || x.work || '').slice(0, 40)}#${x.paragraph_id ?? x.paraId ?? x.id ?? ''}${v ? `:${v}` : ''}`;
 E['judge.passages'] = { kind: 'decision', cls: 'jev', edges: ['answers', 'mentions_only', 'conflict', 'empty'], scope: 'strategy', params: ['precedence', 'question', 'mentions', 'stage'], reads: ['found_passages', 'topic'], writes: ['found_passages'],
   async run(s, p = {}) {   // Jev per passage: answers / only mentions / contradicts another; mentions-only passages drop when others answer
     const u = U(s);
@@ -403,6 +405,7 @@ E['judge.passages'] = { kind: 'decision', cls: 'jev', edges: ['answers', 'mentio
     const stateOf = (x) => (levels.length ? `Source: ${[x.title, x.author].filter(Boolean).join(' — ')}${x.year ? ` (${x.year})` : ''}\n` : '') + String(x.text).slice(0, 400);
     const choices = await Promise.all(u.found_passages.map((x) => Promise.resolve(ask({ question: askOf(x), options: optsOf(x), state: stateOf(x), units: u })).then((r) => r?.choice ?? 'answers', () => 'answers')));
     const verdicts = choices.map((c) => (levels.includes(c) ? 'answers' : c));
+    const seen = u.found_passages.slice(0, 24).map((x, i) => brief(x, choices[i]));   // the trace shows every verdict, kept or dropped
     u.found_passages.forEach((x, i) => { x.verdict = verdicts[i]; if (levels.includes(choices[i])) x.precedence = levels.indexOf(choices[i]); });
     const edge = verdicts.includes('contradicts') ? 'conflict' : verdicts.includes('answers') ? 'answers' : 'mentions_only';
     // mentions-only passages drop where their OWN part (side / heading; the whole list when untagged) has an answer — one side's answer never empties another side
@@ -410,7 +413,7 @@ E['judge.passages'] = { kind: 'decision', cls: 'jev', edges: ['answers', 'mentio
     // mentions: 'keep' — passages on the subject that don't state the fact stay as its setting (round 5: "Who founded Sikhism?" kept one
     // British author's sentence and dropped Macauliffe's Life of Guru Nanak and Guru Nanak's own hymns); rank 'verdict' puts them after the answers
     if (edge !== 'mentions_only' && p.mentions !== 'keep') u.found_passages = u.found_passages.filter((x) => x.verdict !== 'mentions_only' || !answered.has(part(x)));
-    s.note = { read: { question: q }, params: p, count: u.found_passages.length, scope_excluded: 0, verdicts };
+    s.note = { read: { question: q }, params: p, count: u.found_passages.length, scope_excluded: 0, verdicts, seen };
     return edge;
   } };
 
@@ -550,7 +553,7 @@ E.rank = { kind: 'transform', cls: 'code', edges: ['done', 'empty'], scope: 'str
       u.groups = [...g].map(([k2, v]) => ({ key: k2, count: v.length, items: v }));
     }
     u[of] = items;
-    s.note = { read: { by, k }, params: p, count: items.length, scope_excluded: 0 };
+    s.note = { read: { by, k }, params: p, count: items.length, scope_excluded: 0, seen: items.slice(0, 24).map((x) => brief(x, x.verdict)) };
     return items.length ? 'done' : 'empty';
   } };
 const ABSENCE = 'Say plainly that the library does not hold this ({{widened_clause}}). Then give the nearest real passage below, labelled as the nearest — never present it as an answer. If web results are given, say they are from outside the library, labelled.';
