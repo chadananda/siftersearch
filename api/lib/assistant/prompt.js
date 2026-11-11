@@ -162,8 +162,22 @@ export function passageHeader(p, i) {
 const OWN_SITE = /^https?:\/\/(?:[a-z0-9-]+\.)?siftersearch\.com(?:[/?#]|$)/i;
 export const publicUrl = (u) => (u && !OWN_SITE.test(String(u)) ? u : null);
 
-export function anisUserPayload({ question, conversation = '', passages = [], conversational = false, entities = null, peopleAnswer = null, target = null, direction = '' }) {
-  const lines = passages.map((p, i) => `${passageHeader(p, i)}\nURL: ${publicUrl(p.citation_url) || '(none — cite the title without a link)'}\n${passageText(p)}`);
+// A SLUG-TITLED scrape ("shoghi-effendi-trans-011-the-dawn-breakers_en", an oceanoflights .docx — r16 11-11) whose slug ENDS with the
+// title of another passage in the set is that book: it takes the title and the other copy's public book link (never the .docx)
+const SLUGGY = (t) => { const x = String(t || '').trim(); return !!x && !/\s/.test(x) && /[-_]/.test(x); };
+const letters = (t) => String(t || '').normalize('NFD').replace(/[^\p{L}\p{N}]/gu, '').toLowerCase();
+export const unslug = (passages) => passages.map((p) => {
+  if (!SLUGGY(p.source_title)) return p;
+  const tail = letters(String(p.source_title).replace(/[_-](?:en|fa|ar|de|fr|es)$/i, ''));
+  const book = passages.find((q) => q !== p && !SLUGGY(q.source_title) && letters(q.source_title).length >= 6 && tail.endsWith(letters(q.source_title)) && publicUrl(q.citation_url));
+  if (!book) return p;
+  const u = String(publicUrl(book.citation_url)).replace(/[?#].*$/, '');
+  return { ...p, source_title: book.source_title, citation_url: u };
+});
+
+export function anisUserPayload({ question, conversation = '', passages: given = [], conversational = false, entities = null, peopleAnswer = null, target = null, direction = '' }) {
+  const passages = unslug(given);
+  const lines = passages.map((p, i) => `${passageHeader(p, i)}\nURL: ${publicUrl(p.citation_url) || '(none — name the title in italics, unlinked; never tell the reader whether a source has a link)'}\n${passageText(p)}`);
   // Each piece of evidence goes with its verbatim PROOF — the model reads what the source actually says.
   const cite = (e) => `${e.statement}${e.when ? ` (${e.when})` : ''} — ${e.source || 'source'}${publicUrl(e.url) ? ` URL: ${publicUrl(e.url)}` : ''}${e.proof ? ` — proof: "${String(e.proof).slice(0, 220)}"` : ''}`;
   const people = (entities || []).map((p) => `- ${p.name}: ${(p.evidence || []).map(cite).join('; ')}`);

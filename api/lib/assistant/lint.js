@@ -162,13 +162,23 @@ export function finalForm(text) { return formPass(text).text; }
 /** finalForm with what it repaired, for the turn's path (forensics counts form.search_denial as a WRITER defect). Pure. */
 export function formPass(text, { sources = [] } = {}) {
   const uw = unwrapLinks(text), den = dropSearchDenial(uw.text), def = dropDeflection(den.text), off = dropSearchOffer(def.text), lk = checkLinks(off.text, sources);
-  const ct = citeLinks(lk.text, sources), lr = lastResortLast(ct.text), nm = dropNumberMarkers(lr.text), em = repairEmphasis(safeLinkText(nm.text));
-  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), ...(nm.fixed ? { number_markers: nm.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
+  const ct = citeLinks(lk.text, sources), lr = lastResortLast(ct.text), la = dropLinkAside(lr.text), nm = dropNumberMarkers(la.text), em = repairEmphasis(safeLinkText(nm.text));
+  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), ...(nm.fixed ? { number_markers: nm.fixed } : {}), ...(la.fixed ? { link_aside: la.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
     ...(ct.fixed ? { cite_links: ct.fixed } : {}), ...(lr.fixed ? { last_resort: lr.fixed } : {}), ...(em.fixed ? { emphasis: em.fixed } : {}) } };
 }
 
 // Footnote residue the reader cannot follow ("… by Stephen Lambden [^1].", "… Him Whom God shall make manifest [3, 7].", 11-11 kawthar):
 // a bracketed number list that is not a link and has no footnote definition is dropped, with its space. Quoted lines are left. Pure.
+// A LINK ASIDE (r16 11-11: "In his tablet … (which I can cite by title only), he describes"): the writer narrating that a source has
+// no link. The reader sees an unlinked title either way; the aside is our plumbing, never theirs. Parenthetical only (a whole
+// sentence about links would leave a hole). Outside block quotes. Pure.
+const LINK_ASIDE = /\s*\((?:which |that |though )?(?:I |we )?(?:can |could )?(?:only )?(?:cite|name|reference|give|mention)[^()\n]{0,40}?\b(?:by (?:its |the )?title(?: only| alone)?|without a link|with no link|unlinked)\)|\s*\((?:no (?:public )?link(?: (?:is )?available)?|not linked|link unavailable|title only)\)/gi;
+export function dropLinkAside(text) {
+  let fixed = 0;
+  const out = String(text || '').split('\n').map((l) => (/^\s*>/.test(l) ? l : l.replace(LINK_ASIDE, () => { fixed += 1; return ''; }))).join('\n');
+  return { text: fixed ? out : String(text || ''), fixed };
+}
+
 export function dropNumberMarkers(text) {
   const src = String(text || '');
   if (/^\[\^?\d+\]:/m.test(src)) return { text: src, fixed: 0 };   // real footnotes: their definitions are in the text
