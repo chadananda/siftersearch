@@ -148,6 +148,20 @@ describe('history_fact', () => {
   });
 });
 
+describe('history_fact: the narrative history reaches the writer (11-10 "How was the Báb martyred?")', () => {
+  it('the histories are searched apart from the Guardian, and the top k spreads across kinds so a lower-scoring Dawn-Breakers passage survives', async () => {
+    const auths = [], P = (id, title, authority, score) => ({ id, title, authority, score, text: `passage ${id}`, religion: "Bahá'í", document_id: id, paragraph_index: 1 });
+    const tools = { fused_search: async (i) => { const a = [i.filters?.authority].flat().filter(Boolean); auths.push(a);
+      if (a.includes('interpretation')) return { passages: [1, 2, 3].map((n) => P(n, 'God Passes By', 'interpretation', 0.9 - n / 100)) };
+      if (a.includes('history')) return { passages: [P(10, 'The Dawn-Breakers', 'scholarship', 0.5)] };
+      return { passages: [] }; } };
+    const s = await run('history_fact', 'How was the Báb martyred?', { tools, units: { topic: 'martyrdom of the Báb' }, jev: async () => ({ choice: 'answers' }) });
+    expect(auths.some((a) => a.includes('history') && !a.includes('interpretation'))).toBe(true);
+    expect(auths.some((a) => a.length === 1 && a[0] === 'interpretation')).toBe(true);
+    expect(s.out.passages.map((p) => p.id)).toContain(10);
+  });
+});
+
 describe('every rev-B tree passes validateCandidate', () => {
   for (const id of NEW) it(id, () => {
     const g = TREE_GRAPHS[id], steps = TREE_STEPS.filter((x) => x.id.startsWith(`tree.${id}.`)), templates = TREE_TEMPLATES.filter((t) => t.id.startsWith(`${id}.`));

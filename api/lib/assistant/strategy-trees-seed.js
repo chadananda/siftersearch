@@ -177,21 +177,24 @@ const timeline = tree('timeline', 'l1', [
 
 // ── history_fact (rev B 11-09): the histories of the tradition ∥ the web (labelled), weighed in historical precedence; the fact with its date and sources ──
 // Cost per run path (Jev = judge.passages, one cheap-tier call per passage, in parallel):
-//   h1 → h2 → h3 → h4 → h5   : 2 library searches (histories ∥ scripture) + 1 web search + Jev per passage + writer
+//   h1 → h2 → h3 → h4 → h5   : 3 library searches (histories ∥ the Guardian ∥ scripture) + 1 web search + Jev per passage + writer
 //   h1 → h2 → h3 → h4c → h6  : the same; the sources disagree
 //   h1 → h2 → h7 → h8        : 2 searches + writer (no library history: the web finds, labelled)
 //   h1 → h2 → h7 → $absence  : 2 searches (nothing anywhere) · h1 error → $fallback
 const history_fact = tree('history_fact', 'h1', [
   ['h1', 'search.together', { list: [
-    { element: 'search.shelf', params: { query: '{{topic}}', authority: ['history', 'scholarship', 'interpretation'], k: 6 } },   // histories, chronicles, scholarship of the tradition; interpretation: God Passes By is the Guardian's history
+    // the narrative histories (The Dawn-Breakers, Momen, Balyuzi) on their own: with the Guardian in the same search his short summaries took every slot
+    // and "how was the Báb martyred?" never reached Nabíl's account (11-10); the Writings and the Guardian are excluded in the engine (tools.js notAuthor)
+    { element: 'search.shelf', params: { query: '{{topic}}', authority: ['history', 'scholarship'], k: 6 } },
+    { element: 'search.shelf', params: { query: '{{topic}}', authority: ['interpretation'], k: 3 } },   // God Passes By is the Guardian's history
     { element: 'search.shelf', params: { query: '{{topic}}', authority: ['scripture'], k: 3 } },   // the primary record: the founder's own words (Guru Nanak's hymns, the Báb's Writings) — a separate search so scripture never crowds out the histories
     { element: 'search.web', params: { query: '{{topic}}' } }] }, 'tool', ['topic', 'religions_specified'], ['found_passages', 'web_found', 'missing'],
     { one: 'h2', several: 'h2', thin: 'h2', none: '$absence', error: '$fallback' }],
   ['h2', 'switch', { on: { unit: 'found_passages' }, cases: { filled: 'library', empty: 'web' }, default: 'web' }, 'decide', ['found_passages'], [], { library: 'h3', web: 'h7' }],
   ['h3', 'judge.passages', { precedence: ['primary record', 'contemporary account', 'scholarship'], question: 'Does this passage state {{topic}}? A primary record outweighs a contemporary account, which outweighs later scholarship.', mentions: 'keep' }, 'decide', ['found_passages', 'topic'], ['found_passages'],
     { answers: 'h4', mentions_only: 'h4', conflict: 'h4c', empty: 'h7' }],
-  ['h4', 'rank', { by: ['verdict', 'authority', 'history'], k: { default: 4, research: 8 }, dedupe: true }, 'process', ['found_passages'], ['found_passages'], { done: 'h5', empty: 'h7' }],
-  ['h4c', 'rank', { by: ['verdict', 'authority', 'history'], k: { default: 6, research: 10 }, dedupe: true }, 'process', ['found_passages'], ['found_passages'], { done: 'h6', empty: 'h7' }],
+  ['h4', 'rank', { by: ['verdict', 'authority', 'history'], k: { default: 5, research: 9 }, spread: 'authority', dedupe: true }, 'process', ['found_passages'], ['found_passages'], { done: 'h5', empty: 'h7' }],
+  ['h4c', 'rank', { by: ['verdict', 'authority', 'history'], k: { default: 6, research: 10 }, spread: 'authority', dedupe: true }, 'process', ['found_passages'], ['found_passages'], { done: 'h6', empty: 'h7' }],
   ['h5', 'shape', { template: 'history_fact.fact', shared: 'tpl.passages', format: 'history_fact', theme_by: 'authority' }, 'synthesize', ['topic', 'fact_asked', 'found_passages', 'web_found'], [], { done: END }],
   ['h6', 'shape', { template: 'history_fact.disagree', shared: 'tpl.passages', format: 'history_fact', theme_by: 'authority' }, 'synthesize', ['topic', 'found_passages', 'web_found'], [], { done: END }],
   ['h7', 'switch', { on: { unit: 'web_found' }, cases: { filled: 'web', empty: 'nothing' }, default: 'nothing' }, 'decide', ['web_found'], [], { web: 'h8', nothing: '$absence' }],
