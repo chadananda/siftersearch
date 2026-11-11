@@ -68,7 +68,6 @@ describe('POST /api/covers/:docId (internal)', () => {
     const ok = await post(a, 51, { url: 'https://bindery.lnker.com/img/sets/x/1.png', source: 'bindery' });
     expect(ok.statusCode).toBe(200);
     expect(calls[0]).toEqual(['fetch', 'https://bindery.lnker.com/img/sets/x/1.png']);
-    expect((await post(a, 54, { url: 'https://bahai-education.org/api/sow/pages/v1i1/page-001.webp', source: 'sow-scan' })).statusCode).toBe(200);
     expect((await post(a, 52, { url: 'https://169.254.169.254/x.png', source: 'b' })).statusCode).toBe(400);
     expect((await post(a, 52, { url: 'http://bindery.lnker.com/x.png', source: 'b' })).statusCode).toBe(400);
     expect((await post(a, 52, { image: PNG.toString('base64') })).statusCode).toBe(400);

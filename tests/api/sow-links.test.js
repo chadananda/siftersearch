@@ -1,7 +1,8 @@
 // Star of the West range links: issue parse, hl words, page choice, linkFor marker, output pass (map + block_attrs).
 import { describe, it, expect, beforeEach } from 'vitest';
-import { sowIssue, sowHl, sowPage, sowMarkerUrl, upgradeSowLinks, resetSowPageMap, sowPageMap } from '../../api/lib/sow-links.js';
+import { sowCoverUrl, sowIssue, sowHl, sowPage, sowMarkerUrl, upgradeSowLinks, resetSowPageMap, sowPageMap } from '../../api/lib/sow-links.js';
 import { linkFor } from '../../api/lib/source-links.js';
+import { coverAt } from '../../api/lib/quote-blocks.js';
 import { upgradeOceanLinks, needsUpgrade } from '../../api/lib/ocean-links.js';
 
 const MAP = { version: 1, issues: { '11.12': { pages: 16, paras: { 1: 1, 2: 1, 11: [1, 2], 13: 3, 14: 3 } } } };
@@ -64,5 +65,17 @@ describe('sow-links', () => {
     const out = await upgradeOceanLinks(JSON.stringify({ url: sowMarkerUrl(doc, 9) }), { loadRows: async () => rows });
     expect(out).toContain('v11.12-p1?hl=the-plans-chosen-provide-for-an..hundred-and-fifty-feet-in-diameter');
     expect(needsUpgrade(sowMarkerUrl(doc, 9))).toBe(true);
+  });
+});
+
+describe('Star of the West issue thumbnails (in place on bahai-education.org)', () => {
+  it('an issue doc → its page 1 on the bahai-education image worker; anything else → null', () => {
+    expect(sowCoverUrl({ title: 'Star of the West, v11, i9 (August 20, 1920)' })).toMatch(/^https:\/\/bahai-education\.org\/ix\/x\/sow\/v11i9\/page-001\.webp\?/);
+    expect(sowCoverUrl({ title: 'Star of the West' })).toBe(null);
+    expect(sowCoverUrl(null)).toBe(null);
+  });
+  it('coverAt sizes their worker by w= and ours by tr=', () => {
+    expect(coverAt(sowCoverUrl({ title: 'Star of the West, v1, i1' }), 240)).toMatch(/descreen=1&w=240$/);
+    expect(coverAt('https://siftersearch.com/img/covers/5?v=ab', 96)).toBe('https://siftersearch.com/img/covers/5?v=ab&tr=w-96,q-80,e-sharpen');
   });
 });

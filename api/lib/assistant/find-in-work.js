@@ -1,6 +1,7 @@
 // In-book / quote shaping (Chad 11-10): turns a quote_search result into the reply by CODE (no LLM): 1 hit = the passage quoted + linked
 // citation (+ a card), n = count line + passages, meaning = labelled. Deps: quote-search.js (the search + text helpers, re-exported here).
 import { SITE } from '../source-links.js';
+import { sowCoverUrl } from '../sow-links.js';
 import { foldText, holdsWords, boldWords, excerptOf } from './quote-search.js';
 export { foldText, holdsWords, boldWords, excerptOf };
 
@@ -55,7 +56,7 @@ export function inWorkReply(r, { section = null } = {}) {
  *  the **phrase** marks; the client splits on them, never injects HTML); several hits or a meaning match → none (the text list stays). Pure. */
 export function passageCards(r, { cover = null } = {}) {
   if (r?.mode !== 'literal' || r.total !== 1 || r.passages?.length !== 1) return [];
-  const p = r.passages[0], c = cover ?? r.work?.cover_url ?? null;
+  const p = r.passages[0], c = cover ?? r.work?.cover_url ?? sowCoverUrl({ title: p.work ?? p.title }) ?? null;
   return [{ work_id: r.work?.id ?? p.document_id ?? null, title: r.work?.title ?? p.work ?? p.title ?? null, author: p.author ?? r.work?.author ?? null, cover_url: c ? (/^https?:/.test(c) ? c : `${SITE}${c}`) : null,
     url: p.url ?? null, place: p.place ?? null, excerpt: p.excerpt, phrase: r.query }];
 }

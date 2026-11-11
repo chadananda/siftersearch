@@ -4,8 +4,10 @@
 // Deps: quote-blocks.js (shared with the clients), docs-repo listDocs (covers, one read by ids), hit-links workLinks (book urls).
 import { quoteBlocks, foldQuote } from '../quote-blocks.js';
 import { SITE } from '../source-links.js';
+import { sowCoverUrl } from '../sow-links.js';
 
 const abs = (u) => (u ? (/^https?:/.test(u) ? u : `${SITE}${u}`) : null);
+const coverOf = (d) => abs(d.cover_url) ?? sowCoverUrl(d);   // a Star of the West issue: its page 1 scan, in place
 const base = (u) => String(u || '').replace(/[#?].*$/, '');
 const norm = (s) => ({ url: s?.url ?? s?.citation_url ?? s?.source_url ?? null, title: s?.title ?? s?.source_title ?? null, author: s?.author ?? s?.source_author ?? null,
   doc: Number(s?.document_id ?? s?.doc_id) || null, place: s?.place ?? null, text: s?.text ?? '' });
@@ -53,13 +55,13 @@ export async function quoteCards(reply, sources, { namedWork = null, docs = defa
     const d = rows.get(source.doc) || {};
     const title = d.title || source.title || null;
     return { url: block.url, key: block.key, work_id: source.doc, title, author: d.author || source.author || null,
-      place: source.place || placeOf(block.attribution, title) || placeOf(block.attribution, source.title), cover_url: abs(d.cover_url) };
+      place: source.place || placeOf(block.attribution, title) || placeOf(block.attribution, source.title), cover_url: coverOf(d) };
   }).filter((c) => c.title);
   let books = [];
   if (named.length) {
     const ds = named.map((id) => rows.get(id)).filter(Boolean);
     const urls = await links(ds).catch(() => null);
-    books = ds.map((d) => ({ id: d.id, title: d.title, author: d.author || null, year: d.year ?? null, url: urls?.get?.(d.id) ?? null, cover_url: abs(d.cover_url),
+    books = ds.map((d) => ({ id: d.id, title: d.title, author: d.author || null, year: d.year ?? null, url: urls?.get?.(d.id) ?? null, cover_url: coverOf(d),
       description: null, sufficient: false })).filter((b) => b.title && b.url);
   }
   return { cards, books };

@@ -1,11 +1,11 @@
 <!-- Chat passage card: one found passage, phrase marked, small cover; the whole card is one link. Cover via image-service srcset. -->
 <script>
+  import { coverAt } from '../../../api/lib/quote-blocks.js';
   let { passage } = $props();
   // excerpt carries **phrase** marks: split into text/mark parts, rendered as text nodes (no HTML injection)
   const parts = $derived(String(passage?.excerpt || '').split(/\*\*(.+?)\*\*/s).map((t, i) => ({ t, mark: i % 2 === 1 })).filter((x) => x.t));
   const ext = $derived(/^https?:\/\//.test(passage?.url || '') && !/oceanlibrary\.com/.test(passage.url));
-  const sep = $derived(passage?.cover_url?.includes('?') ? '&' : '?');
-  const tr = (w) => `${passage.cover_url}${sep}tr=w-${w},q-80,e-sharpen`;
+  const tr = (w) => coverAt(passage.cover_url, w);
 </script>
 {#if passage?.excerpt}
   <svelte:element this={passage.url ? 'a' : 'div'} href={passage.url || undefined} target={passage.url ? '_blank' : undefined} rel={passage.url ? 'noopener' : undefined}

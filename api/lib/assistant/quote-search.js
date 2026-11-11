@@ -2,6 +2,7 @@
 // Literal first (accent/case/curly-quote folded), meaning fallback in 'auto'. Pure search: no wording, no shaping (quote-results shapes it).
 // Deps (ctx.deps, else the repos): paragraphTexts, paragraphsByIds, withLinks, getDoc, findTitled; `fused` = the fused_search runner.
 import { toPassage } from './tool-kit.js';
+import { sowCoverUrl } from '../sow-links.js';
 import { canonicalTradition } from './tradition-name.js';
 
 /** Fold for matching: accents off, curly/odd apostrophes → ', lower case, every other non-letter → one space. Pure. */
@@ -94,7 +95,7 @@ export async function quoteSearch({ query: phrase, mode = 'auto', religions = []
   // the work's own religion / author must pass the other filters (AND)
   const docOk = (d) => (!rels.length || (d?.religion && rels.includes(canonicalTradition(d.religion)))) && (!auts.length || (d?.author && auts.some((a) => authorKey(d.author).includes(authorKey(a)))));
   const kept = [...docs.entries()].filter(([, d]) => docOk(d)).map(([id]) => id);
-  const meta = (id) => ({ id, title: docs.get(id)?.title ?? null, author: docs.get(id)?.author ?? null, cover_url: docs.get(id)?.cover_url ?? null });
+  const meta = (id) => ({ id, title: docs.get(id)?.title ?? null, author: docs.get(id)?.author ?? null, cover_url: docs.get(id)?.cover_url ?? sowCoverUrl(docs.get(id)) });
   const worksOut = kept.map(meta);
   const cap = Math.max(1, limit ?? (named ? 200 : 20));
   const shape = (p, how, text = p.text) => ({ ...p, doc_id: p.document_id ?? p.doc_id ?? null, work: p.title ?? null, para_id: p.id ?? null, url: p.url ?? p.source_url ?? null,

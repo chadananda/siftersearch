@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { bareTitle, findWork, findTitled, workLead } from './work-request.js';
 import { modelFor } from '../model-roles.js';
 import { workUrl, SITE } from '../source-links.js';
+import { sowCoverUrl } from '../sow-links.js';
 
 const DEFAULT = join(dirname(fileURLToPath(import.meta.url)), '../../../data/run/work-summaries.json');
 const FILE = () => process.env.ANIS_WORK_SUMMARIES || DEFAULT;   // tests point it at a temp file
@@ -76,6 +77,7 @@ export async function cardFields(doc, { read = async (id) => (await (await impor
   return row ? { ...doc, cover_url: row.cover_url ?? null, year: doc.year ?? row.year ?? null, encumbered: doc.encumbered ?? row.encumbered } : doc;
 }
 const absCover = (u) => (u ? (/^https?:/.test(u) ? u : `${SITE}${u}`) : null);
+const coverOf = (d) => absCover(d?.cover_url) ?? sowCoverUrl(d);   // a Star of the West issue: its page 1 scan, in place
 
 /** Stream the answer: the summary, then the book (a `book` card event + its linked lead line), then the offer. → { reply, citations, book } */
 // The card is on the hot path (Chad 11-10: "the book card should be almost immediate"): only the description or the cached summary;
@@ -86,7 +88,7 @@ export async function titleAnswer(work, { onEvent = () => {}, links = null, summ
   if (!sum && later) later(d);
   const urlOf = (x) => wl?.get?.(x.id) ?? workUrl(x);
   // cover_url absolute: widgets embed anywhere, and images live on the site, never the api host.
-  const book = { id: d.id, title: d.title, author: d.author || null, year: d.year ?? null, url: urlOf(d) || null, cover_url: absCover(d.cover_url), description: sum || null, encumbered: d.encumbered === 1, sufficient: true };   // the card IS the answer where a card can show (widget); text stays for history and other channels
+  const book = { id: d.id, title: d.title, author: d.author || null, year: d.year ?? null, url: urlOf(d) || null, cover_url: coverOf(d), description: sum || null, encumbered: d.encumbered === 1, sufficient: true };   // the card IS the answer where a card can show (widget); text stays for history and other channels
   // A bare title asks nothing yet: the card answers, then ONE question invites the real request (Chad 11-10).
   book.follow_up = WORK_FOLLOW_UP;
   onEvent({ type: 'book', book });
@@ -149,7 +151,7 @@ export async function sectionAnswer({ sec, doc = null }, { onEvent = () => {}, l
   const [url0, parent] = await Promise.all([(link || sectionLink)(sec, bare).catch(() => null), card(bare).catch(() => bare)]);
   const url = url0 || workUrl(parent) || null;
   const by = parent.author || sec.author || null;
-  const book = { id: parent.id ?? sec.doc_id, title: sec.title, author: by, year: parent.year ?? null, url, cover_url: absCover(parent.cover_url),
+  const book = { id: parent.id ?? sec.doc_id, title: sec.title, author: by, year: parent.year ?? null, url, cover_url: coverOf(parent),
     description: null, encumbered: parent.encumbered === 1, sufficient: true, section: { title: sec.title, of: parent.title ?? sec.book, start_index: sec.start_index, end_index: sec.end_index, paragraphs: sec.paragraphs ?? null } };
   book.follow_up = WORK_FOLLOW_UP;
   onEvent({ type: 'book', book });

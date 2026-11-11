@@ -14,6 +14,12 @@ export function sowIssue(doc) {
   return m ? { vol: Number(m[1]), issue: Number(m[2]) } : null;
 }
 
+/** An issue's thumbnail: its page 1 scan on bahai-education.org's image worker, referenced in place (sized by `w=`, see coverAt). */
+export function sowCoverUrl(doc) {
+  const at = sowIssue(doc);
+  return at ? `https://bahai-education.org/ix/x/sow/v${at.vol}i${at.issue}/page-001.webp?crop=top&warm=18&contrast=16&sharpen=24&descreen=1` : null;
+}
+
 /** The marker link linkFor hands out for a SoW paragraph (or the issue page when the paragraph is unknown). */
 export function sowMarkerUrl(doc, paragraphIndex, quote = null) {
   const at = sowIssue(doc);

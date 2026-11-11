@@ -1,11 +1,11 @@
 <!-- Chat book card: cover + title/author/year + description + "Read the book". Cover via image-service srcset. -->
 <script>
+  import { coverAt } from '../../../api/lib/quote-blocks.js';
   import { inlineParts } from '../../lib/inline-md.js';
   let { book } = $props();
   const desc = $derived(inlineParts(book?.description));
   const ext = $derived(/^https?:\/\//.test(book?.url || '') && !/oceanlibrary\.com/.test(book.url));
-  const sep = $derived(book?.cover_url?.includes('?') ? '&' : '?');
-  const tr = (w) => `${book.cover_url}${sep}tr=w-${w},q-80,e-sharpen`;
+  const tr = (w) => coverAt(book.cover_url, w);
 </script>
 {#if book?.title}
   <div class="flex flex-col sm:flex-row gap-4 p-4 mb-3 w-full max-w-full overflow-hidden rounded-lg border border-border bg-surface-1">

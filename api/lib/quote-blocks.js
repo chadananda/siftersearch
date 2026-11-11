@@ -60,5 +60,6 @@ export function quoteSegments(md, cards) {
 }
 
 /** The cover at width w through the image service (ImageKit `tr=` syntax, as the book card): pair with a srcset. */
-export const coverAt = (url, w) => (url ? `${url}${url.includes('?') ? '&' : '?'}tr=w-${w},q-80,e-sharpen` : null);
+// Our covers size by ImageKit `tr=`; bahai-education.org's own image worker (/ix/, Star of the West issue scans, referenced in place) by `w=`.
+export const coverAt = (url, w) => (url ? `${url}${url.includes('?') ? '&' : '?'}${/^https:\/\/bahai-education\.org\/ix\//.test(url) ? `w=${w}` : `tr=w-${w},q-80,e-sharpen`}` : null);
 export const coverSrcset = (url, widths = [48, 96, 144]) => (url ? widths.map((w) => `${coverAt(url, w)} ${w}w`).join(', ') : null);
