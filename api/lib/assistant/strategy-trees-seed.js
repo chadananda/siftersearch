@@ -225,7 +225,10 @@ const history_event = tree('history_event', 'h0', historyRows('history_event', {
 // ── person_profile (11-11 manual Dawn-Breakers round): WHO one named person was. The live planner's tree (person_profile@1) searched once on
 // "{{topic}} life history biography martyrdom": scripture and a Sours essay came back, The Dawn-Breakers never, and "Tell me about Quddús" lost the
 // Letters of the Living, the pilgrimage and Ṭabarsí. Same histories tree; the judge asks for the person's life, the writer tells it from the histories.
-const person_profile = tree('person_profile', 'h0', historyRows('person_profile', { inWork: 5, asks: 'tell who {{topic}} was or recount part of their life', k: { default: 10, research: 14 }, kc: { default: 10, research: 14 }, write: 'life', reads: ['topic', 'found_passages', 'web_found'] }),
+// p0 first: the person index (people extracted from the histories, each fact with its cited paragraph) → found_records the writer reads beside the passages
+const person_profile = tree('person_profile', 'p0', [
+  ['p0', 'fetch.person', { name: '{{topic}}' }, 'tool', ['topic'], ['found_records'], { one: 'h0', several: 'h0', none: 'h0', error: 'h0' }],
+  ...historyRows('person_profile', { inWork: 5, asks: 'tell who {{topic}} was or recount part of their life', k: { default: 10, research: 14 }, kc: { default: 10, research: 14 }, write: 'life', reads: ['topic', 'found_passages', 'found_records', 'web_found'] })],
   { needs: ['topic', 'audience'] });
 const T = { understanding, comparison, prayer, guidance, reference, compilation, claim_check, timeline, history_fact, history_event, person_profile };
 

@@ -128,7 +128,7 @@ const TIERS = { type: 'array', minItems: 1, uniqueItems: true, items: { type: 's
   description: 'Escalation ladder: if fewer than min_results come back, drop these filters one at a time in this order and search again; each passage says its tier (strict | relaxed:<dropped filters>). Omit = filters are hard.' };
 const LAYER_FN = { literal: 'searchKeywordQdrant', phrase: 'searchPhrases', hype: 'searchHypeQdrant' };
 const PERSON = { $id: 'AnisPerson', type: 'object', additionalProperties: true, required: ['name'], properties: { id: { type: ['integer', 'string', 'null'] }, name: { type: 'string' },
-  evidence: { type: 'array', items: { type: 'object', additionalProperties: true, properties: { relation: nul('string'), statement: nul('string'), source: nul('string'), paraId: nul('integer') } } } } };
+  evidence: { type: 'array', items: { type: 'object', additionalProperties: true, properties: { relation: nul('string'), statement: nul('string'), source: nul('string'), paraId: { type: ['integer', 'string', 'null'] } } } } } };   // the evidence index keys paragraphs both ways (11-11: a string paraId 500'd every public biography_search)
 
 // one fused search at one filter set: layers merged by reciprocal-rank fusion, deduped, authority-filtered
 async function searchOnce(query, a, filters, ctx) {
