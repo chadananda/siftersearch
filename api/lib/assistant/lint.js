@@ -161,10 +161,17 @@ export function mixedScript(text) {
 export function finalForm(text) { return formPass(text).text; }
 /** finalForm with what it repaired, for the turn's path (forensics counts form.search_denial as a WRITER defect). Pure. */
 export function formPass(text, { sources = [] } = {}) {
-  const den = dropSearchDenial(text), def = dropDeflection(den.text), off = dropSearchOffer(def.text), lk = checkLinks(off.text, sources);
+  const uw = unwrapLinks(text), den = dropSearchDenial(uw.text), def = dropDeflection(den.text), off = dropSearchOffer(def.text), lk = checkLinks(off.text, sources);
   const ct = citeLinks(lk.text, sources), lr = lastResortLast(ct.text), em = repairEmphasis(safeLinkText(lr.text));
-  return { text: em.text, repairs: { search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
+  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
     ...(ct.fixed ? { cite_links: ct.fixed } : {}), ...(lr.fixed ? { last_resort: lr.fixed } : {}), ...(em.fixed ? { emphasis: em.fixed } : {}) } };
+}
+
+// A link wrapped in square brackets ("[[*The Báb*](url)]", 11-10 Letters of the Living) shows its brackets to the reader: unwrapped. Pure.
+export function unwrapLinks(text) {
+  let fixed = 0;
+  const out = String(text || '').replace(/\[(\[[^\[\]\n]+\]\(https?:\/\/[^\s)]+\))\](?!\()/g, (m, link) => { fixed += 1; return link; });
+  return { text: fixed ? out : String(text || ''), fixed };
 }
 
 // THE LINK CHECK — BLOCKING (battery 11-10 "main book of the Hindus": `[*Bhagavad-Gita*](…) [https://…](https://…)`, a Mahabharata
