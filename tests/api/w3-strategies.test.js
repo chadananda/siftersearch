@@ -23,7 +23,7 @@ describe('chooseStrategy (Jev decides, never keywords)', () => {
     expect(jev.last.questions.strategy.type).toBe('choice'); expect(Object.keys(jev.last.questions.strategy.criteria)).toEqual(Object.keys(STRATEGIES));
     expect(jev.last.state).toMatch(/Baha'i/); expect(jev.last.state).toMatch(/forgiveness/);
     expect(s.strategy.choice).toBe('comparison'); expect(s.sides).toEqual(['Islam', 'Christian']); expect(strategyOf(s)).toBe('comparison');
-    expect(s.decisions.map((d) => d.point)).toEqual(['strategy', 'sides', 'side-books']);
+    expect(s.decisions.map((d) => d.point)).toEqual(['strategy', 'sides', 'side-books', 'named-units']);
     expect(s.decisions[0]).toMatchObject({ by: 'jev', chosen: 'comparison', probabilities: { comparison: 0.86, understanding: 0.1 } });
     expect(s.decisions[0].options).toEqual(Object.keys(STRATEGIES));
     expect(s.decisions[1].chosen).toEqual(['Islam', 'Christian']);

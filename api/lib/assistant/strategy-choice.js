@@ -54,6 +54,7 @@ const LANGUAGE_IS_NOT_A_TRADITION = ' A language is not a tradition: "the Arabic
 const SUBJECT_ASK = `Does the latest message ask about the texts, teachers or teachings of one particular religion or tradition ("Buddhist anatta", "Sufi Rumi on fana", "Augustine on grace")? Choose it. "none" when it names no tradition.${LANGUAGE_IS_NOT_A_TRADITION}`;
 const FRAME = /^(?:according to|as (?:stated|explained|written|said) (?:in|by)|per|by|from|in|on)\s+/i;
 const FUNCTION_WORDS = /^(?:who|what|whom|whose|which|when|where|why|how|was|were|is|are|am|be|did|do|does|the|a|an|of|to|in|on|and|or|about|tell|me)\W*$/i;   // question/function words carry no search content
+const ASK_WORDS = /^(?:can|could|would|will|you|please|i|know|like|more|some|anything|something|give|explain|describe|say|said)\W*$/i;   // an asking frame's words ("can you tell me about …")
 const frameless = (n) => String(n).replace(FRAME, '').trim();
 /** Jev's span kinds → { named_work, named_person, topic } (units for the tree's `request`). Pure. */
 export function namedUnits(a = {}, spans = [], question = '', min = MIN_CONFIDENCE) {
@@ -64,7 +65,11 @@ export function namedUnits(a = {}, spans = [], question = '', min = MIN_CONFIDEN
     // remnants of a removed span (structure): lone quote/apostrophe tokens, a dangling "?" or "Who was ?"-style gap
     .replace(/(^|\s)['"’‘“”]+(?=\s|$)/g, ' ').replace(/\s+([?!.,;:])/g, '$1').replace(/^[?!.,;:\s]+/, '').replace(/\s+/g, ' ').trim();
   const words = rest.split(/[\s]+/).filter((w) => /[\p{L}\p{N}]{2,}/u.test(w) && !FUNCTION_WORDS.test(w));
-  return { ...(work ? { named_work: work.name } : {}), ...(person ? { named_person: person.name } : {}), ...(kinds.length && words.length >= 2 ? { topic: rest } : {}) };
+  // the message is only an asking frame around subjects Jev read as "neither" ("Tell me about Vaḥíd", "Who was Ṭáhirih?") → the subjects are the topic;
+  // the whole question as the topic sent "tell me about" to the literal layer (11-11: Sutta Nipata, Mahabharata for Vaḥíd)
+  const subjects = spans.filter((n, i) => { const k = choice(a[`kind_${i + 1}`]); return k?.choice === 'neither' && (k.confidence ?? 0) >= min; }).map(frameless).filter(Boolean);
+  const bare = subjects.length && !kinds.length && !subjects.reduce((q, n) => q.split(n).join(' '), String(question)).split(/\s+/).some((w) => /[\p{L}\p{N}]{2,}/u.test(w) && !FUNCTION_WORDS.test(w) && !ASK_WORDS.test(w));
+  return { ...(work ? { named_work: work.name } : {}), ...(person ? { named_person: person.name } : {}), ...(kinds.length && words.length >= 2 ? { topic: rest } : bare ? { topic: subjects.join(' ') } : {}) };
 }
 
 const choice = (a) => a && { choice: a.choice ?? a.value ?? null, confidence: a.confidence ?? a.distribution?.[a.choice ?? a.value] ?? null, distribution: a.distribution ?? null };
@@ -144,7 +149,8 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
       decisions[0] = { ...decisions[0], chosen: strategy.choice, reason: strategy.reason };
     }
     if (subjectOn) decisions.push({ point: 'subject-religion', by: 'jev', saw: state, options: Object.keys(SIDES), probabilities: jevProbabilities(subj), chosen: subj.choice, reason: 'a hard filter for this turn', ms });
-    if (Object.keys(units).length) decisions.push({ point: 'named-units', by: 'jev', saw: spans, options: Object.keys(KINDS), chosen: units, reason: null, ms });
+    // recorded even when empty: a strategy that runs with no units is diagnosable only from Jev's kind answers (11-11 Vaḥíd)
+    if (spans.length) decisions.push({ point: 'named-units', by: 'jev', saw: spans, options: Object.keys(KINDS), probabilities: Object.fromEntries(spans.map((n, i) => [n, jevProbabilities(choice(a[`kind_${i + 1}`]) || {})])), chosen: units, reason: Object.keys(units).length ? null : 'no unit at confidence', ms });
     const patch = { jev: jevPatch.patch, turnOnly, continues: jevPatch.continues, offer: jevPatch.offer };
     if (Object.keys(patch.jev).length || patch.turnOnly || patch.continues || patch.offer) decisions.push({ point: 'state-patch', by: 'jev', saw: state, options: ['unchanged', 'patch'], chosen: 'patch', reason: JSON.stringify({ ...patch.jev, ...(patch.turnOnly ? { turn_only: patch.turnOnly } : {}), ...(patch.continues ? { continues: lastStrategy } : {}), ...(patch.offer ? { offer: patch.offer } : {}) }).slice(0, 400), ms });
     // the message takes its subject from the last turn (Jev's answer): the tree searches the last turn's topic and anchors on its passages (units.js last_topic / last_passages)

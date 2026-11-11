@@ -161,7 +161,13 @@ describe('namedUnits: topic remnants after a removed span (11-09 widget turns)',
   it('lone apostrophe tokens are dropped', () => {
     expect(namedUnits(p(), ["'Abdu'l-Bahá"], 'Trace how \'Abdu\'l-Bahá uses "Most Great Justice" across his talks').topic).toBe('Trace how uses "Most Great Justice" across his talks');
   });
-  it('a person the question is ABOUT is "neither" (Jev) and the question stays whole', () => {
-    expect(namedUnits({ kind_1: ans('neither') }, ['Ṭáhirih'], 'Who was Ṭáhirih?')).toEqual({});
+  it('a person the question is ABOUT is "neither" (Jev); a bare asking frame around it → the person is the topic', () => {
+    expect(namedUnits({ kind_1: ans('neither') }, ['Ṭáhirih'], 'Who was Ṭáhirih?')).toEqual({ topic: 'Ṭáhirih' });
+    expect(namedUnits({ kind_1: ans('neither') }, ['Vaḥíd'], 'Tell me about Vaḥíd')).toEqual({ topic: 'Vaḥíd' });
+    expect(namedUnits({ kind_1: ans('neither') }, ['Vaḥíd'], 'Can you tell me about Vaḥíd?')).toEqual({ topic: 'Vaḥíd' });
+  });
+  it('a question with its own content beyond the subject keeps the whole question (no topic)', () => {
+    expect(namedUnits({ kind_1: ans('neither') }, ['Báb'], 'When did the Báb declare His mission?')).toEqual({});
+    expect(namedUnits({ kind_1: ans('neither', 0.3) }, ['Vaḥíd'], 'Tell me about Vaḥíd')).toEqual({});
   });
 });
