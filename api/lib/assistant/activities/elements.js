@@ -395,8 +395,14 @@ E['judge.passages'] = { kind: 'decision', cls: 'jev', edges: ['answers', 'mentio
     const ask = s.jev || ((q) => defaultJev(s, q)), q = sub(u, p.question ?? 'Does this passage answer {{current_user_question}}?');
     const roleOf = (x) => (p.question ? null : x.side != null ? ['side', flat(x.side)] : x.sub_theme != null ? ['heading', flat(x.sub_theme)] : null);
     const askOf = (x) => { const r = roleOf(x); return r ? sub(u, `The reader asked: "{{current_user_question}}". This passage was found for one ${r[0]} of that answer: "${r[1]}". Judged for that ${r[0]} alone (not the whole request), does it speak to the subject?`) : q; };
-    const verdicts = await Promise.all(u.found_passages.map((x) => Promise.resolve(ask({ question: askOf(x), options: roleOf(x) ? roleOptions : options, state: String(x.text).slice(0, 400), units: u })).then((r) => r?.choice ?? 'answers', () => 'answers')));
-    u.found_passages.forEach((x, i) => { x.verdict = verdicts[i]; });
+    // precedence (history_fact): an answer is also placed by its source — Nabíl's narrative is a primary record, a travel diary a later account —
+    // so Jev sees the source with the text; the level is kept as x.precedence (rank 'precedence'), the verdict stays 'answers'
+    const levels = Array.isArray(p.precedence) ? p.precedence.map(String) : [];
+    const optsOf = (x) => (roleOf(x) ? roleOptions : levels.length ? [...levels.map((l) => ({ edge: l, when: `the passage answers the question, and its source is a ${l}` })), ...options.slice(1)] : options);
+    const stateOf = (x) => (levels.length ? `Source: ${[x.title, x.author].filter(Boolean).join(' — ')}${x.year ? ` (${x.year})` : ''}\n` : '') + String(x.text).slice(0, 400);
+    const choices = await Promise.all(u.found_passages.map((x) => Promise.resolve(ask({ question: askOf(x), options: optsOf(x), state: stateOf(x), units: u })).then((r) => r?.choice ?? 'answers', () => 'answers')));
+    const verdicts = choices.map((c) => (levels.includes(c) ? 'answers' : c));
+    u.found_passages.forEach((x, i) => { x.verdict = verdicts[i]; if (levels.includes(choices[i])) x.precedence = levels.indexOf(choices[i]); });
     const edge = verdicts.includes('contradicts') ? 'conflict' : verdicts.includes('answers') ? 'answers' : 'mentions_only';
     // mentions-only passages drop where their OWN part (side / heading; the whole list when untagged) has an answer — one side's answer never empties another side
     const part = (x) => { const r = roleOf(x); return r ? r.join(':') : ''; }, answered = new Set(u.found_passages.filter((x) => x.verdict !== 'mentions_only').map(part));
@@ -498,6 +504,7 @@ export const COMPARE = {
   standing: () => (a, b) => standingRank(a) - standingRank(b) || translationRank(a) - translationRank(b),   // tradition-authority: each passage by its own tradition's tiers (Bahá’í: writings > guardian > compilation > reported > house > secondary)
   authority: () => (a, b) => (ORDER.indexOf(kindOf(a) ?? 'other') + 1 || 99) - (ORDER.indexOf(kindOf(b) ?? 'other') + 1 || 99),
   verdict: () => (a, b) => (a.verdict === 'mentions_only' ? 1 : 0) - (b.verdict === 'mentions_only' ? 1 : 0),   // judge.passages: what states the fact before what only sets it
+  precedence: () => (a, b) => (a.precedence ?? 99) - (b.precedence ?? 99),   // judge.passages precedence: primary record, then contemporary account, then scholarship
   phrased: () => (a, b) => (b.phrasing ? 1 : 0) - (a.phrasing ? 1 : 0),   // found on the texts' own wording (plan.phrasings fan-out) before found on the reader's words
   date: () => (a, b) => yearOf(b) - yearOf(a), history: () => (a, b) => yearOf(a) - yearOf(b), score: () => (a, b) => (b.score ?? 0) - (a.score ?? 0),
   length: () => (a, b) => String(a.text ?? '').length - String(b.text ?? '').length, marked: () => (a, b) => (b.marked ? 1 : 0) - (a.marked ? 1 : 0),

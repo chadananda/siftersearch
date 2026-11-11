@@ -164,6 +164,17 @@ describe('history_fact: the narrative history reaches the writer (11-10 "How was
       extra: { judges: { generate: async ({ kind }) => ({ ok: true, items: kind === 'phrasings' ? ['the martyrdom of the Báb'] : [] }) } } });
     expect(s.units.found_passages[0].title).toBe('The Dawn-Breakers');
   });
+  it('the judge places each answer by its source (primary record first): Nabíl outranks a travel diary of the same kind, and Jev sees the source', async () => {
+    const P = (id, title, author) => ({ id, title, author, authority: 'scholarship', score: 0.5, text: `passage ${id}`, religion: "Bahá'í", document_id: id, paragraph_index: 1 });
+    const tools = { fused_search: async (i) => ({ passages: /history/.test([i.filters?.authority].flat().join()) ? [P(1, 'Adventures in Persia', 'Sinclair'), P(2, 'The Dawn-Breakers', 'Nabíl-i-A‘ẓam')] : [] }) };
+    const seen = [];
+    const jev = async ({ options, state }) => { seen.push([options.map((o) => o.edge), state]); return { choice: /Dawn-Breakers/.test(state) ? 'primary record' : 'scholarship' }; };
+    const s = await run('history_fact', 'How was the Báb martyred?', { tools, units: { topic: 'martyrdom of the Báb' }, jev });
+    expect(s.units.found_passages.map((x) => x.title)).toEqual(['The Dawn-Breakers', 'Adventures in Persia']);
+    expect(s.units.found_passages.every((x) => x.verdict === 'answers')).toBe(true);
+    const judged = seen.find(([, st]) => /Source: The Dawn-Breakers — Nabíl/.test(st));
+    expect(judged?.[0]).toEqual(['primary record', 'contemporary account', 'scholarship', 'mentions_only', 'contradicts']);
+  });
   it('the histories are searched apart from the Guardian, and the top k spreads across kinds so a lower-scoring Dawn-Breakers passage survives', async () => {
     const auths = [], P = (id, title, authority, score) => ({ id, title, authority, score, text: `passage ${id}`, religion: "Bahá'í", document_id: id, paragraph_index: 1 });
     const tools = { fused_search: async (i) => { const a = [i.filters?.authority].flat().filter(Boolean); auths.push(a);
