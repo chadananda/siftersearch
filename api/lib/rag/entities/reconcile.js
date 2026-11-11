@@ -71,7 +71,7 @@ export async function run(ctx, docId, opts = {}) {
     const ownFacts = (await ctx.store.getClusterFacts?.(docId, cluster.resolvedAs, cluster.paraIds)) || [];
     const candFacts = {};
     for (const c of candidates.slice(0, 3)) {
-      const f = await ctx.store.getEntityFacts?.(c.id, { limit: 4 });
+      const f = await ctx.store.getEntityFacts?.(c.id, { limit: 4, excludeDocs: [docId] });
       if (f?.facts?.length) candFacts[c.id] = f.facts;
     }
     const user = buildUser(cluster, candidates, scenes, evidence, ownFacts, candFacts);

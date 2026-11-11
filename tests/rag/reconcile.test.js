@@ -181,6 +181,25 @@ describe('reconcile — EEWA P1 facts + P2 verification gate + versioning', () =
     expect(prompt).toContain('defended the fort');         // and the candidate's fact-profile
   });
 
+  it('a candidate\'s facts from the SAME book never ground its own link (no self-reinforcing name-only bind)', async () => {
+    // Quddús once carried "office in Zanján" from a name-only bind in this very book; fed back as his profile, it
+    // "matched" every Zanján cluster. The store is asked to leave the book being reconciled out.
+    const asked = [];
+    const seed = {
+      clusters: { 15257: [{ resolvedAs: 'Mullá Muḥammad-‘Alí', freq: 5, paraIds: ['para_1'] }] },
+      coverage: { 15257: 1 },
+      candidates: [{ id: 1247552, canonical: 'Quddús', type: 'person', importance: 90 }],
+      entityFacts: (id, opts) => { asked.push(opts); return opts?.excludeDocs?.includes(15257) ? { facts: [{ statement: 'martyred at Bárfurúsh', when: '1849' }] } : { facts: [{ statement: 'held office in Zanján' }] }; },
+    };
+    const llm = fakeLLM([{ content: '{"verdict":"uncertain","confidence":0.5}' }]);
+    const { rag } = makeRag({ seed, llm });
+    await rag.entities.reconcile(15257);
+    expect(asked[0].excludeDocs).toEqual([15257]);
+    const prompt = llm.calls[0].messages[1].content;
+    expect(prompt).toContain('Bárfurúsh');
+    expect(prompt).not.toContain('Zanján');
+  });
+
   it('the verification gate VETOES a LINK when candidate facts contradict the cluster (death year)', async () => {
     const seed = {
       clusters: { 21310: [{ resolvedAs: 'Áqá Ján', freq: 5, paraIds: ['para_1'] }] },

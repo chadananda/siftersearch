@@ -505,13 +505,19 @@ export function makeStore() {
     },
 
     // An entity's distinctive BOUND claims — the dedup-guard's fact query (resolve-by-fact, not by name).
-    async getEntityFacts(entityId, { limit = 6 } = {}) {
+    // excludeDocs: the book being reconciled — its own earlier bindings must never ground its own links (a name-only
+    // bind in Ẓuhúr vol 3 gave Quddús "office in Zanján", which then "matched" every Zanján cluster, 11-11).
+    // Claims on paragraphs that no longer exist (orphans of a re-import) are never evidence.
+    async getEntityFacts(entityId, { limit = 6, excludeDocs = [] } = {}) {
       const ent = (await db.queryAll(`SELECT id, canonical_name name FROM graph_entities WHERE id=?`, [entityId]))[0];
       if (!ent) return null;
+      const ex = (excludeDocs || []).filter((d) => d != null);
       const facts = await db.queryAll(
-        `SELECT statement, relation, time_value AS whenv, time_basis, proof_verbatim FROM entity_claims
-           WHERE entity_id=? AND (status IS NULL OR status='supported') ORDER BY (time_value IS NULL), time_value LIMIT ?`,
-        [entityId, limit]);
+        `SELECT c.statement, c.relation, c.time_value AS whenv, c.time_basis, c.proof_verbatim FROM entity_claims c
+           WHERE c.entity_id=? AND (c.status IS NULL OR c.status='supported')${ex.length ? ` AND c.doc_id NOT IN (${ex.map(() => '?').join(',')})` : ''}
+             AND (c.para_id IS NULL OR EXISTS (SELECT 1 FROM content p WHERE p.doc_id=c.doc_id AND COALESCE(p.external_para_id, 'p' || p.id)=c.para_id AND p.deleted_at IS NULL))
+           ORDER BY (c.time_value IS NULL), c.time_value LIMIT ?`,
+        [entityId, ...ex, limit]);
       return { id: ent.id, name: ent.name, facts: facts.map((f) => ({ statement: f.statement, relation: f.relation, when: f.whenv, basis: f.time_basis, proof: f.proof_verbatim })) };
     },
 
