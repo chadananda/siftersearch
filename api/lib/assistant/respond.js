@@ -113,11 +113,29 @@ export function searchQueryFor(messages) {
 const GREETING = /^(?:(?:hello|hi|hey|dear|greetings|good (?:morning|afternoon|evening)|all[aá]h[- ]?u[- ]?abh[aá])\b[^.!?\n]{0,30}?[.!,\n]\s*)+/i;
 // a sentence that asks: a question, or a request ("Give me…", "Then do the same for…")
 const ASKS_SENTENCE = /\?\s*$|^(?:then |and |also |now |please |so )*(?:give|show|tell|find|quote|list|explain|cite|send|do|say|compare|point)\b/i;
+// The reader's own lead-in ("I've been struggling lately and wondering why …") and the source frame ("Do the Bahá'í writings say
+// anything about …") are no search terms: 11-11 suffering T1 searched both whole and got pilgrim diaries ("after this trying experience"),
+// then told the reader no passage addresses it; the same ask without them found the Hidden Words, Unfolding Destiny and 'Abdu'l-Bahá's tablet
+// on suffering. The tradition itself is Jev's scope (a hard filter), never a search word — "Baha'i" in the text pulls diaries even filtered.
+// Query hygiene only: the reply still answers the whole message.
+const LEAD_IN = /(^|[.!?]\s+)(?:(?:so|well|honestly|lately|recently),?\s+)?i(?:['’]ve| have|['’]m| am| was)?\s+(?:been\s+)?(?:[\p{L}'’]+,?\s+){0,4}?(?:wondering|curious|thinking|asking myself|trying to understand)(?:\s+(?:about|if|whether))?\s+/giu;
+const SOURCE_FRAME = /\b(?:(?:what\s+)?(?:do|does|did|can)\s+|(?:is there anything|does anything) in\s+)?(?:the\s+)?(?:[\p{L}'’-]+\s+){0,2}?(?:writings|texts|scriptures|teachings)\s+(?:say|teach|tell us|explain)(?:\s+(?:anything|much))?(?:\s+(?:about|on|regarding|concerning))?\s+/giu;
+const ANYTHING_IN = /\b(?:is there\s+)?anything in\s+(?:the\s+)?(?:[\p{L}'’-]+\s+){0,2}?(?:writings|texts|scriptures|teachings)\s+(?:about|on|regarding|concerning)\s+/giu;
+const askWords = (s) => s.split(/\s+/).filter((w) => /\p{L}{2,}/u.test(w)).length;
+/** The ask without the reader's lead-in and the source frame. The frame stays when it would leave fewer than 4 words: a bare
+ *  "anger?" retrieves fragments ("or through anger or irritation"), the framed question the Dhammapada's chapter on it. Pure. */
+export function unframe(text) {
+  const t = String(text || '');
+  const led = t.replace(LEAD_IN, '$1').replace(/\s+/g, ' ').trim();
+  const base = askWords(led) >= 3 ? led : t;
+  const q = base.replace(SOURCE_FRAME, '').replace(ANYTHING_IN, '').replace(/\s+/g, ' ').trim();
+  return askWords(q) >= 4 ? q : base;
+}
 /** The search string for a standalone message: the greeting dropped and, when it is longer than the query limit, the
  *  asking sentences kept first — the ask usually comes last, past the cut (r6-after 004 T5: the Rāmānuja request was
  *  cut off at 400 characters and the reply said his words were not in the library). Pure. */
 export function distilQuery(text) {
-  const t = String(text || '').replace(GREETING, '').trim() || String(text || '').trim();
+  const t = unframe(String(text || '').replace(GREETING, '').trim()) || String(text || '').trim();
   if (t.length <= QUERY_MAX) return t;
   const sents = t.match(/[^.!?\n]+(?:[.!?]+["”’']?|$)/g)?.map((x) => x.trim()).filter(Boolean) || [t];
   let asking = sents.filter((x) => ASKS_SENTENCE.test(x));

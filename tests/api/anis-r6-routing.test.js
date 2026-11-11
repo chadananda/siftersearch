@@ -69,6 +69,16 @@ describe('search string without greeting, asks kept past the cut (r6-after soul 
     expect(distilQuery(long)).toMatch(/^Then give me the actual words of Rāmānuja/);
     expect(distilQuery('What is justice?')).toBe('What is justice?');
   });
+  // 11-11 suffering T1: the lead-in and "Do the Baha'i writings say anything about" pulled pilgrim diaries; the ask alone found the Writings
+  it('drops the reader\'s lead-in and the source frame, keeps the ask', () => {
+    const t = "I've been struggling lately and wondering why there is so much suffering in the world. Do the Baha'i writings say anything about why God allows it?";
+    expect(distilQuery(t)).toBe('why there is so much suffering in the world. why God allows it?');
+    expect(searchQueryFor([{ role: 'user', content: t }])).not.toMatch(/struggling|writings|Baha/i);
+  });
+  it('keeps the frame when the ask alone would be a bare word', () => {
+    expect(distilQuery('What do the Buddhist texts say about anger?')).toBe('What do the Buddhist texts say about anger?');
+    expect(distilQuery('I am thinking')).toBe('I am thinking');
+  });
 });
 
 // Chad 11-02: "religion science two wings bird quote" answered with Paris Talks + the Persian line + "Phelps Inventory ABU0493"
