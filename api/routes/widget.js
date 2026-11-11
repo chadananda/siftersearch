@@ -164,14 +164,15 @@ function init(){
       setConnectedIdentity(reply, user.id);
     } catch (e) { logger.warn({ err: e.message }, 'widget One Tap: account connect failed (connection row still saved)'); }
     try {
-      const { sendEmail } = await import('../services/email.js');
-      const { pauseUrl } = await import('../lib/assistant/pause-link.js');
-      await sendEmail({
-        to: email,
-        subject: `You're connected to ${profile.name}`,
-        // The promise has to be true: a signed one-click pause link (no sign-in), not a "reply stop" nothing reads yet.
-        text: `Hello${name ? ` ${name}` : ''},\n\nYou've connected your Google account to ${profile.name}, powered by Ocean research.\n\nFrom time to time we'll send you a detailed summary of your research conversations — the passages found, the sources cited, and links to read further in the original texts.\n\nIf you'd rather not receive these, pause them here: ${pauseUrl(email)}\n\n— The Ocean Library`,
-      });
+      // from Anís himself (anis@oceanlibrary.com through the mail Worker, kind 'connected': once per address), so a reply reaches him
+      // (Chad 11-11: it came from a noreply address, named the backend and promised summaries nothing sends)
+      const { connectedLetter } = await import('../lib/assistant/welcome.js');
+      const r = await fetch(`${process.env.MAIL_WORKER_ORIGIN || 'https://siftersearch.com'}/_mail/send`, { method: 'POST', signal: AbortSignal.timeout(15000),
+        headers: { 'content-type': 'application/json', 'x-internal-key': process.env.INTERNAL_API_KEY || '' },
+        body: JSON.stringify({ to: email, kind: 'connected', ...connectedLetter({ name, site: profile.name }) }) });
+      const out = await r.json().catch(() => ({}));
+      if (!r.ok && r.status !== 409) throw new Error(out.error || `mail worker ${r.status}`);
+      logger.info({ status: out.status, reason: out.reason ?? null }, 'One Tap: connected note');
     } catch (e) { logger.warn({ err: e.message }, 'One Tap welcome email failed (connection still saved)'); }
     return { ok: true, email, name, picture: String(info.picture || '') || null };
   });

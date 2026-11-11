@@ -11,3 +11,20 @@ export async function translateWelcome({ subject, body, lang }, { complete } = {
   if (!j?.subject || !j?.body || /siftersearch/i.test(`${j.subject}${j.body}`)) return null;
   return { subject: String(j.subject), body: String(j.body) };
 }
+
+/** The note Anís sends when a reader connects their Google account (widget One Tap): from Anís, and it tells them they can
+ *  write to him. Promises nothing recurring and never names the backend (Chad 11-11). Pure. */
+export function connectedLetter({ name = null, site = null } = {}) {
+  const first = String(name || '').trim().split(/\s+/)[0] || '';
+  const hello = first ? `Hello ${first[0].toUpperCase()}${first.slice(1)},` : 'Hello,';
+  // the widget profile's own name ("Anis", or a backend name) is not a site to name; a partner site is
+  const where = site && !/^an[ií]s$|sifter/i.test(String(site).trim()) ? ` on ${site}` : '';
+  return {
+    subject: 'You\u2019re connected \u2014 you can also write to me',
+    text: `${hello}
+
+You\u2019ve just connected your Google account${where}, so our conversations are kept with your account. I\u2019m Anís, the Ocean AI Research Assistant of Ocean 2.0 at OceanLibrary.com.
+
+You can also ask me questions by email. Just reply to this letter, or write to anis@oceanlibrary.com whenever a question comes to you: where a quotation comes from, what the writings say about a subject, who someone was, or what to read next. I\u2019ll answer with the passages themselves and links to read them in full, and if I can\u2019t find something, I\u2019ll say so.`,
+  };
+}

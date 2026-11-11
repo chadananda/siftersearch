@@ -42,6 +42,8 @@ export function sendDecision(f, s = DEFAULTS) {
     if (f.welcomed) return { ok: false, reason: 'already welcomed' };
     return { ok: true };
   }
+  // the reader just connected their account (their own act is the request, Chad 11-11): one note from Anís, sent at once
+  if (f.kind === 'connected') return f.connectedSent ? { ok: false, reason: 'already sent the connected note' } : { ok: true };
   if (f.kind === 'report') {                   // a deep report the reader asked for (Chad 11-03): only Chad's Send delivers it
     if (!f.approved) return { ok: false, reason: 'a report is held for Chad\'s approval' };
     return { ok: true };
@@ -50,7 +52,7 @@ export function sendDecision(f, s = DEFAULTS) {
     if (!f.inboundCount) return { ok: false, reason: 'a reply needs a message from this person' };
     return { ok: true };
   }
-  if (f.kind !== 'outreach') return { ok: false, reason: `unknown kind '${f.kind}' (reply | welcome | outreach | report)` };
+  if (f.kind !== 'outreach') return { ok: false, reason: `unknown kind '${f.kind}' (reply | welcome | connected | outreach | report)` };
   if (s.outreach_enabled !== 'on') return { ok: false, reason: 'outreach is switched off' };
   if (f.stopped) return { ok: false, reason: 'this person paused letters or asked to stop' };
   if (!f.inboundCount) return { ok: false, reason: 'outreach only to people who have written to Anís' };

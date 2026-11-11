@@ -64,3 +64,15 @@ describe('welcome letter', () => {
     expect(sendDecision({ ...w, stopped: true }, on).reason).toMatch(/paused/);
   });
 });
+
+describe('connected (the reader just connected their account, Chad 11-11)', () => {
+  const c = { ...base, kind: 'connected', invited: false, approved: false, inboundCount: 0, allowlisted: false };
+  it('goes at once, once per address, with no invite or approval: the reader asked by signing in', () => {
+    expect(sendDecision(c).ok).toBe(true);
+    expect(sendDecision({ ...c, connectedSent: true }).reason).toMatch(/already sent/);
+  });
+  it('never to a bounced or ignored address', () => {
+    expect(sendDecision({ ...c, suppressed: true }).ok).toBe(false);
+    expect(sendDecision({ ...c, ignored: 'x.org' }).ok).toBe(false);
+  });
+});

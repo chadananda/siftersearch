@@ -191,7 +191,8 @@ export async function sendMail(env, { to, subject, text, html, inReplyTo, refere
   if (system) return sesSend(env, { addr, subject, text, html, headers: [] });   // notices to Chad: no footer, no rules
   // A REPLY answers someone who wrote to Anís — not a newsletter, no unsubscribe controls (Chad 10-13). Letters Anís
   // starts (welcome / outreach) keep the pause link and the List-Unsubscribe headers.
-  const reply = kind === 'reply';
+  // the connected note answers the reader's own sign-in and promises nothing recurring: no pause footer (its link names the backend)
+  const reply = kind === 'reply' || kind === 'connected';
   const pause = reply ? null : `${SITE}/_mail/pause?t=${await pauseToken(addr, env.MAIL_LINK_SECRET)}`;
   ({ text, html } = composeLetter(text, pause));          // one look for every letter: body, signature (+ pause footer)
   const headers = pause ? [{ Name: 'List-Unsubscribe', Value: `<${pause}>` }, { Name: 'List-Unsubscribe-Post', Value: 'List-Unsubscribe=One-Click' }] : [];
@@ -273,6 +274,7 @@ export async function sendFacts(db, row, settings = {}) {
     approved: !!row.approved,
     askedBy: (await one('SELECT asked_by FROM mail_allowlist WHERE email = ?', addr))?.asked_by ?? null,
     welcomed: !!(await one(`SELECT 1 x FROM mail_messages WHERE direction = 'out' AND kind = 'welcome' AND status = 'sent' AND to_addr = ?`, addr)),
+    connectedSent: !!(await one(`SELECT 1 x FROM mail_messages WHERE direction = 'out' AND kind = 'connected' AND status = 'sent' AND to_addr = ?`, addr)),
     inboundCount: inbound?.n ?? 0,
     // cadence_unit_minutes (default a day) lets testers run the cadence in minutes; the rules still say 'days'
     daysSinceLastInbound: inbound?.days == null ? Infinity : (inbound.days * 1440) / Number(settings.cadence_unit_minutes || 1440),
