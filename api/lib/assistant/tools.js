@@ -149,6 +149,33 @@ async function searchOnce(query, a, filters, ctx) {
 }
 
 // ── the registry ────────────────────────────────────────────────────────────────────────────────────────────────────────
+// A found paragraph that ENDS by introducing what follows ("…their names are as follows:") is half an answer (11-10: "Who were the
+// Letters of the Living?" found Nabíl's lead-in, the judge saw no names and the list came from the web). Its next paragraphs in the same
+// section (≤ LEAD_ROWS, ≤ LEAD_CHARS) join its text. Rights unknown or encumbered: the paragraph alone (as whole_lookup). Never throws.
+const LEADS_ON = /:\s*["”’']?\s*$/, LEAD_ROWS = 4, LEAD_CHARS = 1600;
+export async function continueLeads(passages, ctx = {}) {
+  try {
+    const at = (p) => ({ doc: Number(p.document_id ?? p.doc_id), idx: Number(p.paragraph_index) });
+    const leads = (passages || []).filter((p) => LEADS_ON.test(String(p.text || '')) && Number.isFinite(at(p).doc) && Number.isFinite(at(p).idx));
+    if (!leads.length) return passages;
+    const enc = await (await dep(ctx, 'encumberedAmong', 'rights'))([...new Set(leads.map((p) => at(p).doc))]).catch(() => null);
+    if (!enc) return passages;
+    const inRange = await dep(ctx, 'paragraphsInRange', 'paragraphs');
+    const grown = new Map(await Promise.all(leads.filter((p) => !enc.has(at(p).doc)).map(async (p) => {
+      const { doc, idx } = at(p), rows = (await inRange(doc, idx, idx + LEAD_ROWS).catch(() => [])) || [];
+      const head = rows.find((r) => r.paragraph_index === idx)?.heading ?? null, add = [];
+      let n = 0;
+      for (const r of rows.filter((x) => x.paragraph_index > idx)) {
+        const t = String(r.text || '').trim();
+        if ((r.heading ?? null) !== head || n + t.length > LEAD_CHARS) break;
+        add.push(t); n += t.length;
+      }
+      return [p, add.filter(Boolean)];
+    })));
+    return passages.map((p) => (grown.get(p)?.length ? { ...p, text: `${p.text}\n${grown.get(p).join('\n')}`, continued: grown.get(p).length } : p));
+  } catch { return passages; }
+}
+
 const ENTRIES = [
   layer('literal_search', 'Literal Search (BM25)', 'searchKeywordQdrant', 'BM25 keyword search over whole paragraphs: the exact words, folded for accents and spelling.', C(false, 40)),
   layer('phrase_search', 'Phrase Search', 'searchPhrases', 'Phrase-vector search: paragraphs holding a phrase like the query, in any wording.', C(true, 120)),
@@ -177,6 +204,7 @@ const ENTRIES = [
           passages = dedupePassages([...passages, ...more]).slice(0, limit);
         }
       }
+      passages = await continueLeads(passages, ctx);
       return { passages, query_used: query, relaxed: passages.some((p) => p.tier && p.tier !== 'strict') ? dropped : [] };
     } },
   // THE find-quote tool (Chad 11-10: "'Find quote' is the tool, with filters for religion, author(s) and book(s)"): the words, literal first,
