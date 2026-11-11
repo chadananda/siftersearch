@@ -25,7 +25,7 @@ export function spawnGrounding(docId, { from, only, to, readjudicate, rehype, hy
   if (from) args.push(`--from=${from}`);
   if (only) args.push(`--only=${only}`);
   if (to) args.push(`--to=${to}`);
-  if (readjudicate) args.push('--readjudicate');
+  if (readjudicate) args.push(Number(readjudicate?.entityId) ? `--readjudicate-entity=${Number(readjudicate.entityId)}` : '--readjudicate');
   if (rehype) args.push('--rehype');   // regenerate HyPE (version-aware upgrade on the hype stage)
   if (hypeModel) args.push(`--hype-model=${hypeModel}`);   // model override for the hype stage (flagship runs)
   if (cc) args.push(`--cc=${cc}`);

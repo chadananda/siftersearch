@@ -652,7 +652,9 @@ export function makeStore() {
     // OR decided by an engine older than sinceVersion (null/absent method_version = pre-versioning = stale),
     // OR never decided at all. Each carries `priorId` = the decision this re-adjudication will supersede
     // (null when none). Confident, current clusters are skipped → a sweep costs ~the improvable fraction.
-    async getReadjudicationClusters(docId, { maxConf = 0.9, sinceVersion = null, includeUncertain = true, minFreq = 1 } = {}) {
+    // entityId: instead, EVERY cluster currently bound to that entity, however confident — the repair sweep when the
+    // entity's fact profile was contaminated (Quddús + Zanján, 11-11) and its links rested on false evidence.
+    async getReadjudicationClusters(docId, { maxConf = 0.9, sinceVersion = null, includeUncertain = true, minFreq = 1, entityId = null } = {}) {
       const rows = await db.queryAll(`SELECT id, kind, confidence, payload, method_version, supersedes FROM entity_decisions WHERE target_kind='mention-cluster' ORDER BY id`);
       const superseded = new Set(rows.map((r) => r.supersedes).filter((x) => x != null));
       const current = new Map();                       // resolvedAs → latest non-superseded decision (this doc)
@@ -660,7 +662,8 @@ export function makeStore() {
         if (superseded.has(r.id)) continue;
         let p = {}; try { p = JSON.parse(r.payload || '{}'); } catch { continue; }
         if ((p.docId ?? p.doc_id ?? null) !== docId) continue;
-        current.set(p.resolvedAs ?? p.resolved_as, { id: r.id, kind: r.kind, confidence: r.confidence, methodVersion: r.method_version ?? null });
+        current.set(p.resolvedAs ?? p.resolved_as, { id: r.id, kind: r.kind, confidence: r.confidence, methodVersion: r.method_version ?? null,
+          entity: Number(p.applied_entity_id ?? p.entityId ?? p.entity_id) || null });
       }
       const verStale = (mv) => sinceVersion != null && (mv == null || Number(mv) < sinceVersion);
       const clusters = await db.queryAll(`SELECT m.resolved_as, COUNT(*) freq, GROUP_CONCAT(DISTINCT m.para_id) paras,
@@ -671,7 +674,8 @@ export function makeStore() {
       for (const c of clusters) {
         if (c.freq < minFreq) continue;
         const d = current.get(c.resolved_as);
-        const improvable = !d || (includeUncertain && d.kind === 'uncertain')
+        const improvable = entityId != null ? (d?.kind === 'link' || d?.kind === 'create') && d.entity === Number(entityId)
+          : !d || (includeUncertain && d.kind === 'uncertain')
           || (d.confidence != null && d.confidence < maxConf) || verStale(d.methodVersion);
         if (improvable) out.push({ resolvedAs: c.resolved_as, freq: c.freq, paraIds: String(c.paras).split(','), arabicForm: c.arabic_form || null, priorId: d?.id ?? null });
       }

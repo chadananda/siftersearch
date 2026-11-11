@@ -253,6 +253,36 @@ describe.skipIf(!HAVE_SQLITE)('Store adapter contract', () => {
     expect(c.priorId).toBe(7003);
   });
 
+  it('getReadjudicationClusters({entityId}) returns EVERY cluster bound to that entity, however confident', async () => {
+    run(`INSERT INTO entity_mentions_v2 (anchor,doc_id,para_id,occurrence,surface,surface_norm,resolved_as,method_version) VALUES ('anc_re_q1',15257,'p_re_1',0,'Quddús','quddus','Quddús','v2')`);
+    run(`INSERT INTO entity_mentions_v2 (anchor,doc_id,para_id,occurrence,surface,surface_norm,resolved_as,method_version) VALUES ('anc_re_z1',15257,'p_re_2',0,'Ḥujjat','hujjat','Mullá Muḥammad-‘Alíy-i-Zanjání','v2')`);
+    run(`INSERT INTO entity_mentions_v2 (anchor,doc_id,para_id,occurrence,surface,surface_norm,resolved_as,method_version) VALUES ('anc_re_o1',15257,'p_re_3',0,'Vaḥíd','vahid','Vaḥíd','v2')`);
+    for (const [id, name, ent] of [[7101, 'Quddús', 1247552], [7102, 'Mullá Muḥammad-‘Alíy-i-Zanjání', 1247552], [7103, 'Vaḥíd', 900]]) {
+      run(`INSERT INTO entity_decisions (id,kind,target_kind,target_ids,payload,evidence,rationale,actor,actor_tier,confidence,status,method_version,supersedes,valid_time)
+           VALUES (?,'link','mention-cluster','[]',?,'{}','','model',2,0.97,'applied','9',NULL,NULL)`, [id, JSON.stringify({ resolvedAs: name, docId: 15257, entityId: ent })]);
+    }
+    const r = await store.getReadjudicationClusters(15257, { entityId: 1247552, sinceVersion: 1 });
+    expect(r.map((c) => c.resolvedAs).sort()).toEqual(['Mullá Muḥammad-‘Alíy-i-Zanjání', 'Quddús']);   // confident + current, still revisited
+    expect(r.find((c) => c.resolvedAs === 'Quddús').priorId).toBe(7101);
+    expect(await store.getReadjudicationClusters(15257, { sinceVersion: 1 })).toEqual([]);              // the normal sweep skips them all
+  });
+
+  it('getEntityFacts leaves out excluded books and claims on dead paragraphs', async () => {
+    run(`INSERT INTO graph_entities (id, name, canonical_name, entity_type) VALUES (1247552, 'Quddús', 'Quddús', 'person')`);
+    run(`INSERT INTO content (id, doc_id, external_para_id, paragraph_index, text, deleted_at) VALUES (9001, 15254, NULL, 1, 'live', NULL), (9002, 15254, NULL, 2, 'gone', '2026-11-01')`);
+    const claim = (h, doc, para, st) => run(`INSERT INTO entity_claims (claim_hash, entity_id, relation, statement, doc_id, para_id) VALUES (?,1247552,'event',?,?,?)`, [h, st, doc, para]);
+    claim('q1', 15254, 'p9001', 'martyred at Bárfurúsh');
+    claim('q2', 15254, 'p9002', 'on a soft-deleted paragraph');
+    claim('q3', 15254, 'p16118053', 'orphan of a re-import');
+    claim('q4', 15257, 'p_re_2', 'held office in Zanján');
+    const all = (await store.getEntityFacts(1247552, { limit: 10 })).facts.map((f) => f.statement);
+    expect(all).toContain('martyred at Bárfurúsh');
+    expect(all).not.toContain('on a soft-deleted paragraph');
+    expect(all).not.toContain('orphan of a re-import');
+    const ex = (await store.getEntityFacts(1247552, { limit: 10, excludeDocs: [15257] })).facts.map((f) => f.statement);
+    expect(ex).not.toContain('held office in Zanján');
+  });
+
   // A cluster decision is made from ONE book's evidence; binding by the name string alone let it rewrite every book's
   // mentions of that name (8,250 mentions on 2026-09-27, e.g. Shaykh Aḥmad-i-Aḥsá'í split across two live records).
   it('bindMentions / unbindMentions touch only the decision\'s own document', async () => {

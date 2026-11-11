@@ -72,7 +72,8 @@ const res = await runGrounding(doc, {
   from: opt.from === true ? undefined : opt.from,
   only: opt.only === true ? undefined : opt.only,
   to: opt.to === true ? undefined : opt.to,
-  readjudicate: opt.readjudicate ? true : undefined,   // incremental re-adjudication sweep (reuse prior work)
+  // incremental re-adjudication sweep (reuse prior work); --readjudicate-entity=N revisits every link to entity N
+  readjudicate: Number(opt['readjudicate-entity']) ? { entityId: Number(opt['readjudicate-entity']) } : (opt.readjudicate ? true : undefined),
   rehype: opt.rehype ? true : undefined,               // regenerate HyPE from scratch (upgrade to current HYPE_VERSION)
   hypeModel: typeof opt['hype-model'] === 'string' ? opt['hype-model'] : undefined,   // hype-stage model override
   cc: Number(opt.cc) || 8,
