@@ -122,7 +122,15 @@ export async function bookFastPath({ messages, names = [], by = null, profile = 
     const near = !hit && !alt && p?.choice && !['none', 'new'].includes(p.choice) ? cands.find((c) => c.key === p.choice) : null;
     if (near && onHeld) onHeld({ ...found1(near, cands, via), confidence: p.confidence ?? 0 });
     if (!hit) return null;
-    return found1(hit, cands, via);
+    return found1(await canonical(hit), cands, via);
+  };
+  // the finder's index is up to hours old: a pick since marked a duplicate follows duplicate_of to the copy that holds the work
+  // (11-11: the Star of the West compilations, retired as copies, still won the pick → no cover, our reader's link)
+  const canonical = async (hit) => {
+    if (hit.kind !== 'work') return hit;
+    const get = deps.getDoc || (async (id, o) => (await import('../docs-repo.js')).getDoc(id, o));
+    const d = await Promise.resolve(get(hit.doc.id, { follow: true, fields: ['id', 'title', 'author', 'religion', 'collection', 'language', 'paragraph_count', 'cover_url', 'duplicate_of'] })).catch(() => null);
+    return d?.id && Number(d.id) !== Number(hit.doc.id) ? { ...hit, doc: { ...hit.doc, ...d } } : hit;
   };
   const found1 = (hit, cands, via) => {
     if (hit.kind === 'section') return { kind: 'section', sec: hit.sec, doc: null, via };

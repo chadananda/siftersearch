@@ -128,3 +128,15 @@ describe('Star of the West book link (Chad 11-11: "we are still linking to sifte
     expect(workUrl({ id: 2291, title: 'Star of the West - Selected Content from Volumes VIII-X', source_url: 'https://bahai-library.com/x' })).toBe('https://bahai-education.org/sifter-star-of-the-west/');
   });
 });
+
+describe('book pick follows a retired copy to the work (11-11: duplicate SoW compilation won → no cover, our reader link)', () => {
+  it('a picked doc marked duplicate becomes its canonical', async () => {
+    const { bookFastPath } = await import('../../api/lib/assistant/book-pick.js');
+    const doc = { id: 15204, title: 'Star of the West', author: 'US Bahá’í News Service', paragraph_count: 3929 };
+    const r = await bookFastPath({ messages: [{ role: 'user', content: 'Star of the West' }], deps: {
+      find: async () => ({ cands: [{ kind: 'work', doc }] }), pickBook: async () => ({ choice: 'c1', confidence: 0.9 }),
+      getDoc: async () => ({ id: 13234, title: 'Star of the West', cover_url: '/img/covers/13234?v=1' }) } });
+    expect(r.work.doc.id).toBe(13234);
+    expect(r.work.doc.cover_url).toBe('/img/covers/13234?v=1');
+  });
+});
