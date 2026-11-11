@@ -229,3 +229,19 @@ describe('labels made under stale evidence are not resumed', () => {
     expect(b.asks()).toBeGreaterThan(0);
   });
 });
+
+describe('periodical article writers', () => {
+  const SOW = { id: 9, title: 'Star of the West, v1, i17 Sultan', author: 'Unknown', religion: "Baha'i", collection: 'News', paragraph_count: 5 };
+  const mkRow = (id, pidx, text, blocktype = 'paragraph') => ({ id, pidx, text, heading: null, blocktype, block_attrs: null, authors: '[]', authors_model: null });
+  const prow = [mkRow(1, 0, '## LETTERS.', 'heading'), mkRow(2, 1, 'FROM MR. SIDNEY SPRAGUE.'), mkRow(3, 2, 'Mr. Ellis interviewed the Master.'), mkRow(4, 3, '(Signed) SYDNEY SPRAGUE.'), mkRow(5, 4, 'Orphan text with no article.')];
+  it('a placeholder-author periodical row gets the article writer; "Unknown" is never written', async () => {
+    const outDir = mkdtempSync(join(tmpdir(), 'pa-'));
+    writeFileSync(join(outDir, '9.json'), JSON.stringify({ id: 9, labels: prow.map((r) => ({ id: r.id, speaker: 'Unknown', unproven: true })) }));
+    const written = [];
+    await paragraphAuthorsJob({ ids: [9], write: true, outDir }, { ask: async () => { throw new Error('no model'); }, chatCompletion: async () => { throw new Error('no model'); },
+      doc: async () => SOW, rowsOf: async () => prow, writeAuthors: async (u) => { written.push(...u); } });
+    for (const id of [2, 3, 4]) expect(written.find((u) => u.id === id)?.authors[0]).toMatchObject({ name: 'Sidney Sprague', role: 'author', basis: 'article' });
+    expect(written.find((u) => u.id === 5)).toBeUndefined();
+    expect(JSON.stringify(written)).not.toMatch(/Unknown/);
+  });
+});

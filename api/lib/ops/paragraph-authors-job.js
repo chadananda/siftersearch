@@ -13,10 +13,15 @@ import { getDoc, listDocs } from '../docs-repo.js';
 import { getAuthority } from '../authority.js';
 import { isCompilation } from '../doc-tier.js';
 import { authorshipRows, writeParagraphAuthors } from '../paragraphs-repo.js';
+import { canonical } from '../authorship/window.js';
 import { createClassifier, fragmentShare, nextAuthors, refineLabel, WINDOW_MODEL as MODEL } from '../authorship/window-core.js';
 import { trailerAuthors } from '../authorship/trailers.js';
+import { articleWriters } from '../authorship/articles.js';
 import { isDraining } from '../drain.js';
 
+// a periodical's paragraphs are the ARTICLE's writer's (byline / FROM heading / signature / contents), not the placeholder doc author
+const PLACEHOLDER = /^(unknown|anonymous|various|n\/?a)$/i;
+export const isPeriodical = (d) => d.collection === 'News' || /^Star of the West,/i.test(d.title || '');
 const multiAuthor = (d) => isCompilation(d) || /^(Compilation\b|Various\b)/i.test(d.author || '');
 export const isSecondaryBook = (d) => getAuthority(d) < 8 || multiAuthor(d);
 
@@ -110,7 +115,16 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, all
     // the deterministic rules run again on saved labels, so a book classified under an earlier version gets today's rules
     const raw = new Map(lab.labels.map((l) => [l.id, l]));
     const byId = new Map();
-    rows.forEach((r, i) => { byId.set(r.id, refineLabel(raw.get(r.id), r, rows[i - 1], byId.get(rows[i - 1]?.id), book, { secondary, prevRaw: raw.get(rows[i - 1]?.id) })); });
+    // periodical / placeholder author: the fallback narrator is the article's writer; no writer → unattributed, never "Unknown"
+    const placeholder = PLACEHOLDER.test(String(d.author || '').trim());
+    const writers = placeholder || isPeriodical(d) ? articleWriters(rows) : new Map();
+    rows.forEach((r, i) => {
+      const aw = writers.get(r.id);
+      let l = refineLabel(raw.get(r.id), r, rows[i - 1], byId.get(rows[i - 1]?.id), aw ? { ...book, author: aw.writer } : book, { secondary, prevRaw: raw.get(rows[i - 1]?.id) });
+      if (l && placeholder && (!l.speaker || PLACEHOLDER.test(l.speaker))) l = { ...l, speaker: aw?.writer ?? null };
+      else if (l && aw && PLACEHOLDER.test(String(l.speaker || ''))) l = { ...l, speaker: aw.writer };
+      byId.set(r.id, l);
+    });
     const updates = [];
     const fromTrailer = new Map(evidence.map((u) => [u.id, u]));
     for (const r of rows) {
@@ -118,6 +132,9 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, all
       // a trailer paragraph still gets the classifier's QUOTED voices (the author is locked: 'trailer' is a strong basis) —
       // Shoghi Effendi's letter quoting Bahá'u'lláh keeps Bahá'u'lláh findable (10-19 dry run: skipping them lost ~1,000)
       const n = nextAuthors(r, byId.get(r.id), book, { noDemote: secondary });
+      // the article writer's entry carries its own basis ('article') so the source of the attribution stays visible
+      const aw = writers.get(r.id);
+      if (n && aw) n.authors = n.authors.map((e) => (e.role === 'author' && e.basis === 'window' && e.name === canonical(aw.writer) ? { ...e, basis: 'article', via: aw.basis } : e));
       const ev = fromTrailer.get(r.id);
       if (ev) {
         if (n?.authors.some((e) => e.role === 'quoted' && e.basis === 'window')) stats.quoted_added++;

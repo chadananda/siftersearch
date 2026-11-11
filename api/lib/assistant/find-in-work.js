@@ -62,10 +62,12 @@ export function creditOf(p, phrase) {
   const v = p?.voice;
   const speaker = named(v?.speaker) ?? named(p?.author);
   const quoted = (v?.quoted || []).map(named).filter(Boolean);
-  if (quoted.length === 1 && phrase && p?.text) {
+  if (phrase && p?.text && quoted.length <= 1) {
     const want = foldText(String(phrase).replace(/\*\*/g, ''));
     const inQuote = [...String(p.text).matchAll(QUOTED_SPAN)].some((m) => foldText(m[1]).includes(want));
-    if (inQuote) return speaker && speaker !== quoted[0] ? `${quoted[0]}, as reported by ${speaker}` : quoted[0];
+    // quoted words of a voice the record does not name are never the reporter's own: "reported by" him, not "by" him
+    if (inQuote && quoted.length === 1) return speaker && speaker !== quoted[0] ? `${quoted[0]}, as reported by ${speaker}` : quoted[0];
+    if (inQuote && speaker) return `reported by ${speaker}`;
   }
   return speaker;
 }
