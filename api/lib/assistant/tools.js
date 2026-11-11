@@ -130,6 +130,43 @@ const LAYER_FN = { literal: 'searchKeywordQdrant', phrase: 'searchPhrases', hype
 const PERSON = { $id: 'AnisPerson', type: 'object', additionalProperties: true, required: ['name'], properties: { id: { type: ['integer', 'string', 'null'] }, name: { type: 'string' },
   evidence: { type: 'array', items: { type: 'object', additionalProperties: true, properties: { relation: nul('string'), statement: nul('string'), source: nul('string'), paraId: { type: ['integer', 'string', 'null'] } } } } } };   // the evidence index keys paragraphs both ways (11-11: a string paraId 500'd every public biography_search)
 
+// ORIGINALS FIRST (Chad 11-11: "when I ask about content… why search fragmentary provisional?"): a Bahá'í search open to the Writings
+// also runs the query over their Persian/Arabic originals — the complete record — and puts those first, each followed by its best linked
+// English (pickRendering: Shoghi Effendi's, another translation, else a quoting copy that says what it is); no link = the original alone
+// (the writer renders it, marked provisional). An English hit that IS a shown translation is not repeated; English fills the rest
+// (Shoghi Effendi, the House, histories, works with no original here). Only rows labelled ar/fa count: the ar-fa group also returns
+// mislabelled English rows. Quota: shelf held to scripture | open (no authority); none for another tradition, a work, a non-doctrinal
+// author, a non-original language, or other authority kinds.
+const ORIGINAL_LANG = /^(ar|fa|per|pes)/i;
+export const ORIGINALS_FIRST = { scripture: 4, open: 2 };
+export function originalsQuota(filters = {}, f = {}, authority = null, limit = 8) {
+  const trad = filters?.tradition ?? f.religion;
+  if (!trad || canonicalTradition(trad) !== "Baha'i" || f.documentId != null || filters?.work != null) return 0;
+  if (f.language && !ORIGINAL_LANG.test(String(f.language))) return 0;
+  const fold = (x) => String(x).toLowerCase().normalize('NFD').replace(/[^a-z]/g, '');
+  if (f.author != null && ![f.author].flat().every((x) => DOCTRINAL_KEYS.some((k) => fold(x).includes(k)))) return 0;
+  const n = !authority ? ORIGINALS_FIRST.open : authority.has('scripture') ? ORIGINALS_FIRST.scripture : 0;
+  return Math.min(n, Math.ceil(limit / 2));
+}
+async function originalsFirst(query, f, quota, authority, english, ctx) {
+  const orig = finish((await fastRows(query, { ...f, religion: "Baha'i", ...ORIGINALS_FILTER, ...(f.author != null ? { author: f.author } : {}) }, quota * 3, ctx))
+    .filter((p) => ORIGINAL_LANG.test(String(p.language || ''))), quota, authority);
+  if (!orig.length) return english;
+  const links = await (await dep(ctx, 'resolveLinks', 'plinks'))(orig.map((p) => p.id), { quotedBy: false }).catch(() => new Map());
+  const { pickRendering } = await import('./researcher.js');
+  const shown = new Set(), out = [];
+  for (const p of orig) {
+    out.push({ ...p, found_by: [...new Set([...(p.found_by || []), 'originals'])] });
+    const pick = pickRendering((links.get?.(p.id)?.translations || []).filter((t) => !ORIGINAL_LANG.test(String(t.language || ''))));
+    if (!pick) continue;
+    const t = pick.t;
+    shown.add(Number(t.id));
+    out.push({ ...toPassage(t), translation: translationLabel(t.translated_by, t.translation_authority), translation_of: p.id, found_by: ['originals'],
+      ...(pick.rendering ? {} : { copy_of_original: pick.cls }) });
+  }
+  return [...out, ...english.filter((p) => !shown.has(Number(p.id)))];
+}
+
 // one fused search at one filter set: layers merged by reciprocal-rank fusion, deduped, authority-filtered
 async function searchOnce(query, a, filters, ctx) {
   const { f, authority, none } = await scope(filters, ctx);
@@ -138,7 +175,10 @@ async function searchOnce(query, a, filters, ctx) {
   // the model names the writer; code only resolves the name (alias table). Left in the query, "where does 'Abdu'l-Bahá say
   // justice is each one's due" ranked other traditions and writers above Some Answered Questions 77 (11-05); held to Him, it is #2
   if (typeof f.author === 'string') f.author = (await import('../search-plan.js')).keywordAuthor(f.author) || f.author.trim();
-  if (!a.layers) return finish(await fastRows(query, f, n, ctx), limit, authority, f);
+  if (!a.layers) {
+    const quota = originalsQuota(filters, f, authority, limit), english = finish(await fastRows(query, f, n, ctx), limit, authority, f);
+    return quota ? originalsFirst(query, f, quota, authority, english, ctx).then((l) => l.slice(0, limit + quota)).catch(() => english) : english;
+  }
   const lists = await Promise.all(a.layers.map(async (l) => (l === 'originals'
     ? originalsOut(f) ? [] : (await fastRows(query, { ...f, religion: "Baha'i", ...ORIGINALS_FILTER }, n, ctx)).map((p) => ({ ...p, found_by: ['originals'] }))
     : layerRows(LAYER_FN[l], query, n, f, ctx))));
