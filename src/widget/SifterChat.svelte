@@ -9,20 +9,20 @@
   // Transcript persists in localStorage per token. Soft WebAudio feedback (synthesized, muteable).
   // token/api from the loader; accent/name/mission are optional per-page overrides (data-* attrs)
   // that tune the widget without touching the DB profile. ONE public domain; the edge worker proxies /api.
-  import { ANIS_SAMPLES, SAMPLES_FOR_EVERYONE } from '../lib/anis-samples.js';
+  import { ANIS_SAMPLES } from '../lib/anis-samples.js';
   import { styleQuotes } from '../../api/lib/quote-style.js';
   import { quoteSegments } from '../../api/lib/quote-blocks.js';
   import { BUILD, tagFor } from './version.js';
   let { token = '', api = 'https://siftersearch.com', accent = '', name = '', mission = '', opened = '', samples = '' } = $props();
-  // "Try a sample" menu (one showcase question per strategy): shown with the samples attribute, or once a page was opened
-  // with ?anis-samples (remembered on this browser; ?anis-samples=0 forgets), or for everyone when SAMPLES_FOR_EVERYONE
-  let showSamples = $state(false);
+  // "Try a sample" menu (one showcase question per strategy): on by default (Chad 11-10); a host turns it off with
+  // samples="off"/"false", a reader with ?anis-samples=0 (remembered on this browser; ?anis-samples brings it back)
+  let showSamples = $state(true);
   let sampleOpen = $state(false);
   try {
     const q = new URLSearchParams(location.search).get('anis-samples');
     if (q !== null) localStorage.setItem('sifter-chat-samples', q === '0' ? '0' : '1');
-    showSamples = SAMPLES_FOR_EVERYONE || (samples !== '' && samples !== 'false') || localStorage.getItem('sifter-chat-samples') === '1';
-  } catch { showSamples = SAMPLES_FOR_EVERYONE || (samples !== '' && samples !== 'false'); }
+    showSamples = !/^(off|false|0)$/.test(samples) && localStorage.getItem('sifter-chat-samples') !== '0';
+  } catch { showSamples = !/^(off|false|0)$/.test(samples); }
   async function runSample(smp) {
     sampleOpen = false;
     for (const q of [...(smp.before || []), smp.q]) {
