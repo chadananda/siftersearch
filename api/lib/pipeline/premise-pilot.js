@@ -1,6 +1,6 @@
 // Premise-extraction PILOT (Chad 11-11): passages whose weight lies in what they ASSUME, not what they answer (HyPE cannot hold these).
 // Ops job `premise-pilot` { maxUsd, targets?, dry? }: one Sonnet call per paragraph (+ prev/next ¶, heading, title/author) → premises with a verbatim proof
-// (spanIsPresent-checked; unverified dropped + counted). Billed to budget key `premise-pilot`. Writes data/run/premise-pilot-<ts>.json. Deps all injectable.
+// (spanIsPresent-checked; unverified counted + kept in `dropped` with reason). Billed to budget key `premise-pilot`. Writes data/run/premise-pilot-<ts>.json. Deps all injectable.
 import fs from 'node:fs';
 import path from 'node:path';
 import { withAIContext } from '../ai-context.js';
@@ -23,6 +23,7 @@ export const SYSTEM = `You read ONE passage from a religious or historical work 
 Example: a ruler is rebuked for unjust taxation. That presupposes rights exist before the state (from God), a sovereign can be wrong, and the power to tax has moral limits.
 Rules:
 - The normal answer is an EMPTY list. Narrative, devotional, ritual and descriptive passages usually have no such premise. Never manufacture one.
+- Stay inside what the passage itself addresses. When it speaks of one aspect (the station God created man for, the higher or spiritual nature, an ideal, one specific law), NAME that aspect in the premise; never generalise into a claim about the whole of human nature, all rulers, or all property.
 - Say "assumes" or "presupposes", never "teaches": this is an inference from the words, not a statement of the faith's teaching.
 - Plain words, no jargon. One plain sentence per premise.
 - "proof" must be words copied EXACTLY from the PASSAGE (not the context paragraphs), the words the inference rests on.
@@ -83,7 +84,7 @@ export async function premisePilotJob(params = {}, deps = {}) {
   const plan = { paragraphs: work.length, estUsd: r4(work.length * EST_USD_PER_PARA), maxUsd, ...(missing.length ? { missingDocs: missing } : {}) };
   if (params.dry || params.dryRun) return { dryRun: true, ...plan, byDoc: Object.fromEntries([...docs].map(([id, doc]) => [id, { title: doc.title, n: work.filter((w) => w.doc === doc).length }])) };
 
-  const out = { usd: 0, done: 0, withPremises: 0, premises: [], unverified: 0, unparsed: 0, errors: 0, byConcept: {}, creditWait: null, stop: null };
+  const out = { usd: 0, done: 0, withPremises: 0, premises: [], unverified: 0, dropped: [], unparsed: 0, errors: 0, byConcept: {}, creditWait: null, stop: null };
   let next = 0;
   const one = async ({ doc, p, prev, next: nx }) => {
     for (;;) {
@@ -98,7 +99,7 @@ export async function premisePilotJob(params = {}, deps = {}) {
         if (!list) { out.unparsed++; return; }
         let kept = 0;
         for (const x of list) {
-          if (spanIsPresent(x.proof, [p.text]) !== true || !x.premise) { out.unverified++; continue; }
+          if (spanIsPresent(x.proof, [p.text]) !== true || !x.premise) { out.unverified++; out.dropped.push({ docId: doc.id ?? p.doc_id, title: doc.title, paraId: p.id, ord: p.ord, text: String(p.text).slice(0, TEXT_CAP), premise: x?.premise, concept: x?.concept, basis: x?.basis, proof: x?.proof, why: x?.why, strength: x?.strength, reason: 'proof-not-found' }); continue; }
           kept++; out.byConcept[x.concept] = (out.byConcept[x.concept] || 0) + 1;
           out.premises.push({ docId: doc.id ?? p.doc_id, title: doc.title, paraId: p.id, ord: p.ord, text: String(p.text).slice(0, TEXT_CAP), premise: x.premise, concept: x.concept, basis: x.basis, proof: x.proof, why: x.why, strength: x.strength });
         }
@@ -121,7 +122,7 @@ export async function premisePilotJob(params = {}, deps = {}) {
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, work.length) }, async () => { while (next < work.length && !out.stop) await one(work[next++]); }));
 
   const status = out.stop === 'budget' ? 'budget' : out.stop === 'cap' ? 'cap' : out.stop === 'yielded' ? 'yielded' : 'complete';
-  const result = { status, ...plan, usd: r4(out.usd), analysed: out.done, withPremises: out.withPremises, premises: out.premises, unverified: out.unverified, unparsed: out.unparsed, errors: out.errors, byConcept: out.byConcept, ...(out.capReason ? { capReason: out.capReason } : {}), ...(out.creditWait ? { creditWait: out.creditWait } : {}) };
+  const result = { status, ...plan, usd: r4(out.usd), analysed: out.done, withPremises: out.withPremises, premises: out.premises, unverified: out.unverified, dropped: out.dropped, unparsed: out.unparsed, errors: out.errors, byConcept: out.byConcept, ...(out.capReason ? { capReason: out.capReason } : {}), ...(out.creditWait ? { creditWait: out.creditWait } : {}) };
   try { result.file = d.writeRun(`premise-pilot-${d.now().toISOString().replace(/[:.]/g, '-')}.json`, result); } catch (e) { result.fileError = String(e?.message || e).slice(0, 120); }
   await d.log('premise', `premise-pilot ${status}: ${out.done}/${work.length} ¶, ${out.premises.length} premises in ${out.withPremises} ¶, ${out.unverified} unverified, $${r4(out.usd)}`);
   return result;

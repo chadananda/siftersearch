@@ -1,0 +1,156 @@
+// Premise RECONCILE (Chad 11-11): per concept, check a premise-pilot result's entries against core anchor passages that address the concept
+// explicitly → one framing (the teaching with its distinctions) + a verdict per entry (keep | rescope | drop). Ops job `premise-reconcile`
+// { maxUsd, file?, dry? }. Same budget key/caller/stage as premise-pilot (anthropic-policy unchanged). Writes data/run/premise-reconcile-<ts>.json.
+// Anchors: search.js hybridSearch (Bahá'í, Qdrant-routed) post-filtered to authority.js doctrinalTier core. Deps all injectable.
+import fs from 'node:fs';
+import path from 'node:path';
+import { withAIContext } from '../ai-context.js';
+import { spanIsPresent } from '../rag/enrich/retrieval.js';
+import { JUDGE_MODEL } from './hype-rubric.js';
+import { BUDGET_KEY, TEXT_CAP } from './premise-pilot.js';
+import { calculateCost } from '../model-registry.js';
+import { isCreditRefusal, isSpendCap, CREDIT_WAIT_MS } from '../spend-caps.js';
+
+export const MAX_ANCHORS = 8, CHUNK = 60, CONCURRENCY = 3;
+// ESTIMATE (Sonnet 4.6 sync, $3/$15 per M): per call ≈ 2.6k in (prompt + 8 anchors) + 120 in / 70 out per entry + 300 out for the framing
+export const EST_IN_BASE = 2600, EST_IN_PER_ENTRY = 120, EST_OUT_BASE = 300, EST_OUT_PER_ENTRY = 70;
+export const estCall = (n) => (EST_IN_BASE + EST_IN_PER_ENTRY * n) * 3e-6 + (EST_OUT_BASE + EST_OUT_PER_ENTRY * n) * 15e-6;
+// extra search words per concept (query = label + these); unknown/other concepts search the label alone
+export const SYNONYMS = {
+  'human nature (noble vs. corrupt)': ['man two natures lower higher', 'created noble'],
+  'source of rights (divine vs. state-granted)': ['rights bestowed by God', 'human rights'],
+  'limits of sovereign/state power': ['duty of kings and rulers', 'tyranny oppression'],
+  'just and unjust taxation': ['taxes tribute subjects', 'exactions of rulers'],
+  'private property': ['possessions ownership', 'wealth acquired'],
+  'moral status of the unborn / right to life': ['the embryo soul', 'life of the child in the womb'],
+  'justice (ʿadl) and equity (inṣáf)': ['justice is the best beloved', 'equity fairness'],
+  'equality before the law': ['equal in the sight of the law', 'oneness of mankind'],
+  'rule of law and accountability of rulers': ['rulers accountable to God', 'laws of the land'],
+  'consultation and consent of the governed': ['consultation', 'elected representatives'],
+  'freedom of conscience and religion': ['independent investigation of truth', 'liberty of conscience'],
+  'extremes of wealth and poverty / economic justice': ['rich and poor', 'distribution of wealth'],
+  'punishment, mercy and the purpose of penalties': ['penalty for crime', 'mercy and forgiveness'],
+  'individual rights vs. the common good': ['welfare of the community', 'rights of the individual'],
+  'war, peace and collective security': ['collective security', 'universal peace'],
+  'rights and duties of women': ['equality of men and women', 'education of girls'],
+  'education as a right': ['universal education', 'education compulsory'],
+  'the family and inheritance': ['inheritance', 'marriage and the family'],
+  'religion and the state': ['religion and government', 'separation of church and state'],
+  'work as worship / labour and capital': ['work in the spirit of service is worship', 'profit sharing labour'],
+};
+export const SYSTEM = `You reconcile PREMISES that were each inferred from ONE passage with what the religion's core texts say EXPLICITLY on the same concept.
+You get the CONCEPT, ANCHOR passages (core texts that address it directly), and ENTRIES (id, book, paragraph, premise, proof).
+Authority order: Bahá'u'lláh and the Báb > 'Abdu'l-Bahá > Shoghi Effendi > others. An explicit statement outranks an inference.
+1. Write "framing": the teaching as the texts frame it, WITH its distinctions (for example: man has two natures, a lower material one and a higher spiritual potential one; a statement about the noble station must not be ascribed to the lower nature). 2-5 sentences, plain words. Use only the anchors and entries; never invent doctrine they do not contain.
+2. "framingProof": [{"anchorId":"a1","words":"..."}] words copied EXACTLY from the anchor texts that the framing rests on.
+3. For every ENTRY give a verdict: "keep" (consistent with the framing and scoped to what its passage addresses), "rescope" (true only of one aspect: rewrite "premise" to name the aspect the passage speaks of), or "drop" (overreach, or contradicts the framing). "reason" is one short sentence.
+Reply with JSON only: {"framing":"...","framingProof":[...],"verdicts":[{"id":"e1","verdict":"keep|rescope|drop","premise":"only when rescope","reason":"..."}]}`;
+const r4 = (n) => Math.round(n * 10000) / 10000;
+const userMsg = (concept, anchors, entries, framing) => `CONCEPT: ${concept}\n\n${framing ? `FRAMING ALREADY ESTABLISHED (use it as given; keep "framing" the same and judge only these entries):\n${framing}\n\n` : ''}ANCHORS:\n${anchors.map((a) => `[${a.id}] ${a.title}${a.author ? ` — ${a.author}` : ''}\n${a.text}`).join('\n\n') || '(none found)'}\n\nENTRIES:\n${entries.map((e) => `[${e.id}] ${e.title} ¶${e.ord}\npremise: ${e.premise}\nproof: ${e.proof}`).join('\n\n')}`;
+
+/** The reply text → {framing, framingProof, verdicts} or null. */
+export function parseReconcile(text) {
+  const s = String(text || ''), a = s.indexOf('{'), b = s.lastIndexOf('}');
+  if (a < 0 || b < a) return null;
+  let v; try { v = JSON.parse(s.slice(a, b + 1)); } catch { return null; }
+  return v && Array.isArray(v.verdicts) ? { framing: String(v.framing || ''), framingProof: Array.isArray(v.framingProof) ? v.framingProof : [], verdicts: v.verdicts.filter((x) => x && typeof x === 'object') } : null;
+}
+
+/** entries → [{concept, entries}] grouped by concept (ids e1…); an "other: …" concept with fewer than 2 entries is skipped. */
+export function groupByConcept(entries) {
+  const m = new Map(), skipped = [];
+  entries.forEach((e, i) => { const x = { ...e, id: `e${i + 1}` }; (m.get(e.concept) || m.set(e.concept, []).get(e.concept)).push(x); });
+  const groups = [];
+  for (const [concept, list] of m) { if (String(concept).startsWith('other') && list.length < 2) skipped.push(...list); else groups.push({ concept, entries: list }); }
+  return { groups, skipped };
+}
+export const chunk = (list, n = CHUNK) => Array.from({ length: Math.ceil(list.length / n) }, (_, i) => list.slice(i * n, (i + 1) * n));
+
+async function defaults(over) {
+  return {
+    // core anchors: Bahá'í hybrid search (Qdrant-routed), over-fetched then kept only where doctrinalTier says core (paragraph's own writer decides)
+    search: async (query) => (await import('../search.js')).hybridSearch(query, { limit: 40, filters: { religion: "Baha'i" } }),
+    isCore: async (h) => (await import('../authority.js')).doctrinalTier({ religion: h.religion || "Baha'i", collection: h.collection, title: h.title, author: h.doc_author || h.author }, { author: h.author }) === 'core',
+    readRun: (f) => { const dir = path.join(process.cwd(), 'data', 'run'); const name = f ? path.basename(f) : fs.readdirSync(dir).filter((n) => /^premise-pilot-.*\.json$/.test(n)).sort().pop(); if (!name) return null; return { name, ...JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8')) }; },
+    ask: async (messages, o) => (await import('../ai.js')).chatCompletion(messages, { provider: 'anthropic', model: JUDGE_MODEL, temperature: 0, maxTokens: 8000, ...o }),
+    sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
+    draining: async () => (await import('../drain.js')).isDraining(),
+    log: async (kind, text) => (await import('../repos/activity-repo.js')).logActivity(kind, text),
+    writeRun: (name, obj) => { const dir = path.join(process.cwd(), 'data', 'run'); fs.mkdirSync(dir, { recursive: true }); const f = path.join(dir, name); fs.writeFileSync(f, JSON.stringify(obj, null, 1)); return f; },
+    now: () => new Date(),
+    ...over,
+  };
+}
+
+export async function premiseReconcileJob(params = {}, deps = {}) {
+  const d = await defaults(deps);
+  const maxUsd = Number(params.maxUsd);
+  if (!(maxUsd > 0)) return { status: 'error', error: 'maxUsd required (> 0)' };
+  const src = d.readRun(params.file);
+  if (!src?.premises?.length) return { status: 'error', error: 'no premise-pilot result with premises found' };
+  const { groups, skipped } = groupByConcept(src.premises);
+  const estUsd = r4(groups.reduce((s, g) => s + chunk(g.entries).reduce((t, c) => t + estCall(c.length), 0), 0));
+  const plan = { source: src.name || params.file, entries: src.premises.length, concepts: groups.length, skippedEntries: skipped.length, estUsd, maxUsd, estimate: `per call ${EST_IN_BASE}+${EST_IN_PER_ENTRY}/entry in, ${EST_OUT_BASE}+${EST_OUT_PER_ENTRY}/entry out at Sonnet 4.6 sync $3/$15 per M` };
+  if (params.dry || params.dryRun) return { dryRun: true, ...plan };
+
+  const out = { usd: 0, stop: null, errors: [], creditWait: null }, concepts = [], verdictOf = new Map();
+  const call = async (concept, anchors, entries, framing) => {
+    for (;;) {
+      if (out.stop) return null;
+      if (out.usd + estCall(entries.length) > maxUsd) { out.stop = 'budget'; return null; }
+      try {
+        const res = await withAIContext({ billTo: BUDGET_KEY, stage: 'hype-judge', caller: BUDGET_KEY }, () => d.ask([{ role: 'system', content: SYSTEM }, { role: 'user', content: userMsg(concept, anchors, entries, framing) }]));
+        out.usd += res?.usage?.promptTokens != null || res?.usage?.completionTokens != null ? calculateCost(JUDGE_MODEL, res.usage.promptTokens || 0, res.usage.completionTokens || 0) : estCall(entries.length);
+        if (out.creditWait && !out.creditWait.resolvedAt) out.creditWait.resolvedAt = d.now().toISOString();
+        return parseReconcile(res?.content);
+      } catch (e) {
+        // no credit is a WAIT, never a failure: the same call is offered again
+        if (isCreditRefusal(e)) {
+          if (!out.creditWait || out.creditWait.resolvedAt) { out.creditWait = { since: d.now().toISOString(), probes: 0 }; await d.log('premise', 'premise-reconcile: Anthropic has no credit — waiting in place'); }
+          out.creditWait.probes++;
+          if (await d.draining()) { out.stop = 'yielded'; return null; }
+          await d.sleep(Math.max(1000, Math.min(isSpendCap(e) ? e.retryAfterMs ?? CREDIT_WAIT_MS : CREDIT_WAIT_MS, CREDIT_WAIT_MS)));
+          continue;
+        }
+        if (isSpendCap(e)) { out.stop = 'cap'; out.capReason = String(e.message).slice(0, 200); return null; }
+        out.errors.push(`${concept}: ${String(e?.message || e).slice(0, 120)}`); return null;
+      }
+    }
+  };
+  const one = async ({ concept, entries }) => {
+    // anchors: concept label + synonyms, core only, deduped, best first
+    const seen = new Map();
+    for (const q of [concept.replace(/^other:\s*/, ''), ...(SYNONYMS[concept] || [])]) {
+      let hits = []; try { hits = (await d.search(q))?.hits || []; } catch (e) { out.errors.push(`${concept}: anchor search ${String(e?.message || e).slice(0, 80)}`); }
+      for (const h of hits) { const k = h.id ?? h.paragraph_id ?? h.text; if (seen.size < MAX_ANCHORS && !seen.has(k) && String(h.text || '').trim() && await d.isCore(h)) seen.set(k, h); }
+    }
+    const anchors = [...seen.values()].map((h, i) => ({ id: `a${i + 1}`, title: h.title, author: h.author, text: String(h.text).slice(0, TEXT_CAP * 2) }));
+    let framing = null, framingProof = [], unverifiedFraming = [];
+    for (const part of chunk(entries)) {
+      const r = await call(concept, anchors, part, framing);
+      if (!r) { if (!out.stop) out.errors.push(`${concept}: unparsed reply`); if (out.stop) break; continue; }
+      if (framing == null) {
+        framing = r.framing; framingProof = r.framingProof;
+        unverifiedFraming = framingProof.filter((f) => spanIsPresent(f?.words, [anchors.find((a) => a.id === f?.anchorId)?.text ?? '']) !== true);
+      }
+      for (const v of r.verdicts) verdictOf.set(v.id, v);
+    }
+    const counts = { keep: 0, rescope: 0, drop: 0 };
+    for (const e of entries) { const v = verdictOf.get(e.id); if (v && counts[v.verdict] != null) counts[v.verdict]++; }
+    concepts.push({ concept, framing, framingProof, ...(unverifiedFraming.length ? { framingUnverified: unverifiedFraming } : {}), anchors: anchors.map((a) => ({ ...a, text: a.text.slice(0, TEXT_CAP) })), counts });
+  };
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, groups.length) }, async () => { while (next < groups.length && !out.stop) await one(groups[next++]); }));
+
+  const entries = src.premises.map((e, i) => {
+    const id = `e${i + 1}`, v = verdictOf.get(id), skip = skipped.some((s) => s.id === id);
+    if (!v || !['keep', 'rescope', 'drop'].includes(v.verdict)) return { ...e, id, verdict: skip ? 'skipped' : 'unjudged', newPremise: e.premise, reason: skip ? 'single other-concept entry' : 'no verdict' };
+    return { ...e, id, verdict: v.verdict, newPremise: v.verdict === 'rescope' && v.premise ? v.premise : e.premise, reason: v.reason || '' };
+  });
+  const status = out.stop === 'budget' ? 'budget' : out.stop === 'cap' ? 'cap' : out.stop === 'yielded' ? 'yielded' : 'complete';
+  const result = { status, ...plan, usd: r4(out.usd), concepts, entries, errors: out.errors, ...(out.capReason ? { capReason: out.capReason } : {}), ...(out.creditWait ? { creditWait: out.creditWait } : {}) };
+  try { result.file = d.writeRun(`premise-reconcile-${d.now().toISOString().replace(/[:.]/g, '-')}.json`, result); } catch (e) { result.fileError = String(e?.message || e).slice(0, 120); }
+  const c = (v) => entries.filter((e) => e.verdict === v).length;
+  await d.log('premise', `premise-reconcile ${status}: ${concepts.length} concepts, keep ${c('keep')} rescope ${c('rescope')} drop ${c('drop')}, $${r4(out.usd)}`);
+  return result;
+}

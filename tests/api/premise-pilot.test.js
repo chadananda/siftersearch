@@ -1,7 +1,7 @@
 // pipeline/premise-pilot — target selection (range, match + neighbours), unverified proof dropped + counted, empty premises fine,
 // maxUsd stop, credit refusal waits, result shape, billing key, policy gate. Everything injected; no network, no DB.
 import { describe, it, expect } from 'vitest';
-import { premisePilotJob, selectParas, parsePremises, PILOT_TARGETS, CONCEPTS, EST_USD_PER_PARA } from '../../api/lib/pipeline/premise-pilot.js';
+import { SYSTEM, premisePilotJob, selectParas, parsePremises, PILOT_TARGETS, CONCEPTS, EST_USD_PER_PARA } from '../../api/lib/pipeline/premise-pilot.js';
 import { SpendCapError } from '../../api/lib/spend-caps.js';
 import { currentAIContext } from '../../api/lib/ai-context.js';
 import { assertAnthropicAllowed, isPremisePilotAllowed } from '../../api/lib/anthropic-policy.js';
@@ -55,6 +55,8 @@ describe('premisePilotJob', () => {
     const r = await premisePilotJob({ maxUsd: 5, targets: [{ docId: 7 }] }, deps);
     expect(r).toMatchObject({ status: 'complete', paragraphs: 10, analysed: 10, withPremises: 1, unverified: 1 });
     expect(r.premises).toHaveLength(1);
+    expect(r.dropped).toHaveLength(1);
+    expect(r.dropped[0]).toMatchObject({ reason: 'proof-not-found', paraId: 1004, proof: 'words that are nowhere in the passage at all' });
     expect(r.premises[0]).toMatchObject({ docId: 7, title: 'The Work', paraId: 1004, ord: 5, concept: CONCEPTS[1], basis: 'presupposes', strength: 'strong' });
     expect(r.premises[0].text.length).toBeLessThanOrEqual(600);
     expect(r.byConcept).toEqual({ [CONCEPTS[1]]: 1 });
@@ -104,6 +106,11 @@ describe('premisePilotJob', () => {
 });
 
 describe('parsePremises + policy', () => {
+  it('prompt carries the scope rule and keeps assumes-not-teaches', () => {
+    expect(SYSTEM).toContain('Stay inside what the passage itself addresses');
+    expect(SYSTEM).toContain('NAME that aspect');
+    expect(SYSTEM).toContain('never "teaches"');
+  });
   it('parses wrapped JSON, rejects junk', () => {
     expect(parsePremises('here: {"premises":[]} done')).toEqual([]);
     expect(parsePremises('nope')).toBeNull();
