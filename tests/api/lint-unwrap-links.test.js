@@ -17,6 +17,11 @@ describe('unwrapLinks', () => {
     const linked = '[*“Seventeen Letters.”*](https://oceanlibrary.com/x)';
     expect(unwrapLinks(linked).text).toBe(linked);
   });
+  it('an opening bracket nothing closes on its line is dropped', () => {
+    expect(unwrapLinks('these disciples [*“found the Báb” (The Báb, #105)*. Next').text).toBe('these disciples *“found the Báb” (The Báb, #105)*. Next');
+    const ok = 'See [*A*](https://x.org/a) and [[PASSAGES]] here.\n[*B*](https://x.org/b)';
+    expect(unwrapLinks(ok).text).toBe(ok);
+  });
   it('runs in the exit form pass', () => {
     expect(formPass('As [[*Some Answered Questions*](https://oceanlibrary.com/saq)] says.').text).toContain('As [*Some Answered Questions*](https://oceanlibrary.com/saq) says.');
   });

@@ -173,7 +173,15 @@ export function unwrapLinks(text) {
   let fixed = 0;
   const out = String(text || '').replace(/\[(\[[^\[\]\n]+\]\(https?:\/\/[^\s)]+\))\](?!\()/g, (m, link) => { fixed += 1; return link; });
   const out2 = out.replace(/\[(\*["“][^\[\]\n]+["”]\*)\](?![(\[])/g, (m, q) => { fixed += 1; return q; });   // a quotation in link brackets with no link
-  return { text: fixed ? out2 : String(text || ''), fixed };
+  // a "[" that no "]" closes on its line ("records that these eighteen disciples [*“found the Báb…” (…, #105)*.")
+  const out3 = out2.split('\n').map((line) => {
+    const cut = [];
+    for (let i = 0; i < line.length; i += 1) { if (line[i] === '[') cut.push(i); else if (line[i] === ']' && cut.length) cut.pop(); }
+    if (!cut.length) return line;
+    fixed += cut.length;
+    return [...line].filter((_, i) => !cut.includes(i)).join('');
+  }).join('\n');
+  return { text: fixed ? out3 : String(text || ''), fixed };
 }
 
 // THE LINK CHECK — BLOCKING (battery 11-10 "main book of the Hindus": `[*Bhagavad-Gita*](…) [https://…](https://…)`, a Mahabharata
