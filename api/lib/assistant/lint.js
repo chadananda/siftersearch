@@ -219,10 +219,17 @@ export function dropRepeatedCite(text) {
   let fixed = 0;
   const out = String(text ?? '').split(/\n{2,}/).map((para) => {
     const seen = new Set();
-    return para.replace(CITE, (m, label, url, tail) => {
-      const place = placeIn(label, tail);
-      if (!place) return m;
-      const k = `${bookUrl(url)}|${place}`;
+    let last = null;   // { book, end } of the last citation WITH a locator
+    return para.replace(CITE, (m, label, url, tail, off) => {
+      const place = placeIn(label, tail), book = bookUrl(url);
+      // a citation with no locator ("on Ṭáhirih", or nothing) right after one of the same work WITH a locator adds nothing (11-11 Badasht:
+      // "([Memorials of the Faithful, 69 Ṭáhirih, #67.28](…))* ([*Memorials of the Faithful*](…), on Ṭáhirih)"); later in the paragraph it may back another claim
+      if (!/\d/.test(place)) {
+        if (last?.book === book && /^[\s*_)\].,;]*$/.test(para.slice(last.end, off))) { fixed++; return ''; }
+        return m;
+      }
+      last = { book, end: off + m.length };
+      const k = `${book}|${place}`;
       if (seen.has(k)) { fixed++; return ''; }
       seen.add(k); return m;
     });

@@ -41,3 +41,19 @@ describe('dropRepeatedCite', () => {
     expect(r.repairs).toMatchObject({ double_attribution: 1, repeated_cite: 1 });
   });
 });
+
+describe('dropRepeatedCite: a placeless citation after a placed one of the same work (11-11 Badasht)', () => {
+  const MF = 'https://oceanlibrary.com/memorials-of-the-faithful_abdul-baha';
+  it('drops the second, keeps the placed one', () => {
+    const t = `he concludes: *"The Conference of Badasht broke up." ([Memorials of the Faithful, 69 Ṭáhirih, #67.28](${MF}/?paraId=para_711))* ([*Memorials of the Faithful*](${MF}), on Ṭáhirih)`;
+    const r = dropRepeatedCite(t);
+    expect(r.fixed).toBe(1);
+    expect(r.text).toContain('#67.28');
+    expect(r.text).not.toContain('on Ṭáhirih');
+  });
+  it('a placeless citation BEFORE the placed one stays', () => {
+    const t = `In ([*Memorials of the Faithful*](${MF}), on Ṭáhirih) he writes *"x"* ([Memorials of the Faithful, #67.28](${MF}/?paraId=para_711)).`;
+    expect(dropRepeatedCite(t).fixed).toBe(0);
+  });
+});
+
