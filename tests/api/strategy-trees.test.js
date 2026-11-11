@@ -336,7 +336,7 @@ describe('cost per run path (node kinds)', () => {
 });
 
 describe('seeded rows and the ratchet', () => {
-  const HAS_V1 = (id) => STRATEGIES.some((s) => s.id === id && s.version === 1);   // the rev-B trees (claim_check, timeline, history_fact) have no seed v1: production holds their earlier versions
+  const HAS_V1 = (id) => STRATEGIES.some((s) => s.id === id && s.version === 1);   // the rev-B trees (claim_check, timeline, history_fact, history_event) have no seed v1: production holds their earlier versions
   const latest = (id) => STRATEGIES.filter((s) => s.id === id).sort((a, b) => b.version - a.version)[0];
   it('every strategy of the seed — latest version — is a tree of more than one working node (sanity cap 64, ANIS_MAX_NODES), no new one-node strategies', () => {
     for (const id of new Set(STRATEGIES.map((s) => s.id))) {
@@ -345,7 +345,7 @@ describe('seeded rows and the ratchet', () => {
     }
   });
   it('the starter trees: an active v2 above the one-node v1 (seeding retires v1, rollback restores it), nodes kinded with reads/writes, synthesis edges marked', () => {
-    expect(TREE_IDS.sort()).toEqual(['claim_check', 'comparison', 'compilation', 'guidance', 'history_fact', 'prayer', 'reference', 'timeline', 'understanding']);
+    expect(TREE_IDS.sort()).toEqual(['claim_check', 'comparison', 'compilation', 'guidance', 'history_event', 'history_fact', 'prayer', 'reference', 'timeline', 'understanding']);
     for (const id of TREE_IDS.filter(HAS_V1)) {
       const v1 = STRATEGIES.find((s) => s.id === id && s.version === 1), v2 = STRATEGIES.find((s) => s.id === id && s.version === 2);
       expect(v1.status).toBe('active'); expect(Object.keys(v1.graph.nodes).length).toBe(1); expect(v2).toMatchObject({ status: 'active', parent_version: 1 });

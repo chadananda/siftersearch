@@ -181,7 +181,9 @@ const timeline = tree('timeline', 'l1', [
 //   h1 → h2 → h3 → h4c → h6  : the same; the sources disagree
 //   h1 → h2 → h7 → h8        : 2 searches + writer (no library history: the web finds, labelled)
 //   h1 → h2 → h7 → $absence  : 2 searches (nothing anywhere) · h1 error → $fallback
-const history_fact = tree('history_fact', 'h0', [
+// the histories' tree, shared by history_fact (one fact) and history_event (what happened): the same searches, precedence and rank; the judge's
+// question, the shelf the writer reads and the writer differ
+const historyRows = (name, o) => [
   // the question as asked ("How was the Báb martyred?") ranked Nabíl's account 14th behind pilgrim notes and periodicals; the texts' own wording
   // ("the martyrdom of the Báb") ranked it 3rd. One light generator call names the subject that way; the histories are searched on each phrasing too (11-10)
   ['h0', 'plan.phrasings', { n: 2 }, 'process', ['topic'], ['phrasings'], { done: 'h0b', fail: 'h0b' }],
@@ -189,7 +191,7 @@ const history_fact = tree('history_fact', 'h0', [
   ['h1', 'search.together', { list: [
     // each named history searched on each phrasing: inside The Dawn-Breakers "How was the Báb martyred?" (the topic) found Vaḥíd's martyrdom and
     // Townshend; "the martyrdom of the Báb" finds "The martyrdom of the Báb took place at noon…" first (11-10). No phrasing → the topic.
-    { element: 'search.fanout', params: { by: 'histories', as: 'work', tag: 'history_work', inner: { element: 'search.fanout', params: { by: 'phrasings', tag: 'phrasing', inner: { element: 'search.shelf', params: { query: '{{value}}', work: '{{work}}', k: 3 } } } } } },
+    { element: 'search.fanout', params: { by: 'histories', as: 'work', tag: 'history_work', inner: { element: 'search.fanout', params: { by: 'phrasings', tag: 'phrasing', inner: { element: 'search.shelf', params: { query: '{{value}}', work: '{{work}}', k: o.inWork } } } } } },
     { element: 'search.fanout', params: { by: 'histories', tag: 'history_work', inner: { element: 'search.shelf', params: { query: '{{topic}}', work: '{{value}}', k: 2 } } } },
     { element: 'search.fanout', params: { by: 'phrasings', tag: 'phrasing', inner: { element: 'search.shelf', params: { query: '{{value}}', authority: ['history', 'scholarship'], k: 6 } } } },
     // the narrative histories (The Dawn-Breakers, Momen, Balyuzi) on their own: with the Guardian in the same search his short summaries took every slot
@@ -202,17 +204,24 @@ const history_fact = tree('history_fact', 'h0', [
     { element: 'search.web', params: { query: '{{topic}}' } }] }, 'tool', ['topic', 'religions_specified'], ['found_passages', 'web_found', 'missing'],
     { one: 'h2', several: 'h2', thin: 'h2', none: '$absence', error: '$fallback' }],
   ['h2', 'switch', { on: { unit: 'found_passages' }, cases: { filled: 'library', empty: 'web' }, default: 'web' }, 'decide', ['found_passages'], [], { library: 'h3', web: 'h7' }],
-  ['h3', 'judge.passages', { precedence: ['primary record', 'contemporary account', 'scholarship'], question: 'Does this passage state {{topic}}? A primary record outweighs a contemporary account, which outweighs later scholarship.', mentions: 'keep' }, 'decide', ['found_passages', 'topic'], ['found_passages'],
+  ['h3', 'judge.passages', { precedence: ['primary record', 'contemporary account', 'scholarship'], question: `Does this passage ${o.asks}? A primary record outweighs a contemporary account, which outweighs later scholarship.`, mentions: 'keep' }, 'decide', ['found_passages', 'topic'], ['found_passages'],
     { answers: 'h4', mentions_only: 'h4', conflict: 'h4c', empty: 'h7' }],
-  ['h4', 'rank', { by: ['verdict', 'authority', 'standard', 'precedence', 'phrased', 'history'], k: { default: 7, research: 9 }, spread: 'authority', dedupe: true }, 'process', ['found_passages'], ['found_passages'], { done: 'h5', empty: 'h7' }],
-  ['h4c', 'rank', { by: ['verdict', 'authority', 'standard', 'precedence', 'phrased', 'history'], k: { default: 8, research: 10 }, spread: 'authority', dedupe: true }, 'process', ['found_passages'], ['found_passages'], { done: 'h6', empty: 'h7' }],
-  ['h5', 'shape', { template: 'history_fact.fact', shared: 'tpl.passages', format: 'history_fact', theme_by: 'authority' }, 'synthesize', ['topic', 'fact_asked', 'found_passages', 'web_found'], [], { done: END }],
-  ['h6', 'shape', { template: 'history_fact.disagree', shared: 'tpl.passages', format: 'history_fact', theme_by: 'authority' }, 'synthesize', ['topic', 'found_passages', 'web_found'], [], { done: END }],
+  ['h4', 'rank', { by: ['verdict', 'authority', 'standard', 'precedence', 'phrased', 'history'], k: o.k, spread: 'authority', dedupe: true }, 'process', ['found_passages'], ['found_passages'], { done: 'h5', empty: 'h7' }],
+  ['h4c', 'rank', { by: ['verdict', 'authority', 'standard', 'precedence', 'phrased', 'history'], k: o.kc, spread: 'authority', dedupe: true }, 'process', ['found_passages'], ['found_passages'], { done: 'h6', empty: 'h7' }],
+  ['h5', 'shape', { template: `${name}.${o.write}`, shared: 'tpl.passages', format: 'history_fact', theme_by: 'authority' }, 'synthesize', o.reads, [], { done: END }],
+  ['h6', 'shape', { template: `${name}.disagree`, shared: 'tpl.passages', format: 'history_fact', theme_by: 'authority' }, 'synthesize', ['topic', 'found_passages', 'web_found'], [], { done: END }],
   ['h7', 'switch', { on: { unit: 'web_found' }, cases: { filled: 'web', empty: 'nothing' }, default: 'nothing' }, 'decide', ['web_found'], [], { web: 'h8', nothing: '$absence' }],
-  ['h8', 'shape', { template: 'history_fact.web', shared: 'tpl.passages', format: 'history_fact' }, 'synthesize', ['topic', 'web_found'], [], { done: END }],
-], { needs: ['topic', 'fact_asked', 'audience'] });
+  ['h8', 'shape', { template: `${name}.web`, shared: 'tpl.passages', format: 'history_fact' }, 'synthesize', ['topic', 'web_found'], [], { done: END }],
+];
+const history_fact = tree('history_fact', 'h0', historyRows('history_fact', { inWork: 3, asks: 'state {{topic}}', k: { default: 7, research: 9 }, kc: { default: 8, research: 10 }, write: 'fact', reads: ['topic', 'fact_asked', 'found_passages', 'web_found'] }),
+  { needs: ['topic', 'fact_asked', 'audience'] });
+// ── history_event (11-10 manual Dawn-Breakers round): WHAT HAPPENED in one event (how the Báb was martyred, Badasht, the siege of Ṭabarsí). history_fact and
+// person_profile both exclude "the story of how Quddús was martyred", so these turns went Unmatched → a live plan (110 s, failed) → general_research,
+// which never searched inside Nabíl. Same histories tree; the judge asks for the narration, the writer tells the story from a wider shelf.
+const history_event = tree('history_event', 'h0', historyRows('history_event', { inWork: 5, asks: 'narrate {{topic}} or a moment of it', k: { default: 10, research: 14 }, kc: { default: 10, research: 14 }, write: 'story', reads: ['topic', 'found_passages', 'web_found'] }),
+  { needs: ['topic', 'audience'] });
 
-const T = { understanding, comparison, prayer, guidance, reference, compilation, claim_check, timeline, history_fact };
+const T = { understanding, comparison, prayer, guidance, reference, compilation, claim_check, timeline, history_fact, history_event };
 
 // ── the three tradition-general lookups (planning/anis-strategy-review-20261109.md): v2 candidates above their v1 lookup graphs. Tradition first
 // (religions_specified, none = every tradition), each tradition's own core and editions; the Bahá'í pairing / CTAI are one provider each. Never translate. ──
@@ -314,6 +323,9 @@ export const TREE_TEMPLATES = [
   t('history_fact.fact', "First sentence: the answer about {{topic}} — the date, place or founder — with its source linked. {{#fact_asked}}The reader asks for the {{fact_asked}}.{{/fact_asked}} Weigh the sources in historical precedence: a primary record, then a contemporary account, then later scholarship, each labelled. Where sources disagree, say so and give each with its source. After the passages that state it come those that only set it (the founder's life, his own words in the tradition's scripture): draw on them for the date, place and setting, quoting the founder's own words where one is given — each for what it actually says, never as stating the fact itself. {{scope_clause}}\n{{#web_found}}Web sources are given too: cite them only as outside the library, labelled with their site.{{/web_found}}\n{{#voice}}One sentence with the date and its spoken source; offer to send the sources.{{/voice}}"),
   t('history_fact.disagree', "The sources disagree on {{topic}}: say so in the first sentence. Then each account with its date and source, in historical precedence (primary record, contemporary account, later scholarship), attributed and linked; say which carries the most weight and why; never reconcile them yourself. {{scope_clause}}\n{{#web_found}}Web sources are given too: labelled as outside the library.{{/web_found}}"),
   t('history_fact.web', "The library holds no history of {{topic}}: say so in one line. Then the answer from the web sources below, each labelled as outside the library with its site linked; never present them as library evidence. If they disagree, give each. {{scope_clause}}"),
+  t('history_event.story', "What happened in {{topic}}, as the histories record it. First sentence: the answer to the question in plain words. Then the account in the order it happened, from the passages below: the primary record (an eyewitness or contemporary narrative, such as Nabíl's) first, quoted whole at its key moments and linked; later histories and scholarship after it, labelled, for what they add. Where sources disagree, say so and give each with its source. Tell only what the passages say: never fill a gap from memory, and never say the library lacks a detail a passage below gives. {{scope_clause}}\n{{#web_found}}Web sources are given too: use them only for what the library's passages do not give, labelled as outside the library with their site.{{/web_found}}\n{{#voice}}Two or three sentences of the story with one spoken source; offer to send the account.{{/voice}}\n{{#email}}The account in full, its key passages quoted whole.{{/email}}"),
+  t('history_event.disagree', "The sources tell {{topic}} differently: say so in the first sentence. Then each account in historical precedence (primary record, contemporary account, later scholarship), attributed, quoted at its key moment and linked; say which carries the most weight and why; never reconcile them yourself. {{scope_clause}}\n{{#web_found}}Web sources are given too: labelled as outside the library.{{/web_found}}"),
+  t('history_event.web', "The library holds no account of {{topic}}: say so in one line. Then what the web sources below say happened, each labelled as outside the library with its site linked; never present them as library evidence. If they disagree, give each. {{scope_clause}}"),
 
 
   t('quote_trace.source', "Where the quotation comes from. First line: the source — work and author as a linked italic title — with the passage quoted whole and linked. The source is the best published edition holding it; if it was found first in a book quoting it, name that book after the source (\"quoted in …\"). Then the other works that quote it, by linked italic title. The earliest and most authoritative occurrence comes first, by the source tradition's own authority. If the attribution the reader gave differs from the source found, say so plainly in one line. If an original-language edition is given, show it beside the passage, aligned, never translated by you; if a record names a missing language, one line: the library holds no edition in that language. {{scope_clause}}"),
@@ -332,6 +344,7 @@ export const TREE_DESCRIPTIONS = {
   claim_check: "Asks whether a contested, critical or loaded claim or label about a religion, its community or its institutions is true or fair. Examples: is it a cult or sect, is it really a religion, is it authoritarian, is it an offshoot of another faith, is a criticism justified. The reader wants the claim weighed against the tradition's own texts and outside evidence, not a general explanation of a teaching.",
   timeline: "Asks for a TIMELINE or CHRONOLOGY: an ordered list of dated periods or events across several figures, ministries, eras or stages, such as the ministries of successive leaders, the stages of a movement or the key dates of a period. The reader wants many dated entries in time order with sources. This card does not cover one single date or founder, a narrated story of an event, a biography of one person, or an explanation of a teaching.",
   history_fact: "Asks ONE short historical fact: when or where a religion or movement began, who founded it, or the date of a named event. The reader wants a date, place or founder with its source. Not for: Tell me the story of how Quddús was martyred; Who was Mullá Ḥusayn; Give me a chronology of the Heroic Age; Explain what the Bahá'í teaching on progressive revelation means.",
+  history_event: "Asks WHAT HAPPENED in one named historical event or episode: how it unfolded, who took part, how it ended. Examples: how was the Báb martyred, what happened at the Conference of Badasht, tell me about the siege of Fort Ṭabarsí, how did the Báb declare His mission to Mullá Ḥusayn, the story of how Quddús was martyred. The reader wants the event told from the histories, the primary record first. Not for: When did the Báb declare His mission (one date or place); Who was Mullá Ḥusayn (one person's life); Give me a chronology of the Heroic Age; Explain what Bahá'u'lláh taught about martyrdom.",
 };
 export const TREE_STEPS = Object.values(T).flatMap((x) => x.steps);
 // v2 of each executor strategy: a CANDIDATE (the promotion gate on tower decides); v1 (one node) stays active for rollback

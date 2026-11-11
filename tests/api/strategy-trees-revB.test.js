@@ -15,7 +15,7 @@ const TPL = Object.fromEntries(TEMPLATES.map((t) => [t.id, t.text]));
 const NONE = async () => ({ passages: [] });
 const EMPTY = { fused_search: NONE, hype_search: NONE, originals_search: NONE, web_search: async () => null };
 const path = (s) => s.trace.map((t) => t.node);
-const NEW = ['claim_check', 'timeline', 'history_fact'];
+const NEW = ['claim_check', 'timeline', 'history_fact', 'history_event'];
 
 async function run(id, q, { tools = {}, units = {}, jev, extra = {} } = {}) {
   const g = graphFor(id, 2);
@@ -203,6 +203,27 @@ describe('history_fact: the narrative history reaches the writer (11-10 "How was
     expect(auths.some((a) => a.includes('history') && !a.includes('interpretation'))).toBe(true);
     expect(auths.some((a) => a.length === 1 && a[0] === 'interpretation')).toBe(true);
     expect(s.out.passages.map((p) => p.id)).toContain(10);
+  });
+});
+
+describe('history_event: what happened, told from the histories (11-10: "How was the Báb martyred?" had no card → a 110 s live plan → general_research)', () => {
+  it('searches inside the named history like history_fact, and Jev judges whether each passage NARRATES the event', async () => {
+    const calls = [], asked = [];
+    const P = (id, title) => ({ id, title, authority: 'scholarship', score: 0.5, text: `passage ${id}`, religion: "Bahá'í", document_id: id, paragraph_index: 1 });
+    const tools = { fused_search: async (i) => { calls.push(i); return { passages: i.filters?.work ? [1, 2, 3, 4, 5].map((n) => P(n, 'The Dawn-Breakers')) : [] }; } };
+    const jev = async ({ question }) => { asked.push(question); return { choice: 'primary record' }; };
+    const s = await run('history_event', 'How was the Báb martyred?', { tools, units: { topic: 'the martyrdom of the Báb' }, jev,
+      extra: { judges: { generate: async ({ kind }) => ({ ok: true, items: kind === 'histories' ? ['The Dawn-Breakers'] : ['the martyrdom of the Báb'] }) } } });
+    expect(calls.some((c) => c.filters?.work === 'The Dawn-Breakers' && c.limit === 5)).toBe(true);
+    expect(asked[0]).toMatch(/narrate the martyrdom of the Báb/);
+    expect(s.units.found_passages.length).toBe(5);   // the story keeps every narrating paragraph, not the fact's top 7 across kinds alone
+    expect(path(s).at(-1)).toBe('h5');
+    expect(TPL['history_event.story']).toMatch(/never say the library lacks a detail a passage below gives/);
+  });
+  it('its card takes the story of an event and leaves the single date, the person and the chronology to their own cards', () => {
+    expect(TREE_DESCRIPTIONS.history_event).toMatch(/how was the Báb martyred/);
+    expect(TREE_DESCRIPTIONS.history_fact).toMatch(/Not for: Tell me the story of how Quddús was martyred/);
+    expect(TREE_DESCRIPTIONS.history_event).toMatch(/Not for: When did the Báb declare His mission/);
   });
 });
 
