@@ -185,7 +185,10 @@ export function dropLinkAside(text) {
 const RETRIEVAL_TALK = [
   [/\b([Tt])he first passage (?:returned|retrieved|found|here)\b/g, (m, t) => `${t}he first source I found`],
   [/\b([Tt])he library'?s results(?: here)?\b/g, (m, t) => `${t}he sources I found`],
-  [/\b([Tt])he (?:retrieved |returned )?passages(?: (?:here|returned|retrieved|provided|I found|I have))?(?= (?:do|did|don't|didn't|does|show|leave|say|give|record|contain|include|hold|are|were)\b)/g, (m, t) => `${t}he sources`],
+  [/\b([Tt])he (?:retrieved |returned )?passages(?: (?:found here|above|here|returned|retrieved|provided|I found|I have))?(?= (?:do|did|don't|didn't|does|show|leave|say|state|give|record|contain|include|hold|are|were)\b)/g, (m, t) => `${t}he sources`],
+  // "The library hasn't surfaced a passage" (11-11 Shaykh Aḥmad): the reader hears the machinery, not the finding
+  [/\b[Tt]he library (?:hasn't|has not) (?:surfaced|returned|turned up|produced)\b/g, () => "I haven't found"],
+  [/\b[Tt]he library (?:didn't|did not) (?:surface|return|turn up|produce)\b/g, () => "I didn't find"],
   [/\b([Ii]n|[Ff]rom) (?:the )?(?:search )?results(?: here)?\b/g, (m, w) => `${w} the sources`],
 ];
 export function plainSources(text) {

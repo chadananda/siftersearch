@@ -37,6 +37,9 @@ describe('retrieval talk becomes source talk', () => {
     expect(r.text).toBe('The first source I found, a Tablet, does not speak of him. The sources I found did not include his writings. The sources show the opening. The sources don\'t record his reason.');
     expect(r.fixed).toBe(4);
     expect(plainSources('This passage of the Íqán is famous.').fixed).toBe(0);
+    expect(plainSources('The passages found here do not lay out an argument.').text).toBe('The sources do not lay out an argument.');   // 11-11 Quddús
+    expect(plainSources('The passages above do not state it.').text).toBe('The sources do not state it.');
+    expect(plainSources("The library hasn't surfaced a passage in his own words.").text).toBe("I haven't found a passage in his own words.");   // 11-11 Shaykh Aḥmad
     expect(plainSources('> The passages here show it').fixed).toBe(0);
     expect(formPass('The passages here show the opening.').repairs.retrieval_talk).toBe(1);
   });
