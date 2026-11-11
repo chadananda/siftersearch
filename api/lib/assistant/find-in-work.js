@@ -16,7 +16,15 @@ export function briefExcerpt(text, max = BRIEF_WORDS) {
   const w = out.split(' ');
   return w.length > max + 15 ? `${w.slice(0, max).join(' ').replace(/[,;:—–-]+$/, '')} …` : out.length < t.length ? `${out} …` : out;
 }
-const brief = (r) => r.passages.slice(0, MEANING_SHOW).map((p) => ({ ...p, excerpt: briefExcerpt(p.excerpt) }));
+// the excerpt opens at the sentence that matched (`match`, quote-search bestSentence) when the opening would cut before it (11-11:
+// "Five diamonds are worth more than five million stones" was the 4th sentence of the Ellis interview, shown only as its opening)
+export function briefAround(text, match, max = BRIEF_WORDS) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  const at = match ? t.indexOf(match) : -1;
+  if (at <= 0 || briefExcerpt(t, max).replace(/ …$/, '').length >= at + match.length) return briefExcerpt(t, max);
+  return `… ${briefExcerpt(t.slice(at), max)}`;
+}
+const brief = (r) => r.passages.slice(0, MEANING_SHOW).map((p) => ({ ...p, excerpt: briefAround(p.excerpt, p.match) }));
 const closest = (n) => (n === 1 ? 'This passage is' : `These ${n} passages are`);
 
 /** The reply, built by code (no writer): each place as a quoted passage with its linked citation; a count line only when there are several. Pure. */
@@ -56,7 +64,17 @@ export function passageCards(r, { cover = null } = {}) {
 export function wordsToFind({ quoted = [], topic = null, titles = [] } = {}) {
   const t = titles.filter(Boolean).map(foldText);
   const q = quoted.map((s) => String(s).replace(/^[\s.,;:!?'"—–-]+|[\s.,;:!?'"—–-]+$/g, '').trim()).filter((s) => s && !t.includes(foldText(s)));
-  return q[0] || (topic && !namesTheWork(topic, titles) ? topic : null);
+  const desc = topic ? describedWords(topic) : null;
+  return q[0] || (desc && !namesTheWork(desc, titles) ? desc : null);
+}
+// The request's asking frame is not words to find (11-11: Jev's topic "find the statement about how five diamonds is worth…" was searched
+// whole and quoted back as "the exact words"): "find (me) the statement / passage / quote … about (how) / that says" set aside. Word
+// resolution of the search string, not intent (Jev chose find_passage). Pure.
+const ASK = /^\s*(?:please\s+)?(?:can you\s+|could you\s+)?(?:find|locate|show|give|get|look\s+for|search\s+for|search|where\s+is|what\s+is)\s+(?:me\s+)?(?:(?:the|a|an|that|this)\s+)?(?:statement|passage|quote|quotation|words?|line|verse|text|saying|tablet|sentence|part)?\s*(?:(?:about|on|where|in\s+which|which\s+says|that\s+says|saying|that|which)\s+)?(?:how\s+)?/i;
+export function describedWords(topic) {
+  const t = String(topic || '').trim();
+  const rest = t.replace(ASK, '').trim();
+  return rest && rest !== t ? rest : t || null;
 }
 
 // A topic made only of the work's own title words (+ what kind of text it is) names the work — no words to find in it
@@ -133,7 +151,7 @@ export const asWorkResult = (res, query, doc = null) => {
 };
 
 /** The library-wide reply (no work named): each passage quoted with ITS work in the citation; the filters named in the count / absence line. Pure. */
-export function quoteReply(r, { scope = null } = {}) {
+export function quoteReply(r, { scope = null, described = false } = {}) {
   const q = `“${r.query}”`, where = scope || 'the library';
   const item = (p) => { const name = p.work || p.title || 'this work', cite = p.place ? `*${name}*, ${p.place}` : `*${name}*`;
     return `> “${p.excerpt}”\n>\n> — ${p.author ? `${p.author}, ` : ''}${p.url ? `[${cite}](${p.url})` : cite}`; };
@@ -141,7 +159,10 @@ export function quoteReply(r, { scope = null } = {}) {
     const more = r.total > r.passages.length ? `\n\nThose are the first ${r.passages.length} of the ${r.total}; ask for the rest and I will continue from there.` : '';
     return r.total === 1 ? item(r.passages[0]) : `${r.total} passages in ${where} hold ${q}:\n\n${r.passages.map(item).join('\n\n')}${more}`;
   }
+  // the reader DESCRIBED the passage (no words in quotation marks): never "has the exact words …" of a description (11-11)
+  if (r.mode === 'meaning' && described) { const top = brief(r); return `${top.length === 1 ? 'The passage' : `The ${top.length} passages`} in ${where} closest to what you describe:\n\n${top.map(item).join('\n\n')}`; }
   if (r.mode === 'meaning') { const top = brief(r); return `No passage in ${where} has the exact words ${q}. ${closest(top.length)} the closest to them in meaning:\n\n${top.map(item).join('\n\n')}`; }
+  if (described) return `I searched ${where} and found no passage close to what you describe.`;
   return `I searched ${where} for ${q}: the words are not there, and no passage comes close in meaning.`;
 }
 
@@ -165,7 +186,7 @@ export function resolveAuthors(named = [], library = []) {
  * scoped, the person he named as author, a work he named) → quote_search → quoteReply. The words = a quoted span, else Jev's topic.
  * null when there are no words (the turn researches as before). No LLM.
  */
-export async function findPassageAnswer({ messages, religions = [], authors = [], works = [], topic = null, decisions = null, deps = {}, search = null }) {
+export async function findPassageAnswer({ messages, religions = [], authors = [], works = [], topic = null, language = null, decisions = null, deps = {}, search = null }) {
   const text = [...(messages || [])].reverse().find((m) => m.role === 'user')?.content || '';
   const quoted = (deps.quotedSpans || (await import('./request-features.js')).quotedSpans)(text) || [];
   const words = wordsToFind({ quoted, topic, titles: works });
@@ -180,11 +201,53 @@ export async function findPassageAnswer({ messages, religions = [], authors = []
     }
   }
   const run = search || (async (a) => (await import('./tools.js')).run('quote_search', a, { deps: deps.toolDeps || {} }));
-  const res = await run({ query: words, ...(religions.length ? { religions } : {}), ...(authors.length ? { authors } : {}), ...(works.length ? { works } : {}) });
+  const res = await run({ query: words, ...(religions.length ? { religions } : {}), ...(authors.length ? { authors } : {}), ...(works.length ? { works } : {}), ...(language ? { language } : {}) });
   if (!res) return null;
+  if (res.passages?.length) {
+    const swap = await (deps.publishedCopies || publishedCopies)(res.passages, { decisions });
+    if (swap) res.passages = swap;
+  }
   // nothing at all under the reader's filters is not "nothing close in meaning": research takes it (it reads, rephrases, widens)
   if (!res.total && !res.passages?.length) { decisions?.record?.('find-passage:empty', { by: 'code', chosen: 'research', reason: 'no passage under these filters' }); return null; }
   const r = { work: null, query: words, mode: res.mode_used, total: res.total, passages: res.passages };
-  const scope = [...authors, ...(works.length ? works.map((w) => `*${w}*`) : []), ...(!authors.length && !works.length ? religions : [])].join(', ') || null;
-  return { result: r, reply: quoteReply(r, { scope: scope && (authors.length || works.length ? `${scope}` : `the ${scope} texts`) }), cards: passageCards({ ...r, work: {} }), work: null, section: null };
+  const scope = [...oneSpelling(authors), ...(works.length ? works.map((w) => `*${w}*`) : []), ...(!authors.length && !works.length ? religions : [])].join(', ') || null;
+  return { result: r, reply: quoteReply(r, { scope: scope && (authors.length || works.length ? `${scope}` : `the ${scope} texts`), described: !quoted.length }), cards: passageCards({ ...r, work: {} }), work: null, section: null };
+}
+
+// One spelling per author for the reader (11-11: "’Abdu’l-Bahá, 'Abdu'l-Bahá, ‘Abdu’l-Bahá, abdul-baha, ‘Abdu'l-Bahá"): the filter keeps every
+// library spelling, the sentence names each person once — the spelling with its accents and capital. Pure.
+export function oneSpelling(names = []) {
+  const groups = new Map();
+  for (const n of names) { const k = authKey(n); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(n); }
+  const score = (n) => (/[^\x00-\x7f]/.test(n) ? 2 : 0) + (/^[’‘'"]?\p{Lu}/u.test(n) ? 1 : 0);
+  return [...groups.values()].map((g) => g.slice().sort((a, b) => score(b) - score(a))[0]);
+}
+
+/**
+ * A provisional translation (the Phelps inventory) gives way to a PUBLISHED copy of the same words (11-11: 'Abdu'l-Bahá's words to
+ * William Ellis, first printed in Star of the West, were cited from the Phelps "Words to William Ellis … (provisional translation)"):
+ * the matched sentence searched word for word; the first copies holding it, not provisional, linked; a paragraph-level link wins.
+ * The speaker stays the passage's author; the copy gives title, place and link. Budget 1.5 s; late or none → the passage stays.
+ */
+async function publishedCopies(passages, { decisions = null, budgetMs = 1500 } = {}) {
+  const { isProvisional } = await import('../source-hunt.js');
+  const todo = passages.map((p, i) => ({ p, i })).filter(({ p }) => isProvisional(p) && (p.match || p.excerpt));
+  if (!todo.length) return null;
+  const os = await import('./own-source.js');
+  const late = new Promise((r) => setTimeout(r, budgetMs, null));
+  const one = async ({ p }) => {
+    const span = String(p.match || p.excerpt).replace(/^…\s*|\s*…$/g, '');
+    const hits = (await os.literalOwnSearch(span, {}, { timeoutMs: budgetMs, limit: 10 }).catch(() => []))
+      .filter((h) => Number(h.document_id) !== Number(p.doc_id ?? p.document_id) && !isProvisional(h) && !os.slugTitle(h.title) && holdsWords(h.text, span)).slice(0, 5);
+    if (!hits.length) return null;
+    const linked = await os.linkHits(hits.map((h) => ({ ...h, quote: span }))).catch(() => hits);
+    const best = linked.find((h) => h.link?.paragraph_level) || linked[0];
+    return { ...p, doc_id: best.document_id, document_id: best.document_id, work: best.title, title: best.title, url: best.url ?? null, place: (await import('./tool-kit.js')).toPassage(best).place ?? null, copy_of: p.para_id ?? p.id };
+  };
+  const got = await Promise.race([Promise.all(todo.map((t) => one(t).catch(() => null))), late]);
+  if (!got || !got.some(Boolean)) return null;
+  const out = passages.slice();
+  todo.forEach((t, k) => { if (got[k]) out[t.i] = got[k]; });
+  decisions?.record?.('find-passage:published-copy', { by: 'code', saw: { provisional: todo.map((t) => t.p.para_id ?? t.p.id) }, chosen: got.filter(Boolean).map((g) => g.title), reason: 'a provisional translation gives way to the published copy holding the same words' });
+  return out;
 }

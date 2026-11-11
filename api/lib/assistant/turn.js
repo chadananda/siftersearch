@@ -336,7 +336,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   if (passageFn && lkIntent === 'find_passage' && !strat?.refersBack && engine === undefined && research === undefined && !variants && !llm) {
     const explicit = ['turn', 'conversation'].includes(scopeR.units.scope_source) ? scopeR.units.religions_specified : null;
     const got = await timed('find_passage', () => passageFn({ messages, religions: Array.isArray(explicit) ? explicit : [], authors: [u.named_person].filter(Boolean), works: [u.named_work].filter(Boolean),
-      topic: u.topic ?? null, decisions }), (r) => (r ? { mode: r.result?.mode, total: r.result?.total } : null)).catch(() => null);
+      topic: u.topic ?? null, language: scopeR.units.reply_language || 'en', decisions }), (r) => (r ? { mode: r.result?.mode, total: r.result?.total } : null)).catch(() => null);
     if (got?.reply) return inWorkAnswer(got, ex, { gate: 'lookup', ...(jevFallback ? { jev_fallback: jevFallback } : {}), decisions: decisions.list() });
   }
   // PROBE (Chad 11-10, "Deepening Compilation" built a compilation): Jev chose to MAKE something (a compilation) or to talk, but

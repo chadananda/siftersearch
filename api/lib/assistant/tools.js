@@ -217,6 +217,7 @@ const ENTRIES = [
       religions: { type: 'array', items: { type: 'string' }, description: "Traditions, any of: Baha'i, Islam, Christianity…" },
       authors: { type: 'array', items: { type: 'string' }, description: 'Authors, any of (a name as written)' },
       works: { type: 'array', items: { type: ['integer', 'string'] }, description: 'Works, any of: document ids or titles' },
+      language: str('The reader\'s language (ISO code): a closest-in-meaning passage in another language is shown in its linked translation'),
       from: { type: 'integer', minimum: 0, description: 'A section of the work: first paragraph_index' }, to: { type: 'integer', minimum: 0, description: 'A section: last paragraph_index' },
       limit: LIMIT(20, 1000) } },
     output: { type: 'object', required: ['total', 'passages', 'mode_used'], properties: { total: { type: 'integer', description: 'Every literal occurrence (passages may list fewer: limit)' },

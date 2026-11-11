@@ -54,6 +54,22 @@ const repo = async (ctx, name, mod) => ctx?.deps?.[name] || (await import(mod))[
 const asList = (x) => (x == null || x === '' ? [] : Array.isArray(x) ? x : [x]);
 const uniq = (l) => [...new Set(l)];
 const authorKey = (a) => foldText(a).replace(/'/g, '');
+/** Text as a reader sees it: sentence markers ⁅s1⁆, footnote refs [^1], pandoc {…} attributes and markdown emphasis out (11-11: a
+ *  meaning match printed "⁅s1⁆ای احبّای…" and "_that the melody…_" raw). Pure. */
+export const plainText = (t) => String(t || '').replace(/⁅\/?[sp]\d+⁆/g, '').replace(/\[\^[^\]]*\]/g, '').replace(/\{[^{}]*\}/g, '')
+  .replace(/(\*\*|__)(\S(?:.*?\S)?)\1/g, '$2').replace(/(^|[\s(“"‘'])[*_](\S(?:.*?\S)?)[*_](?=[\s.,;:!?)”"’']|$)/g, '$1$2').replace(/\s+/g, ' ').trim();
+const STOP = new Set(['the', 'and', 'that', 'this', 'with', 'for', 'are', 'was', 'were', 'his', 'her', 'its', 'how', 'what', 'about', 'from', 'than', 'more', 'into', 'which', 'who', 'not']);
+const content = (s) => foldText(s).split(' ').filter((w) => w.length > 2 && !STOP.has(w));
+/** The sentence of a meaning match that holds most of the asked words (11-11: "five diamonds are worth more than five million stones"
+ *  sat in the 4th sentence, the 45-word opening cut before it). null when no sentence shares a word. Pure. */
+export function bestSentence(text, words) {
+  const want = new Set(content(words));
+  if (!want.size) return null;
+  const sents = plainText(text).split(/(?<=[.!?]["”’)\]]*)\s+/u);
+  let best = null, top = 0;
+  for (const x of sents) { const n = new Set(content(x).filter((w) => want.has(w))).size; if (n > top) { top = n; best = x; } }
+  return best;
+}
 
 /**
  * { query: phrase, mode = 'auto', religions[], authors[], works[] (ids or titles), from?, to?, limit } → { total, passages, mode_used, works }.
@@ -61,7 +77,7 @@ const authorKey = (a) => foldText(a).replace(/'/g, '');
  * works given → each work's paragraphs read whole (complete, reading order); none → the library by the literal layer.
  * mode_used: 'literal' | 'meaning' | 'none'. fused(args) = run('fused_search', args) (tools.js passes it).
  */
-export async function quoteSearch({ query: phrase, mode = 'auto', religions = [], authors = [], works = [], from = null, to = null, limit } = {}, ctx = {}, fused = null) {
+export async function quoteSearch({ query: phrase, mode = 'auto', religions = [], authors = [], works = [], from = null, to = null, limit, language = null } = {}, ctx = {}, fused = null) {
   const lo = from ?? 0, hi = to ?? 1e9;
   const rels = uniq(asList(religions).map((r) => canonicalTradition(r)).filter(Boolean)), auts = uniq(asList(authors).filter(Boolean));
   const link = async (ps) => { try { return await (await repo(ctx, 'withLinks', '../hit-links.js'))(ps); } catch { return ps; } };
@@ -82,7 +98,7 @@ export async function quoteSearch({ query: phrase, mode = 'auto', religions = []
   const worksOut = kept.map(meta);
   const cap = Math.max(1, limit ?? (named ? 200 : 20));
   const shape = (p, how, text = p.text) => ({ ...p, doc_id: p.document_id ?? p.doc_id ?? null, work: p.title ?? null, para_id: p.id ?? null, url: p.url ?? p.source_url ?? null,
-    excerpt: how === 'literal' ? excerptOf(text, phrase) : String(text || '').replace(/\s+/g, ' ').trim(), found_by: [how === 'literal' ? (named ? 'in_work' : 'literal') : 'meaning'] });
+    excerpt: how === 'literal' ? excerptOf(plainText(text), phrase) : plainText(text), ...(how === 'literal' ? {} : { match: bestSentence(text, phrase) }), found_by: [how === 'literal' ? (named ? 'in_work' : 'literal') : 'meaning'] });
   let used = 'none', total = 0, passages = [];
   if (named && !kept.length) return { total, passages, mode_used: used, works: worksOut };
   // ── literal
@@ -112,8 +128,11 @@ export async function quoteSearch({ query: phrase, mode = 'auto', religions = []
   if (!passages.length && mode !== 'literal' && fused) {
     const near = (await libraryRows(fused, phrase, { rels, auts, ids: named ? kept : [] }, ['phrase', 'hype'], Math.min(cap, 8)))
       .filter((p) => !named || ((p.paragraph_index ?? 0) >= lo && (p.paragraph_index ?? 0) <= hi));
-    if (near.length) used = 'meaning';
-    passages = (named ? near.sort((a, b) => (a.paragraph_index ?? 0) - (b.paragraph_index ?? 0)) : near).map((p) => shape(p, 'meaning'));
+    const shown = language ? await inLanguage(near, language, ctx) : near;
+    if (shown.length) used = 'meaning';
+    // each link ranges to the sentence that matched, on whichever site publishes it (11-11: the Phelps link carried no range)
+    const ranged = await link(shown.map((p) => ({ ...p, quote: bestSentence(p.text, phrase) || undefined })));
+    passages = (named ? ranged.sort((a, b) => (a.paragraph_index ?? 0) - (b.paragraph_index ?? 0)) : ranged).map((p) => shape({ ...p, url: p.url ?? null }, 'meaning'));
     total = passages.length;
   }
   return { total, passages, mode_used: used, works: worksOut };
@@ -123,5 +142,27 @@ async function libraryRows(fused, query, { rels, auts, ids = [] }, layers, limit
   const sets = (rels.length ? rels : [null]).map((t) => ({ ...(t ? { tradition: t } : {}), ...(auts.length ? { author: auts } : {}), ...(ids.length ? { documentId: ids } : {}) }));
   const lists = await Promise.all(sets.map((filters) => fused({ query, limit: Math.min(limit, 50), layers, ...(Object.keys(filters).length ? { filters } : {}) }).then((r) => r?.passages || []).catch(() => [])));
   const seen = new Set();
-  return lists.flat().filter((p) => { const k = p.id ?? p.text; if (seen.has(k)) return false; seen.add(k); return true; });
+  // the author filter holds on every layer: the phrase / HyPE layers returned a May Maxwell obituary and Star of the West issues for
+  // "'Abdu'l-Bahá" (11-11)
+  const byAuthor = (p) => !auts.length || !p.author || (auts.some((a) => authorKey(p.author).includes(authorKey(a))));
+  return lists.flat().filter((p) => { const k = p.id ?? p.text; if (seen.has(k) || !byAuthor(p)) return false; seen.add(k); return true; });
+}
+
+/** Meaning matches in the reader's language (11-11: a Persian original was quoted to an English reader while its Tablets of the Divine
+ *  Plan translation is linked to it): another-language passage → its linked translation; none linked → dropped while others remain. */
+async function inLanguage(rows, language, ctx) {
+  const lang = String(language).toLowerCase().slice(0, 2);
+  const other = rows.filter((p) => p.language && String(p.language).toLowerCase().slice(0, 2) !== lang);
+  if (!other.length) return rows;
+  let links = new Map();
+  try { links = await (await repo(ctx, 'resolveLinks', '../passage-links.js'))(other.map((p) => p.id), { quotedBy: false }); } catch { links = new Map(); }
+  const swap = (p) => {
+    if (!other.includes(p)) return p;
+    const t = (links.get(Number(p.id))?.translations || []).find((x) => String(x.language || '').toLowerCase().slice(0, 2) === lang);
+    return t ? { id: t.id, document_id: t.documentId, paragraph_index: t.paragraphIndex, text: t.text, title: t.document?.title ?? null, author: t.document?.author ?? null,
+      religion: t.document?.religion ?? null, language: t.language, url: t.url ?? null, translation_of: p.id } : null;
+  };
+  const seen = new Set();
+  const out = rows.map(swap).filter((p) => p && !seen.has(Number(p.id)) && seen.add(Number(p.id)));
+  return out.length ? out : rows;
 }
