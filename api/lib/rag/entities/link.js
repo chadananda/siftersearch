@@ -20,9 +20,12 @@
 // and an unobservable stage stops working quietly. See backlog 0043.
 //
 // ── WHAT THIS MUST NOT DO ───────────────────────────────────────────────────────────────────────────────
-// * NEVER bind on a global name match. A claim inherits an entity id only via a same-paragraph bound
-//   mention, or (doc-scoped only) a name unambiguous within ONE book. Binding "Muhammad" globally would
-//   attach thousands of claims to the Prophet.
+// * NEVER bind on a name alone (Chad, repeatedly: a name is an evidence claim, not a determination). A claim
+//   inherits an entity id only via a same-paragraph mention that disambiguation bound from the passage's own
+//   context. Binding "Muhammad" globally would attach thousands of claims to the Prophet; binding it "because only
+//   one Muḥammad-'Alí is catalogued in this book" did the same thing at book scale (11-11: Ḥujjat of Zanján's
+//   biography in Ẓuhúr vol. 3 bound to Quddús, whose name is also Mullá Muḥammad-'Alí). The book-unique name is
+//   now RECORDED as a candidate (why: name_only:<id>, nameOnly count), never bound.
 // * NEVER match core ⊂ subject. Directional only: subject ⊂ core. Otherwise a short common core
 //   ("muhammad", "ali") is swallowed by any compound name ("Mírzá Muḥammad-'Alí…") and mis-binds it.
 // * NEVER invent a binding to raise a number. An unbound claim is evidence of a person the archive has not
@@ -76,10 +79,10 @@ export function namesMention(name, resolvedAs, { exact = false } = {}) {
  * Bind claims to entities for one document (or for the legacy seed batches when docId is omitted).
  *
  * @param {object}  opts
- * @param {number} [opts.docId]  scope to one document. STRONGLY preferred: enables the doc-unambiguous
- *                               fallback and the self-healing clear-then-recompute.
+ * @param {number} [opts.docId]  scope to one document. STRONGLY preferred: enables the book-unique name
+ *                               candidates and the self-healing clear-then-recompute.
  * @param {boolean} [opts.write] actually write. Default false — this is a DRY RUN unless asked.
- * @returns {Promise<{claims,subjectBound,targetBound,viaFallback,updated,dry,docId,samples}>}
+ * @returns {Promise<{claims,subjectBound,targetBound,nameOnly,updated,dry,docId,samples}>}
  *          Counts, always. The caller emits this as telemetry; returning void is what caused 0043.
  */
 export async function link({ docId = null, write = false, diff = false, deps = {} } = {}) {
@@ -102,9 +105,9 @@ export async function link({ docId = null, write = false, diff = false, deps = {
           : `SELECT id, para_id, semantic_key, entity_id, target_entity_id, relation, statement FROM entity_claims WHERE import_batch IN ('db-v2','gpb-v2')`,
     docId ? [docId] : []);
 
-  // Doc-level UNAMBIGUOUS fallback (doc-scoped only). Within ONE book's disambiguation context, a name that
-  // maps to exactly ONE bound entity is safe to bind; a name used by >1 entity in the doc is EXCLUDED.
-  // Namesake-safe by construction: under-bind, never mis-bind.
+  // Book-unique NAME CANDIDATE (doc-scoped only): the one entity in this book answering to the name. Evidence for a
+  // later judged pass, never a binding — the book's catalogue is not the world (an uncatalogued namesake, a
+  // biography of a different man with the same name), and a paragraph with no bound mention gave no context at all.
   const docPairs = [];
   if (docId) {
     const ents = await qa(
@@ -126,7 +129,7 @@ export async function link({ docId = null, write = false, diff = false, deps = {
   // binding differs is rewritten — including to NULL — so a re-run after a matcher fix removes stale mis-binds.
   // Only CHANGED rows are written (it used to clear the whole doc and rewrite every row: same end state, a
   // window of blank binds, and ~100× the writes).
-  let subjectBound = 0, targetBound = 0, updated = 0, viaFallback = 0;
+  let subjectBound = 0, targetBound = 0, updated = 0, nameOnly = 0;
   const samples = [];
   const changes = [];
   for (const c of claims) {
@@ -149,9 +152,9 @@ export async function link({ docId = null, write = false, diff = false, deps = {
     };
     let sEid = sameParaBind(subject, 'subject');
     let oEid = object ? sameParaBind(object, 'object') : null;
-    let fellBack = false;
-    if (sEid == null) { const g = docBind(subject); if (g != null) { sEid = g; fellBack = true; delete why.subject; } }  // pass 2
-    if (oEid == null && object) { const g = docBind(object); if (g != null) { oEid = g; delete why.object; } }
+    // pass 2 (evidence only): the book-unique name candidate is noted in `why`, not bound.
+    if (sEid == null) { const g = docBind(subject); if (g != null) { nameOnly++; why.subject = `name_only:${g}`; if (samples.length < 12) samples.push(`${subject} ?→ #${g}`); } }
+    if (oEid == null && object) { const g = docBind(object); if (g != null) why.object = `name_only:${g}`; }
 
     // Subject unresolved → the claim is unbound (target too). See KNOWN LIMITATION above. Outside doc scope the
     // prior value is kept, as before (the legacy batch mode never cleared).
@@ -159,7 +162,6 @@ export async function link({ docId = null, write = false, diff = false, deps = {
     else {
       subjectBound++;
       if (oEid != null) targetBound++;
-      if (fellBack) { viaFallback++; if (samples.length < 12) samples.push(`${subject} → #${sEid}`); }
     }
     const oldS = c.entity_id ?? null, oldT = c.target_entity_id ?? null;
     if (oldS === sEid && oldT === oEid) continue;
@@ -168,7 +170,7 @@ export async function link({ docId = null, write = false, diff = false, deps = {
     updated++;
   }
 
-  return { docId, dry: !write, claims: claims.length, subjectBound, targetBound, viaFallback, updated, samples, ...(diff ? { changes } : {}) };
+  return { docId, dry: !write, claims: claims.length, subjectBound, targetBound, viaFallback: 0, nameOnly, updated, samples, ...(diff ? { changes } : {}) };
 }
 
 /**

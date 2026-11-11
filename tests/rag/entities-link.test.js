@@ -111,3 +111,18 @@ describe('link — binds by same-paragraph mention, never by substring', () => {
     expect(r.changes.find((c) => c.id === 301)).toMatchObject({ newT: null, why: { object: 'ambiguous:1,9' } });
   });
 });
+
+describe('link — a name is evidence, never the determination (Chad 11-11)', () => {
+  it('a book-unique name does NOT bind a claim whose paragraph has no bound mention; it is recorded as a candidate', async () => {
+    // Ẓuhúr vol. 3: Ḥujjat's biography ("Mullá Muḥammad-'Alí" of Zanján) was bound to Quddús, the one Muḥammad-'Alí the book catalogued.
+    const f = fakeDeps({
+      mentions: [{ para_id: 'p1', resolved_as: 'Quddús (Mullá Muḥammad-‘Alí)', entity_id: 3 }],
+      claims: [{ ...claim(400, 'mulla muhammad-ali', 'zanjan', 'p9'), entity_id: 3 }],
+      docEntities: [{ id: 3, canonical_name: 'Quddús (Mullá Muḥammad-‘Alí)' }],
+    });
+    const r = await link({ docId: 15254, write: true, diff: true, deps: f.deps });
+    expect(f.updates).toEqual([[null, null, 400]]);   // the stale name-only bind is undone
+    expect(r).toMatchObject({ subjectBound: 0, nameOnly: 1 });
+    expect(r.changes[0].why.subject).toBe('name_only:3');
+  });
+});

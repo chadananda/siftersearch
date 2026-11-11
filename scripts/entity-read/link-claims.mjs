@@ -27,7 +27,7 @@ const r = await link({ docId: DOC, write: WRITE });
 
 console.log(
   `${r.dry ? 'DRY' : 'WROTE'} — ${r.claims} claims: ${r.subjectBound} subject-bound ` +
-  `(${r.viaFallback} via doc-unambiguous fallback), ${r.targetBound} target-bound (${r.updated} updated)`
+  `(${r.nameOnly} name-only candidates, not bound), ${r.targetBound} target-bound (${r.updated} updated)`
 );
 if (r.dry && r.samples.length) console.log('  fallback samples: ' + r.samples.join(' ; '));
 process.exit(0);
