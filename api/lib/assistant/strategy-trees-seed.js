@@ -177,15 +177,17 @@ const timeline = tree('timeline', 'l1', [
 
 // ── history_fact (rev B 11-09): the histories of the tradition ∥ the web (labelled), weighed in historical precedence; the fact with its date and sources ──
 // Cost per run path (Jev = judge.passages, one cheap-tier call per passage, in parallel):
-//   h0 → h1 → h2 → h3 → h4 → h5 : gen (2 phrasings) + 5 library searches (histories ×3 ∥ the Guardian ∥ scripture) + 1 web search + Jev per passage + writer
+//   h0 → h0b → h1 → h2 → h3 → h4 → h5 : 2 light gens (phrasings, the standard histories) + up to 9 library searches (each history searched inside ∥ each phrasing ∥ histories ∥ the Guardian ∥ scripture) + 1 web search + Jev per passage + writer
 //   h1 → h2 → h3 → h4c → h6  : the same; the sources disagree
 //   h1 → h2 → h7 → h8        : 2 searches + writer (no library history: the web finds, labelled)
 //   h1 → h2 → h7 → $absence  : 2 searches (nothing anywhere) · h1 error → $fallback
 const history_fact = tree('history_fact', 'h0', [
   // the question as asked ("How was the Báb martyred?") ranked Nabíl's account 14th behind pilgrim notes and periodicals; the texts' own wording
   // ("the martyrdom of the Báb") ranked it 3rd. One light generator call names the subject that way; the histories are searched on each phrasing too (11-10)
-  ['h0', 'plan.phrasings', { n: 2 }, 'process', ['topic'], ['phrasings'], { done: 'h1', fail: 'h1' }],
+  ['h0', 'plan.phrasings', { n: 2 }, 'process', ['topic'], ['phrasings'], { done: 'h0b', fail: 'h0b' }],
+  ['h0b', 'plan.histories', { n: 2 }, 'process', ['topic'], ['histories'], { done: 'h1', fail: 'h1' }],
   ['h1', 'search.together', { list: [
+    { element: 'search.fanout', params: { by: 'histories', tag: 'history_work', inner: { element: 'search.shelf', params: { query: '{{topic}}', work: '{{value}}', k: 4 } } } },
     { element: 'search.fanout', params: { by: 'phrasings', tag: 'phrasing', inner: { element: 'search.shelf', params: { query: '{{value}}', authority: ['history', 'scholarship'], k: 6 } } } },
     // the narrative histories (The Dawn-Breakers, Momen, Balyuzi) on their own: with the Guardian in the same search his short summaries took every slot
     // and "how was the Báb martyred?" never reached Nabíl's account (11-10); the Writings and the Guardian are excluded in the engine (tools.js notAuthor)

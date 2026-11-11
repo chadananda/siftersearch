@@ -119,7 +119,7 @@ describe('timeline spans the whole range asked (round 5: three ministries, only 
 describe('history_fact', () => {
   it('no library history: the web path reads web_found and the writer gets the web finds, labelled', async () => {
     const s = await run('history_fact', 'when was the Brahmo Samaj founded', { tools: { web_search: async () => ({ text: 'Founded in 1828 in Calcutta.', citations: ['https://example.org/brahmo'] }) }, units: { topic: 'founding of the Brahmo Samaj', fact_asked: 'date' } });
-    expect(path(s)).toEqual(['h0', 'h1', 'h2', 'h7', 'h8']);
+    expect(path(s)).toEqual(['h0', 'h0b', 'h1', 'h2', 'h7', 'h8']);
     const h7 = graphFor('history_fact', 2).nodes.h7; expect(h7.reads ?? TREE_GRAPHS.history_fact.nodes.h7.reads).toContain('web_found');
     expect(s.out.passages).toEqual([expect.objectContaining({ web: true, text: 'Founded in 1828 in Calcutta.', source_url: 'https://example.org/brahmo', title: 'Web: example.org' })]);
     expect(s.how).toContain('outside the library');
@@ -127,9 +127,9 @@ describe('history_fact', () => {
   it('library histories found: judged in historical precedence, the fact shaped; disagreement shaped apart', async () => {
     const tools = { fused_search: async () => ({ passages: [{ id: 1, text: 'In 1828…', authority: 'history', religion: 'Hinduism', document_id: 1, paragraph_index: 1 }] }) };
     let s = await run('history_fact', 'when', { tools, units: { topic: 'founding of the Brahmo Samaj', fact_asked: 'date' }, jev: async () => ({ choice: 'answers' }) });
-    expect(path(s)).toEqual(['h0', 'h1', 'h2', 'h3', 'h4', 'h5']); expect(s.how).toContain('historical precedence'); expect(s.how).toContain('The reader asks for the date');
+    expect(path(s)).toEqual(['h0', 'h0b', 'h1', 'h2', 'h3', 'h4', 'h5']); expect(s.how).toContain('historical precedence'); expect(s.how).toContain('The reader asks for the date');
     s = await run('history_fact', 'when', { tools, units: { topic: 'founding' }, jev: async () => ({ choice: 'contradicts' }) });
-    expect(path(s)).toEqual(['h0', 'h1', 'h2', 'h3', 'h4c', 'h6']);
+    expect(path(s)).toEqual(['h0', 'h0b', 'h1', 'h2', 'h3', 'h4c', 'h6']);
   });
   it('round 5 "Who founded Sikhism?": the founder\'s own scripture is searched beside the histories, and passages that only set the fact stay after the one that states it', async () => {
     const auths = [], P = (id, title, authority, text) => ({ id, title, authority, text, religion: 'Sikh', document_id: id, paragraph_index: 1, score: 0.5 });
@@ -138,7 +138,7 @@ describe('history_fact', () => {
         : [P(2, 'The Sikh Religion Vol. 1 - Life of Guru Nanak', 'scholarship', 'Guru Nanak was born in 1469 at Talwandi.'), P(1, 'The Sikhs', 'scholarship', 'The Sikh religion as it was founded by Nanak was a pure monotheism.')] }; } };
     const jev = async ({ state }) => ({ choice: /founded/.test(state) ? 'answers' : 'mentions_only' });
     const s = await run('history_fact', 'Who founded Sikhism?', { tools, units: { topic: 'founder of Sikhism', fact_asked: 'founder' }, jev });
-    expect(path(s)).toEqual(['h0', 'h1', 'h2', 'h3', 'h4', 'h5']);
+    expect(path(s)).toEqual(['h0', 'h0b', 'h1', 'h2', 'h3', 'h4', 'h5']);
     expect(auths.some((a) => a.includes('scripture'))).toBe(true);
     expect(auths.some((a) => a.includes('history'))).toBe(true);
     const ids = s.out.passages.filter((p) => !p.web).map((p) => p.id);
@@ -155,6 +155,16 @@ describe('history_fact: the narrative history reaches the writer (11-10 "How was
     await run('history_fact', 'How was the Báb martyred?', { tools, units: {}, extra: { judges: { generate: async ({ kind }) => ({ ok: true, items: kind === 'phrasings' ? ['the martyrdom of the Báb at Tabríz'] : [] }) } } });
     expect(queries).toContainEqual(['the martyrdom of the Báb at Tabríz', 'history,scholarship']);
     expect(queries).toContainEqual(['How was the Báb martyred?', 'history,scholarship']);
+  });
+  it('the standard histories the generator names are searched inside (work filter) on the question; none named → no in-work search', async () => {
+    const calls = [];
+    const tools = { fused_search: async (i) => { calls.push(i); return { passages: [] }; } };
+    const gen = (hist) => ({ judges: { generate: async ({ kind }) => (kind === 'histories' ? (hist ? { ok: true, items: hist } : { ok: false, error: 'x' }) : { ok: true, items: ['the martyrdom of the Báb'] }) } });
+    await run('history_fact', 'How was the Báb martyred?', { tools, units: {}, extra: gen(['The Dawn-Breakers']) });
+    expect(calls.filter((c) => c.filters?.work).map((c) => [c.query, c.filters.work])).toEqual([['How was the Báb martyred?', 'The Dawn-Breakers']]);
+    calls.length = 0;
+    await run('history_fact', 'How was the Báb martyred?', { tools, units: {}, extra: gen(null) });
+    expect(calls.some((c) => c.filters?.work)).toBe(false);
   });
   it('within one authority kind, a passage found on the texts\' own wording outranks one found on the reader\'s words (Star of the West took the one history slot)', async () => {
     const P = (id, title) => ({ id, title, authority: 'scholarship', score: 0.5, text: `passage ${id}`, religion: "Bahá'í", document_id: id, paragraph_index: 1 });

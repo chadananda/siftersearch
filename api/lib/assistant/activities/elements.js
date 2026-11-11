@@ -505,7 +505,7 @@ export const COMPARE = {
   authority: () => (a, b) => (ORDER.indexOf(kindOf(a) ?? 'other') + 1 || 99) - (ORDER.indexOf(kindOf(b) ?? 'other') + 1 || 99),
   verdict: () => (a, b) => (a.verdict === 'mentions_only' ? 1 : 0) - (b.verdict === 'mentions_only' ? 1 : 0),   // judge.passages: what states the fact before what only sets it
   precedence: () => (a, b) => (a.precedence ?? 99) - (b.precedence ?? 99),   // judge.passages precedence: primary record, then contemporary account, then scholarship
-  phrased: () => (a, b) => (b.phrasing ? 1 : 0) - (a.phrasing ? 1 : 0),   // found on the texts' own wording (plan.phrasings fan-out) before found on the reader's words
+  phrased: () => { const f = (x) => (x.phrasing || x.history_work ? 1 : 0); return (a, b) => f(b) - f(a); },   // found on the texts' own wording (plan.phrasings) or inside a standard history (plan.histories) before found on the reader's words
   date: () => (a, b) => yearOf(b) - yearOf(a), history: () => (a, b) => yearOf(a) - yearOf(b), score: () => (a, b) => (b.score ?? 0) - (a.score ?? 0),
   length: () => (a, b) => String(a.text ?? '').length - String(b.text ?? '').length, marked: () => (a, b) => (b.marked ? 1 : 0) - (a.marked ? 1 : 0),
   occasion: (u) => (a, b) => (b.occasion === u.occasion ? 1 : 0) - (a.occasion === u.occasion ? 1 : 0), audience: (u) => (a, b) => (b.audience === u.audience ? 1 : 0) - (a.audience === u.audience ? 1 : 0),
@@ -592,7 +592,7 @@ E.shape = { kind: 'writer', cls: 'code', edges: ['done'], scope: 'strategy', par
 const tradOf = (u) => { const r = [u.religions_specified].flat().filter((x) => x && x !== 'all'); return r.length ? r.join(', ') : null; };
 for (const [name, unit, kind, reads, what] of [['plan.subthemes', 'sub_themes', 'subthemes', ['topic'], 'sub-themes a topic splits into'],
   ['plan.criteria', 'criteria', 'criteria', ['challenged_claim', 'topic'], 'points that would make a claim true or false'], ['plan.entries', 'entries', 'entries', ['topic', 'named_person'], 'periods/events a timeline holds'],
-  ['plan.phrasings', 'phrasings', 'phrasings', ['topic'], 'search phrases in the words the texts use']]) {
+  ['plan.phrasings', 'phrasings', 'phrasings', ['topic'], 'search phrases in the words the texts use'], ['plan.histories', 'histories', 'histories', ['topic'], 'the standard histories that narrate a subject']]) {
   E[name] = { kind: 'tool', cls: 'llm', edges: ['done', 'fail'], scope: 'strategy', params: ['n', 'stage'], reads, writes: [unit],
     async run(s, p = {}) {
       const u = U(s), subject = reads.map((k) => flat(u[k])).find((x) => String(x).trim()) || u.current_user_question, n = p.n ?? 4, tradition = tradOf(u);
@@ -603,7 +603,7 @@ for (const [name, unit, kind, reads, what] of [['plan.subthemes', 'sub_themes', 
         else { const r = await (s.judges?.generate || generateList)({ kind, subject, n, tradition, ...(s.complete ? { complete: s.complete } : {}) }); items = r?.items || []; error = r?.ok ? null : r?.error ?? 'no items'; }
       } catch (err) { error = err?.message || String(err); items = []; }
       const ok = Array.isArray(items) && items.length > 0, edge = ok ? 'done' : 'fail';
-      u[unit] = ok ? items : [subject];
+      u[unit] = ok ? items : unit === 'histories' ? [] : [subject];   // no named history → no in-work search (the subject is no title)
       const calls = Array.isArray(meter) ? meter.slice(m0) : [], usd = calls.reduce((a, c) => a + (Number(c.usd) || 0), 0);
       s.note = { read: { subject: trim(subject), tradition }, params: p, count: u[unit].length, generator: via, ...(calls.length ? { llm: { calls: calls.length, usd: Math.round(usd * 1e6) / 1e6, model: calls[0].model } } : {}), ...(error ? { error: String(error).slice(0, 200) } : {}) };
       (s.direction?.decisions ?? s.ctx?.decisions)?.record?.(`plan:${unit}`, { by: via === 'tool' ? 'code' : 'model', saw: { subject: trim(subject), tradition, n }, options: ['done', 'fail'], chosen: edge,
@@ -716,6 +716,7 @@ export const ELEMENT_META = {
   'fill.term_script': m('Fills the term_arabic unit: a Latin term’s Arabic-script spelling (already Arabic or remembered = no model; otherwise one Jev call), so fetch.renderings can look it up.', 'term', 'term_arabic', []),
   'plan.criteria': m('A light generator for the criteria a claim is weighed on (default: the claim itself).', 'challenged_claim or topic', 'criteria', []),
   'plan.phrasings': m('A light generator for search phrases naming the question\'s subject the way the texts word it (default: the question itself).', 'topic', 'phrasings', []),
+  'plan.histories': m('A light generator naming the published works that narrate the question\'s subject as its primary or standard history (default: none).', 'topic', 'histories', []),
   'plan.entries': m('A light generator for the entries (periods, events) a timeline orders (default: the subject itself).', 'topic or named_person', 'entries', []),
   'plan.subthemes': m('A light generator for the sub-themes a topic splits into (default: the topic itself).', 'topic', 'sub_themes', []),
   rank: m('Orders what was found by authority, standing, date, score… keeps the top few (per a field, or fields), regroups by a field (or nested fields), skips what was already given.', 'found_passages', 'found_passages', []),
