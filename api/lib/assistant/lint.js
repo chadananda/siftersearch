@@ -162,9 +162,33 @@ export function finalForm(text) { return formPass(text).text; }
 /** finalForm with what it repaired, for the turn's path (forensics counts form.search_denial as a WRITER defect). Pure. */
 export function formPass(text, { sources = [] } = {}) {
   const uw = unwrapLinks(text), den = dropSearchDenial(uw.text), def = dropDeflection(den.text), off = dropSearchOffer(def.text), lk = checkLinks(off.text, sources);
-  const ct = citeLinks(lk.text, sources), lr = lastResortLast(ct.text), la = dropLinkAside(lr.text), rt = plainSources(la.text), nm = dropNumberMarkers(rt.text), em = repairEmphasis(safeLinkText(nm.text));
-  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), ...(nm.fixed ? { number_markers: nm.fixed } : {}), ...(la.fixed ? { link_aside: la.fixed } : {}), ...(rt.fixed ? { retrieval_talk: rt.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
+  const ct = citeLinks(lk.text, sources), lr = lastResortLast(ct.text), la = dropLinkAside(lr.text), rt = plainSources(la.text), nm = dropNumberMarkers(rt.text), rq = dropRepeatedQuote(nm.text), em = repairEmphasis(safeLinkText(rq.text));
+  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), ...(rq.fixed ? { repeated_quote: rq.fixed } : {}), ...(nm.fixed ? { number_markers: nm.fixed } : {}), ...(la.fixed ? { link_aside: la.fixed } : {}), ...(rt.fixed ? { retrieval_talk: rt.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
     ...(ct.fixed ? { cite_links: ct.fixed } : {}), ...(lr.fixed ? { last_resort: lr.fixed } : {}), ...(em.fixed ? { emphasis: em.fixed } : {}) } };
+}
+
+// A REPEATED QUOTE (11-11 suffering: the same Unfolding Destiny passage as a block quote with a whole-book link, then again as a
+// linked quote with its place): two paragraphs that are each one quotation of the same passage. The one linked to its place
+// (paraId / #:~:text=) stays; with no difference the first stays. Only paragraphs that ARE a quote (a block quote, or one opening
+// with a quoted link), and only passages of 40+ letters, so a phrase echoed in prose is never touched. Pure.
+const quoteBody = (para) => {
+  const t = para.trim();
+  if (t.startsWith('>')) return t.replace(/^>\s?/gm, '').replace(/\s*\(\[[^\]]*\]\([^)]*\)\)\s*$/, '').replace(/\s*—.*$/s, '');
+  const m = t.match(/^\[[*_]*["“]([^\]]+?)["”][*_]*\]\(/); return m ? m[1] : null;
+};
+const letters = (s) => s.toLowerCase().normalize('NFD').replace(/[^a-z]/g, '');
+const placed = (para) => /[?&]paraId=|#:~:text=|[?&]p=/.test(para);
+export function dropRepeatedQuote(text) {
+  const paras = String(text ?? '').split(/\n{2,}/), seen = new Map(), drop = new Set();
+  paras.forEach((p, i) => {
+    const b = quoteBody(p), k = b && letters(b);
+    if (!k || k.length < 40) return;
+    const j = [...seen.keys()].find((x) => x === k || x.includes(k) || k.includes(x));
+    if (j === undefined) { seen.set(k, i); return; }
+    const first = seen.get(j);
+    if (placed(p) && !placed(paras[first])) { drop.add(first); seen.delete(j); seen.set(k, i); } else drop.add(i);
+  });
+  return drop.size ? { text: paras.filter((_, i) => !drop.has(i)).join('\n\n'), fixed: drop.size } : { text, fixed: 0 };
 }
 
 // Footnote residue the reader cannot follow ("… by Stephen Lambden [^1].", "… Him Whom God shall make manifest [3, 7].", 11-11 kawthar):
