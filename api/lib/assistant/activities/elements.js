@@ -530,7 +530,7 @@ export const COMPARE = {
   attributed: (u) => { const who = String(flat(u.named_person) || ''); return (a, b) => (who && String(b.author) === who ? 1 : 0) - (who && String(a.author) === who ? 1 : 0); },   // the named author's own works first
   copy: (u) => { const w = String(u.translation_wanted ?? 'authorized'); const r = (x) => (x.translation && String(x.translation).includes(w) ? 0 : x.edition === 'default' ? 1 : x.language === u.reply_language ? 2 : x.translation ? 3 : 4); return (a, b) => r(a) - r(b); },
 };
-E.rank = { kind: 'transform', cls: 'code', edges: ['done', 'empty'], scope: 'strategy', params: ['by', 'k', 'per', 'spread', 'best', 'pin', 'group', 'order', 'dedupe', 'skip', 'of', 'stage'], reads: ['found_passages', 'state.given'], writes: ['found_passages'],
+E.rank = { kind: 'transform', cls: 'code', edges: ['done', 'empty'], scope: 'strategy', params: ['by', 'k', 'per', 'spread', 'most', 'best', 'pin', 'group', 'order', 'dedupe', 'skip', 'of', 'stage'], reads: ['found_passages', 'state.given'], writes: ['found_passages'],
   run(s, p = {}) {   // order by the listed keys (stable, earlier keys win), pin, drop repeats / already-given, keep the top k; nothing left → empty ($absence)
     const u = U(s), of = p.of ?? 'found_passages', by = [p.by].flat().filter((k) => COMPARE[k]), cmp = by.map((k) => COMPARE[k](u));
     const given = new Set((s.state?.given ?? u.given ?? []).map((g) => String(g.ref ?? g.id ?? g)));
@@ -551,6 +551,12 @@ E.rank = { kind: 'transform', cls: 'code', edges: ['done', 'empty'], scope: 'str
       const take = new Set(), lists = [...by2.values()];
       for (let r = 0; take.size < k && lists.some((l) => l.length > r); r++) for (const l of lists) if (l.length > r && take.size < k) take.add(l[r]);
       items = items.filter((_, i) => take.has(i));
+    } else if (p.most && k) {   // most: { by, k } at most that many of one value in the top k, the rest refilled in rank order only when nothing else is left
+      // (11-11 Quddús: four Writings passages, two off the question, filled k=4 and God Passes By's direct statement was cut)
+      const cap = kOf(p.most, u), n = new Map(), over = [];
+      const kept = items.filter((x) => { const g = gk(x, p.most.by ?? 'authority'), c = n.get(g) ?? 0; if (c >= cap) { over.push(x); return false; } n.set(g, c + 1); return true; }).slice(0, k);
+      const back = new Set([...kept, ...over.slice(0, Math.max(0, k - kept.length))]);
+      items = items.filter((x) => back.has(x));
     } else if (p.per && k) { const n = new Map(); items = items.filter((x) => { const g = gk(x, p.per), c = n.get(g) ?? 0; n.set(g, c + 1); return c < k; }); } else if (k) items = items.slice(0, k);   // per: k for EACH value of the field (a side cannot crowd another out)
     if (p.group) {   // the items themselves are regrouped (the writer reads them in order): groups in the `order` unit's order (e.g. sub_themes as planned), else first appearance; rank order within
       const g = new Map(), fs = [p.group].flat(), ord = (Array.isArray(u[p.order]) ? u[p.order] : []).map(flat), pos = (x) => { const i = ord.indexOf(flat(x[fs.at(-1)])); return i < 0 ? ord.length : i; };

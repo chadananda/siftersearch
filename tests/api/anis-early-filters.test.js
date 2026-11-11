@@ -69,6 +69,13 @@ describe('hard filters first, widening when thin', () => {
     const s2 = mk({}, { tools: { fused_search: fused } }); seen.length = 0;
     await ELEMENTS['search.shelf'].run(s2, { about_person: true }); expect(seen.length).toBe(0); expect(s2.units.found_outcome.n).toBe('skipped');
   });
+  it('rank most: one authority kind fills at most its cap of the top k; refilled only when nothing else is left (11-11 Quddús lost God Passes By)', () => {
+    const W = (id) => ({ id, authority: 'scripture', text: `w${id}` }), G = { id: 9, authority: 'interpretation', text: 'gpb' };
+    const a = mk({ found_passages: [W(1), W(2), W(3), W(4), G] }); ELEMENTS.rank.run(a, { by: ['authority'], k: 4, most: { by: 'authority', k: 3 } });
+    expect(a.units.found_passages.map((x) => x.id)).toEqual([1, 2, 3, 9]);
+    const b = mk({ found_passages: [W(1), W(2), W(3), W(4)] }); ELEMENTS.rank.run(b, { by: ['authority'], k: 4, most: { by: 'authority', k: 3 } });
+    expect(b.units.found_passages.map((x) => x.id)).toEqual([1, 2, 3, 4]);
+  });
   it('search.shelf about_person: also runs for a subject Jev read as "neither" (11-11 Quddús got only scripture)', async () => {
     const seen = [];
     const fused = async (i) => { seen.push(i); return { passages: [P(1, { authority: 'history' })] }; };

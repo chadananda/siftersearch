@@ -38,7 +38,7 @@ const understanding = tree('understanding', 'anchor', [
   // the filtered pass was thin: once more with no hard filter (tradition, work, author); free skip when nothing was filtered
   ['widen', 'search.together', { list: [{ element: 'search.shelf', params: { wide: true, scope: 'rank', k: 6 } }, { element: 'search.hype', params: { wide: true, scope: 'rank', k: 6 } }] }, 'tool', ['topic', 'religions_specified', 'named_work', 'named_person'], ['found_passages', 'missing'],
     { one: 'rank', several: 'rank', thin: 'rank', none: 'rank', error: 'rank' }],
-  ['rank', 'rank', { by: ['named', 'authority'], k: { default: 4, research: 8 }, pin: 'anchor', skip: 'given', dedupe: true }, 'process', ['found_passages', 'state.given'], ['found_passages'], { done: 'stage', empty: '$absence' }],
+  ['rank', 'rank', { by: ['named', 'authority'], k: { default: 4, research: 8 }, most: { by: 'authority', k: { default: 3, research: 6 } }, pin: 'anchor', skip: 'given', dedupe: true }, 'process', ['found_passages', 'state.given'], ['found_passages'], { done: 'stage', empty: '$absence' }],
   ['stage', 'ui.stage', { stage: 'Reading the passages in context…' }, 'process', ['channel'], [], { emitted: 'around' }],
   ['around', 'read.around', {}, 'tool', ['found_passages'], ['found_passages'], { done: 'trace' }],
   ['trace', 'read.source', {}, 'tool', ['found_passages'], ['found_passages'], { traced: 'judge', kept: 'judge' }],
