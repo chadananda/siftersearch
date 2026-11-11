@@ -1,6 +1,8 @@
 <!-- Chat book card: cover + title/author/year + description + "Read the book". Cover via image-service srcset. -->
 <script>
+  import { inlineParts } from '../../lib/inline-md.js';
   let { book } = $props();
+  const desc = $derived(inlineParts(book?.description));
   const ext = $derived(/^https?:\/\//.test(book?.url || '') && !/oceanlibrary\.com/.test(book.url));
   const sep = $derived(book?.cover_url?.includes('?') ? '&' : '?');
   const tr = (w) => `${book.cover_url}${sep}tr=w-${w},q-80,e-sharpen`;
@@ -19,7 +21,7 @@
     <div class="min-w-0 flex-1 flex flex-col gap-2">
       <h3 class="m-0 text-xl sm:text-2xl font-semibold leading-tight"><a href={book.url} class="italic text-primary hover:text-accent" target={ext ? '_blank' : undefined} rel={ext ? 'noopener' : undefined}>{book.title}</a></h3>
       {#if book.author || book.year}<p class="m-0 text-sm text-muted">{[book.author, book.year].filter(Boolean).join(' · ')}</p>{/if}
-      {#if book.description}<p class="m-0 text-secondary text-sm sm:text-base leading-relaxed">{book.description}</p>{/if}
+      {#if desc.length}<p class="m-0 text-secondary text-sm sm:text-base leading-relaxed">{#each desc as d}{#if d.strong}<strong>{d.t}</strong>{:else if d.em}<em>{d.t}</em>{:else}{d.t}{/if}{/each}</p>{/if}
       {#if book.url}<a href={book.url} class="self-start mt-1 px-4 py-2 rounded-md bg-accent hover:bg-accent-hover text-white font-medium no-underline" target={ext ? '_blank' : undefined} rel={ext ? 'noopener' : undefined}>Read the book</a>{/if}
     </div>
   </div>

@@ -4,8 +4,9 @@
 import { readOriginal, storeCover, CONTENT_TYPES } from '../lib/covers.js';
 import { requireInternal } from '../lib/auth.js';
 
-// The only hosts the server fetches a cover from (no SSRF): Chad's Bindery cover sets. Anything else is sent as `image`.
-export const COVER_FETCH_HOSTS = new Set(['bindery.lnker.com']);
+// The only hosts the server fetches a cover from (no SSRF): Chad's Bindery cover sets; bahai-education.org's Star of the West
+// page scans (an issue's page 1 is its cover). Anything else is sent as `image`.
+export const COVER_FETCH_HOSTS = new Set(['bindery.lnker.com', 'bahai-education.org']);
 
 export default async function coverRoutes(fastify, opts = {}) {
   const setDocCover = opts.setDocCover || (async (id, url) => (await import('../lib/docs-repo.js')).setDocCover(id, url));

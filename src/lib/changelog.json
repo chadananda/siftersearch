@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-11T18:46:25.148Z",
+  "generated": "2026-11-11T19:59:46.734Z",
   "entries": [
+    {
+      "hash": "315c67a89",
+      "date": "2026-11-11",
+      "type": "Other",
+      "description": "A title is evidence, not identity — the turn's own work wins, a named author must match",
+      "scope": null
+    },
     {
       "hash": "7ea1cb656",
       "date": "2026-11-11",
@@ -1015,24 +1022,17 @@
       "type": "New",
       "description": "Supersede path - replace a talk source audio, keep the old original and meta under original-superseded/vN, revert any time",
       "scope": "media"
-    },
-    {
-      "hash": "af211ea5c",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "RAM defer lane for write-and-forget batches (30 s), 25 ms group window, checkpoint 300 s; flushed on power flush and shutdown",
-      "scope": null
-    },
-    {
-      "hash": "4c7f9f9fa",
-      "date": "2026-10-28",
-      "type": "New",
-      "description": "AMD GPU worker path - whisper.cpp HIP ASR, :rocm image, host admission (refuse without proven GPU), boss whole orders, one host per order",
-      "scope": "media"
     }
   ],
   "grouped": {
     "2026-11-11": [
+      {
+        "hash": "315c67a89",
+        "date": "2026-11-11",
+        "type": "Other",
+        "description": "A title is evidence, not identity — the turn's own work wins, a named author must match",
+        "scope": null
+      },
       {
         "hash": "7ea1cb656",
         "date": "2026-11-11",
@@ -2072,20 +2072,6 @@
         "date": "2026-10-28",
         "type": "New",
         "description": "Supersede path - replace a talk source audio, keep the old original and meta under original-superseded/vN, revert any time",
-        "scope": "media"
-      },
-      {
-        "hash": "af211ea5c",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "RAM defer lane for write-and-forget batches (30 s), 25 ms group window, checkpoint 300 s; flushed on power flush and shutdown",
-        "scope": null
-      },
-      {
-        "hash": "4c7f9f9fa",
-        "date": "2026-10-28",
-        "type": "New",
-        "description": "AMD GPU worker path - whisper.cpp HIP ASR, :rocm image, host admission (refuse without proven GPU), boss whole orders, one host per order",
         "scope": "media"
       }
     ]
