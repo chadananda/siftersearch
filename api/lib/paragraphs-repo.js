@@ -102,6 +102,11 @@ async function bookShape(docId, now = Date.now()) {
   SHAPES.set(docId, shape);
   return shape;
 }
+/** A book's top-level sections in order (doc_sections; cached with its shape) → [{ title, start_index, end_index }]; [] for an unsectioned book.
+ *  Numbered references read chapters here when the headings are only marginal notes ("Dawn-Breakers - Chapter 25", 11-11). */
+export async function topSectionsOf(docId) {
+  return (await bookShape(Number(docId))).tops.map(({ title, start_index, end_index }) => ({ title, start_index, end_index }));
+}
 export async function withSectionPlaces(rows, { shape = bookShape } = {}) {
   const want = rows.filter((r) => !/^#/.test(r.locator || '') && r.para_no != null && !/^heading/.test(r.blocktype || ''));
   const docs = [...new Set(want.map((r) => Number(r.doc_id)))];

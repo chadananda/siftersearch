@@ -205,6 +205,14 @@ export async function resolveLookup(messages, deps = {}) {
       const rows = await runFrom(w.doc.id, row.paragraph_index, inRange, (r) => (r.heading || '') === (row.heading || ''));
       return step('chapter heading', await answer(w.doc, rows.length ? rows : [row], { label: `${w.doc.title}, ${ref.num}` }));
     }
+    // 3b. chapters kept as the book's SECTIONS ("CHAPTER XXV") when its headings are only marginal notes (Dawn-Breakers, 11-11):
+    //     the section whose TITLE carries the number — never its rank, front matter is a section too
+    const topsOf = deps.topSections || repo.topSectionsOf;
+    const secs = topsOf ? (await topsOf(w.doc.id).catch(() => [])).filter((x) => headingNumber(x.title) === ref.num) : [];
+    if (secs.length === 1 && Number.isInteger(secs[0].start_index)) {
+      const s0 = secs[0], rows = await inRange(w.doc.id, s0.start_index, s0.end_index ?? s0.start_index).catch(() => []);
+      return step('section title', await answer(w.doc, rows, { label: `${w.doc.title}, ${s0.title}` }));
+    }
     // 4. chapters numbered only by order (numbering.js tables: SAQ, Paris Talks)
     const sec = done(await bySectionTable(w, ref, { ...deps, paragraphsInRange: inRange }, link));
     if (sec) return step('section table', sec);

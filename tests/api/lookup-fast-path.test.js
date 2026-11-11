@@ -94,6 +94,20 @@ describe('resolveLookup (mocked deps)', () => {
     expect(r).toMatchObject({ kind: 'reference', passages: [{ paragraph_index: 900 }, { paragraph_index: 901 }] });
     expect(seen).toEqual([['lookup:reference', 'chapter heading']]);
   });
+  it('a chapter kept as a doc SECTION (headings are only marginal notes) resolves by the section title, not its rank (11-11 Dawn-Breakers live)', async () => {
+    const seen = []; let asked;
+    const r = await resolveLookup(user('Dawn-Breakers - Chapter 25'), { intent: 'reference', findTitled: async () => GL,
+      decisions: { record: (k, d) => seen.push([k, d.chosen]) },
+      paragraphsByPn: async () => [],
+      headingStarts: async () => [{ id: 1, paragraph_index: 1300, heading: 'His journey to Karbilá', text: 'a' }],
+      // front matter is a top section too: rank 25 would be CHAPTER XXIV
+      topSections: async () => [{ title: 'INTRODUCTION', start_index: 6, end_index: 90 }, ...Array.from({ length: 26 }, (_, i) => ({ title: `CHAPTER ${['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX','XXI','XXII','XXIII','XXIV','XXV','XXVI'][i]}`, start_index: 100 + i * 50, end_index: 149 + i * 50 }))],
+      paragraphsInRange: async (id, a, b) => { asked = [a, b]; return [{ id: 2, paragraph_index: a, heading: 'His journey to Karbilá', text: P }, { id: 3, paragraph_index: a + 1, text: 'More of it.' }]; },
+      withLinks: async (h) => h.map((x) => ({ ...x, url: `https://x/db#${x.paragraph_index}` })) });
+    expect(asked).toEqual([1300, 1349]);
+    expect(r).toMatchObject({ kind: 'reference', label: 'Gleanings from the Writings of Bahá’u’lláh, CHAPTER XXV', passages: [{ paragraph_index: 1300 }, { paragraph_index: 1301 }] });
+    expect(seen).toEqual([['lookup:reference', 'section title']]);
+  });
   it('a named chapter with no chapter headings still falls back to the display number', async () => {
     const r = await resolveLookup(user('Gleanings section 27'), { intent: 'reference', findTitled: async () => GL, headingStarts: async () => [],
       paragraphsInRange: async () => [], paragraphsByPn: async (id, n) => (String(n) === '27' ? [{ id: 5, paragraph_index: 40, text: P }] : []),

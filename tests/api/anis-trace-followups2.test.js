@@ -18,9 +18,11 @@ describe('trace names what ran', () => {
   });
   it('turnTrace carries the decisions; the text view prints strategy@version + decisions', async () => {
     const path = { gate: 'research', plan: { shape: 'quote', stages: { strategy: { choice: 'quote', ...strategyRun(strat, [{ graph: 'phrase_usage_trace@1' }], 'quote') } } },
-      decisions: [{ point: 'refers-back', by: 'jev', saw: 'long state', chosen: 'previous', probabilities: { previous: 0.9 }, reason: 'subject from the last turn' }] };
+      decisions: [{ point: 'refers-back', by: 'jev', saw: 'long state', chosen: 'previous', probabilities: { previous: 0.9 }, reason: 'subject from the last turn' },
+        { point: 'lookup:reference', by: 'code', saw: '{"work":"33857 The Dawn-Breakers"}', chosen: 'none', reason: 'no numbered unit 25' }] };
     const t = await turnTrace({ thread: async () => ({}), messages: async () => [{ round_index: 0, role: 'user', content: 'q' }, { round_index: 0, role: 'assistant', content: 'a', path_json: JSON.stringify(path) }], traces: async () => [], titles: async () => new Map() }, 'conv_x:0');
-    expect(t.decisions).toEqual([{ point: 'refers-back', by: 'jev', chosen: 'previous', probabilities: { previous: 0.9 }, reason: 'subject from the last turn' }]);
+    expect(t.decisions).toEqual([{ point: 'refers-back', by: 'jev', chosen: 'previous', probabilities: { previous: 0.9 }, reason: 'subject from the last turn' },
+      { point: 'lookup:reference', by: 'code', chosen: 'none', probabilities: null, reason: 'no numbered unit 25', saw: '{"work":"33857 The Dawn-Breakers"}' }]);
     const txt = turnText(t);
     expect(txt).toMatch(/strategy phrase_usage_trace@1  shape quote/); expect(txt).toMatch(/refers-back \[jev\] -> "previous"/);
   });

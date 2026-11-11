@@ -149,8 +149,10 @@ export async function turnTrace({ thread, messages, traces, titles }, turnId) {
   const p = safeJson(a?.path_json) || {};
   return { turn: String(turnId), thread: k.thread, round: k.round, question: q?.content ?? null, reply: a?.content ?? null, status: a?.status ?? null,
     route: { gate: p.gate || null, kind: p.kind || null, strategy: p.recipe || p.plan?.shape || null, plan: p.plan || null },
-    // Jev's decisions for the turn (strategy, refers-back, lookup kind, sides, side books, named units), without what he saw
-    decisions: (Array.isArray(p.decisions) ? p.decisions : []).map((d) => ({ point: d.point, by: d.by, chosen: d.chosen, probabilities: d.probabilities ?? null, reason: d.reason ?? null })),
+    // the turn's decisions (strategy, refers-back, lookup kind, sides, side books, named units); Jev's without what he saw (reader state),
+    // code's WITH it (11-11: "no numbered unit 25" could not say which work it searched)
+    decisions: (Array.isArray(p.decisions) ? p.decisions : []).map((d) => ({ point: d.point, by: d.by, chosen: d.chosen, probabilities: d.probabilities ?? null, reason: d.reason ?? null,
+      ...(d.by === 'code' && d.saw != null ? { saw: d.saw } : {}) })),
     // the strategy graph's steps with their wall ms (round 4: a 14 s prayer retrieval had no stage below 'planned-search' to blame)
     ...(Array.isArray(p.steps) && p.steps.length ? { steps: p.steps.map((x) => ({ graph: x.graph ?? null, node: x.node, step: x.step, ms: x.ms ?? null, edge: x.edge ?? null, ...(Array.isArray(x.seen) ? { seen: x.seen } : {}) })) } : {}),
     searches: searchesView(tr, names, 20), ...writerView(p.evidence, a?.content) };
