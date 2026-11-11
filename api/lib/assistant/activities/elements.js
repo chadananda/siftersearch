@@ -386,6 +386,7 @@ E.judge = { kind: 'decision', cls: 'jev', edges: [], edgesFor: (p) => (p?.option
   } };
 // one passage in a trace note: its source, paragraph and verdict (round db-r3: Nabíl's martyrdom paragraphs were found and vanished, judge untraced)
 const brief = (x, v) => `${String(x.title || x.work || '').slice(0, 40)}#${x.paragraph_id ?? x.paraId ?? x.id ?? ''}${v ? `:${v}` : ''}`;
+const MENTIONS_FLOOR = 4;   // the fewest passages a mentions drop may leave the writer
 E['judge.passages'] = { kind: 'decision', cls: 'jev', edges: ['answers', 'mentions_only', 'conflict', 'empty'], scope: 'strategy', params: ['precedence', 'question', 'mentions', 'stage'], reads: ['found_passages', 'topic'], writes: ['found_passages'],
   async run(s, p = {}) {   // Jev per passage: answers / only mentions / contradicts another; mentions-only passages drop when others answer
     const u = U(s);
@@ -412,7 +413,11 @@ E['judge.passages'] = { kind: 'decision', cls: 'jev', edges: ['answers', 'mentio
     const part = (x) => { const r = roleOf(x); return r ? r.join(':') : ''; }, answered = new Set(u.found_passages.filter((x) => x.verdict !== 'mentions_only').map(part));
     // mentions: 'keep' — passages on the subject that don't state the fact stay as its setting (round 5: "Who founded Sikhism?" kept one
     // British author's sentence and dropped Macauliffe's Life of Guru Nanak and Guru Nanak's own hymns); rank 'verdict' puts them after the answers
-    if (edge !== 'mentions_only' && p.mentions !== 'keep') u.found_passages = u.found_passages.filter((x) => x.verdict !== 'mentions_only' || !answered.has(part(x)));
+    // …and a drop that would leave the writer under MENTIONS_FLOOR passages keeps them after the answers (11-11 "Tell me about Vaḥíd": the
+    // Tablet of Visitation, God Passes By and the Nayríz history were each "mentions only" — the writer got one passage and wrote two sentences)
+    const kept = u.found_passages.filter((x) => x.verdict !== 'mentions_only' || !answered.has(part(x)));
+    if (edge !== 'mentions_only' && p.mentions !== 'keep') u.found_passages = kept.length >= MENTIONS_FLOOR ? kept
+      : [...u.found_passages.filter((x) => x.verdict !== 'mentions_only'), ...u.found_passages.filter((x) => x.verdict === 'mentions_only')];
     s.note = { read: { question: q }, params: p, count: u.found_passages.length, scope_excluded: 0, verdicts, seen };
     return edge;
   } };

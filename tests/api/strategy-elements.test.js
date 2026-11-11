@@ -199,7 +199,8 @@ describe('decisions', () => {
   });
   it('judge.passages: answers / mentions_only / conflict / empty', async () => {
     const run = (verdicts, n = verdicts.length) => { let i = 0; const s = mk({}, { found_passages: Array.from({ length: n }, (_, k) => P(k + 1)) }, { jev: async () => ({ choice: verdicts[i++] }) }); return ELEMENTS['judge.passages'].run(s, {}).then((e) => [e, s.units.found_passages.length]); };
-    expect(await run(['answers', 'mentions_only'])).toEqual(['answers', 1]);
+    expect(await run(['answers', 'answers', 'answers', 'answers', 'mentions_only'])).toEqual(['answers', 4]);   // enough answers: the mention drops
+    expect(await run(['answers', 'mentions_only'])).toEqual(['answers', 2]);   // under the floor: the mention stays, after the answer
     expect(await run(['mentions_only', 'mentions_only'])).toEqual(['mentions_only', 2]);
     expect((await run(['answers', 'contradicts']))[0]).toBe('conflict');
     expect(await run([], 0)).toEqual(['empty', 0]);
