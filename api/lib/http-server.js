@@ -171,7 +171,7 @@ export async function createHttpServer(opts = {}) {
   // route that sends its own reply (ERR_HTTP_HEADERS_SENT in public-api-library tests).
   server.addHook('onSend', (request, reply, payload, done) => {
     if (reply.raw.headersSent || typeof payload !== 'string'
-      || !((payload.includes('oceanlibrary.com') && (payload.includes('paraId=') || payload.includes('~q='))) || (payload.includes('oceanoflights.org') && payload.includes('~q=')))
+      || !((payload.includes('oceanlibrary.com') && (payload.includes('paraId=') || payload.includes('~q='))) || (payload.includes('oceanoflights.org') && payload.includes('~q=')) || (payload.includes('sifter-star-of-the-west/v') && payload.includes('#~d=')))
       || !/json/i.test(String(reply.getHeader('content-type') || ''))) return done(null, payload);
     import('./ocean-links.js')
       .then(({ upgradeOceanLinks }) => upgradeOceanLinks(payload))

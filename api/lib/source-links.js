@@ -6,6 +6,7 @@
 import { slugifyPath } from './slug.js';
 import { rangeUrl, quoteUrl } from './ocean-range.js';
 import { encodeMarker } from './ool-range.js';
+import { sowMarkerUrl } from './sow-links.js';
 
 export const SITE = 'https://siftersearch.com';   // the site worker: pages + the image service (/img/*); never the api tunnel
 const TIERS = [['oceanlibrary.com', 1], ['oceanoflights.org', 2], ['portlandiator.github.io', 3], ['bahai-library.com', 4]];
@@ -23,7 +24,7 @@ export function tierOf(url) {
 
 // a quote marker is paragraph-level on Ocean of Lights (the range is placed in our copy of that page); on an OceanLibrary
 // BOOK link it is only a hope — that copy has no paragraph ids, so the site copy that has them must still win
-const paragraphLevel = (url) => /paraId=|selectionString=|#p\d+|[?&]p=\d+|#\(/.test(url || '') || (/~q=/.test(url || '') && !/oceanlibrary\.com/.test(url || ''));
+const paragraphLevel = (url) => /paraId=|selectionString=|#p\d+|[?&]p=\d+|#\(|sifter-star-of-the-west\/v\d+\.\d+(?:-p\d+|#~d=)/.test(url || '') || (/~q=/.test(url || '') && !/oceanlibrary\.com/.test(url || ''));
 
 function parseMeta(metadata) {
   if (!metadata) return null;
@@ -100,10 +101,13 @@ export function linkFor(doc, paragraphIndex, { quote = null } = {}) {
     if (!doc.external_para_id) return (quote || doc.text) && !u.includes('#') ? `${u}#~q=${encodeMarker(String(quote || doc.text).slice(0, 2000))}` : u;
     return range(u.replace(/[?#].*$/, '')) || marker(`${u}${u.includes('?') ? '&' : '?'}paraId=${encodeURIComponent(doc.external_para_id)}`);
   };
+  // Star of the West issues: the page scan on bahai-education.org, the passage highlighted (lib/sow-links.js; resolved at output)
+  const sow = sowMarkerUrl(doc, paragraphIndex, quote);
   const candidates = [doc.source_url, ...metaSourceUrls(doc.metadata)]
     .filter((u) => typeof u === 'string' && /^https?:\/\//.test(u))
     .map(oolPageUrl)
     .map((u) => withPara(u))
+    .concat(sow ? [sow] : [])
     .map((u) => ({ url: u, ...tierOf(u) }))
     .filter((c) => c.tier < SIFTER_TIER);   // our own address stored as a "source" is not a source
   // Best tier wins; within a tier, a paragraph-level link beats a whole-document one.
