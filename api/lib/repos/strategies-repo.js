@@ -79,11 +79,12 @@ export function seedStrategies(db, seed = { TEMPLATES, STEPS, STRATEGIES: seedRo
     }
     const pinSteps = (g) => (g?.nodes ? { ...g, nodes: Object.fromEntries(Object.entries(g.nodes).map(([k, nd]) => [k, stepV.has(nd.step) ? { ...nd, step_version: stepV.get(nd.step) } : nd])) } : g);
     // seed-trees rows take the NEXT FREE version: a fixed v2 collided with older candidates (11-05 understanding@2/@3, comparison@2,
-    // prayer@2) and INSERT OR IGNORE silently kept those. A tree is re-seeded only when its graph changed (no seed-trees row with this graph).
-    const treeDone = db.prepare("SELECT 1 FROM strategies WHERE id = ? AND created_by = 'seed-trees' AND graph_json = ? LIMIT 1");
+    // prayer@2) and INSERT OR IGNORE silently kept those. A tree is re-seeded only when its graph or its card text changed (no seed-trees row with both;
+    // 11-10: a description-only edit never shipped, so the live card kept the old wording).
+    const treeDone = db.prepare("SELECT 1 FROM strategies WHERE id = ? AND created_by = 'seed-trees' AND graph_json = ? AND description IS ? LIMIT 1");
     const maxV = db.prepare('SELECT MAX(version) AS v FROM strategies WHERE id = ?');
     const retireOthers = db.prepare("UPDATE strategies SET status = 'retired' WHERE id = ? AND status = 'active' AND version != ?");
-    const versionOf = (s) => (s.created_by !== 'seed-trees' ? s.version : treeDone.get(s.id, JSON.stringify(s.graph)) ? null : Math.max(s.version, (maxV.get(s.id)?.v ?? 0) + 1));
+    const versionOf = (s) => (s.created_by !== 'seed-trees' ? s.version : treeDone.get(s.id, JSON.stringify(s.graph), s.description ?? null) ? null : Math.max(s.version, (maxV.get(s.id)?.v ?? 0) + 1));
     for (const s1 of seed.STRATEGIES) { const s0 = s1.created_by === 'seed-trees' ? { ...s1, graph: pinSteps(s1.graph) } : s1; const v = versionOf(s0); if (v == null) continue; const s = { ...s0, version: v };
       n += str.run(s.id, s.version, s.name, s.description ?? null, JSON.stringify(s.exemplars || []), JSON.stringify(s.graph),
       s.status || 'active', s.parent_version ?? null, at, s.created_by || 'seed').changes;

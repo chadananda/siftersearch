@@ -36,4 +36,18 @@ describe('tree seed versions', () => {
     expect(db.prepare("SELECT COUNT(*) AS n FROM strategies WHERE id = 'prayer' AND created_by = 'seed-trees'").get().n).toBe(1);
     expect(seedStrategies(db, edited)).toBe(0);
   });
+
+  it('an edited tree description ships as a new version; re-seeding it again adds nothing', () => {
+    const db = openStrategiesDb(':memory:');
+    const seed = { TEMPLATES, STEPS, STRATEGIES: [...STRATEGIES, ...TREE_STRATEGIES] };
+    seedStrategies(db, seed);
+    const edited = { ...seed, STRATEGIES: seed.STRATEGIES.map((s) => (s.id === 'history_fact' && s.created_by === 'seed-trees' ? { ...s, description: `${s.description} Edited.` } : s)) };
+    expect(seedStrategies(db, edited)).toBeGreaterThan(0);
+    const rows = db.prepare("SELECT version, status, description FROM strategies WHERE id = 'history_fact' AND created_by = 'seed-trees' ORDER BY version").all();
+    expect(rows.length).toBe(2);
+    expect(rows[1]).toMatchObject({ status: 'active' });
+    expect(rows[1].description).toMatch(/Edited\.$/);
+    expect(rows[0].status).toBe('retired');
+    expect(seedStrategies(db, edited)).toBe(0);
+  });
 });
