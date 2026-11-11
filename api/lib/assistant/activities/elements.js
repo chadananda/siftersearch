@@ -583,7 +583,8 @@ E.shape = { kind: 'writer', cls: 'code', edges: ['done'], scope: 'strategy', par
 // Never a stored list. Failure or empty → the subject itself (the unit default) and 'fail', as before.
 const tradOf = (u) => { const r = [u.religions_specified].flat().filter((x) => x && x !== 'all'); return r.length ? r.join(', ') : null; };
 for (const [name, unit, kind, reads, what] of [['plan.subthemes', 'sub_themes', 'subthemes', ['topic'], 'sub-themes a topic splits into'],
-  ['plan.criteria', 'criteria', 'criteria', ['challenged_claim', 'topic'], 'points that would make a claim true or false'], ['plan.entries', 'entries', 'entries', ['topic', 'named_person'], 'periods/events a timeline holds']]) {
+  ['plan.criteria', 'criteria', 'criteria', ['challenged_claim', 'topic'], 'points that would make a claim true or false'], ['plan.entries', 'entries', 'entries', ['topic', 'named_person'], 'periods/events a timeline holds'],
+  ['plan.phrasings', 'phrasings', 'phrasings', ['topic'], 'search phrases in the words the texts use']]) {
   E[name] = { kind: 'tool', cls: 'llm', edges: ['done', 'fail'], scope: 'strategy', params: ['n', 'stage'], reads, writes: [unit],
     async run(s, p = {}) {
       const u = U(s), subject = reads.map((k) => flat(u[k])).find((x) => String(x).trim()) || u.current_user_question, n = p.n ?? 4, tradition = tradOf(u);
@@ -706,6 +707,7 @@ export const ELEMENT_META = {
   'judge.timeline': m('One step. People from fetch.person: keeps those whose cited proof does what the question asks, with the book’s clause. Any other subject (event, work, person): keeps the passages whose own text states a date, each with date, year and event; planned entries with no dated source go to undated_entries.', 'found_records (people) or found_passages, entries, the question', 'found_records / found_passages (dated), undated_entries', []),
   'fill.term_script': m('Fills the term_arabic unit: a Latin term’s Arabic-script spelling (already Arabic or remembered = no model; otherwise one Jev call), so fetch.renderings can look it up.', 'term', 'term_arabic', []),
   'plan.criteria': m('A light generator for the criteria a claim is weighed on (default: the claim itself).', 'challenged_claim or topic', 'criteria', []),
+  'plan.phrasings': m('A light generator for search phrases naming the question\'s subject the way the texts word it (default: the question itself).', 'topic', 'phrasings', []),
   'plan.entries': m('A light generator for the entries (periods, events) a timeline orders (default: the subject itself).', 'topic or named_person', 'entries', []),
   'plan.subthemes': m('A light generator for the sub-themes a topic splits into (default: the topic itself).', 'topic', 'sub_themes', []),
   rank: m('Orders what was found by authority, standing, date, score… keeps the top few (per a field, or fields), regroups by a field (or nested fields), skips what was already given.', 'found_passages', 'found_passages', []),

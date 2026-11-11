@@ -33,7 +33,7 @@ const RULES = {
   ...Object.fromEntries(BOOL.map((n) => [n, (v) => typeof v === 'boolean' || 'must be true or false'])),
 };
 // the light generators (elements.js plan.*): one per planned unit, the same cheap tier and contract (params n, stage; default = the subject itself)
-export const GENERATORS = Object.freeze({ 'plan.subthemes': 'sub_themes', 'plan.criteria': 'criteria', 'plan.entries': 'entries' });
+export const GENERATORS = Object.freeze({ 'plan.subthemes': 'sub_themes', 'plan.criteria': 'criteria', 'plan.entries': 'entries', 'plan.phrasings': 'phrasings' });
 const ITEM_KEYS = ['element', 'params'];
 
 /** Contract problems of one step's params. → [string]. acts = the registry (nested list/inner elements), slots = extra known slot names. */
