@@ -69,7 +69,17 @@ async function scope(filters = {}, ctx = {}) {
 const WRITERS_OF_KIND = { scripture: ['bahaullah', 'thebab', 'bab', 'abdulbaha'], interpretation: ['shoghieffendi'] };
 // over-fetch when an authority post-filter will thin the list
 const want = (limit, authority) => (authority ? limit * 3 : limit);
-const finish = (list, limit, authority) => dedupePassages(list).filter((p) => !authority || authority.has(p.authority)).slice(0, limit);
+// one work holds at most a third of a shelf no single work was asked for (11-10: five Star of the West volumes took the history shelf for "how was the Báb
+// martyred?" and pushed The Dawn-Breakers past the cut); the overflow refills the tail, so a search never returns fewer than before
+const perWork = (list, limit) => {
+  const cap = Math.max(2, Math.ceil(limit / 3)), n = new Map(), keep = [], over = [];
+  for (const p of list) { const w = String(p.title || p.document_id || '').toLowerCase().trim(), c = n.get(w) ?? 0; n.set(w, c + 1); (c < cap ? keep : over).push(p); }
+  return [...keep, ...over];
+};
+const finish = (list, limit, authority, f = {}) => {
+  const kept = dedupePassages(list).filter((p) => !authority || authority.has(p.authority));
+  return (f.documentId == null && f.work == null ? perWork(kept, limit) : kept).slice(0, limit);
+};
 
 // one Qdrant layer: engine filters (a year range → doc ids) → the layer → paragraphs in rank order → links → Passages (found_by = the layer)
 async function layerRows(fnName, query, limit, engine, ctx = {}) {
@@ -87,7 +97,7 @@ async function layerRows(fnName, query, limit, engine, ctx = {}) {
 async function layerSearch(fnName, { query, limit = 8, filters } = {}, ctx = {}) {
   const { f, authority, none } = await scope(filters, ctx);
   if (none) return { passages: [] };
-  return { passages: finish(await layerRows(fnName, query, want(limit, authority), f, ctx), limit, authority) };
+  return { passages: finish(await layerRows(fnName, query, want(limit, authority), f, ctx), limit, authority, f) };
 }
 // the agent's fast engine (agent-search.js): every layer fused on the query as written; filters.tradition → its religion argument
 async function fastRows(query, engine, limit, ctx = {}) {
@@ -128,14 +138,14 @@ async function searchOnce(query, a, filters, ctx) {
   // the model names the writer; code only resolves the name (alias table). Left in the query, "where does 'Abdu'l-Bahá say
   // justice is each one's due" ranked other traditions and writers above Some Answered Questions 77 (11-05); held to Him, it is #2
   if (typeof f.author === 'string') f.author = (await import('../search-plan.js')).keywordAuthor(f.author) || f.author.trim();
-  if (!a.layers) return finish(await fastRows(query, f, n, ctx), limit, authority);
+  if (!a.layers) return finish(await fastRows(query, f, n, ctx), limit, authority, f);
   const lists = await Promise.all(a.layers.map(async (l) => (l === 'originals'
     ? originalsOut(f) ? [] : (await fastRows(query, { ...f, religion: "Baha'i", ...ORIGINALS_FILTER }, n, ctx)).map((p) => ({ ...p, found_by: ['originals'] }))
     : layerRows(LAYER_FN[l], query, n, f, ctx))));
   const rrf = new Map(), key = (p) => `${p.id ?? p.text}`;
   lists.forEach((l) => l.forEach((p, r) => rrf.set(key(p), (rrf.get(key(p)) || 0) + 1 / (60 + r))));
   const merged = lists.flat().sort((x, y) => rrf.get(key(y)) - rrf.get(key(x)));
-  return finish(merged, limit, authority).map((p) => ({ ...p, score: Math.round(rrf.get(key(p)) * 10000) / 10000 }));
+  return finish(merged, limit, authority, f).map((p) => ({ ...p, score: Math.round(rrf.get(key(p)) * 10000) / 10000 }));
 }
 
 // ── the registry ────────────────────────────────────────────────────────────────────────────────────────────────────────

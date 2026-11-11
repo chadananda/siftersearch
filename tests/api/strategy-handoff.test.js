@@ -47,7 +47,8 @@ describe('history_fact: a religion set for the turn does not carry the default f
     expect(s.units.authority_floor).toBe('any');
     expect(s.trace.map((t) => t.node).slice(0, 3)).toEqual(['h1', 'h2', 'h3']);   // not h7 (the web path)
     expect(s.out.passages.map((p) => p.title)).toEqual(expect.arrayContaining(['The Dawn-Breakers', 'God Passes By']));
-    expect(seen[0].filters).toMatchObject({ tradition: "Baha'i", authority: ['history', 'scholarship', 'interpretation'] });
+    expect(seen[0].filters).toMatchObject({ tradition: "Baha'i", authority: ['history', 'scholarship'] });   // the histories apart from the Guardian (11-10)
+    expect(seen.some((i) => i.filters?.authority?.join() === 'interpretation')).toBe(true);
   });
   it('a floor the reader or Jev really set still filters', () => {
     const r = resolveScope({ turn: { religions_specified: ["Baha'i"], authority_floor: 'scripture' } });

@@ -81,6 +81,14 @@ describe('each search tool calls only its own layer', () => {
     await tools.run('fused_search', { query: 'q', filters: { tradition: "Baha'i" } }, { fastSearch });
     expect(fastSearch.mock.calls[0][3]?.notAuthor).toBeUndefined();
   });
+  it('one work holds at most a third of a shelf no work was asked for; the overflow refills the tail; a work search is uncapped (11-10 Star of the West)', async () => {
+    const sotw = Array.from({ length: 8 }, (_, i) => ({ id: 100 + i, text: `periodical ${i}`, title: 'Star of the West', document_id: 15199 + i }));
+    const fastSearch = vi.fn(async () => [...sotw, { id: 9, text: 'The martyrdom of the Báb took place at noon', title: 'The Dawn-Breakers', document_id: 21308 }]);
+    let f = await tools.run('fused_search', { query: 'q', limit: 6, filters: { tradition: "Baha'i" } }, { fastSearch });
+    expect(f.passages.map((p) => p.id)).toEqual([100, 101, 9, 102, 103, 104]);
+    f = await tools.run('fused_search', { query: 'q', limit: 6, filters: { tradition: "Baha'i", documentId: 15199 } }, { fastSearch });
+    expect(f.passages.map((p) => p.id)).toEqual([100, 101, 102, 103, 104, 105]);
+  });
   it('originals_search is the fast engine held to the doctrinal writers in the ar-fa group (11-04)', async () => {
     const fastSearch = vi.fn(async () => [{ id: 5, text: 'يا معشر الملوك', language: 'ar' }]);
     const r = await tools.run('originals_search', { query: 'kings burden their subjects' }, { fastSearch });
