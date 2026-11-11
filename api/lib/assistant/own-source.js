@@ -18,7 +18,8 @@ const MAX_WORDS = 40, MIN_WORDS = 5;
 const canon = (n) => firstPerson(n || '') || n || null;
 const words = (s) => String(s || '').trim().split(/\s+/).filter(Boolean);
 const clip = (s) => words(s).slice(0, MAX_WORDS).join(' ');
-const keyOf = (p) => p?.id ?? `${p?.document_id}:${p?.paragraph_index}`;
+// a shaped hit can lack id and index: never let two paragraphs of one document share a key (they deduped into one, 11-11)
+const keyOf = (p) => p?.id ?? p?.paragraph_id ?? `${p?.document_id}:${p?.paragraph_index ?? String(p?.text || '').slice(0, 80)}`;
 
 /** The words the book quotes: the longest span in quotation marks (5+ words; an ellipsis splits it), else the paragraph
  *  itself (a block quotation, attributed whole to the writer). At most 40 words, so the source paragraph holds it verbatim.
@@ -95,7 +96,16 @@ const fits = (q, j, provisional) => (j.kind === 'copy' ? betterCopy(q, j, provis
  * `keep(p)` true → never swapped: a passage of the book the reader named is that book's words, not a copy to trade away.
  * `writers` adds writers to the doctrinal set for this call only.
  */
-export async function preferOwnWork(passages, { search = null, link = null, budgetMs = OWN_SOURCE_MS, shape = (h) => h, keep = null, writers = [] } = {}) {
+export async function preferOwnWork(passages, opts = {}) {
+  const first = await ownPass(passages, opts);
+  // a swap can land on a poor copy (a writer's words found in a slug-titled scrape): one more pass trades it for the published copy (11-11)
+  const left = (opts.budgetMs ?? OWN_SOURCE_MS) - first.ms;
+  if (!first.swapped.length || left <= 0) return first;
+  const again = await ownPass(first.passages, { ...opts, budgetMs: left, onlyKinds: new Set(['copy', 'host']), only: new Set(first.swapped.map((x) => x.to)) });
+  if (!again.swapped.length) return first;
+  return { ...again, swapped: [...first.swapped, ...again.swapped], searches: first.searches + again.searches, late: first.late + again.late, ms: first.ms + again.ms };
+}
+async function ownPass(passages, { search = null, link = null, budgetMs = OWN_SOURCE_MS, shape = (h) => h, keep = null, writers = [], onlyKinds = null, only = null } = {}) {
   const t0 = Date.now();
   const done = (extra = {}) => ({ passages, swapped: [], searches: 0, late: 0, ...extra, ms: Date.now() - t0 });
   if (!Array.isArray(passages) || !passages.length) return done();
@@ -108,7 +118,7 @@ export async function preferOwnWork(passages, { search = null, link = null, budg
   const kindOf = (p) => (keep?.(p) ? null : quotedElsewhere(p, DOCTRINAL) ? 'elsewhere' : slugTitle(p.title) ? 'copy'
     : LAST_RESORT.test(p.title || '') && canon(p.author) ? 'published'
     : DOCTRINAL.has(canon(p.author)) && canon(p.author) === canon(p.book_author || p.author) && quotedOnly(p.text).length ? 'self' : SCRAPE_HOST.test(String(p.source_url || '')) ? 'host' : null);
-  const jobs = passages.map((p, i) => ({ p, i, kind: kindOf(p) })).filter((j) => j.kind)
+  const jobs = passages.map((p, i) => ({ p, i, kind: only && !only.has(keyOf(p)) ? null : kindOf(p) })).filter((j) => j.kind && (!onlyKinds || onlyKinds.has(j.kind)))
     .map((j) => ({ ...j, writer: j.kind === 'copy' || j.kind === 'host' ? null : canon(j.p.author), span: j.kind === 'self' ? quotedOnly(j.p.text)[0] : j.kind === 'copy' || j.kind === 'host' || j.kind === 'published' ? (words(j.p.text).length >= MIN_WORDS ? clip(j.p.text) : null) : quotedSpan(j.p.text) })).filter((j) => j.span);
   if (!jobs.length) return done();
   for (const j of jobs) j.own = passages.find((q) => q !== j.p && fits(q, j, isProvisional)) || null;
@@ -136,7 +146,8 @@ export async function preferOwnWork(passages, { search = null, link = null, budg
   const found = jobs.filter((j) => j.own);
   if (!found.length) return done({ searches: need.length, late });
   const lead = passages.slice(), tail = [];
-  for (const j of found) { lead[j.i] = j.own; tail.push(j.p); }
+  // a poor copy holds the same words as its better copy: dropped, never kept as context (the writer cited the scrape, 11-11)
+  for (const j of found) { lead[j.i] = j.own; if (j.kind !== 'copy' && j.kind !== 'host') tail.push(j.p); }
   const seen = new Set();
   const out = [...lead, ...tail].filter((p) => { const k = keyOf(p); if (seen.has(k)) return false; seen.add(k); return true; });
   return { passages: out, swapped: found.map((j) => ({ from: keyOf(j.p), to: keyOf(j.own), writer: j.writer, kind: j.kind })), searches: need.length, late, ms: Date.now() - t0 };

@@ -96,3 +96,21 @@ describe('own source: a scrape-host edition gives way to the published book hold
     expect(n).toBe(0);
   });
 });
+
+describe('own source: a swap that lands on a scrape goes on to the published copy (11-11 grandmother turn)', () => {
+  const AB = '‘Abdu’l-Bahá';
+  const MEN = 'Men who suffer not, attain no perfection. The plant most pruned by the gardeners is that one which, when the summer comes, will have the most beautiful blossoms and the most abundant fruit.';
+  const sow = toPassage({ id: 16413529, document_id: 15839, paragraph_index: 40, title: 'Star of the West, v20', author: AB, book_author: AB, religion: B,
+    source_url: 'https://bahai-library.com/sow_v20', text: `He said: “Men who suffer not, attain no perfection. The plant most pruned by the gardeners is that one which, when the summer comes, will have the most beautiful blossoms” — so he taught.` });
+  const scrapePT = { document_id: 563763, paragraph_id: 38963437, title: 'abdul-baha-paris-talks-014_en', author: AB, book_author: AB, religion: B, collection: 'Writings of ‘Abdu’l-Bahá', book_authority: 10,
+    source_url: 'https://oceanoflights.org/abdul-baha-paris-talks-014-en/#(Men)(fruit)', text: MEN };
+  const paris = { id: 1050, document_id: 21395419, paragraph_index: 1050, title: 'Paris Talks', author: AB, book_author: AB, religion: B, collection: 'Writings of ‘Abdu’l-Bahá', book_authority: 10,
+    source_url: 'https://oceanlibrary.com/paris-talks_abdul-baha/?paraId=para_1050', text: MEN };
+  it('Star of the West → the scrape → Paris Talks (oceanlibrary paraId)', async () => {
+    const r = await preferOwnWork([sow], { search: async (span, f) => (f.author ? [scrapePT] : [scrapePT, paris]), shape: toPassage });
+    expect(r.passages[0]).toMatchObject({ title: 'Paris Talks', source_url: expect.stringMatching(/oceanlibrary\.com.*paraId=/) });
+    expect(r.swapped.map((x) => x.kind)).toEqual(['self', 'copy']);
+    expect(r.passages.some((p) => /oceanoflights/.test(p.source_url || ''))).toBe(false);
+  });
+});
+
