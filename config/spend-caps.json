@@ -6,6 +6,12 @@
   ],
   "rules": [
     {
+      "group": "premise-pilot",
+      "exact": [
+        "premise-pilot"
+      ]
+    },
+    {
       "group": "hype-program",
       "exact": [
         "hype-program"

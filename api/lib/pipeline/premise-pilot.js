@@ -1,0 +1,128 @@
+// Premise-extraction PILOT (Chad 11-11): passages whose weight lies in what they ASSUME, not what they answer (HyPE cannot hold these).
+// Ops job `premise-pilot` { maxUsd, targets?, dry? }: one Sonnet call per paragraph (+ prev/next ¶, heading, title/author) → premises with a verbatim proof
+// (spanIsPresent-checked; unverified dropped + counted). Billed to budget key `premise-pilot`. Writes data/run/premise-pilot-<ts>.json. Deps all injectable.
+import fs from 'node:fs';
+import path from 'node:path';
+import { withAIContext } from '../ai-context.js';
+import { spanIsPresent } from '../rag/enrich/retrieval.js';
+import { JUDGE_MODEL } from './hype-rubric.js';
+import { calculateCost } from '../model-registry.js';
+import { isCreditRefusal, isSpendCap, CREDIT_WAIT_MS } from '../spend-caps.js';
+
+export const BUDGET_KEY = 'premise-pilot';
+export const EST_USD_PER_PARA = 0.008;   // ESTIMATE: ~1.8k in (prompt + ¶ + neighbours) + ~150 out at Sonnet 4.6 sync prices ($3/$15 per M); replace with the metered mean
+export const CONCURRENCY = 4, MIN_LEN = 40, TEXT_CAP = 600;
+export const CONCEPTS = ['source of rights (divine vs. state-granted)', 'limits of sovereign/state power', 'just and unjust taxation', 'private property', 'moral status of the unborn / right to life', 'justice (ʿadl) and equity (inṣáf)', 'equality before the law', 'rule of law and accountability of rulers', 'consultation and consent of the governed', 'freedom of conscience and religion', 'extremes of wealth and poverty / economic justice', 'punishment, mercy and the purpose of penalties', 'individual rights vs. the common good', 'war, peace and collective security', 'rights and duties of women', 'education as a right', 'the family and inheritance', 'human nature (noble vs. corrupt)', 'religion and the state', 'work as worship / labour and capital'];
+export const PILOT_TARGETS = [
+  { docId: 20806 },   // Summons of the Lord of Hosts (Tablets to the Kings), whole book
+  { docId: 21307 },   // The Kitáb-i-Aqdas, whole book
+  { docId: 20911, match: 'justice|equity|punish|strike|wealth|poverty|rights' },   // Some Answered Questions
+  { docId: 21310, match: 'Mashriqu|Ishq|Soviet|Russia|confiscat|expropriat|property' },   // God Passes By
+];
+export const SYSTEM = `You read ONE passage from a religious or historical work and list the PREMISES it rests on: things it ASSUMES (presupposes) or plainly states that carry real political, legal, economic, ethical or philosophical weight for contemporary debate.
+Example: a ruler is rebuked for unjust taxation. That presupposes rights exist before the state (from God), a sovereign can be wrong, and the power to tax has moral limits.
+Rules:
+- The normal answer is an EMPTY list. Narrative, devotional, ritual and descriptive passages usually have no such premise. Never manufacture one.
+- Say "assumes" or "presupposes", never "teaches": this is an inference from the words, not a statement of the faith's teaching.
+- Plain words, no jargon. One plain sentence per premise.
+- "proof" must be words copied EXACTLY from the PASSAGE (not the context paragraphs), the words the inference rests on.
+- "concept" is one of the CONCEPTS below (copy it exactly), or "other: <short label>".
+- "basis" is "states" (the passage says it) or "presupposes" (it takes it for granted).
+- "strength" is "strong" or "moderate"; leave out weak ones.
+CONCEPTS:
+${CONCEPTS.map((c) => `- ${c}`).join('\n')}
+Reply with JSON only: {"premises":[{"premise":"...","concept":"...","basis":"states|presupposes","proof":"...","why":"one sentence linking proof to premise","strength":"strong|moderate"}]}`;
+const r4 = (n) => Math.round(n * 10000) / 10000;
+const userMsg = (doc, p, prev, next) => `WORK: ${doc.title || '?'}${doc.author ? ` by ${doc.author}` : ''}\nSECTION: ${p.heading || '(none)'}\n\nPREVIOUS PARAGRAPH (context only):\n${prev?.text || '(none)'}\n\nPASSAGE:\n${p.text}\n\nNEXT PARAGRAPH (context only):\n${next?.text || '(none)'}`;
+
+/** The reply text → premises array, or null when it is not the JSON asked for. */
+export function parsePremises(text) {
+  const s = String(text || ''), a = s.indexOf('{'), b = s.lastIndexOf('}');
+  if (a < 0 || b < a) return null;
+  let v; try { v = JSON.parse(s.slice(a, b + 1)); } catch { return null; }
+  return Array.isArray(v?.premises) ? v.premises.filter((x) => x && typeof x === 'object') : null;
+}
+
+/** One doc's prose paragraphs + a target → the paragraphs to analyse (ord = 1-based position among prose ¶; from/to inclusive; match = regex + 1 neighbour each side). */
+export function selectParas(paras, t = {}) {
+  const all = paras.map((p, i) => ({ ...p, ord: i + 1 }));
+  let picked = all;
+  if (t.match) { const re = new RegExp(t.match, 'i'), keep = new Set(); all.forEach((p, i) => { if (re.test(p.text || '')) [i - 1, i, i + 1].forEach((j) => j >= 0 && j < all.length && keep.add(j)); }); picked = all.filter((_, i) => keep.has(i)); }
+  if (t.from != null || t.to != null) picked = picked.filter((p) => p.ord >= (t.from ?? 1) && p.ord <= (t.to ?? Infinity));
+  return { all, picked: picked.filter((p) => String(p.text || '').trim().length >= MIN_LEN) };
+}
+
+async function defaults(over) {
+  return {
+    doc: async (id) => (await import('../docs-repo.js')).getDoc(id, { scope: 'live' }),
+    paragraphs: async (id) => (await import('../docs-repo.js')).getParagraphs(id),
+    ask: async (messages, o) => (await import('../ai.js')).chatCompletion(messages, { provider: 'anthropic', model: JUDGE_MODEL, temperature: 0, maxTokens: 1500, ...o }),
+    sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
+    draining: async () => (await import('../drain.js')).isDraining(),
+    log: async (kind, text) => (await import('../repos/activity-repo.js')).logActivity(kind, text),
+    writeRun: (name, obj) => { const dir = path.join(process.cwd(), 'data', 'run'); fs.mkdirSync(dir, { recursive: true }); const f = path.join(dir, name); fs.writeFileSync(f, JSON.stringify(obj, null, 1)); return f; },
+    now: () => new Date(),
+    ...over,
+  };
+}
+
+export async function premisePilotJob(params = {}, deps = {}) {
+  const d = await defaults(deps);
+  const maxUsd = Number(params.maxUsd);
+  if (!(maxUsd > 0)) return { status: 'error', error: 'maxUsd required (> 0)' };
+  const targets = params.targets?.length ? params.targets : PILOT_TARGETS;
+  // plan: dedupe paragraphs across targets
+  const work = [], seen = new Set(), docs = new Map(), missing = [];
+  for (const t of targets) {
+    const doc = await d.doc(t.docId);
+    if (!doc) { missing.push(t.docId); continue; }
+    const { all, picked } = selectParas(await d.paragraphs(t.docId), t);
+    docs.set(t.docId, doc);
+    for (const p of picked) if (!seen.has(p.id)) { seen.add(p.id); work.push({ doc, p, prev: all[p.ord - 2], next: all[p.ord] }); }
+  }
+  const plan = { paragraphs: work.length, estUsd: r4(work.length * EST_USD_PER_PARA), maxUsd, ...(missing.length ? { missingDocs: missing } : {}) };
+  if (params.dry || params.dryRun) return { dryRun: true, ...plan, byDoc: Object.fromEntries([...docs].map(([id, doc]) => [id, { title: doc.title, n: work.filter((w) => w.doc === doc).length }])) };
+
+  const out = { usd: 0, done: 0, withPremises: 0, premises: [], unverified: 0, unparsed: 0, errors: 0, byConcept: {}, creditWait: null, stop: null };
+  let next = 0;
+  const one = async ({ doc, p, prev, next: nx }) => {
+    for (;;) {
+      if (out.stop) return;
+      if (out.usd + EST_USD_PER_PARA > maxUsd) { out.stop = 'budget'; return; }
+      try {
+        const res = await withAIContext({ billTo: BUDGET_KEY, stage: 'hype-judge', caller: BUDGET_KEY, docId: p.doc_id ?? doc.id }, () => d.ask([{ role: 'system', content: SYSTEM }, { role: 'user', content: userMsg(doc, p, prev, nx) }]));
+        out.usd += res?.usage?.promptTokens != null || res?.usage?.completionTokens != null ? calculateCost(JUDGE_MODEL, res.usage.promptTokens || 0, res.usage.completionTokens || 0) : EST_USD_PER_PARA;
+        if (out.creditWait && !out.creditWait.resolvedAt) out.creditWait.resolvedAt = d.now().toISOString();
+        out.done++;
+        const list = parsePremises(res?.content);
+        if (!list) { out.unparsed++; return; }
+        let kept = 0;
+        for (const x of list) {
+          if (spanIsPresent(x.proof, [p.text]) !== true || !x.premise) { out.unverified++; continue; }
+          kept++; out.byConcept[x.concept] = (out.byConcept[x.concept] || 0) + 1;
+          out.premises.push({ docId: doc.id ?? p.doc_id, title: doc.title, paraId: p.id, ord: p.ord, text: String(p.text).slice(0, TEXT_CAP), premise: x.premise, concept: x.concept, basis: x.basis, proof: x.proof, why: x.why, strength: x.strength });
+        }
+        if (kept) out.withPremises++;
+        return;
+      } catch (e) {
+        // no credit is a WAIT, never a failure: the same paragraph is offered again
+        if (isCreditRefusal(e)) {
+          if (!out.creditWait || out.creditWait.resolvedAt) { out.creditWait = { since: d.now().toISOString(), probes: 0 }; await d.log('premise', 'premise-pilot: Anthropic has no credit — waiting in place'); }
+          out.creditWait.probes++;
+          if (await d.draining()) { out.stop = 'yielded'; return; }
+          await d.sleep(Math.max(1000, Math.min(isSpendCap(e) ? e.retryAfterMs ?? CREDIT_WAIT_MS : CREDIT_WAIT_MS, CREDIT_WAIT_MS)));
+          continue;
+        }
+        if (isSpendCap(e)) { out.stop = 'cap'; out.capReason = String(e.message).slice(0, 200); return; }   // a daily cap: quiet stop, the run is rerunnable
+        out.errors++; return;
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, work.length) }, async () => { while (next < work.length && !out.stop) await one(work[next++]); }));
+
+  const status = out.stop === 'budget' ? 'budget' : out.stop === 'cap' ? 'cap' : out.stop === 'yielded' ? 'yielded' : 'complete';
+  const result = { status, ...plan, usd: r4(out.usd), analysed: out.done, withPremises: out.withPremises, premises: out.premises, unverified: out.unverified, unparsed: out.unparsed, errors: out.errors, byConcept: out.byConcept, ...(out.capReason ? { capReason: out.capReason } : {}), ...(out.creditWait ? { creditWait: out.creditWait } : {}) };
+  try { result.file = d.writeRun(`premise-pilot-${d.now().toISOString().replace(/[:.]/g, '-')}.json`, result); } catch (e) { result.fileError = String(e?.message || e).slice(0, 120); }
+  await d.log('premise', `premise-pilot ${status}: ${out.done}/${work.length} ¶, ${out.premises.length} premises in ${out.withPremises} ¶, ${out.unverified} unverified, $${r4(out.usd)}`);
+  return result;
+}
