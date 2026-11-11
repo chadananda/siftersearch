@@ -81,6 +81,7 @@ export async function defaultDeps() {   // exported for the strategy dry run (st
 // Every turn runs under a per-turn METER (ai-context): each model call's model and cost land in the turn's path.meta
 // (type · models · usd · latency) — what the daily conversation digest shows (Chad 10-22). An outer meter is reused.
 // the "something new" option Jev weighs beside the existing works when his strategy would MAKE or chat rather than open a book
+const LONG_UNIT = 20;   // paragraphs: a numbered reference longer than this is carded, not quoted
 const PROBE_ALT = {
   compilation: 'a NEW compilation gathered on this topic (not an existing work in the library)',
   about: 'a question or conversation about Anís or the library itself, not a particular work',
@@ -350,6 +351,14 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     if (found?.kind === 'section') return sectionCard(found, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
   }
   const lk = lkIntent && lkIntent !== 'in_work' && lkIntent !== 'find_passage' ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent, profile, decisions, onJev: (info) => decisions.record('jev:timeout', timeoutDecision(info)) }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
+  // a numbered unit too long to quote whole (a CHAPTER of a narrative, 11-11 "Dawn-Breakers chapter 25" got an essay with no link)
+  // → that chapter's card: its heading, the book, a link to where it starts. Short units ("Gleanings 27") stay verbatim.
+  if (lk?.kind === 'reference' && lk.passages?.length > LONG_UNIT && lk.work?.doc) {
+    const ps = lk.passages, first = ps[0], doc = lk.work.doc;
+    decisions.record('reference:chapter-card', { by: 'code', saw: { label: lk.label ?? null, paragraphs: ps.length }, chosen: 'chapter card', reason: `more than ${LONG_UNIT} paragraphs: the card, not the whole text` });
+    return sectionCard({ doc, sec: { doc_id: doc.id, book: doc.title, author: doc.author ?? null, title: first.heading || lk.label || `${doc.title}, ${lk.ref?.num}`,
+      start_index: first.paragraph_index, end_index: ps.at(-1).paragraph_index, paragraphs: ps.length, first_para_id: first.id } }, ex, { gate: 'lookup', via: 'reference', decisions: decisions.list() });
+  }
   // a SHORT turn Jev read as a search ("more", "and the Báb?", "in Persian") gets its self-contained query from the history
   // and the card (short-turn.js) — respond.js searches those words, not the bare message
   const resolved = route.action === 'research' && outcome === 'search' && tri?.features?.short && !tri.features.first && d.resolve

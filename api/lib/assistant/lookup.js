@@ -22,10 +22,14 @@ const toRoman = (n) => n > 0 && n < 4000 ? [[1000, 'M'], [900, 'CM'], [500, 'D']
 /** "Gleanings 27", "Hidden Words no. 12", "Gleanings section CXXVII" → { title, num } | null. Pure. */
 export function parseReference(text) {
   const t = stripMarkup(text).replace(/[?.!]+$/, '').trim();
-  const m = /^(?:the\s+)?([\p{L}][\p{L}'’‘ʼ.\- ]{2,60}?)[\s,]+(?:(?:no\.?|number|#|section|sec\.?|§|¶|para(?:graph)?\.?|passage|prayer|verse|tablet)\s*)?(\d{1,4}|[ivxlcdm]{1,8})$/iu.exec(t);
+  // "Gleanings 27", "Dawn-Breakers chapter 25", "Dawn-Breakers - Chapter 25" … and "chapter 25 of The Dawn-Breakers" (11-11: "chapter"
+  // was not a unit word, so "Dawn-Breakers chapter" became the title and the turn fell through to an essay)
+  const UNIT = "no\\.?|number|#|chapter|ch\\.?|section|sec\\.?|§|¶|para(?:graph)?\\.?|passage|prayer|verse|tablet|talk|letter|lesson|part";
+  const m = new RegExp(`^(?:the\\s+)?([\\p{L}][\\p{L}'’‘ʼ.\\- ]{2,60}?)[\\s,:\\-–—]+(?:(?:${UNIT})\\s*)?(\\d{1,4}|[ivxlcdm]{1,8})$`, 'iu').exec(t)
+    || ((r) => r && [r[0], r[3], r[2]])(new RegExp(`^(?:the\\s+)?(${UNIT})\\s*(\\d{1,4}|[ivxlcdm]{1,8})\\s+(?:of|in|from)\\s+(?:the\\s+)?([\\p{L}][\\p{L}'’‘ʼ.\\- ]{2,60})$`, 'iu').exec(t));
   if (!m) return null;
   const raw = m[2], num = /^\d+$/.test(raw) ? Number(raw) : ROMAN.test(raw) ? romanToInt(raw) : null;
-  const title = m[1].replace(/[,\s]+$/, '').trim();
+  const title = m[1].replace(/[,\s:\-–—]+$/, '').trim();
   return num && title.split(/\s+/).length <= 6 ? { title, num } : null;
 }
 
@@ -51,7 +55,7 @@ export function holds(text, phrase) {
 }
 
 const passageOf = (doc, row, url) => ({ id: row.id, text: row.text, title: doc.title, author: doc.author, document_id: doc.id,
-  paragraph_index: row.paragraph_index, religion: doc.religion, collection: doc.collection, language: doc.language, source_url: url || null });
+  paragraph_index: row.paragraph_index, heading: row.heading ?? null, religion: doc.religion, collection: doc.collection, language: doc.language, source_url: url || null });
 /** Works that number chapters/talks only by order (SAQ, Paris Talks): numbering.js's per-edition table → the chapter's
  *  opening paragraphs (heading rows dropped). The edition must be the work Jev's title matched or one of its other copies. */
 async function bySectionTable(w, ref, deps, link) {

@@ -20,6 +20,10 @@ describe('parsing', () => {
     expect(parseReference('Hidden Words no. 12')).toEqual({ title: 'Hidden Words', num: 12 });
     expect(parseReference('Gleanings section CXXVII')).toEqual({ title: 'Gleanings', num: 127 });
   });
+  it('a chapter named either way round: "Dawn-Breakers chapter 25", "- Chapter 25", "chapter XXV of the Dawn-Breakers" (11-11)', () => {
+    for (const q of ['Dawn-Breakers chapter 25', 'Dawn-Breakers - Chapter 25', 'chapter 25 of the Dawn-Breakers', 'Chapter XXV of The Dawn-Breakers?'])
+      expect(parseReference(q)).toEqual({ title: 'Dawn-Breakers', num: 25 });
+  });
   it('a title with no number is no reference (Jev decides intent; this only parses the target)', () => {
     expect(parseReference('Gleanings')).toBeNull();
   });
@@ -106,6 +110,19 @@ describe('resolveLookup (mocked deps)', () => {
     await anisTurn({ messages: user('Gleanings 1'), participant: { id: 's' }, clientKey: 's', onEvent: () => {}, deps });
     expect(seen[0]?.lookup?.kind).toBe('reference');
     expect(closed.path.triage.lookup).toEqual({ choice: 'reference', confidence: 0.99 });
+  });
+  it('a numbered unit too long to quote (a chapter, 40 paragraphs) → the chapter card linked to its start, no writer (11-11)', async () => {
+    let responded = 0, card = null;
+    const DB = { id: 50, title: 'The Dawn-Breakers', author: 'Nabíl-i-A‘ẓam' };
+    const passages = Array.from({ length: 40 }, (_, i) => ({ id: 900 + i, paragraph_index: 3000 + i, heading: 'CHAPTER XXV: The Báb\'s Imprisonment', text: `p${i}` }));
+    const deps = { open: async () => ({ conversationId: 'c', round: 0 }), close: async () => {}, fail: async () => {}, outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {},
+      triage: async () => ({ malicious: 0.01, complete: 0.99, stop_request: 0, kind: { choice: 'research', confidence: 0.9 }, stance: { choice: 'curious' }, lookup: { choice: 'reference', confidence: 0.99 } }),
+      lookup: async () => ({ kind: 'reference', ref: { title: 'Dawn-Breakers', num: 25 }, label: 'The Dawn-Breakers, 25', work: { doc: DB }, passages }),
+      sectionAnswer: async ({ sec, doc }) => { card = { sec, doc }; return { reply: `CARD ${sec.title}`, citations: [] }; },
+      respond: async () => { responded++; return { reply: 'r', citations: [], retrieved: [], plan: {}, timings: {} }; } };
+    const r = await anisTurn({ messages: user('Dawn-Breakers chapter 25'), participant: { id: 's' }, clientKey: 's', onEvent: () => {}, deps });
+    expect(responded).toBe(0); expect(r.reply).toBe("CARD CHAPTER XXV: The Báb's Imprisonment");
+    expect(card.sec).toMatchObject({ doc_id: 50, start_index: 3000, end_index: 3039, paragraphs: 40, first_para_id: 900 });
   });
   it('quoted words found only in commentary make no quote candidate (Chad 11-03: core literature only)', async () => {
     const famous = [{ ...COMMENTARY, text: `As Bahá’u’lláh wrote: ${P}` }, { ...CORE, collection: 'Pilgrim Notes', book_authority: 7, text: P },
