@@ -48,6 +48,23 @@ describe('hypeMode', () => {
   });
 });
 
+describe('submit: no Anthropic credit is a wait', () => {
+  it('a refused create returns creditOut with nothing counted; a later submit sends everything; non-credit errors still throw', async () => {
+    const t = fakeTransport(), rag = fakeRag({ docs: { 1: [1, 2, 3, 4, 5, 6, 7] } });
+    const c0 = t.create; let n = 0;
+    t.create = async (...a) => { if (n++ === 1) throw new Error('400 Your credit balance is too low to access the Anthropic API'); return c0(...a); };
+    const hb = make(rag, t, { maxRequests: 3 });
+    const out = await hb.submit([1]);   // batch 1 goes out, batch 2 is refused
+    expect(out.creditOut).toBeTruthy();
+    expect(out.batches).toHaveLength(1); expect(out.paragraphs).toBe(3);
+    const again = await hb.submit([1]);   // the first 3 are in flight (excluded); the rest go out
+    expect(again.creditOut).toBeUndefined(); expect(again.paragraphs).toBe(4);
+    expect(rag.settled).toHaveLength(0);
+    const t2 = fakeTransport(); t2.create = async () => { throw new Error('boom'); };
+    await expect(make(fakeRag(), t2, { dir: fs.mkdtempSync(path.join(os.tmpdir(), 'hype-batch-')) }).submit([1])).rejects.toThrow('boom');
+  });
+});
+
 describe('submit', () => {
   it('chunks requests under the per-batch ceiling and persists the jobs', async () => {
     const t = fakeTransport(), rag = fakeRag({ docs: { 1: [1, 2, 3, 4, 5, 6, 7] } });

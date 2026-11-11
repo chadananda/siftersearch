@@ -217,6 +217,47 @@ describe('hypeProgramJob: run', () => {
   });
 });
 
+describe('hypeProgramJob: Anthropic out of credit is a wait, never a failure (11-11)', () => {
+  const NOCREDIT = { batches: [], paragraphs: 0, requests: 0, gated: [], spendRefused: [], over_budget: false, docs: 0, creditOut: { retryAfterMs: 5000 } };
+  it('a no-credit submit marks nothing failed/exhausted, leaves the cursor alone, waits (sleep) and sends the same docs once credit returns', async () => {
+    const { w, deps } = fakeWorld({ select: [docsOf(3), docsOf(3)] });
+    const sleeps = []; deps.sleep = async (ms) => { sleeps.push(ms); };
+    const sub = deps.makeHb; let calls = 0, cursorAtRetry = 'unset';
+    deps.makeHb = async (o) => { const hb = await sub(o); const s0 = hb.submit; hb.submit = async (...a) => { if (calls++ === 0) return NOCREDIT; cursorAtRetry = store.cursors()['core:bahai:primary:dis']; return s0(...a); }; return hb; };
+    const r = await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 0 }, deps);
+    expect(r).toMatchObject({ status: 'complete', paragraphs: 3, written: 3, failed: 0, exhausted: 0, errors: [] });
+    expect(cursorAtRetry).toBeUndefined();
+    expect(sleeps).toContain(5000);
+    expect(w.submits).toHaveLength(1);
+    expect(r.creditWait).toMatchObject({ probes: 1 });
+    expect(r.creditWait.since).toBeTruthy(); expect(r.creditWait.resolvedAt).toBeTruthy();
+    expect(w.logs.some((l) => /no credit/.test(l))).toBe(true);
+  });
+  it('a partly-sent round keeps what went out and still does not move the cursor past the unsent', async () => {
+    const { deps } = fakeWorld({ select: [docsOf(3), docsOf(3)] });
+    const sub = deps.makeHb; let calls = 0, cursorAtRetry = 'unset';
+    deps.makeHb = async (o) => { const hb = await sub(o); const s0 = hb.submit; hb.submit = async (...a) => { if (calls++ === 0) { const s = await s0(...a); return { ...s, creditOut: { retryAfterMs: 1000 } }; } cursorAtRetry = store.cursors()['core:bahai:primary:dis']; return s0(...a); }; return hb; };
+    const r = await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 0 }, deps);
+    expect(r).toMatchObject({ status: 'complete', failed: 0, exhausted: 0 });
+    expect(cursorAtRetry).toBeUndefined();
+  });
+  it('a refused grading check is deferred (not counted as an error) and sent when credit returns', async () => {
+    let n = 0;
+    const { w, deps } = fakeWorld({ select: [docsOf(4)], checkCreate: async () => { if (n++ === 0) throw new Error('400 Your credit balance is too low to access the Anthropic API'); } });
+    const r = await hypeProgramJob({ tier: 'core', maxUsd: 5, sampleRate: 1 }, deps);
+    expect(r.status).toBe('complete');
+    expect(w.checkBatches.size).toBe(1);
+    const g = store.ledger()[0].grade;
+    expect(g.errors).toBeFalsy(); expect(g.deferred).toBeUndefined(); expect(g.checkBatch).toBeTruthy();
+    expect(r.creditWait).toMatchObject({ probes: 1 }); expect(r.creditWait.resolvedAt).toBeTruthy();
+  });
+  it('a non-credit submit error keeps today\'s behaviour (the job throws)', async () => {
+    const { deps } = fakeWorld({ select: [docsOf(3)] });
+    const sub = deps.makeHb; deps.makeHb = async (o) => { const hb = await sub(o); hb.submit = async () => { throw new Error('boom'); }; return hb; };
+    await expect(hypeProgramJob({ tier: 'core', maxUsd: 5 }, deps)).rejects.toThrow('boom');
+  });
+});
+
 describe('hypeProgramJob: quality auto-pause', () => {
   const baseline = { questionsPerPara: 2, faultRate: 0.05, emptyRate: 0, exhaustedRate: 0, truncationRate: 0, failedRate: 0, dupRate: 0, langMismatchRate: 0, at: 'pilot' };
   it('a batch worse than the stored baseline pauses the program with the reason, in the ledger, the activity log and the result', async () => {

@@ -268,7 +268,7 @@ export function anthropicBatchTransport({ stage = 'hype', caller = 'hype-batch',
       const b = await api().messages.batches.create({ requests: requests.map((r) => ({ custom_id: r.custom_id, params: {
         model, max_tokens: r.maxTokens, thinking: { type: 'disabled' },
         system: [{ type: 'text', text: r.system, cache_control: { type: 'ephemeral', ttl: '1h' } }],
-        messages: [{ role: 'user', content: r.user }] } })) });
+        messages: [{ role: 'user', content: r.user }] } })) }).catch((err) => { throw noteCreditOut('anthropic', err) || err; });   // no credit → SpendCapError: callers wait, never fail
       return b.id;
     },
     async status(id) {

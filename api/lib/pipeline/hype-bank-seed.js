@@ -12,6 +12,7 @@ import { parseJudge } from './hype-judge.js';
 import { BUDGET_KEY, EST_USD_PER_CHECK, monthlyUsd, budgetRoom } from './hype-program.js';
 import { canonicalTradition } from '../assistant/tradition-name.js';
 import { doctrinalTier } from '../authority.js';
+import { isCreditRefusal, isSpendCap, CREDIT_WAIT_MS } from '../spend-caps.js';
 
 export const SEED_TIERS = ['core', 'gray'];
 export const DEFAULT_PER_QUESTION = 10;   // keep every confirmed answering ¶ up to this (Chad: "as much as possible" in the doctrinal material)
@@ -127,7 +128,7 @@ export async function hypeBankSeedJob(params = {}, deps = {}) {
 
   return withAIContext({ billTo: BUDGET_KEY, stage: 'hype-judge', caller: BUDGET_KEY }, async () => {
     const c = await d.checks();
-    let bid = checkBatch, byPara;
+    let bid = checkBatch, byPara, creditWait = null;
     if (!bid) {
       const monthUsd = monthlyUsd(d.env);
       if (!monthUsd) return { ...plan, status: 'budget', reason: 'HYPE_PROGRAM_USD_MONTH is 0 or not a number' };
@@ -137,7 +138,18 @@ export async function hypeBankSeedJob(params = {}, deps = {}) {
       const built = checkRequests(pairs, await d.rows([...new Set(pairs.map((p) => p.paraId))]));
       byPara = built.byPara;
       if (!built.reqs.length) return { ...plan, status: 'complete', seeded: 0, rejected: 0, duplicates: 0, missingText: built.missing.length };
-      bid = await c.create(built.reqs, { model: JUDGE_MODEL });
+      // no Anthropic credit is a WAIT, never a verdict: nothing is recorded, the same batch is offered again until it is accepted
+      for (;;) {
+        try { bid = await c.create(built.reqs, { model: JUDGE_MODEL }); break; }
+        catch (e) {
+          if (!isCreditRefusal(e)) throw e;
+          if (!creditWait || creditWait.resolvedAt) { creditWait = { since: new Date().toISOString(), probes: 0 }; await d.log('hype', `hype-bank-seed ${bankId}: Anthropic has no credit — waiting in place`); }
+          creditWait.probes++;
+          if (await d.draining()) return { ...plan, creditWait, yielded: true, resume: { ...params, pairs } };
+          await d.sleep(Math.max(1000, Math.min(isSpendCap(e) ? e.retryAfterMs ?? CREDIT_WAIT_MS : CREDIT_WAIT_MS, CREDIT_WAIT_MS)));
+        }
+      }
+      if (creditWait) creditWait.resolvedAt = new Date().toISOString();
       await d.log('hype', `hype-bank-seed ${bankId}: ${built.reqs.length} checks submitted (${pairs.length} question×¶ pairs) · est $${estUsd}`);
     } else byPara = checkRequests(pairs, pairs.map((p) => ({ id: p.paraId, text: '-' }))).byPara;   // resume: only the pair map is needed
     for (;;) {
@@ -152,7 +164,7 @@ export async function hypeBankSeedJob(params = {}, deps = {}) {
     if (docIds.length) try { await d.follow(docIds); } catch { /* the follow pass picks the docs up from the ledger */ }
     const seeded = verdicts.filter((v) => v.verdict === 'seeded').length, duplicates = verdicts.filter((v) => v.verdict === 'duplicate').length, rejected = verdicts.length - seeded - duplicates;
     await d.log('hype', `hype-bank-seed ${bankId}: ${seeded} seeded, ${duplicates} duplicate, ${rejected} rejected, ${unparsed.length} unparsed · ${docIds.length} docs to the hype index`);
-    return { ...plan, status: 'complete', checkBatch: bid, seeded, rejected, duplicates, unparsed: unparsed.length, merged: saved.merged, indexedDocs: docIds.length };
+    return { ...plan, ...(creditWait ? { creditWait } : {}), status: 'complete', checkBatch: bid, seeded, rejected, duplicates, unparsed: unparsed.length, merged: saved.merged, indexedDocs: docIds.length };
   });
 }
 

@@ -8,6 +8,7 @@ import { TIER_ORDER, PASSES, FAITHS, selectTier, countTiers } from './hype-tiers
 import { createStore, measureDoc, sumAcc, rates, gradeSummary, compare, DEFAULT_MIN_SAMPLE, GRADE_KEYS } from './hype-ledger.js';
 import { RUBRIC, JUDGE_MODEL, judgeUser } from './hype-rubric.js';
 import { parseJudge } from './hype-judge.js';
+import { isCreditRefusal } from '../spend-caps.js';
 
 export const BUDGET_KEY = 'hype-program';
 export const EST_USD_PER_REQUEST = 0.00018;   // measured 10-28: 38,275 batch requests = $6.94 (Haiku 5.5, Message Batches, 50% off)
@@ -131,17 +132,30 @@ export async function hypeProgramJob(params = {}, deps = {}) {
       await d.log('hype', `⏸ hype-program paused — ${reason}`.slice(0, 200));
     };
     let checker = null; const checks = async () => (checker ||= await d.checks());
-    // a settled generation batch: free rates now (may pause at once); the sampled paragraphs go out as one check batch
-    const onBatchDone = async ({ id, at, model, version, requests, tag, acc }) => {
-      const total = sumAcc(Object.values(acc)), r = rates(total), t = tag?.tier || 'unknown';
-      const picked = total.sampleIds.slice(0, checksFor(t, d.store, maxGrade)), rows = picked.length ? await d.rows(picked) : [];
+    // the grading requests for sampled paragraph ids (the judge reads each one's written questions)
+    const gradeReqs = async (ids) => {
       const reqs = [];
-      for (const row of rows) {
+      for (const row of ids.length ? await d.rows(ids) : []) {
         let qs = []; try { const q = JSON.parse(row.hyp_questions); qs = Array.isArray(q) ? q : q?.questions || []; } catch { /* none */ }
         if (qs.length) reqs.push({ custom_id: `d${row.doc_id}_p${row.id}`, system: RUBRIC, user: judgeUser(row.text, row.original_text, qs), maxTokens: 4000 });
       }
+      return reqs;
+    };
+    // Anthropic has no credit: a WAIT, never a failure (Chad 11-11). Recorded in the summary; nothing is marked failed/exhausted, no cursor moves.
+    const markCredit = () => {
+      if (!sum.creditWait || sum.creditWait.resolvedAt) { sum.creditWait = { since: new Date(d.now()).toISOString(), probes: 0 }; d.log('hype', 'hype-program: Anthropic has no credit — waiting in place (in-flight batches keep being collected); resumes when credit returns').catch(() => {}); }
+      sum.creditWait.probes++;
+    };
+    const creditBack = () => { if (sum.creditWait && !sum.creditWait.resolvedAt) { sum.creditWait.resolvedAt = new Date(d.now()).toISOString(); d.log('hype', 'hype-program: Anthropic credit is back — continuing').catch(() => {}); } };
+    // a settled generation batch: free rates now (may pause at once); the sampled paragraphs go out as one check batch
+    const onBatchDone = async ({ id, at, model, version, requests, tag, acc }) => {
+      const total = sumAcc(Object.values(acc)), r = rates(total), t = tag?.tier || 'unknown';
+      const picked = total.sampleIds.slice(0, checksFor(t, d.store, maxGrade)), reqs = await gradeReqs(picked);
       const grade = { sampled: picked.length, requests: reqs.length };
-      if (reqs.length) try { grade.pending = await (await checks()).create(reqs, { model: JUDGE_MODEL }); } catch (e) { grade.errors = reqs.length; grade.firstError = String(e?.message || e).slice(0, 300); }   // a refused check never stops the program
+      if (reqs.length) try { grade.pending = await (await checks()).create(reqs, { model: JUDGE_MODEL }); }
+      catch (e) {   // a refused check never stops the program; no credit DEFERS it (the sampled ids are kept, collectChecks sends them when credit returns)
+        if (isCreditRefusal(e)) { grade.deferred = picked; markCredit(); } else { grade.errors = reqs.length; grade.firstError = String(e?.message || e).slice(0, 300); }
+      }
       const baseline = d.store.baselineFor(t), violations = compare(r, baseline, { margin, minSample });
       d.store.appendLedger({ id, at: new Date(at).toISOString(), doneAt: new Date().toISOString(), tier: t, pass: tag?.pass || null, model, version, requests, totals: { ...total, sampleIds: undefined, sampled: picked.length }, rates: r, grade, violations, baselineAt: baseline?.at || null });
       if (violations.length) await pauseFor(id, t, violations);
@@ -149,6 +163,18 @@ export async function hypeProgramJob(params = {}, deps = {}) {
     // check batches that have ended → grades into their ledger entry (+ the grade comparison, which may pause). → how many still pending
     const collectChecks = async () => {
       let pending = 0;
+      // checks that were refused for no credit: send them now (still no credit → they stay deferred and count as pending)
+      for (const e of d.store.ledger().filter((x) => x.grade?.deferred)) {
+        try {
+          const reqs = await gradeReqs(e.grade.deferred), { deferred, ...g } = e.grade;
+          if (!reqs.length) { d.store.updateLedger(e.id, { grade: { ...g, requests: 0 } }); continue; }
+          const pend = await (await checks()).create(reqs, { model: JUDGE_MODEL });
+          d.store.updateLedger(e.id, { grade: { ...g, requests: reqs.length, pending: pend } }); creditBack();
+        } catch (err) {
+          if (isCreditRefusal(err)) { markCredit(); pending++; continue; }
+          const { deferred, ...g } = e.grade; d.store.updateLedger(e.id, { grade: { ...g, errors: e.grade.deferred.length, firstError: String(err?.message || err).slice(0, 300) } });
+        }
+      }
       for (const e of d.store.ledger().filter((x) => x.grade?.pending)) {
         const c = await checks(), bid = e.grade.pending;
         let st = null; try { st = await c.status(bid); } catch { /* try again next loop */ }
@@ -199,7 +225,7 @@ export async function hypeProgramJob(params = {}, deps = {}) {
       delete sum.waitingSince;
       if (n < 1) return { ...sum, status: room.usd < EST_USD_PER_REQUEST ? 'budget' : 'limit', binding: room.binding, budget: { ...room, room: undefined } };   // quiet stop: by design, no phase 'stopped'
       sum.rounds++;
-      let sent = false, progressed = false, refused = false;
+      let sent = false, progressed = false, refused = false, creditHit = null;
       for (const [faith, pass] of FAITHS.flatMap((f) => PASSES.map((p) => [f, p]))) {
         const key = `${tier}:${faith}:${pass}:${noDisambig ? 'nd' : 'dis'}`, cur = d.store.cursors()[key] || { after: 0, skip: [] }, skip = new Set(cur.skip);
         const sel = await d.select({ tier, pass, faith, limit: n, after: cur.after, skip });
@@ -207,12 +233,19 @@ export async function hypeProgramJob(params = {}, deps = {}) {
         if (!sel.paragraphs) { save(); progressed ||= sel.cursor !== cur.after; continue; }
         const sub = await hb.submit(sel.docs.map((x) => x.docId), { limit: n, noDisambig, upgrade, idsByDoc: Object.fromEntries(sel.docs.map((x) => [x.docId, x.ids])), tag: { tier, pass } });
         if (sub.over_budget) return { ...sum, status: 'budget', binding: 'anthropic' };
+        // no credit: what was sent is in flight; the rest stays unsent and the cursor does NOT move (the next round re-selects it)
+        if (sub.creditOut) { sum.paragraphs += sub.paragraphs; sum.requests += sub.requests; sum.batches += sub.batches.length; creditHit = sub.creditOut; markCredit(); break; }
+        if (sub.batches.length) creditBack();
         const bad = sub.gated.map((g) => g.docId);   // a gate refusal (daily pace / month) is a WAIT, not a verdict on the doc: never added to the skip list
         sum.gated += sub.gated.length; sum.spendRefused += sub.spendRefused.length; save(bad);
         if (sub.spendRefused.length && !sub.paragraphs) refused = true;
         sum.paragraphs += sub.paragraphs; sum.requests += sub.requests; sum.batches += sub.batches.length;
         if (!sub.paragraphs && !bad.length && !sub.spendRefused.length) { sum.unplannable += sel.docs.length; save(sel.docs.map((x) => x.docId)); sent = true; await d.log('hype', `${tier}/${faith}/${pass} · ${sel.docs.length} docs yielded nothing to plan (capped or already copied) — skipped`); break; }   // never re-select what the planner will not send
         if (sub.paragraphs || bad.length) { sent = true; await d.log('hype', `${tier}/${faith}/${pass} · ${sub.paragraphs} ¶ in ${sub.batches.length} batch(es) · ${sub.requests} requests · est $${r2(sub.requests * EST_USD_PER_REQUEST)}${bad.length ? ` · ${bad.length} docs skipped` : ''}`); break; }
+      }
+      if (creditHit) {
+        if (await d.draining()) return { ...sum, yielded: true, resume: { ...params } };
+        await d.sleep(Math.max(1000, Math.min(creditHit.retryAfterMs ?? WAIT_CHUNK_MS, WAIT_CHUNK_MS))); continue;   // re-probe when the credit wait is over (settleAll at the loop top keeps collecting)
       }
       if (!sent && refused) { if (await d.draining()) return { ...sum, yielded: true, resume: { ...params } }; await d.sleep(Math.min(pollMs, WAIT_CHUNK_MS)); continue; }   // the gate said not now: re-read the budget and try again
       if (!sent) {

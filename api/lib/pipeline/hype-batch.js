@@ -9,6 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { HYPE_VERSION } from '../rag/enrich/retrieval.js';
+import { isCreditRefusal, isSpendCap, noteCreditOut } from '../spend-caps.js';
 
 export const hypeMode = (env = process.env) => (String(env.HYPE_MODE || 'batch').toLowerCase() === 'sync' ? 'sync' : 'batch');
 export const MAX_REQUESTS = 10000;          // under the 100,000 API ceiling; the shared system prefix makes bytes bind first
@@ -37,6 +38,8 @@ export function createHypeBatch({ rag, transport, budgetOver = async () => false
       st.batches[id] = { at: now(), model: cur.model, version: HYPE_VERSION, requests: cur.requests.length, docs: cur.docs, settled: {}, ...(tag ? { tag } : {}) };
       save(st); out.batches.push(id); out.requests += cur.requests.length; cur = null;
     };
+    // no credit at the provider is a WAIT: whatever was not yet sent stays unsent (state untouched, nothing failed/exhausted), the caller waits and asks again
+    try {
     for (const docId of docIds) {
       if (left <= 0) break;
       let p;
@@ -51,14 +54,20 @@ export function createHypeBatch({ rag, transport, budgetOver = async () => false
         const reqs = u.parts.map((user, i) => ({ custom_id: cid(docId, u.id, i), system: p.system, user, maxTokens: p.maxTokens }));
         const bytes = reqs.reduce((n, r) => n + r.system.length + r.user.length + 400, 0);
         if (cur && (cur.model !== p.model || cur.requests.length + reqs.length > maxRequests || cur.bytes + bytes > maxBytes)) await flush();
-        cur ||= { model: p.model, requests: [], bytes: 0, docs: {} };
-        cur.requests.push(...reqs); cur.bytes += bytes;
+        cur ||= { model: p.model, requests: [], bytes: 0, docs: {}, paras: 0 };
+        cur.requests.push(...reqs); cur.bytes += bytes; cur.paras++;
         (cur.docs[docId] ||= { units: [] }).units.push({ id: u.id, parts: u.parts.length });
         exclude.add(u.id); left--; out.paragraphs++;
       }
       out.docs++;
     }
     await flush();
+    } catch (e) {
+      if (!isCreditRefusal(e)) throw e;
+      const sc = isSpendCap(e) ? e : noteCreditOut('anthropic', e);
+      out.paragraphs -= cur?.paras || 0;   // the unflushed ones were never sent
+      out.creditOut = { retryAfterMs: sc?.retryAfterMs ?? null, message: String(e.message || e).slice(0, 200) };
+    }
     return out;
   }
 

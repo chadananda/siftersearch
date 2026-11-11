@@ -25,6 +25,8 @@ export class SpendCapError extends Error {
   }
 }
 export const isSpendCap = (err) => err?.code === 'SPEND_CAP';
+/** The provider has no credit left (our SpendCapError for it, or its raw refusal): work WAITS, it is never a failure. Pure. */
+export const isCreditRefusal = (err) => (isSpendCap(err) && err.credit === true) || isExhaustion({ status: err?.status ?? err?.statusCode ?? null, message: err?.message || String(err ?? '') });
 
 /** caller → group: the first rule that matches (exact or prefix), else the default group. Pure. */
 export function groupOf(caller, cfg = CONFIG) {
@@ -58,7 +60,7 @@ export function providerCapFor(provider, day = dayOf(), cfg = CONFIG, env = proc
 // ── out of credit: the provider's own refusal becomes a SpendCapError, so queue work waits (never marked failed) and
 // every later call in this process waits too, without asking the provider again, until CREDIT_WAIT_MS has passed.
 // (11-06: an empty Anthropic balance had the improve worker failing ~2 calls a second, 40,375 in 6 h.)
-const CREDIT_WAIT_MS = Number(process.env.SPEND_CREDIT_WAIT_MS) || 15 * 60_000;
+export const CREDIT_WAIT_MS = Number(process.env.SPEND_CREDIT_WAIT_MS) || 15 * 60_000;
 const creditOut = new Map();   // provider → until (ms)
 /** A failed provider call → a SpendCapError to throw instead when it means "no credit left", else null (throw the original). */
 export function noteCreditOut(provider, err, now = Date.now()) {

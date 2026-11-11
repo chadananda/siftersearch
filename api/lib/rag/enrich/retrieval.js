@@ -17,6 +17,7 @@ import { assertDisambiguated } from '../kernel/gate.js';  // HyPE consumes disam
 import { profileFor } from '../kernel/profile.js';
 import { segment } from '../kernel/segment.js';
 import { pool } from '../kernel/run.js';
+import { isCreditRefusal } from '../../spend-caps.js';
 import { isHyped, DISAMB_THRESHOLD } from '../../pipeline/processed.js';
 
 // v4 (2026-08-26, "hype-v4-seeker"): the questions are the retrieval surface, so their SHAPE is the product.
@@ -188,7 +189,7 @@ export async function run(ctx, docId, opts = {}) {
       if (!(await commitHype(ctx, p, meta, parsed, opts, stats))) { await markHypeExhausted(ctx, p, opts, stats); report(); return; }
       stats.done++; if (escalated) stats.escalated++; report();
     } catch (e) {
-      if (e?.fatal) throw e;
+      if (e?.fatal || isCreditRefusal(e)) throw e;   // no credit is a wait for the caller, never an exhausted paragraph
       await markHypeExhausted(ctx, p, opts, stats);
       report();
     }

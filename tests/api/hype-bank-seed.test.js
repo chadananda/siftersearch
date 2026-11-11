@@ -93,6 +93,29 @@ describe('hypeBankSeedJob', () => {
     expect(w.followed).toEqual([3]);
     expect(w.metered).toHaveLength(1);
   });
+  it('no Anthropic credit on the check submit: waits, records creditWait, then proceeds; nothing recorded as rejected meanwhile', async () => {
+    const { w, deps } = world({ questions: Q(4), hits: () => [{ id: 300, doc_id: 3, religion: "Baha'i", tier: 'gray' }] });
+    const sleeps = []; deps.sleep = async (ms) => { sleeps.push(ms); };
+    const mk = deps.checks; let n = 0, savedBefore = null;
+    deps.checks = async () => { const c = await mk(); const c0 = c.create; c.create = async (...a) => { if (n++ < 2) { savedBefore = w.saved.length; throw new Error('400 Your credit balance is too low to access the Anthropic API'); } return c0(...a); }; return c; };
+    const r = await hypeBankSeedJob({ tradition: 'bahai' }, deps);
+    expect(r).toMatchObject({ status: 'complete', seeded: 4, rejected: 0 });
+    expect(savedBefore).toBe(0);
+    expect(w.created).toHaveLength(1);
+    expect(sleeps).toHaveLength(2);
+    expect(r.creditWait).toMatchObject({ probes: 2 }); expect(r.creditWait.resolvedAt).toBeTruthy();
+  });
+  it('a non-credit check-submit error still throws', async () => {
+    const { deps } = world({ questions: Q(4), hits: () => [{ id: 300, doc_id: 3, religion: "Baha'i", tier: 'gray' }] });
+    const mk = deps.checks; deps.checks = async () => ({ ...(await mk()), create: async () => { throw new Error('boom'); } });
+    await expect(hypeBankSeedJob({ tradition: 'bahai' }, deps)).rejects.toThrow('boom');
+  });
+  it('draining during the credit wait yields with the pairs to resume', async () => {
+    const { deps } = world({ questions: Q(4), hits: () => [{ id: 300, doc_id: 3, religion: "Baha'i", tier: 'gray' }], draining: async () => true });
+    const mk = deps.checks; deps.checks = async () => ({ ...(await mk()), create: async () => { throw new Error('402 payment required: credit balance is too low'); } });
+    const r = await hypeBankSeedJob({ tradition: 'bahai' }, deps);
+    expect(r).toMatchObject({ yielded: true, creditWait: { probes: 1 } }); expect(r.resume.pairs).toHaveLength(4);
+  });
   it('an unparseable verdict leaves its pairs unjudged (retried next run)', async () => {
     const { w, deps } = world({ questions: Q(2), judge: () => 'garbage' });
     deps.checks = (orig => async () => { const c = await orig(); const res = c.results; c.results = async function* (b) { for await (const x of res(b)) yield { ...x, text: 'no json here' }; }; return c; })(deps.checks);
