@@ -33,3 +33,13 @@ describe('unwrapLinks', () => {
     expect(formPass('As [[*Some Answered Questions*](https://oceanlibrary.com/saq)] says.').text).toContain('As [*Some Answered Questions*](https://oceanlibrary.com/saq) says.');
   });
 });
+
+describe('dropNumberMarkers — footnote residue with no footnotes', () => {
+  it('drops [^1] and [3, 7]; leaves links, real footnotes and quoted lines', async () => {
+    const { dropNumberMarkers } = await import('../../api/lib/assistant/lint.js');
+    expect(dropNumberMarkers('noted by Stephen Lambden [^1]. It points to Him [3, 7].').text).toBe('noted by Stephen Lambden. It points to Him.');
+    expect(dropNumberMarkers('see [1](https://x.org/a) here').fixed).toBe(0);
+    expect(dropNumberMarkers('a claim [^1]\n\n[^1]: the note').fixed).toBe(0);
+    expect(dropNumberMarkers('> verse [3] of the text').fixed).toBe(0);
+  });
+});

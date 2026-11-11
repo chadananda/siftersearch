@@ -180,7 +180,7 @@ export async function findTitled(cands, opts = {}) {
 export function otherCopies(sorted, asked) {
   const seen = new Set([sorted[0].title]);
   // other copies worth offering: not a foreword / introduction stub split off a book (11-01 live: GPB's "also holds" listed two)
-  const stub = (d) => /\b(?:foreword|introduction|preface|afterword|glossary|notes|index|bibliography)\b|\bchapters?\s+(?:[ivxlc]+|\d+)\b/i.test(d.title) || (d.paragraph_count ?? 99) < 20;
+  const stub = (d) => /\b(?:foreword|introduction|preface|afterword|appendix|appendices|epilogue|prologue|glossary|notes|index|bibliography|summary|synopsis|abridg(?:ed|ment)|study guide|review)\b|\bchapters?\s+(?:[ivxlc]+|\d+)\b/i.test(d.title) || (d.paragraph_count ?? 99) < 20;
   // …and not a work ABOUT the book ("God Passes By: Outline and cross-reference of chapters"), nor
   // a recording sharing the title (11-10: Nabíl's Dawn-Breakers offered "Dawn Breakers", a William Sears talk). Authors are no test:
   // translations of one text carry their translators' names (Dhammapada)

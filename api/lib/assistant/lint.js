@@ -162,9 +162,19 @@ export function finalForm(text) { return formPass(text).text; }
 /** finalForm with what it repaired, for the turn's path (forensics counts form.search_denial as a WRITER defect). Pure. */
 export function formPass(text, { sources = [] } = {}) {
   const uw = unwrapLinks(text), den = dropSearchDenial(uw.text), def = dropDeflection(den.text), off = dropSearchOffer(def.text), lk = checkLinks(off.text, sources);
-  const ct = citeLinks(lk.text, sources), lr = lastResortLast(ct.text), em = repairEmphasis(safeLinkText(lr.text));
-  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
+  const ct = citeLinks(lk.text, sources), lr = lastResortLast(ct.text), nm = dropNumberMarkers(lr.text), em = repairEmphasis(safeLinkText(nm.text));
+  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), ...(nm.fixed ? { number_markers: nm.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
     ...(ct.fixed ? { cite_links: ct.fixed } : {}), ...(lr.fixed ? { last_resort: lr.fixed } : {}), ...(em.fixed ? { emphasis: em.fixed } : {}) } };
+}
+
+// Footnote residue the reader cannot follow ("… by Stephen Lambden [^1].", "… Him Whom God shall make manifest [3, 7].", 11-11 kawthar):
+// a bracketed number list that is not a link and has no footnote definition is dropped, with its space. Quoted lines are left. Pure.
+export function dropNumberMarkers(text) {
+  const src = String(text || '');
+  if (/^\[\^?\d+\]:/m.test(src)) return { text: src, fixed: 0 };   // real footnotes: their definitions are in the text
+  let fixed = 0;
+  const out = src.split('\n').map((l) => (/^\s*>/.test(l) ? l : l.replace(/[ \t]*\[\^?\d{1,3}(?:\s*[,–-]\s*\^?\d{1,3})*\](?![(\[:])/g, () => { fixed += 1; return ''; }))).join('\n');
+  return { text: fixed ? out : src, fixed };
 }
 
 // A link wrapped in square brackets ("[[*The Báb*](url)]") or a quotation in link brackets with no link ("[*“Seventeen Letters…”*]"),

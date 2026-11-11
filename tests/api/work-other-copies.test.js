@@ -11,4 +11,8 @@ describe('otherCopies', () => {
   it('keeps translations by other hands', () => {
     expect(otherCopies([d('Dhammapada', 'Müller'), d('The Dhammapada', 'Buddharakkhita'), d('Dhammapada: Sayings', 'Easwaran')], 'dhammapada').length).toBe(2);
   });
+  it('drops an appendix and a summary of the work (11-11)', () => {
+    const sorted = [d('The Dawn-Breakers', 'Nabil Zarandi'), d('The Dawn-Breakers--Appendix', 'Nabíl'), d('The Dawn-Breakers: A Summary', 'Kersten')];
+    expect(otherCopies(sorted, 'the dawn-breakers')).toEqual([]);
+  });
 });
