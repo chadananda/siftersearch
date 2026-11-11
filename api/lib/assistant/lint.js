@@ -162,8 +162,8 @@ export function finalForm(text) { return formPass(text).text; }
 /** finalForm with what it repaired, for the turn's path (forensics counts form.search_denial as a WRITER defect). Pure. */
 export function formPass(text, { sources = [] } = {}) {
   const uw = unwrapLinks(text), den = dropSearchDenial(uw.text), def = dropDeflection(den.text), off = dropSearchOffer(def.text), lk = checkLinks(off.text, sources);
-  const ct = citeLinks(lk.text, sources), lr = lastResortLast(ct.text), la = dropLinkAside(lr.text), rt = plainSources(la.text), nm = dropNumberMarkers(rt.text), rq = dropRepeatedQuote(nm.text), em = repairEmphasis(safeLinkText(rq.text));
-  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), ...(rq.fixed ? { repeated_quote: rq.fixed } : {}), ...(nm.fixed ? { number_markers: nm.fixed } : {}), ...(la.fixed ? { link_aside: la.fixed } : {}), ...(rt.fixed ? { retrieval_talk: rt.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
+  const ct = citeLinks(lk.text, sources), lr = lastResortLast(ct.text), la = dropLinkAside(lr.text), rt = plainSources(la.text), nm = dropNumberMarkers(rt.text), rq0 = dropRepeatedQuote(nm.text), da = dropDoubleAttribution(rq0.text), rc = dropRepeatedCite(da.text), rq = { text: rc.text, fixed: rq0.fixed }, em = repairEmphasis(safeLinkText(rq.text));
+  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), ...(rq.fixed ? { repeated_quote: rq.fixed } : {}), ...(da.fixed ? { double_attribution: da.fixed } : {}), ...(rc.fixed ? { repeated_cite: rc.fixed } : {}), ...(nm.fixed ? { number_markers: nm.fixed } : {}), ...(la.fixed ? { link_aside: la.fixed } : {}), ...(rt.fixed ? { retrieval_talk: rt.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
     ...(ct.fixed ? { cite_links: ct.fixed } : {}), ...(lr.fixed ? { last_resort: lr.fixed } : {}), ...(em.fixed ? { emphasis: em.fixed } : {}) } };
 }
 
@@ -189,6 +189,45 @@ export function dropRepeatedQuote(text) {
     if (placed(p) && !placed(paras[first])) { drop.add(first); seen.delete(j); seen.set(k, i); } else drop.add(i);
   });
   return drop.size ? { text: paras.filter((_, i) => !drop.has(i)).join('\n\n'), fixed: drop.size } : { text, fixed: 0 };
+}
+
+// A DOUBLE ATTRIBUTION (11-11 suffering: "> — Abdu'l-Bahá's 2nd Visit to UK…" closing the block quote, then "— 'Abdu'l-Bahá, *Abdu'l-Bahá's 2nd
+// Visit to UK…*" as its own paragraph): one attribution, the fuller, inside the quote. Only when the standalone line is nothing but an
+// attribution that contains the quote's own. Pure.
+export function dropDoubleAttribution(text) {
+  const paras = String(text ?? '').split(/\n{2,}/), drop = new Set();
+  paras.forEach((p, i) => {
+    const lines = p.trimEnd().split('\n'), last = lines[lines.length - 1] ?? '', next = (paras[i + 1] ?? '').trim();
+    const a = last.match(/^>\s*[—–-]\s*(.+)$/), b = next.match(/^[—–]\s*(.+)$/);
+    if (!a || !b || next.includes('\n') || !p.trim().startsWith('>')) return;
+    const ka = letters(a[1].replace(/\]\([^)]*\)/g, ']')), kb = letters(b[1].replace(/\]\([^)]*\)/g, ']'));
+    if (ka.length < 8 || !kb.includes(ka)) return;
+    lines[lines.length - 1] = `> ${next}`; paras[i] = lines.join('\n'); drop.add(i + 1);
+  });
+  return drop.size ? { text: paras.filter((_, i) => !drop.has(i)).join('\n\n'), fixed: drop.size } : { text, fixed: 0 };
+}
+
+// A REPEATED CITATION in one paragraph (11-11: "([Selections from the Writings of ‘Abdu’l-Bahá, #1247](…paraId=para_1247…)) He gently tells … lasts
+// ([*Selections from the Writings of 'Abdu'l-Bahá*](…), #1247)"): a later parenthetical naming the same work at the same place goes; the first,
+// usually the one linked to its place, stays. A citation with no place is never dropped (it may be another passage of the work). Pure.
+const CITE = /\s*\(\[([^\]]+)\]\(([^)\s]+)\)(?:,\s*([^()]*?))?\)/g;
+const placeIn = (label, tail) => {
+  const t = String(tail || '').trim() || (String(label).replace(/[*_]/g, '').match(/,\s*((?:#|§|p\.?\s*|pp?\.\s*|para\.?\s*)[\d.:–-]+)\s*$/i) || [])[1] || '';
+  return t.replace(/\s+/g, '').toLowerCase();
+};
+export function dropRepeatedCite(text) {
+  let fixed = 0;
+  const out = String(text ?? '').split(/\n{2,}/).map((para) => {
+    const seen = new Set();
+    return para.replace(CITE, (m, label, url, tail) => {
+      const place = placeIn(label, tail);
+      if (!place) return m;
+      const k = `${bookUrl(url)}|${place}`;
+      if (seen.has(k)) { fixed++; return ''; }
+      seen.add(k); return m;
+    });
+  });
+  return fixed ? { text: out.join('\n\n'), fixed } : { text, fixed: 0 };
 }
 
 // Footnote residue the reader cannot follow ("… by Stephen Lambden [^1].", "… Him Whom God shall make manifest [3, 7].", 11-11 kawthar):
