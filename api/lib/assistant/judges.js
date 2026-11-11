@@ -1,6 +1,7 @@
 // Tree-level model steps the pure tools no longer hold (Chad 11-09): holds (quotation_candidates), timeline (biography_search people), dated claims (judgeDated, any subject), the light generators (generateList: sub-themes / criteria / timeline entries), term script (Latin → Arabic for rendering_lookup).
 // ONE call over the merged result, never per item. Seams (tests): decide / complete. Deps: source-hunt (quoteWindow, quoteRanges), systemone, ai, ctai-term. Not imported by tools.js (no-LLM ratchet).
 import { quoteWindow, quoteRanges } from '../source-hunt.js';
+import { byTier } from './source-tier.js';
 
 const WORDING = 0.8;   // the quote's own words held (share) = holds without a model; the WORDING always counts (source-hunt.js)
 const HOLDS_MAX = 24;
@@ -32,9 +33,11 @@ export async function judgeHolds({ quotation, passages = [], decide = null } = {
   });
   // a candidate the judge says holds the sentence (another translation) is the source when no source holds; otherwise it is a further holder
   const kept = out.filter((p) => p.verdict !== 'no');
+  // the promoted one is the holder of best standing (byTier), not the first in search order (11-11: Sohrab's "2nd Visit to UK" diary ranked
+  // above Paris Talks and was named as the source of 'Abdu'l-Bahá's words)
   const hasSource = kept.some((p) => p.role === 'source');
-  let promoted = hasSource;
-  const final = kept.map((p) => (p.role !== 'candidate' ? p : p.verdict === 'holds' && !promoted ? ((promoted = true), { ...p, role: 'source' }) : { ...p, role: p.verdict === 'holds' ? 'holder' : 'near' }));
+  const best = hasSource ? null : byTier(kept.filter((p) => p.role === 'candidate' && p.verdict === 'holds'))[0] ?? null;
+  const final = kept.map((p) => (p.role !== 'candidate' ? p : p === best ? { ...p, role: 'source' } : { ...p, role: p.verdict === 'holds' ? 'holder' : 'near' }));
   return { passages: final, judged: !ask.length || !!answers, asked: ask.length };
 }
 

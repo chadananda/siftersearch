@@ -57,3 +57,15 @@ describe('source_trace fallback standings', () => {
     expect(SIGNPOST_SOURCES).not.toContain('scholarship');
   });
 });
+
+describe('judgeHolds names the holder of best standing as the source', () => {
+  it("Paris Talks over Sohrab's diary when both hold the words and the diary ranks first", async () => {
+    const { judgeHolds } = await import('../../api/lib/assistant/judges.js');
+    const T = 'The mind and spirit of man advance when he is tried by suffering. The more the ground is ploughed the better the seed will grow.';
+    const c = (id, title, author) => ({ id, text: T, title, author, religion: "Baha'i", role: 'candidate', score: 1 });
+    const r = await judgeHolds({ quotation: WORDS, passages: [c(1, "Abdu'l-Bahá's 2nd Visit to UK, Dec 5 1913 - Jan 21 1914", 'Mírzá Aḥmad Sohrab'), c(2, 'Paris Talks', '‘Abdu’l-Bahá')],
+      decide: () => { throw new Error('wording holds without a model'); } });
+    expect(r.passages.find((p) => p.role === 'source')?.id).toBe(2);
+    expect(r.passages.find((p) => p.id === 1).role).toBe('holder');
+  });
+});
