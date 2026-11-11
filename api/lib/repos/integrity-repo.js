@@ -32,6 +32,14 @@ export async function liveParagraphsByScope() {
 
 /** Live paragraphs with text per doc × raw `authors` value (the tier is per paragraph author) with the doc fields the tier rule reads
  *  and the doc's CURRENT scope. Full scan like the rest of this file: call out of process (the ops reports worker) only. */
+/** One doc's live paragraphs as the phrase indexer selects them (same filters), with a short preview. */
+export async function liveParagraphsOfDoc(docId) {
+  return queryAll(`SELECT c.id, LENGTH(c.text) AS len, substr(c.text, 1, 80) AS preview, c.authors
+    FROM content c JOIN docs d ON d.id = c.doc_id
+    WHERE c.doc_id = ? AND c.deleted_at IS NULL AND d.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(c.text) > 0
+    ORDER BY c.id`, [Number(docId)]);
+}
+
 export async function liveParagraphsByDocAuthors() {
   return queryAll(`SELECT c.doc_id, d.religion, d.collection, d.title, d.author AS doc_author, COALESCE(d.scope, 'primary') AS scope,
       c.authors, COUNT(*) AS paragraphs

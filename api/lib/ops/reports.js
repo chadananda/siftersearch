@@ -41,9 +41,9 @@ import { mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJo
 import { mediaGalleryJob, mediaPortraitInventoryJob } from './media-gallery-jobs.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { pipelineSnapshotJob } from './pipeline-snapshot-job.js';
-import { deletionsByDay, hollowDocs, liveParagraphsByDocAuthors } from '../repos/integrity-repo.js';
+import { deletionsByDay, hollowDocs, liveParagraphsByDocAuthors, liveParagraphsOfDoc } from '../repos/integrity-repo.js';
 import { docLanguageCounts } from '../repos/language-repo.js';
-import { coveredByDocAuthor, monthSpend } from '../repos/phrase-store-repo.js';
+import { coveredByDocAuthor, monthSpend, unitsForParagraphs } from '../repos/phrase-store-repo.js';
 import { doctrinalTier, TIERS } from '../authority.js';
 import { paragraphAuthor } from '../authorship/effective.js';
 import { normLang } from '../language-codes.js';
@@ -148,6 +148,20 @@ export const REPORTS = {
    *  Tier is each paragraph's own author (doctrinalTier) on CURRENT doc data. Live ¶ vs ¶ with ≥1 phrase point, matched per doc ×
    *  author (the store stamps paragraphAuthor at index time; a re-attributed paragraph can read as missing until re-indexed).
    *  Also the $ to finish at the measured cost per paragraph. */
+  /** Why a doc reads as phrase-missing: per doc, live ¶ vs ¶ with stored units (by point-id block, any stamp), units stamped
+   *  with ANOTHER doc id, units never sent to Qdrant, and up to `sample` paragraphs with no units at all. params { docs: ids[], sample? } */
+  async 'phrase-gap'({ docs = [], sample = 12 } = {}) {
+    const out = [];
+    for (const doc of docs.slice(0, 20).map(Number)) {
+      const live = await liveParagraphsOfDoc(doc), units = new Map(unitsForParagraphs(live.map((p) => p.id)).map((u) => [u.id, u]));
+      const none = live.filter((p) => !units.get(p.id)?.n), other = live.filter((p) => units.get(p.id)?.n && String(units.get(p.id).docs) !== String(doc));
+      const unsent = live.filter((p) => units.get(p.id)?.n && !units.get(p.id).upserted);
+      out.push({ doc, live: live.length, with_units: live.length - none.length, no_units: none.length, stamped_other_doc: other.length,
+        never_upserted: unsent.length, other_docs: [...new Set(other.map((p) => units.get(p.id).docs))].slice(0, 10),
+        sample_no_units: none.slice(0, sample).map((p) => ({ id: p.id, len: p.len, preview: p.preview, authors: p.authors })) });
+    }
+    return { docs: out };
+  },
   async 'phrase-coverage'() {
     const months = monthSpend();
     const covered = coveredByDocAuthor();
@@ -458,7 +472,7 @@ REPORTS['anis-precache'] = async (params) => (await import('../assistant/precach
 REPORTS['tradition-readiness'] = async (params) => (await import('./tradition-readiness.js')).traditionReadinessReport(params);   // params { tradition?, minPct? } — per religion (bank traditions first) × layer: total/done/% by core/gray/rest from coverage_totals; ready + missing layers; "not measured" where the ledger has no stamp
 REPORTS['hype-quality'] = async (params) => (await import('../pipeline/hype-program.js')).hypeQualityReport(params);   // params { tier?, last?, counts? } — spend this month, ¶ done/remaining per tier, ledger metrics vs baseline, grades
 export const LANES = { hype: ['hype-program', 'hype-bank-seed'],   // days of batch waiting: its own lane, one run at a time; archive: ['archive-adopt', 'archive-sample', 'archive-reprobe', 'archive-import', 'archive-import-dryrun', 'archive-collection-backfill', 'archive-search'], copy: ['archive-copy'],   // hours of rsync must not hold up sampling extract: ['episode-extract', 'structure-infer'],
-  heavy: ['index-sizes', 'hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'hype-quality', 'source-link-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'ol-refresh', 'keyword-fill-sites', 'toc-candidates'],
+  heavy: ['index-sizes', 'hollow', 'deletions', 'phrase-coverage', 'phrase-gap', 'hype-coverage', 'hype-quality', 'source-link-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'ol-refresh', 'keyword-fill-sites', 'toc-candidates'],
   intake: ['dewey-received', 'dewey-discard', 'dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport', 'dewey-offer-paths'],   // a book Chad is waiting on does not queue behind hours of indexing
   ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake
   scout: ['dewey-scout'],

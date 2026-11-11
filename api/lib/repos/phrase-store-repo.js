@@ -25,6 +25,17 @@ export function coveredByDocAuthor() {
   } finally { db.close(); }
 }
 
+/** Per paragraph id: its stored units in the point-id block (id×1000 … +999, the primary key) — count, the doc ids and fields
+ *  they were stamped with, how many reached Qdrant. Reads by key only, so a 70K-paragraph doc is cheap. */
+export function unitsForParagraphs(ids) {
+  const db = open(STORE);
+  try {
+    const q = db.prepare(`SELECT COUNT(*) AS n, group_concat(DISTINCT doc_id) AS docs, group_concat(DISTINCT field) AS fields, SUM(upserted) AS upserted
+      FROM units WHERE point_id BETWEEN ? AND ?`);
+    return ids.map((id) => ({ id, ...q.get(id * 1000, id * 1000 + 999) }));
+  } finally { db.close(); }
+}
+
 /** Gemini embedding spend by month, as the indexer recorded it. */
 export function monthSpend() {
   const db = open(LEDGER);
