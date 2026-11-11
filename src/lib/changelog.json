@@ -1,6 +1,62 @@
 {
-  "generated": "2026-11-10T19:29:12.208Z",
+  "generated": "2026-11-11T14:39:41.027Z",
   "entries": [
+    {
+      "hash": "fbce345a9",
+      "date": "2026-11-11",
+      "type": "Other",
+      "description": "Anís's own long replies in the history no longer 400 the next turn (4000-char limit applies to the reader's messages only)",
+      "scope": null
+    },
+    {
+      "hash": "990054e41",
+      "date": "2026-11-11",
+      "type": "Other",
+      "description": "Anís answer guard (detect → correct → note), streaming decision for Chad",
+      "scope": null
+    },
+    {
+      "hash": "d7516ed07",
+      "date": "2026-11-10",
+      "type": "Other",
+      "description": "Plan.histories — the standard histories of the subject (The Dawn-Breakers for the Bábí period) are named and searched inside on the question",
+      "scope": null
+    },
+    {
+      "hash": "3c5e8b4fd",
+      "date": "2026-11-10",
+      "type": "Other",
+      "description": "Plan.phrasings — one light generator call names the subject the way the texts word it; the histories are searched on each phrasing too",
+      "scope": null
+    },
+    {
+      "hash": "d9c1fb0bc",
+      "date": "2026-11-10",
+      "type": "Other",
+      "description": "One work holds at most a third of a shelf no work was asked for (Star of the West volumes crowded out The Dawn-Breakers)",
+      "scope": null
+    },
+    {
+      "hash": "4f4477dc2",
+      "date": "2026-11-10",
+      "type": "Other",
+      "description": "Histories shelf k 12 — the question as asked ranked The Dawn-Breakers 10th; Jev's per-passage verdict picks the one that answers",
+      "scope": null
+    },
+    {
+      "hash": "e86bb7642",
+      "date": "2026-11-10",
+      "type": "Other",
+      "description": "Narrative histories searched apart from the Guardian; rank spreads across kinds so The Dawn-Breakers reaches the writer",
+      "scope": null
+    },
+    {
+      "hash": "152e7f632",
+      "date": "2026-11-10",
+      "type": "Other",
+      "description": "Semantic dedupe between bank seeds and HyPE questions; Bahá'í first within every tier",
+      "scope": null
+    },
     {
       "hash": "bdb8551ec",
       "date": "2026-11-10",
@@ -1071,66 +1127,68 @@
       "type": "Other",
       "description": "Point the f16 build at phrase-vector-read-repo",
       "scope": null
-    },
-    {
-      "hash": "f1a3e5362",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "Restore phrase-store-repo (clobbered), vectors.db f16 reader is phrase-vector-read-repo",
-      "scope": null
-    },
-    {
-      "hash": "8ef24140e",
-      "date": "2026-10-28",
-      "type": "Fixed",
-      "description": "SIGKILL / rsync timeouts also mean an unreachable host (aorus offline: its talks used attempts)",
-      "scope": "media"
-    },
-    {
-      "hash": "66d163b98",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "Phrase-f16-build job (phrases main+hot -> float16 collection on qdrant-main /faster), vectors.db read repo, qdrant-main unit",
-      "scope": null
-    },
-    {
-      "hash": "ecbb5e676",
-      "date": "2026-10-28",
-      "type": "Fixed",
-      "description": "Boss memory safety — every gate job in a hard cgroup (capped.sh: MemoryMax, no swap, oom_score_adj 900), CPU-tail container 6 GB x 1 with a RAM check, 13 GB MemAvailable reserve checked live before any boss job",
-      "scope": "media"
-    },
-    {
-      "hash": "f56e30205",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "Logical bytes per caller x name (per-thread wchar split by payload) in db_write_stats, /stats and write-stats report",
-      "scope": null
-    },
-    {
-      "hash": "9e8f3fe0c",
-      "date": "2026-10-28",
-      "type": "Fixed",
-      "description": "An unreachable home host rests 10 min and its talk goes back to the front without using an attempt (boss went offline: 41 talks burned their attempts)",
-      "scope": "media"
-    },
-    {
-      "hash": "a5a0491e7",
-      "date": "2026-10-28",
-      "type": "New",
-      "description": "Audio tags (ID3/MP4/Vorbis) as hints for speaker, title, series; media-hint-review report and media-tags-backfill job",
-      "scope": "media"
-    },
-    {
-      "hash": "56c3541e8",
-      "date": "2026-10-28",
-      "type": "New",
-      "description": "Boss restores D/E talks (UniPASE on its ROCm iGPU + the worker-image CPU tail) beside aorus's whole imports; boss heat limits 96/99/93 (measured: no throttling at 90-92 C); media-cloud-order backfill mode, worst grade first",
-      "scope": "media"
     }
   ],
   "grouped": {
+    "2026-11-11": [
+      {
+        "hash": "fbce345a9",
+        "date": "2026-11-11",
+        "type": "Other",
+        "description": "Anís's own long replies in the history no longer 400 the next turn (4000-char limit applies to the reader's messages only)",
+        "scope": null
+      },
+      {
+        "hash": "990054e41",
+        "date": "2026-11-11",
+        "type": "Other",
+        "description": "Anís answer guard (detect → correct → note), streaming decision for Chad",
+        "scope": null
+      }
+    ],
     "2026-11-10": [
+      {
+        "hash": "d7516ed07",
+        "date": "2026-11-10",
+        "type": "Other",
+        "description": "Plan.histories — the standard histories of the subject (The Dawn-Breakers for the Bábí period) are named and searched inside on the question",
+        "scope": null
+      },
+      {
+        "hash": "3c5e8b4fd",
+        "date": "2026-11-10",
+        "type": "Other",
+        "description": "Plan.phrasings — one light generator call names the subject the way the texts word it; the histories are searched on each phrasing too",
+        "scope": null
+      },
+      {
+        "hash": "d9c1fb0bc",
+        "date": "2026-11-10",
+        "type": "Other",
+        "description": "One work holds at most a third of a shelf no work was asked for (Star of the West volumes crowded out The Dawn-Breakers)",
+        "scope": null
+      },
+      {
+        "hash": "4f4477dc2",
+        "date": "2026-11-10",
+        "type": "Other",
+        "description": "Histories shelf k 12 — the question as asked ranked The Dawn-Breakers 10th; Jev's per-passage verdict picks the one that answers",
+        "scope": null
+      },
+      {
+        "hash": "e86bb7642",
+        "date": "2026-11-10",
+        "type": "Other",
+        "description": "Narrative histories searched apart from the Guardian; rank spreads across kinds so The Dawn-Breakers reaches the writer",
+        "scope": null
+      },
+      {
+        "hash": "152e7f632",
+        "date": "2026-11-10",
+        "type": "Other",
+        "description": "Semantic dedupe between bank seeds and HyPE questions; Bahá'í first within every tier",
+        "scope": null
+      },
       {
         "hash": "bdb8551ec",
         "date": "2026-11-10",
@@ -2225,62 +2283,6 @@
         "type": "Other",
         "description": "Point the f16 build at phrase-vector-read-repo",
         "scope": null
-      },
-      {
-        "hash": "f1a3e5362",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "Restore phrase-store-repo (clobbered), vectors.db f16 reader is phrase-vector-read-repo",
-        "scope": null
-      },
-      {
-        "hash": "8ef24140e",
-        "date": "2026-10-28",
-        "type": "Fixed",
-        "description": "SIGKILL / rsync timeouts also mean an unreachable host (aorus offline: its talks used attempts)",
-        "scope": "media"
-      },
-      {
-        "hash": "66d163b98",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "Phrase-f16-build job (phrases main+hot -> float16 collection on qdrant-main /faster), vectors.db read repo, qdrant-main unit",
-        "scope": null
-      },
-      {
-        "hash": "ecbb5e676",
-        "date": "2026-10-28",
-        "type": "Fixed",
-        "description": "Boss memory safety — every gate job in a hard cgroup (capped.sh: MemoryMax, no swap, oom_score_adj 900), CPU-tail container 6 GB x 1 with a RAM check, 13 GB MemAvailable reserve checked live before any boss job",
-        "scope": "media"
-      },
-      {
-        "hash": "f56e30205",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "Logical bytes per caller x name (per-thread wchar split by payload) in db_write_stats, /stats and write-stats report",
-        "scope": null
-      },
-      {
-        "hash": "9e8f3fe0c",
-        "date": "2026-10-28",
-        "type": "Fixed",
-        "description": "An unreachable home host rests 10 min and its talk goes back to the front without using an attempt (boss went offline: 41 talks burned their attempts)",
-        "scope": "media"
-      },
-      {
-        "hash": "a5a0491e7",
-        "date": "2026-10-28",
-        "type": "New",
-        "description": "Audio tags (ID3/MP4/Vorbis) as hints for speaker, title, series; media-hint-review report and media-tags-backfill job",
-        "scope": "media"
-      },
-      {
-        "hash": "56c3541e8",
-        "date": "2026-10-28",
-        "type": "New",
-        "description": "Boss restores D/E talks (UniPASE on its ROCm iGPU + the worker-image CPU tail) beside aorus's whole imports; boss heat limits 96/99/93 (measured: no throttling at 90-92 C); media-cloud-order backfill mode, worst grade first",
-        "scope": "media"
       }
     ]
   }
