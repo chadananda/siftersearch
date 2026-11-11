@@ -47,3 +47,13 @@ describe('quotedByJev at a quotation tree entry', () => {
     expect(asked).toBe(false); expect(u.quoted_words).toBe('the earth is but one country');
   });
 });
+
+describe('source_trace fallback standings', () => {
+  it("a signpost may rest on a Central Figure's recorded talks (Paris Talks), not only scripture and the Guardian", async () => {
+    const { SIGNPOST_SOURCES } = await import('../../api/lib/assistant/tools.js');
+    const { authorityKind } = await import('../../api/lib/assistant/tool-kit.js');
+    const paris = authorityKind({ title: 'Paris Talks', author: "'Abdu'l-Bahá", tradition: "Baha'i" });
+    expect(paris).toBe('reported'); expect(SIGNPOST_SOURCES).toContain(paris);
+    expect(SIGNPOST_SOURCES).not.toContain('scholarship');
+  });
+});

@@ -477,7 +477,7 @@ const ENTRIES = [
     output: { type: 'object', required: ['authors'], properties: { authors: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['author', 'key', 'docs'], properties: { author: { type: 'string' }, key: { type: 'string' }, docs: { type: 'integer' } } } } } },
     example: { input: { name: 'Augustine' }, output: { authors: [{ author: 'Augustine of Hippo', key: 'augustineofhippo', docs: 4 }] } },
     async run({ name }, ctx = {}) { return { authors: matchAuthors(name, await (await dep(ctx, 'distinctAuthors', 'docs'))()) }; } },
-  // a signpost's recorded quote links, else a pure fused_search held to the authoritative standings (scripture, Guardian): no planner, no model
+  // a signpost's recorded quote links, else a pure fused_search held to the standings a signpost quotes (SIGNPOST_SOURCES): no planner, no model
   { name: 'source_trace', label: 'Source Trace', kind: 'tool', refInput: true, outputName: 'Passage[]', cost: C(true, 300),
     purpose: 'The primary passages a signpost (a House letter, a scholar, a compilation) quotes or rests on.',
     description: "A House of Justice letter, a scholar or a compilation stating a teaching is a SIGNPOST (Chad 10-19: when they refer to the teachings there is a presumption they mean something specific — we hold it): give its ref (e.g. P4) and get the primary passages it quotes or rests on — from the library's quote links, else the closest scripture and authorised interpretation of the signpost's tradition (default Bahá'í: Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi; pass `tradition` for another). Cite THOSE.",
@@ -489,7 +489,7 @@ const ENTRIES = [
         const linked = (await (await dep(ctx, 'resolveLinks', 'plinks'))([a.paragraph_id], { quotedBy: false })).get(Number(a.paragraph_id))?.sources || [];
         out.push(...linked.slice(0, 4).map(toPassage));
       }
-      if (out.length < 2) out.push(...(await run('fused_search', { query: String(a.text).slice(0, 500), limit: 4, filters: { tradition: a.tradition ? canonicalTradition(a.tradition) : "Baha'i", authority: ['scripture', 'interpretation'] } }, ctx)).passages);
+      if (out.length < 2) out.push(...(await run('fused_search', { query: String(a.text).slice(0, 500), limit: 4, filters: { tradition: a.tradition ? canonicalTradition(a.tradition) : "Baha'i", authority: SIGNPOST_SOURCES } }, ctx)).passages);
       return { passages: dedupePassages(out).slice(0, 4) };
     } },
   // edition_lookup (11-09): a passage's other-language editions for ANY tradition — recorded links, else the work family aligned by reference, else by meaning. Never translates.
@@ -631,6 +631,10 @@ const validator = (e) => { const k = `${e.name}@${e.version ?? 0}`; return valid
 
 /** run(name, input, ctx) → the tool's plain JSON, or a thrown ToolError { code, message, retryable }: unknown_tool, empty_input,
  *  invalid_input (the input does not match the schema), timeout, unavailable, rights_unavailable, tool_failed. Never a silent empty. */
+// what a signpost rests on: scripture, the Guardian, and a Central Figure's recorded talks (11-11: the House quotes Paris Talks; held to
+// scripture+Guardian, "the mind and spirit of man advance when he is tried by suffering" traced to a diary instead)
+export const SIGNPOST_SOURCES = Object.freeze(['scripture', 'interpretation', 'reported']);
+
 export async function run(name, input = {}, ctx = {}) {
   const e = resolve(name);
   if (!e) throw new ToolError('unknown_tool', `unknown tool: ${name}`, false);
