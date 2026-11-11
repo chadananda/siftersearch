@@ -185,7 +185,9 @@ const history_fact = tree('history_fact', 'h1', [
   ['h1', 'search.together', { list: [
     // the narrative histories (The Dawn-Breakers, Momen, Balyuzi) on their own: with the Guardian in the same search his short summaries took every slot
     // and "how was the Báb martyred?" never reached Nabíl's account (11-10); the Writings and the Guardian are excluded in the engine (tools.js notAuthor)
-    { element: 'search.shelf', params: { query: '{{topic}}', authority: ['history', 'scholarship'], k: 6 } },
+    // k 12: the question as asked ("How was the Báb martyred?") ranked Nabíl's account 10th behind pilgrim notes and periodicals; Jev's per-passage
+    // verdict (h3) then puts the passage that states the fact first, so a wider shelf costs cheap judge calls, never the answer
+    { element: 'search.shelf', params: { query: '{{topic}}', authority: ['history', 'scholarship'], k: 12 } },
     { element: 'search.shelf', params: { query: '{{topic}}', authority: ['interpretation'], k: 3 } },   // God Passes By is the Guardian's history
     { element: 'search.shelf', params: { query: '{{topic}}', authority: ['scripture'], k: 3 } },   // the primary record: the founder's own words (Guru Nanak's hymns, the Báb's Writings) — a separate search so scripture never crowds out the histories
     { element: 'search.web', params: { query: '{{topic}}' } }] }, 'tool', ['topic', 'religions_specified'], ['found_passages', 'web_found', 'missing'],
