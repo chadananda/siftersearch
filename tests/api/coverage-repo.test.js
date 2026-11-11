@@ -91,6 +91,15 @@ describe('coverage ledger', () => {
     const m2 = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count })).map((r) => [r.layer, r]));
     expect(m2.keyword.total).toBe(1);
   });
+  it('phrase: a document the indexer found unyielding leaves the total while it has no points; points or growth bring it back', async () => {
+    const phraseOf = async (c) => Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count: async () => c })).map((r) => [r.layer, r])).phrase;
+    expect(await phraseOf(0)).toMatchObject({ total: 3, indexed: 0 });
+    expect(await repo.savePhraseUnyielding([1, 2])).toBe(2);
+    expect(await phraseOf(0)).toMatchObject({ total: 0, generated: 0, indexed: 0 });   // newDocsMissingLayer's total > 0 no longer holds
+    expect((await phraseOf(5)).total).toBe(3);                                         // points exist: the skip ends
+    raw.prepare('INSERT INTO content (id, doc_id) VALUES (9, 1)').run();
+    expect((await phraseOf(0)).total).toBe(1);                                         // grew past the recorded 3: selected again
+  });
   it('measures one document across every layer', async () => {
     const m = Object.fromEntries((await repo.measureDoc(1, { hypeVersion: 'v15', count })).map((r) => [r.layer, r]));
     expect(m.text).toMatchObject({ total: 3, generated: 3, indexed: 2 });

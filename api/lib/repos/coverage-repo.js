@@ -70,7 +70,7 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
       SUM(COALESCE(blocktype, 'paragraph') IN ('paragraph', 'quote') AND LENGTH(COALESCE(text, '')) >= ${HYPE_MIN_LEN}) AS hype_eligible
     FROM content WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(is_duplicate, 0) = 0`, [hypeVersion || '', id], 'coverage:content');
   const total = c?.total || 0;
-  const [mentions, concepts, aligned, sections, kw, phrase, hype, conceptPts, structure, kwSkip] = await Promise.all([
+  const [mentions, concepts, aligned, sections, kw, phrase, hype, conceptPts, structure, kwSkip, phraseSkip] = await Promise.all([
     queryOne(`SELECT COUNT(DISTINCT para_id) AS n FROM entity_mentions_v2 WHERE doc_id = ? AND status = 'active'`, [id], 'coverage:mentions'),
     queryOne('SELECT COUNT(DISTINCT para_id) AS n FROM concept_claims WHERE doc_id = ? AND proof_ok = 1', [id], 'coverage:concepts'),
     queryOne(`SELECT COUNT(DISTINCT c.id) AS n FROM content c WHERE c.doc_id = ? AND c.deleted_at IS NULL AND (
@@ -80,12 +80,16 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
     count('paragraphs_kw', id), count('phrases', id), count('hype', id), count('concepts', id),
     queryOne('SELECT sections FROM doc_structure WHERE doc_id = ?', [id], 'coverage:structure'),
     queryOne(`SELECT n FROM layer_unindexable WHERE doc_id = ? AND layer = 'keyword'`, [id], 'coverage:unindexable'),
+    queryOne(`SELECT n FROM layer_unindexable WHERE doc_id = ? AND layer = 'phrase'`, [id], 'coverage:unindexable-phrase'),
   ]);
   // a count that failed (Qdrant busy, timeout) is UNKNOWN, not zero: keep the document's last good figure (10-16: zeros
   // from timed-out counts made phrase/keyword coverage appear to shrink by ~66K paragraphs an hour)
   const prev = Object.fromEntries((await queryAll('SELECT layer, indexed FROM index_coverage WHERE doc_id = ?', [id], 'coverage:prev')).map((r) => [r.layer, r.indexed]));
   const known = (n, layer) => (n == null ? prev[layer] ?? null : n);
   const [kwN, phraseN, hypeN, conceptN] = [known(kw, 'keyword'), known(phrase, 'phrase'), known(hype, 'hype'), known(conceptPts, 'concepts')];
+  // a document the phrase indexer ran and found nothing new to embed or send, with no point in Qdrant: its paragraphs yield no
+  // phrase units — left out of the total (like keyword's), so follow-through stops re-queueing it. Points appearing ends the skip.
+  const phraseTotal = phraseN ? total : Math.max(0, total - (phraseSkip?.n || 0));
   const kwTotal = Math.max(0, (c?.texted ?? total) - (kwSkip?.n || 0));
   const nonEnglish = !/^en/i.test(String(doc.language || 'en'));
   // originals ↔ translations (tradition readiness, Chad 11-10): a non-English paragraph is LINKED when it carries a stored
@@ -104,7 +108,7 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
     // Qdrant points ≈ paragraphs that HAVE WORDS: empty rows and markup-only rows ('|', '##') can never have a point
     // (10-17: 197 documents read 'short' forever and keyword-fill re-sent their 203K paragraphs every 10 minutes)
     row('keyword', kwTotal, kwTotal, kwN, null, kwTotal),
-    row('phrase', total, total, phraseN),                                // points = phrase units (several per paragraph)
+    row('phrase', phraseTotal, phraseTotal, phraseN, null, phraseTotal),                                // points = phrase units (several per paragraph)
     // structure is per DOCUMENT: total 1; generated 1 when structure was FOUND (Chad 10-17: "often it is not" embedded as
     // headings — reading every document is not the same as having its structure) OR is NOT NEEDED: a short single work —
     // a tablet, a letter, a talk (Chad 10-17: "largely independent tablets") — once read; current 1 once read; indexed = sections
@@ -177,6 +181,20 @@ export async function touchCoverage(ids, at = Math.floor(Date.now() / 1000)) {
 /** A layer met paragraphs it cannot index in a document (keyword: no words) — the ledger leaves them out of its total. */
 export const saveUnindexable = (docId, layer, n) => transaction([{ sql: `INSERT INTO layer_unindexable (doc_id, layer, n, at) VALUES (?, ?, ?, ?)
   ON CONFLICT(doc_id, layer) DO UPDATE SET n = excluded.n, at = excluded.at`, args: [Number(docId), layer, n, Math.floor(Date.now() / 1000)] }], 'coverage:unindexable-save');
+
+/** A phrase-index run over these documents embedded and sent nothing: record their live paragraph count as unindexable for the
+ *  phrase layer (measureDoc leaves it out while the document has no points). A document that grows past it is selected again. */
+export const savePhraseUnyielding = (ids) => {
+  const list = [...new Set((ids || []).map(Number).filter(Number.isFinite))], at = Math.floor(Date.now() / 1000);
+  const stmts = [];
+  for (let i = 0; i < list.length; i += 500) {
+    const chunk = list.slice(i, i + 500);
+    stmts.push({ sql: `INSERT INTO layer_unindexable (doc_id, layer, n, at) SELECT doc_id, 'phrase', COUNT(*), ? FROM content
+      WHERE doc_id IN (${chunk.map(() => '?').join(',')}) AND deleted_at IS NULL AND COALESCE(is_duplicate, 0) = 0 GROUP BY doc_id
+      ON CONFLICT(doc_id, layer) DO UPDATE SET n = excluded.n, at = excluded.at`, args: [at, ...chunk] });
+  }
+  return stmts.length ? transaction(stmts, 'coverage:phrase-unyielding').then(() => list.length) : Promise.resolve(0);
+};
 
 /** The section index just read a document: move its ledger 'sections' row (1 of 1, indexed = sections) without
  *  re-measuring every layer, keeping the document's core flag. */

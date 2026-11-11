@@ -189,7 +189,40 @@ describe('indexer hot-full → fold, never a stall', () => {
     const q = [];
     const r = await afterHotFull({ tier: 'core', maxUsd: 5 }, full(), async (n, p) => q.push([n, p]));
     expect(r).toEqual({ fold: 'phrase-hot-fold', continued: true });
-    expect(q).toEqual([['phrase-hot-fold', {}], ['phrase-index', { tier: 'core', maxUsd: 5, hotRetry: 0 }]]);
+    expect(q).toEqual([['phrase-hot-fold', {}], ['phrase-index', { tier: 'core', maxUsd: 5, hotRetry: 0, hotRound: 1 }]]);
+  });
+  it('the continuation differs from the running job, so the queue cannot dedupe it away (11-11, run 1393285)', async () => {
+    const running = { tier: 'supplemental', maxUsd: 20, budgetKey: 'phrase-supplemental-1110', hotRetry: 0 };
+    const live = [['phrase-index', JSON.stringify(running)]], made = [];
+    // dedupes like ENQUEUE_SAME_SQL: an identical queued/running run is reused, not created
+    const enq = async (n, p) => { const k = JSON.stringify(p ?? null); if (live.some(([ln, lp]) => ln === n && lp === k)) return; live.push([n, k]); made.push(n); };
+    expect((await afterHotFull(running, full(), enq)).continued).toBe(true);
+    expect(made).toEqual(['phrase-hot-fold', 'phrase-index']);
+    // and a second round differs again from the first continuation
+    const next = []; await afterHotFull({ ...running, hotRound: 1 }, full(), async (n, p) => next.push(p));
+    expect(next[1].hotRound).toBe(2);
+  });
+  it('a hot-full stop whose continuation is queued is not "stopped short"; a real stop still is', async () => {
+    const { stoppedShort } = await import('../../api/lib/ops/service-worker.js');
+    const last = full();
+    expect(stoppedShort({ code: 0, last })).toMatch(/hot RAM disk/);
+    expect(stoppedShort({ code: 0, last, hotFull: { fold: 'phrase-hot-fold', continued: true } })).toBeNull();
+    expect(stoppedShort({ code: 0, last: { phase: 'stopped', reason: 'budget x would pass $20' } })).toMatch(/budget/);
+  });
+  it('followUps returns the hot-full outcome (continued) for the job result', async () => {
+    const r = await followUps({ tier: 'core', maxUsd: 5 }, full(), null, { enqueue: async () => {}, log: async () => {}, wantedFile: join(tmp(), 'w.json') });
+    expect(r).toEqual({ fold: 'phrase-hot-fold', continued: true });
+  });
+  it('a docs run that embedded and sent nothing marks its documents unyielding BEFORE the re-measure; a productive or hype run does not', async () => {
+    const order = [], mark = async (ids) => order.push(['mark', ids]), enqueue = async (n) => order.push([n]);
+    const done = (x = {}) => ({ phase: 'done', paragraphs: 438, units: 0, embedded: 0, upserted: 0, ...x });
+    await followUps({ docs: [285226, 285227], maxUsd: 1 }, done(), null, { enqueue, markUnyielding: mark, wantedFile: join(tmp(), 'w.json') });
+    expect(order).toEqual([['mark', [285226, 285227]], ['coverage-refresh']]);
+    order.length = 0;
+    await followUps({ docs: [1], maxUsd: 1 }, done({ upserted: 3 }), null, { enqueue, markUnyielding: mark, wantedFile: join(tmp(), 'w.json') });
+    await followUps({ docs: [1], maxUsd: 1, field: 'hype' }, done(), null, { enqueue, markUnyielding: mark, wantedFile: join(tmp(), 'w.json') });
+    await followUps({ docs: [1], maxUsd: 1 }, { phase: 'stopped', reason: 'budget', units: 0 }, null, { enqueue, markUnyielding: mark, wantedFile: join(tmp(), 'w.json') });
+    expect(order.filter((o) => o[0] === 'mark')).toEqual([]);
   });
   it('logs one activity line (visible, not an alarm)', async () => {
     const logs = [];
@@ -209,7 +242,7 @@ describe('indexer hot-full → fold, never a stall', () => {
     const q = [];
     const slow = (n, p) => new Promise((r) => setTimeout(() => { q.push([n, p]); r(); }, 20));
     await followUps({ tier: 'core', maxUsd: 5 }, full(), null, { enqueue: slow, log: async () => {}, wantedFile: join(tmp(), 'w.json') });
-    expect(q).toEqual([['phrase-hot-fold', {}], ['phrase-index', { tier: 'core', maxUsd: 5, hotRetry: 0 }]]);
+    expect(q).toEqual([['phrase-hot-fold', {}], ['phrase-index', { tier: 'core', maxUsd: 5, hotRetry: 0, hotRound: 1 }]]);
     const pre = [];
     await followUps({ tier: 'core' }, full(), ['prebuilt'], { enqueue: async (n) => pre.push(n) });
     expect(pre).toEqual([]);

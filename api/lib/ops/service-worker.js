@@ -34,7 +34,7 @@ async function alertStoppedShort(service, run, short) {
     + `\nFurther stopped-short runs of ${run.name}${run.params?.budgetKey ? ` (${String(run.params.budgetKey).split(':')[0]})` : ''} today are counted, not mailed.`
     + (t.suppressedBefore ? `\nOn ${t.previousDay}, ${t.suppressedBefore} more stopped short without a mail.` : ''));
 }
-export const stoppedShort = (result) => { const s = JSON.stringify(result || {}); return /"phase":"stopped"/.test(s) ? (s.match(/"reason":"([^"]+)"/)?.[1] || 'stopped early') : null; };
+export const stoppedShort = (result) => { if (result?.hotFull?.continued) return null; const s = JSON.stringify(result || {}); return /"phase":"stopped"/.test(s) ? (s.match(/"reason":"([^"]+)"/)?.[1] || 'stopped early') : null; };
 
 /**
  * service: name · registry {job: fn} · lanes {lane: [jobs]} · laneWorkers {lane: n} · main: also run a catch-all lane for

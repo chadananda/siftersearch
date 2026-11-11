@@ -59,7 +59,9 @@ export async function afterHotFull(params = {}, last, enqueue = null, log = null
     if (!moved && retry > HOT_RETRY_MAX && log) await log(`⚠ phrase-index: RAM tier still full after ${HOT_RETRY_MAX} folds — not continuing (check phrase-hot-fold)`);
     return { fold, continued: false };
   }
-  await q('phrase-index', { ...params, hotRetry: moved ? 0 : retry }, 'hot-full-continue');
+  // params must DIFFER from the running job's: enqueue reuses an identical queued/running run, i.e. this very job (11-11: no
+  // continuation row was ever created, run 1393285)
+  await q('phrase-index', { ...params, hotRetry: moved ? 0 : retry, hotRound: (Number(params.hotRound) || 0) + 1 }, 'hot-full-continue');
   return { fold, continued: true };
 }
 
@@ -96,10 +98,15 @@ export async function remeasureAfter({ docs = null, scanOnly = false } = {}, enq
  *  supplemental tier runs stopped hot-full and were never continued). */
 export async function followUps(params, last, prebuilt = null, deps = {}) {
   const { enqueue = null, log = async (m) => (await import('../repos/activity-repo.js')).logActivity('index', m) } = deps;
+  // a docs run that found nothing to embed or send: those documents yield no phrase units → ledger leaves them out, BEFORE the re-measure
+  if (!prebuilt && params.docs?.length && !params.field && !params.scanOnly && !params.limit && last?.phase === 'done' && !last.units && !last.embedded && !last.upserted)
+    await (deps.markUnyielding || (async (ids) => (await import('../repos/coverage-repo.js')).savePhraseUnyielding(ids)))(params.docs)
+      .catch((err) => console.warn(`phrase unyielding mark failed: ${err.message}`));
   await remeasureAfter(params, enqueue).catch(() => {});
-  if (prebuilt) return;
-  await afterHotFull(params, last, enqueue, log).catch((err) => console.warn(`hot-full follow-up failed: ${err.message}`));
+  if (prebuilt) return null;
+  const hot = await afterHotFull(params, last, enqueue, log).catch((err) => { console.warn(`hot-full follow-up failed: ${err.message}`); return null; });
   try { markFoldWanted(params, last, deps.wantedFile); } catch { /* best effort: the fold loop still folds by fill */ }
+  return hot;
 }
 
 export function phraseIndexJob(params = {}, prebuilt = null) {
@@ -125,8 +132,9 @@ export function phraseIndexJob(params = {}, prebuilt = null) {
     child.stdout.on('data', take); child.stderr.on('data', (buf) => { tail = (tail + buf).slice(-2000); });   // stderr = progress/wait notes: tail only, never `last`
     child.on('exit', async (code) => {
       if (docsFile) rmSync(docsFile, { force: true });
-      if (code === 0) await followUps(params, last, prebuilt);
-      return code === 0 ? resolve({ code, last }) : reject(new Error(`indexer exit ${code}: ${(tail.match(/^.*Error: .*$/m)?.[0] || '').slice(0, 400)} … ${tail.slice(-300)}`));
+      const hot = code === 0 ? await followUps(params, last, prebuilt) : null;
+      // hotFull: a by-design stop whose fold + continuation are queued — the service must not mail "stopped short" for it
+      return code === 0 ? resolve({ code, last, ...(hot?.continued ? { hotFull: { fold: hot.fold, continued: true } } : {}) }) : reject(new Error(`indexer exit ${code}: ${(tail.match(/^.*Error: .*$/m)?.[0] || '').slice(0, 400)} … ${tail.slice(-300)}`));
     });
   });
 }
