@@ -33,7 +33,13 @@ const FROM_MIXED = /^From\s+((?:(?:Mr|Mrs|Miss|Dr|Prof|Rev)\.?\s+)?\p{Lu}[^.]{2,
 const BY = /^(?:written\s+)?by\s+(.{3,70}?)\.?$/i;
 const SIGNED = /^\(signed\)\s*(.{2,70}?)\.?$/i;
 const DASH = /^(?:[—–]|--)\s*(.{2,70}?)\.?$/;
-const personFrom = (m) => { const x = m?.[1]?.trim(); return x && nameShaped(x) && (x.split(/\s+/).length >= 2 || /^shoghi$/i.test(x)) ? x : null; };
+// "From Stenographic Notes." / "From the Diary of …" name a record, not a person (11-11 dry run credited "Stenographic Notes")
+const RECORD = /\b(?:notes?|diary|records?|minutes|stenographic|letters?|tablets?|address|talks?|words|writings|press|report|translation)\b/i;
+const personFrom = (m) => { const x = m?.[1]?.trim(); return x && nameShaped(x) && !RECORD.test(x) && (x.split(/\s+/).length >= 2 || /^shoghi$/i.test(x)) ? x : null; };
+// a title stored as a plain paragraph ("TABLET FROM 'ABDU'L-BAHÁ", "Words of 'Abdu'l-Bahá", "ADDRESS OF 'ABDU'L-BAHÁ AT …") opens a new
+// piece: left inside the article before it, its closing "(Signed) 'ABDU'L-BAHÁ" credited Louise Waite's essay to Him (SoW v12 i1, 11-11)
+const TITLE_OPENER = /^(?:(?:a|the|another)\s+)?(?:(?:recent|new)\s+)?(?:tablets?|words|address|talk|letter|prayer|supplication|cablegram)\s+(?:from|of|to|by|revealed)\b/i;
+export const titleLine = (t) => t.length <= 200 && TITLE_OPENER.test(t) && !/[,;:]\s*$/.test(t) && (t.length <= 90 || t === t.toUpperCase());
 export const fromLine = (t) => personFrom(t.match(FROM)) || personFrom(t.match(FROM_MIXED));
 export const byLine = (t) => { const m = t.match(BY); return m && nameShaped(m[1]) && /^[A-Z*_]/.test(t) ? m[1].trim() : null; };
 export function signedLine(t) {
@@ -81,6 +87,7 @@ export function articleWriters(rows) {
       open({ title: t, level: L, rows: [r], start: parent?.start?.basis === 'byline' ? parent.start : null, prose: false });
       stack.push(cur);
     } else if (from) open({ title: t, level: 99, rows: [r], start: { writer: displayName(from), basis: 'from-heading' }, prose: true });
+    else if (cur && titleLine(t)) open({ title: t, level: 99, rows: [r], start: null, prose: false });
     else if (cur) {
       cur.rows.push(r);
       if (!isMeta(t)) cur.prose = true;
@@ -101,7 +108,10 @@ export function articleWriters(rows) {
     });
     let from = 0;
     const block = (to, sig) => {
-      const slice = seg.rows.slice(from, to), w = sig && start && similar(sig, start.writer) ? { writer: start.writer, basis: start.basis } : sig ? { writer: sig, basis: 'signature' } : start ? { writer: start.writer, basis: start.basis } : null;
+      // a signer other than the article's named writer, closing the article's opening block: the block is mixed (the writer's text, then a
+      // signed piece we could not separate) — credited to no one rather than all of it to the signer
+      const clash = sig && start && !similar(sig, start.writer) && from === 0 && start.basis !== 'from-heading';
+      const slice = seg.rows.slice(from, to), w = clash ? null : sig && start && similar(sig, start.writer) ? { writer: start.writer, basis: start.basis } : sig ? { writer: sig, basis: 'signature' } : start ? { writer: start.writer, basis: start.basis } : null;
       if (w && slice.length) for (const r of slice) out.set(r.id, { ...w, span: [slice[0].pidx, slice[slice.length - 1].pidx] });
     };
     for (const s of sigs) { const end = seg.rows.indexOf(body[s.k].r) + 1; block(end, s.w); from = end; }

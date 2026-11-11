@@ -49,6 +49,24 @@ describe('articleWriters', () => {
     expect(w(m, 3)).toBe('Keith Ransom-Kehler');
     expect(w(m, 2)).toBe('Keith Ransom-Kehler');
   });
+  it('SoW v12 i1: a Tablet title stored as a paragraph ends the essay before it; its signature credits only the Tablet', () => {
+    const rows = mk(['Fac-simile of Cover.......... 1', 'The Bahá\'í Revelation—By Louise R. Waite.......... 9', '## The Bahá\'í Revelation', 'THE Bahá\'í Revelation is essentially a message of peace.',
+      'Today, amid all the suffering of his people, he lives in his own home on Mount Carmel.', 'Words of \'Abdu\'l-Bahá', 'Blessed is he who proclaims the doctrine of Spiritual Brotherhood.',
+      "TABLET FROM 'ABDU'L-BAHÁ", 'O thou Star of the West!', 'Be thou happy! Be thou happy!', "(Signed) 'ABDU'L-BAHÁ 'ABBÁS."]);
+    const m = articleWriters(rows);
+    for (const i of [3, 4]) expect(w(m, i)).toBe('Louise R. Waite');
+    expect(w(m, 6)).toBeUndefined();
+    for (const i of [7, 8, 9]) expect(w(m, i)).toBe('‘Abdu’l-Bahá');
+  });
+  it('a signer other than the named writer, closing the opening block, credits no one', () => {
+    const rows = mk(['## News', 'By ALBERT WINDUST', 'The friends met.', 'O thou servant of God!', "(Signed) 'ABDU'L-BAHÁ ABBAS."]);
+    const m = articleWriters(rows);
+    for (const i of [2, 3, 4]) expect(w(m, i)).toBeUndefined();
+  });
+  it('"From Stenographic Notes." names a record, not a writer', () => {
+    const m = articleWriters(mk(["## ADDRESS OF 'ABDU'L-BAHÁ AT HOTEL ANSONIA", 'From Stenographic Notes.', 'Souls from the East and from the West have been brought to this spot.']));
+    expect(w(m, 2)).not.toBe('Stenographic Notes');
+  });
   it('name helpers', () => {
     expect(displayName('MR. SIDNEY SPRAGUE.')).toBe('Sidney Sprague');
     expect(displayName("'ABDU'L-BAHÁ 'ABBÁS.")).toBe('‘Abdu’l-Bahá');
