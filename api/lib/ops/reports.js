@@ -43,7 +43,7 @@ import { vocabBuildJob } from './vocab-job.js';
 import { pipelineSnapshotJob } from './pipeline-snapshot-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByDocAuthors, liveParagraphsOfDoc } from '../repos/integrity-repo.js';
 import { docLanguageCounts } from '../repos/language-repo.js';
-import { coveredByDocAuthor, monthSpend, unitsForParagraphs } from '../repos/phrase-store-repo.js';
+import { coveredByDocAuthor, monthSpend, skippedByDocAuthor, unitsForParagraphs } from '../repos/phrase-store-repo.js';
 import { doctrinalTier, TIERS } from '../authority.js';
 import { paragraphAuthor } from '../authorship/effective.js';
 import { normLang } from '../language-codes.js';
@@ -167,6 +167,8 @@ export const REPORTS = {
     const covered = coveredByDocAuthor();
     const live = await liveParagraphsByDocAuthors();
     const cov = new Map(covered.map((r) => [`${r.doc_id}|${r.author || ''}`, r.paragraphs]));
+    // left out on purpose by the indexer (site markup / page chrome): done, not missing
+    const skipped = skippedByDocAuthor(), skp = new Map(skipped.map((r) => [`${r.doc_id}|${r.author || ''}`, r.paragraphs]));
     // live ¶ per doc × effective author first (several raw `authors` values can name the same author), then tier + coverage once each
     const byKey = new Map();
     for (const r of live) {
@@ -177,13 +179,13 @@ export const REPORTS = {
     const agg = new Map();
     for (const [k, r] of byKey) {
       const tier = doctrinalTier({ religion: r.religion, collection: r.collection, title: r.title, author: r.doc_author }, { author: r.author });
-      const c = Math.min(r.paragraphs, cov.get(k) || 0), g = `${r.religion || 'Other'}|${tier}|${r.scope}`;
-      const row = agg.get(g) || { religion: r.religion || 'Other', tier, scope: r.scope, live: 0, covered: 0 };
-      row.live += r.paragraphs; row.covered += c; agg.set(g, row);
+      const c = Math.min(r.paragraphs, cov.get(k) || 0), sk = Math.min(r.paragraphs - c, skp.get(k) || 0), g = `${r.religion || 'Other'}|${tier}|${r.scope}`;
+      const row = agg.get(g) || { religion: r.religion || 'Other', tier, scope: r.scope, live: 0, covered: 0, skipped: 0 };
+      row.live += r.paragraphs; row.covered += c; row.skipped += sk; agg.set(g, row);
     }
     // the same, matched per DOC only (ignores the author stamp): a gap that closes here is re-attribution, not unindexed text
     const covDoc = new Map(), liveDoc = new Map();
-    for (const r of covered) covDoc.set(r.doc_id, (covDoc.get(r.doc_id) || 0) + r.paragraphs);
+    for (const r of [...covered, ...skipped]) covDoc.set(r.doc_id, (covDoc.get(r.doc_id) || 0) + r.paragraphs);
     for (const [, r] of byKey) {
       const tier = doctrinalTier({ religion: r.religion, collection: r.collection, title: r.title, author: r.doc_author }, { author: r.author });
       const e = liveDoc.get(r.doc_id) || { doc_id: r.doc_id, title: r.title, religion: r.religion, live: 0, liveByTier: {} };
@@ -197,11 +199,12 @@ export const REPORTS = {
     }
     docOnly.missing = docOnly.live - docOnly.covered;
     worst.sort((a, b) => b.core - a.core || (b.live - b.covered) - (a.live - a.covered));
-    const rows = [...agg.values()].map((r) => ({ ...r, missing: r.live - r.covered }));
+    const rows = [...agg.values()].map((r) => ({ ...r, missing: r.live - r.covered - r.skipped }));
     const order = { core: 0, gray: 1, supplemental: 2 };
     rows.sort((x, y) => order[x.tier] - order[y.tier] || y.missing - x.missing);
     const by_tier = Object.fromEntries(TIERS.map((t) => { const rs = rows.filter((r) => r.tier === t);
-      return [t, { live: rs.reduce((n, r) => n + r.live, 0), covered: rs.reduce((n, r) => n + r.covered, 0), missing: rs.reduce((n, r) => n + r.missing, 0) }]; }));
+      const sum = (f) => rs.reduce((n, r) => n + r[f], 0);
+      return [t, { live: sum('live'), covered: sum('covered'), skipped: sum('skipped'), missing: sum('missing') }]; }));
     const spent = months.reduce((n, m) => n + (m.usd || 0), 0);
     const coveredTotal = rows.reduce((n, r) => n + r.covered, 0);
     const perPara = coveredTotal ? spent / coveredTotal : 0;

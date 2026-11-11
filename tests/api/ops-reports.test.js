@@ -15,7 +15,7 @@ vi.mock('../../api/lib/repos/query-health-repo.js', () => ({ slowQueriesByHour: 
 vi.mock('../../api/lib/repos/translator-repo.js', () => ({ translatorCoverage: async () => ({ byTranslator: [{ translator: 'Shoghi Effendi', basis: 'book', paragraphs: 5 }], translationBy: [], books: { with_translators: 1, docs: 9 } }) }));
 vi.mock('../../api/lib/repos/language-repo.js', () => ({ docLanguageCounts: async () => [{ language: 'en', docs: 5 }, { language: 'En', docs: 2 }] }));
 vi.mock('../../api/lib/repos/phrase-store-repo.js', () => ({
-  coveredByDocAuthor: () => [{ doc_id: 1, author: 'Shoghi Effendi', paragraphs: 50 }, { doc_id: 1, author: 'Helen Hornby', paragraphs: 30 }, { doc_id: 2, author: 'Bukhari', paragraphs: 25 }], monthSpend: () => [{ month: '2026-10', usd: 8 }],
+  coveredByDocAuthor: () => [{ doc_id: 1, author: 'Shoghi Effendi', paragraphs: 50 }, { doc_id: 1, author: 'Helen Hornby', paragraphs: 30 }, { doc_id: 2, author: 'Bukhari', paragraphs: 25 }], monthSpend: () => [{ month: '2026-10', usd: 8 }], skippedByDocAuthor: () => [{ doc_id: 1, author: 'Shoghi Effendi', paragraphs: 4 }],
   unitsForParagraphs: (ids) => ids.map((id) => ({ id, ...{ 7: { n: 3, docs: '5', fields: 'text', upserted: 3 }, 8: { n: 0, docs: null, fields: null, upserted: null }, 9: { n: 2, docs: '9', fields: 'text', upserted: 0 } }[id] })),
 }));
 vi.mock('../../api/lib/repos/schema-repo.js', () => ({
@@ -59,8 +59,8 @@ describe('ops reports (server-side)', () => {
     expect((await REPORTS.languages()).not_normalised.map((r) => r.language)).toEqual(['En']);
     const c = await REPORTS['phrase-coverage']();
     // covered 50 (core) + 30 (supplemental) + 20 (gray, clamped to its 20 live) = 100 of 120 live; $8 / 100 ¶
-    expect(c).toMatchObject({ missing_paragraphs: 20, usd_per_paragraph: 0.08, est_usd_to_finish: 2 });
-    expect(c.by_tier).toEqual({ core: { live: 60, covered: 50, missing: 10 }, gray: { live: 20, covered: 20, missing: 0 }, supplemental: { live: 40, covered: 30, missing: 10 } });
+    expect(c).toMatchObject({ missing_paragraphs: 16, usd_per_paragraph: 0.08, est_usd_to_finish: 1 });   // 4 core ¶ skipped on purpose (site chrome) = done
+    expect(c.by_tier).toEqual({ core: { live: 60, covered: 50, skipped: 4, missing: 6 }, gray: { live: 20, covered: 20, skipped: 0, missing: 0 }, supplemental: { live: 40, covered: 30, skipped: 0, missing: 10 } });
     expect(c.rows[0]).toMatchObject({ religion: "Baha'i", tier: 'core', scope: 'primary' });
     expect(c.rows.find((r) => r.tier === 'gray')).toMatchObject({ religion: 'Islam', scope: 'supplemental' });   // scope = the doc's CURRENT scope
     // per-doc view (author stamp ignored) never reports less coverage than the per-author one; the worst docs carry ids

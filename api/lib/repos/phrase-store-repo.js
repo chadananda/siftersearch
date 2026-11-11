@@ -25,6 +25,15 @@ export function coveredByDocAuthor() {
   } finally { db.close(); }
 }
 
+/** Paragraphs the indexer left out ON PURPOSE (scraped-site markup / page chrome), per doc × author stamp. Older stores have no table → []. */
+export function skippedByDocAuthor() {
+  const db = open(STORE);
+  try {
+    if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'skipped'").get()) return [];
+    return db.prepare('SELECT doc_id, author, COUNT(*) AS paragraphs FROM skipped GROUP BY 1, 2').all();
+  } finally { db.close(); }
+}
+
 /** Per paragraph id: its stored units in the point-id block (id×1000 … +999, the primary key) — count, the doc ids and fields
  *  they were stamped with, how many reached Qdrant. Reads by key only, so a 70K-paragraph doc is cheap. */
 export function unitsForParagraphs(ids) {

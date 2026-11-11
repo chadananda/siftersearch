@@ -80,7 +80,10 @@ store.exec(`CREATE TABLE IF NOT EXISTS vec (key TEXT PRIMARY KEY, model TEXT, di
 CREATE TABLE IF NOT EXISTS units (point_id INTEGER PRIMARY KEY, paragraph_id TEXT, doc_id TEXT, k INTEGER, start INTEGER, "end" INTEGER,
   seg_v TEXT, key TEXT, fa_share REAL, religion TEXT, author TEXT, lang_label TEXT, upserted INTEGER DEFAULT 0);
 CREATE INDEX IF NOT EXISTS units_key ON units(key); CREATE INDEX IF NOT EXISTS units_up ON units(upserted);
-CREATE TABLE IF NOT EXISTS spend (budget TEXT PRIMARY KEY, tokens INTEGER, usd REAL, at INTEGER);`);
+CREATE TABLE IF NOT EXISTS spend (budget TEXT PRIMARY KEY, tokens INTEGER, usd REAL, at INTEGER);
+-- paragraphs a 'text' run left out ON PURPOSE (scraped-site markup/page chrome): coverage counts them as done, not missing.
+-- A paragraph that later gets units leaves this table (unitize).
+CREATE TABLE IF NOT EXISTS skipped (paragraph_id INTEGER PRIMARY KEY, doc_id INTEGER, author TEXT, reason TEXT, at INTEGER);`);
 const cols = new Set(store.prepare('PRAGMA table_info(units)').all().map((c) => c.name));
 for (const [c, t] of [['field', "TEXT DEFAULT 'text'"], ['lang_group', 'TEXT'], ['collection', 'TEXT'], ['scope', 'TEXT']])
   if (!cols.has(c)) store.exec(`ALTER TABLE units ADD COLUMN ${c} ${t}`);
@@ -157,18 +160,21 @@ function source() {
 
 // scraped sites: skip markup-only lines and recurring page chrome (api/lib/site-boilerplate.js); library never filtered
 let BP = null;
-const keep = (text, p = null) => {
+// why a paragraph is left out of this run: 'tier' (another tier's run takes it), 'site' (scraped-site markup or page chrome —
+// never indexed, by design), 'script' (another script's run); null = index it
+const skipWhy = (text, p = null) => {
   // tier runs span both scopes: site-scraped paragraphs (scope 'supplemental') still get the boilerplate filter
-  if (TIER_ON && p) { if (doctrinalTier(p, { author: paragraphAuthor(p) }) !== TIER) return false; if (p.scope === 'supplemental') { BP ??= boilerplateTexts(new Database(DB, { readonly: true, fileMustExist: true })); if (!keepSiteParagraph(text, BP)) return false; } }
+  if (TIER_ON && p) { if (doctrinalTier(p, { author: paragraphAuthor(p) }) !== TIER) return 'tier'; if (p.scope === 'supplemental') { BP ??= boilerplateTexts(new Database(DB, { readonly: true, fileMustExist: true })); if (!keepSiteParagraph(text, BP)) return 'site'; } }
   if (SCOPE === 'supplemental') {
     BP ??= boilerplateTexts(new Database(DB, { readonly: true, fileMustExist: true }));
-    if (!keepSiteParagraph(text, BP)) return false;
+    if (!keepSiteParagraph(text, BP)) return 'site';
   }
-  if (SCOPE === 'originals' && !DOCS.length && !TIER_ON) return arabicShare(text) >= 0.5;
-  if (SCRIPT === 'arabic') return arabicShare(text) >= 0.5;
-  if (SCRIPT === 'other') return arabicShare(text) < 0.5;
-  return true;
+  if (SCOPE === 'originals' && !DOCS.length && !TIER_ON) return arabicShare(text) >= 0.5 ? null : 'script';
+  if (SCRIPT === 'arabic') return arabicShare(text) >= 0.5 ? null : 'script';
+  if (SCRIPT === 'other') return arabicShare(text) < 0.5 ? null : 'script';
+  return null;
 };
+const keep = (text, p = null) => !skipWhy(text, p);
 
 const haveUnit = store.prepare('SELECT seg_v, key, start, "end", upserted FROM units WHERE point_id = ?');
 const restamp = store.prepare('UPDATE units SET seg_v = ? WHERE point_id = ?');
@@ -179,6 +185,9 @@ const putUnit = store.prepare(`INSERT INTO units (point_id, paragraph_id, doc_id
 const haveVec = store.prepare('SELECT 1 FROM vec WHERE key = ?');
 const putVec = store.prepare('INSERT OR IGNORE INTO vec (key, model, dims, v, at) VALUES (?, ?, ?, ?, ?)');
 const tx = store.transaction((list) => { for (const u of list) putUnit.run(u); });
+const putSkip = store.prepare('INSERT OR REPLACE INTO skipped (paragraph_id, doc_id, author, reason, at) VALUES (?, ?, ?, ?, ?)');
+const unskip = store.prepare('DELETE FROM skipped WHERE paragraph_id = ?');
+const saveSkips = store.transaction((list) => { for (const r of list) putSkip.run(...r); });
 
 // The units of one paragraph: its phrases, (--field hype) its HyPE questions + thesis, or (--field concepts) its claims.
 const HYPE_SEG = 'hype-v1';
@@ -227,6 +236,7 @@ function unitize(paras) {
       for (const { point_id: id } of unitsInBlock.all(p.id * 1000, p.id * 1000 + 999)) if (!keep.has(id)) { dropUnit.run(id); stale.push(id); }
     }
   }
+  if (FIELD === 'text') store.transaction(() => { for (const p of paras) unskip.run(p.id); })();
   tx(buf); if (relabel.length) store.transaction(() => relabel.forEach((r) => restamp.run(...r)))();
   return { pending, units: buf.length };
 }
@@ -424,13 +434,16 @@ async function build() {
     log({ phase: 'chunk', paragraphs: paras, units, embedded, upserted: sent, spent: spentRow(), month_usd: +monthSpent().toFixed(2),
       paras_per_hour: Math.round(paras / ((Date.now() - t0) / 3.6e6)), timing: timing() });
   };
+  let skips = [];
   for (const p of rows.iterate()) {
-    if (!keep(p.text, p)) continue;
+    const why = skipWhy(p.text, p);
+    if (why) { if (why === 'site' && FIELD === 'text') { skips.push([p.id, p.doc_id, paragraphAuthor(p), why, Date.now()]); if (skips.length >= 5000) { saveSkips(skips); skips = []; } } continue; }
     batch.push(p); paras++;
     if (batch.length >= CHUNK) await flush();
     if (stopped || (LIMIT && paras >= LIMIT)) break;
   }
   if (batch.length && !stopped) await flush();
+  if (skips.length) saveSkips(skips);
   src.close();
   log({ phase: stopped ? 'stopped' : 'done', reason: stopped, paragraphs: paras, units, embedded, upserted: sent, spent: spentRow(),
     minutes: +((Date.now() - t0) / 6e4).toFixed(1), timing: timing() });
