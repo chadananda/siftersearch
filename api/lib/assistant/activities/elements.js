@@ -505,6 +505,9 @@ export const COMPARE = {
   standing: () => (a, b) => standingRank(a) - standingRank(b) || translationRank(a) - translationRank(b),   // tradition-authority: each passage by its own tradition's tiers (Bahá’í: writings > guardian > compilation > reported > house > secondary)
   authority: () => (a, b) => (ORDER.indexOf(kindOf(a) ?? 'other') + 1 || 99) - (ORDER.indexOf(kindOf(b) ?? 'other') + 1 || 99),
   verdict: () => (a, b) => (a.verdict === 'mentions_only' ? 1 : 0) - (b.verdict === 'mentions_only' ? 1 : 0),   // judge.passages: what states the fact before what only sets it
+  // a passage found INSIDE the work named as the subject's standard history (plan.histories → history_work) leads its authority kind: the judge, reading
+  // "The Dawn-Breakers — Nabil Zarandi (?)", placed Browne and Star of the West above Nabíl's own account of the martyrdom (11-10 live)
+  standard: () => (a, b) => (b.history_work ? 1 : 0) - (a.history_work ? 1 : 0),
   precedence: () => (a, b) => (a.precedence ?? 99) - (b.precedence ?? 99),   // judge.passages precedence: primary record, then contemporary account, then scholarship
   phrased: () => { const f = (x) => (x.phrasing || x.history_work ? 1 : 0); return (a, b) => f(b) - f(a); },   // found on the texts' own wording (plan.phrasings) or inside a standard history (plan.histories) before found on the reader's words
   date: () => (a, b) => yearOf(b) - yearOf(a), history: () => (a, b) => yearOf(a) - yearOf(b), score: () => (a, b) => (b.score ?? 0) - (a.score ?? 0),

@@ -174,6 +174,14 @@ describe('history_fact: the narrative history reaches the writer (11-10 "How was
       extra: { judges: { generate: async ({ kind }) => ({ ok: true, items: kind === 'phrasings' ? ['the martyrdom of the Báb'] : [] }) } } });
     expect(s.units.found_passages[0].title).toBe('The Dawn-Breakers');
   });
+  it('a passage found inside the named standard history leads its kind even when the judge places another source higher (11-10: Browne and Star of the West took both history slots)', async () => {
+    const P = (id, title) => ({ id, title, authority: 'scholarship', score: 0.5, text: `passage ${id}`, religion: "Bahá'í", document_id: id, paragraph_index: 1 });
+    const tools = { fused_search: async (i) => ({ passages: i.filters?.work ? [P(10, 'The Dawn-Breakers')] : /history/.test([i.filters?.authority].flat().join()) ? [P(1, 'A Year Amongst the Persians'), P(2, 'Star of the West'), P(3, 'Star of the West 2')] : [] }) };
+    const jev = async ({ state }) => ({ choice: /Dawn-Breakers/.test(state) ? 'scholarship' : 'contemporary account' });
+    const s = await run('history_fact', 'How was the Báb martyred?', { tools, units: {}, jev,
+      extra: { judges: { generate: async ({ kind }) => ({ ok: true, items: kind === 'histories' ? ['The Dawn-Breakers'] : ['the martyrdom of the Báb'] }) } } });
+    expect(s.units.found_passages[0].title).toBe('The Dawn-Breakers');
+  });
   it('the judge places each answer by its source (primary record first): Nabíl outranks a travel diary of the same kind, and Jev sees the source', async () => {
     const P = (id, title, author) => ({ id, title, author, authority: 'scholarship', score: 0.5, text: `passage ${id}`, religion: "Bahá'í", document_id: id, paragraph_index: 1 });
     const tools = { fused_search: async (i) => ({ passages: /history/.test([i.filters?.authority].flat().join()) ? [P(1, 'Adventures in Persia', 'Sinclair'), P(2, 'The Dawn-Breakers', 'Nabíl-i-A‘ẓam')] : [] }) };
