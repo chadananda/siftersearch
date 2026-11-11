@@ -141,6 +141,21 @@ describe('resolveLookup (mocked deps)', () => {
     expect(responded).toBe(0); expect(r.reply).toBe("CARD CHAPTER XXV: The Báb's Imprisonment");
     expect(card.sec).toMatchObject({ doc_id: 50, start_index: 3000, end_index: 3039, paragraphs: 40, first_para_id: 900 });
   });
+  it('Jev\'s book strategy (named-work-only) but a reference lookup: the chapter resolves first, the book card is never picked (11-11 live)', async () => {
+    let picked = 0, card = null;
+    const DB = { id: 50, title: 'The Dawn-Breakers', author: 'Nabíl-i-A‘ẓam' };
+    const passages = Array.from({ length: 40 }, (_, i) => ({ id: 900 + i, paragraph_index: 3000 + i, heading: 'CHAPTER XXV', text: `p${i}` }));
+    const deps = { open: async () => ({ conversationId: 'c', round: 0 }), close: async () => {}, fail: async () => {}, outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {},
+      titleOnly: async () => null, card: async () => null,
+      triage: async () => ({ malicious: 0.01, complete: 0.99, stop_request: 0, kind: { choice: 'research', confidence: 0.9 }, stance: { choice: 'curious' }, lookup: { choice: 'reference', confidence: 1 } }),
+      strategy: async () => ({ strategy: { choice: 'book', confidence: 0.5, reason: 'named-work-only' }, sides: [], sources: {}, decisions: [], units: { named_work: 'Dawn-Breakers' } }),
+      bookPick: async () => { picked++; return { kind: 'work', work: { doc: { id: 99, title: 'THE DAWN-BREAKERS---Chapter XXV' } }, via: 'pick' }; },
+      lookup: async () => ({ kind: 'reference', ref: { title: 'Dawn-Breakers', num: 25, unit: 'chapter' }, label: 'The Dawn-Breakers, 25', work: { doc: DB }, passages }),
+      sectionAnswer: async ({ sec, doc }) => { card = { sec, doc }; return { reply: `CARD ${sec.title}`, citations: [] }; },
+      respond: async () => ({ reply: 'r', citations: [], retrieved: [], plan: {}, timings: {} }) };
+    const r = await anisTurn({ messages: user('Dawn-Breakers - Chapter 25'), participant: { id: 's' }, clientKey: 's', onEvent: () => {}, deps });
+    expect(r.reply).toBe('CARD CHAPTER XXV'); expect(picked).toBe(0); expect(card.sec.doc_id).toBe(50);
+  });
   it('quoted words found only in commentary make no quote candidate (Chad 11-03: core literature only)', async () => {
     const famous = [{ ...COMMENTARY, text: `As Bahá’u’lláh wrote: ${P}` }, { ...CORE, collection: 'Pilgrim Notes', book_authority: 7, text: P },
       { ...CORE, collection: 'Media', book_authority: 2, text: P }];

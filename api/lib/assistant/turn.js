@@ -337,7 +337,11 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   // '"Dispensation of Baha'u'llah"' — Unmatched, lookup quote — never reached the probe and got a quote search of its own title)
   const probeKey = strategyOf(strat) ?? (unmatchedName(strat?.strategy?.choice) || (!strat && lkIntent === 'quote') ? 'unmatched' : null);
   const probe = bookGate && !bookOn ? PROBE_ALT[probeKey] : null;
-  if (bookOn || probe) {
+  const lookupNow = () => timed('lookup', () => d.lookup(messages, { intent: lkIntent, profile, decisions, onJev: (info) => decisions.record('jev:timeout', timeoutDecision(info)) }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null);
+  // Jev read a numbered reference: it resolves BEFORE the book card, which answers only when no numbered unit is found (11-11
+  // "Dawn-Breakers - Chapter 25": named-work-only made it the book strategy and it carded a one-chapter scrape instead)
+  const lkFirst = lkIntent === 'reference' && (bookOn || probe) ? await lookupNow() : undefined;
+  if ((bookOn || probe) && !lkFirst) {
     const found = await timed('book', () => bookFn({ messages, names: [u.named_work, ...(probe ? [u.topic] : [])].filter(Boolean), by: u.named_person ?? null, profile, decisions, ...(probe ? { alt: probe } : { onHeld: (f) => { held = f; } }) }),
       (r) => (r ? { kind: r.kind, via: r.via } : null)).catch(() => null);
     // the book strategy covers "find words in it" (book-pick.js): words quoted beside the resolved book → the in-work find ON that book, not its card
@@ -350,7 +354,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     if (found?.kind === 'work') return bookAnswer(found.work, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
     if (found?.kind === 'section') return sectionCard(found, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
   }
-  const lk = lkIntent && lkIntent !== 'in_work' && lkIntent !== 'find_passage' ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent, profile, decisions, onJev: (info) => decisions.record('jev:timeout', timeoutDecision(info)) }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
+  const lk = lkFirst !== undefined ? lkFirst : lkIntent && lkIntent !== 'in_work' && lkIntent !== 'find_passage' ? await lookupNow() : null;
   // a numbered unit too long to quote whole (a CHAPTER of a narrative, 11-11 "Dawn-Breakers chapter 25" got an essay with no link)
   // → that chapter's card: its heading, the book, a link to where it starts. Short units ("Gleanings 27") stay verbatim.
   if (lk?.kind === 'reference' && lk.passages?.length > LONG_UNIT && lk.work?.doc) {
