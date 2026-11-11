@@ -1,6 +1,7 @@
 // Ocean of Lights range links: `#(start)(end)[$N]`, shortest fragments by the site's own matching (indexOf, first occurrence).
 import { describe, it, expect } from 'vitest';
-import { locateQuote, oolQuoteHash, oolQuoteUrl } from '../../api/lib/ool-range.js';
+import { locateQuote, oolQuoteHash, oolQuoteUrl, plainText } from '../../api/lib/ool-range.js';
+import { textFragmentUrl } from '../../api/lib/ocean-links.js';
 
 // the text the site searches on oceanoflights.org/bahaullah-pub02-02-en (.tablet-content textContent, read 10-12)
 const PAGE = '– II – The beginning of all things is the knowledge of God, and the end of all things is strict observance of whatsoever hath been sent down from the empyrean of the Divine Will that pervadeth all that is in the heavens and all that is on the earth. ';
@@ -65,5 +66,14 @@ describe('bounded work (10-12: whole-book pages froze the API)', () => {
   it('a page past the size cap gets no range (the caller falls back to a text fragment)', async () => {
     const { oolQuoteUrl, OOL_PAGE_MAX } = await import('../../api/lib/ool-range.js');
     expect(oolQuoteUrl('https://oceanoflights.org/x/', 'a '.repeat(OOL_PAGE_MAX), 'a a')).toBeNull();
+  });
+});
+
+describe('plainText: pandoc attribute blocks never reach a link (11-11 Lights of Guidance)', () => {
+  it('drops {id=… ilmid=… type=… language=…} from the text and the text fragment', () => {
+    const q = '...regarding the declaration of the Báb {id="para5863" ilmid="bl3rp" type="par" language="en"}';
+    expect(plainText(q)).not.toContain('ilmid');
+    expect(textFragmentUrl('https://oceanoflights.org/x', q)).not.toMatch(/%7B|ilmid/);
+    expect(plainText('a {curly} word')).toBe('a {curly} word');
   });
 });

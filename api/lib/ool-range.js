@@ -28,6 +28,7 @@ function normalised(s) {
 
 // our stored text keeps markup the page doesn't show: sentence markers, footnote refs, page marks, links, emphasis, escapes
 export const plainText = (s) => String(s || '').replace(/⁅\/?s\d+⁆/g, '').replace(/\[\d+(?:\.\d+)*\]\s*/g, '')   // section markers our copies add: "[93.1] Know thou…" (10-12)
+  .replace(/\{(?:#[\w-]+\s*)?(?:[\w-]+="[^"]*"\s*)+\}/g, '')   // pandoc attribute blocks on oceanoflights scrapes: {id="para5863" ilmid="bl3rp" type="par" …} (11-11 Lights of Guidance link)
   .replace(/\[\^[^\]\s]+\]/g, '').replace(/\[pg [^\]]*\]/g, '')
   .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\\(?=[\\`*_{}[\]()#+\-.!])/g, '').replace(/[*_]/g, '');
 
