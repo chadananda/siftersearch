@@ -7,13 +7,13 @@ import path from 'node:path';
 import { withAIContext } from '../ai-context.js';
 import { spanIsPresent } from '../rag/enrich/retrieval.js';
 import { JUDGE_MODEL } from './hype-rubric.js';
-import { BUDGET_KEY, TEXT_CAP } from './premise-pilot.js';
+import { BUDGET_KEY, TEXT_CAP, CONCEPTS } from './premise-pilot.js';
 import { calculateCost } from '../model-registry.js';
 import { isCreditRefusal, isSpendCap, CREDIT_WAIT_MS } from '../spend-caps.js';
 
-export const MAX_ANCHORS = 8, CHUNK = 60, CONCURRENCY = 3;
-// ESTIMATE (Sonnet 4.6 sync, $3/$15 per M): per call ≈ 2.6k in (prompt + 8 anchors) + 120 in / 70 out per entry + 300 out for the framing
-export const EST_IN_BASE = 2600, EST_IN_PER_ENTRY = 120, EST_OUT_BASE = 300, EST_OUT_PER_ENTRY = 70;
+export const MAX_ANCHORS = 8, CHUNK = 30, CONCURRENCY = 3, PARA_CAP = 2500;
+// ESTIMATE (Sonnet 4.6 sync, $3/$15 per M): per call ≈ 2.6k in (prompt + 8 anchors) + 570 in / 70 out per entry (120 premise+proof, ~450 the whole paragraph, capped at 2500 chars) + 300 out for the framing
+export const EST_IN_BASE = 2600, EST_IN_PER_ENTRY = 570, EST_OUT_BASE = 300, EST_OUT_PER_ENTRY = 70;
 export const estCall = (n) => (EST_IN_BASE + EST_IN_PER_ENTRY * n) * 3e-6 + (EST_OUT_BASE + EST_OUT_PER_ENTRY * n) * 15e-6;
 // extra search words per concept (query = label + these); unknown/other concepts search the label alone
 export const SYNONYMS = {
@@ -38,15 +38,28 @@ export const SYNONYMS = {
   'religion and the state': ['religion and government', 'separation of church and state'],
   'work as worship / labour and capital': ['work in the spirit of service is worship', 'profit sharing labour'],
 };
+// quotes/dashes normalised on both sides: a model returns straight quotes for the texts' curly ones (11-11: a4 framingProof flagged for that)
+const qnorm = (t) => String(t || '').replace(/[\u2018\u2019\u02BC\u2032\u00B4`]/g, "'").replace(/[\u201C\u201D\u00AB\u00BB]/g, '"').replace(/[\u2013\u2014]/g, '-');
+export const spanPresent = (span, texts) => spanIsPresent(qnorm(span), texts.map(qnorm));
 export const SYSTEM = `You reconcile PREMISES that were each inferred from ONE passage with what the religion's core texts say EXPLICITLY on the same concept.
-You get the CONCEPT, ANCHOR passages (core texts that address it directly), and ENTRIES (id, book, paragraph, premise, proof).
+You get the CONCEPT, ANCHOR passages (core texts that address it directly), and ENTRIES (id, premise, proof) grouped under the whole PARAGRAPH each was inferred from.
 Authority order: Bahá'u'lláh and the Báb > 'Abdu'l-Bahá > Shoghi Effendi > others. An explicit statement outranks an inference.
 1. Write "framing": the teaching as the texts frame it, WITH its distinctions (for example: man has two natures, a lower material one and a higher spiritual potential one; a statement about the noble station must not be ascribed to the lower nature). 2-5 sentences, plain words. Use only the anchors and entries; never invent doctrine they do not contain.
 2. "framingProof": [{"anchorId":"a1","words":"..."}] words copied EXACTLY from the anchor texts that the framing rests on.
-3. For every ENTRY give a verdict: "keep" (consistent with the framing and scoped to what its passage addresses), "rescope" (true only of one aspect: rewrite "premise" to name the aspect the passage speaks of), or "drop" (overreach, or contradicts the framing). "reason" is one short sentence.
-Reply with JSON only: {"framing":"...","framingProof":[...],"verdicts":[{"id":"e1","verdict":"keep|rescope|drop","premise":"only when rescope","reason":"..."}]}`;
+3. For every ENTRY give a verdict, judged against the WHOLE paragraph, not the proof words alone (read what the paragraph makes it conditional on):
+- "keep": consistent with the framing and scoped to what the paragraph addresses.
+- "rescope": true only of one aspect, rewrite "premise" to name it. A paragraph that speaks of a POTENTIAL, a station humans are CALLED to, or a condition ("whosoever turneth unto this Countenance shall manifest the potentialities of that inborn nature, and whosoever remaineth veiled shall be deprived") MUST be rescoped to say so; never state it as a fact about people as they are.
+- "drop": overreach, or contradicts the framing.
+- "move": the premise is sound but belongs to a different concept; give "concept" (copy one from the CONCEPTS list below, or "other: <short label>"). Wrong concept is NOT overreach.
+Never assign a faculty or quality (reason, will, love…) to the higher or the lower nature unless an anchor or the paragraph says so.
+"reason" is one short sentence.
+CONCEPTS:
+${CONCEPTS.map((c) => `- ${c}`).join('\n')}
+Reply with JSON only: {"framing":"...","framingProof":[...],"verdicts":[{"id":"e1","verdict":"keep|rescope|drop|move","premise":"only when rescope","concept":"only when move","reason":"..."}]}`;
 const r4 = (n) => Math.round(n * 10000) / 10000;
-const userMsg = (concept, anchors, entries, framing) => `CONCEPT: ${concept}\n\n${framing ? `FRAMING ALREADY ESTABLISHED (use it as given; keep "framing" the same and judge only these entries):\n${framing}\n\n` : ''}ANCHORS:\n${anchors.map((a) => `[${a.id}] ${a.title}${a.author ? ` — ${a.author}` : ''}\n${a.text}`).join('\n\n') || '(none found)'}\n\nENTRIES:\n${entries.map((e) => `[${e.id}] ${e.title} ¶${e.ord}\npremise: ${e.premise}\nproof: ${e.proof}`).join('\n\n')}`;
+const userMsg = (concept, anchors, entries, framing) => `CONCEPT: ${concept}\n\n${framing ? `FRAMING ALREADY ESTABLISHED (use it as given; keep "framing" the same and judge only these entries):\n${framing}\n\n` : ''}ANCHORS:\n${anchors.map((a) => `[${a.id}] ${a.title}${a.author ? ` — ${a.author}` : ''}\n${a.text}`).join('\n\n') || '(none found)'}\n\nENTRIES (grouped by paragraph):\n${paraGroups(entries).map((g) => `PARAGRAPH — ${g[0].title} ¶${g[0].ord}:\n${String(g[0].fullText || g[0].text || '').slice(0, PARA_CAP)}\n${g.map((e) => `  [${e.id}] premise: ${e.premise}\n      proof: ${e.proof}`).join('\n')}`).join('\n\n')}`;
+/** entries → arrays sharing one paragraph (docId + paraId), so each paragraph's text is sent once per call. */
+export const paraGroups = (entries) => [...entries.reduce((m, e) => { const k = `${e.docId}:${e.paraId}`; (m.get(k) || m.set(k, []).get(k)).push(e); return m; }, new Map()).values()];
 
 /** The reply text → {framing, framingProof, verdicts} or null. */
 export function parseReconcile(text) {
@@ -71,6 +84,8 @@ async function defaults(over) {
     // core anchors: Bahá'í hybrid search (Qdrant-routed), over-fetched then kept only where doctrinalTier says core (paragraph's own writer decides)
     search: async (query) => (await import('../search.js')).hybridSearch(query, { limit: 40, filters: { religion: "Baha'i" } }),
     isCore: async (h) => (await import('../authority.js')).doctrinalTier({ religion: h.religion || "Baha'i", collection: h.collection, title: h.title, author: h.doc_author || h.author }, { author: h.author }) === 'core',
+    // whole paragraph by doc (docs-repo getParagraphs, as premise-pilot reads them)
+    paragraphs: async (docId) => (await import('../docs-repo.js')).getParagraphs(docId),
     readRun: (f) => { const dir = path.join(process.cwd(), 'data', 'run'); const name = f ? path.basename(f) : fs.readdirSync(dir).filter((n) => /^premise-pilot-.*\.json$/.test(n)).sort().pop(); if (!name) return null; return { name, ...JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8')) }; },
     ask: async (messages, o) => (await import('../ai.js')).chatCompletion(messages, { provider: 'anthropic', model: JUDGE_MODEL, temperature: 0, maxTokens: 8000, ...o }),
     sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
@@ -94,6 +109,12 @@ export async function premiseReconcileJob(params = {}, deps = {}) {
   if (params.dry || params.dryRun) return { dryRun: true, ...plan };
 
   const out = { usd: 0, stop: null, errors: [], creditWait: null }, concepts = [], verdictOf = new Map();
+  // the whole paragraph of every entry (the pilot file keeps only 600 chars); a doc that can't be read falls back to that excerpt
+  const full = new Map();
+  for (const docId of new Set(groups.flatMap((g) => g.entries.map((e) => e.docId)))) {
+    try { for (const p of await d.paragraphs(docId)) full.set(`${docId}:${p.id}`, p.text); } catch (e) { out.errors.push(`paragraphs ${docId}: ${String(e?.message || e).slice(0, 80)}`); }
+  }
+  for (const g of groups) for (const e of g.entries) e.fullText = full.get(`${e.docId}:${e.paraId}`) || e.text;
   const call = async (concept, anchors, entries, framing) => {
     for (;;) {
       if (out.stop) return null;
@@ -131,11 +152,11 @@ export async function premiseReconcileJob(params = {}, deps = {}) {
       if (!r) { if (!out.stop) out.errors.push(`${concept}: unparsed reply`); if (out.stop) break; continue; }
       if (framing == null) {
         framing = r.framing; framingProof = r.framingProof;
-        unverifiedFraming = framingProof.filter((f) => spanIsPresent(f?.words, [anchors.find((a) => a.id === f?.anchorId)?.text ?? '']) !== true);
+        unverifiedFraming = framingProof.filter((f) => spanPresent(f?.words, [anchors.find((a) => a.id === f?.anchorId)?.text ?? '']) !== true);
       }
       for (const v of r.verdicts) verdictOf.set(v.id, v);
     }
-    const counts = { keep: 0, rescope: 0, drop: 0 };
+    const counts = { keep: 0, rescope: 0, drop: 0, move: 0 };
     for (const e of entries) { const v = verdictOf.get(e.id); if (v && counts[v.verdict] != null) counts[v.verdict]++; }
     concepts.push({ concept, framing, framingProof, ...(unverifiedFraming.length ? { framingUnverified: unverifiedFraming } : {}), anchors: anchors.map((a) => ({ ...a, text: a.text.slice(0, TEXT_CAP) })), counts });
   };
@@ -144,13 +165,13 @@ export async function premiseReconcileJob(params = {}, deps = {}) {
 
   const entries = src.premises.map((e, i) => {
     const id = `e${i + 1}`, v = verdictOf.get(id), skip = skipped.some((s) => s.id === id);
-    if (!v || !['keep', 'rescope', 'drop'].includes(v.verdict)) return { ...e, id, verdict: skip ? 'skipped' : 'unjudged', newPremise: e.premise, reason: skip ? 'single other-concept entry' : 'no verdict' };
-    return { ...e, id, verdict: v.verdict, newPremise: v.verdict === 'rescope' && v.premise ? v.premise : e.premise, reason: v.reason || '' };
+    if (!v || !['keep', 'rescope', 'drop', 'move'].includes(v.verdict)) return { ...e, id, verdict: skip ? 'skipped' : 'unjudged', newPremise: e.premise, reason: skip ? 'single other-concept entry' : 'no verdict' };
+    return { ...e, id, verdict: v.verdict, newPremise: v.verdict === 'rescope' && v.premise ? v.premise : e.premise, reason: v.reason || '', ...(v.verdict === 'move' ? { movedTo: v.concept || null } : {}) };
   });
   const status = out.stop === 'budget' ? 'budget' : out.stop === 'cap' ? 'cap' : out.stop === 'yielded' ? 'yielded' : 'complete';
   const result = { status, ...plan, usd: r4(out.usd), concepts, entries, errors: out.errors, ...(out.capReason ? { capReason: out.capReason } : {}), ...(out.creditWait ? { creditWait: out.creditWait } : {}) };
   try { result.file = d.writeRun(`premise-reconcile-${d.now().toISOString().replace(/[:.]/g, '-')}.json`, result); } catch (e) { result.fileError = String(e?.message || e).slice(0, 120); }
   const c = (v) => entries.filter((e) => e.verdict === v).length;
-  await d.log('premise', `premise-reconcile ${status}: ${concepts.length} concepts, keep ${c('keep')} rescope ${c('rescope')} drop ${c('drop')}, $${r4(out.usd)}`);
+  await d.log('premise', `premise-reconcile ${status}: ${concepts.length} concepts, keep ${c('keep')} rescope ${c('rescope')} drop ${c('drop')} move ${c('move')}, $${r4(out.usd)}`);
   return result;
 }

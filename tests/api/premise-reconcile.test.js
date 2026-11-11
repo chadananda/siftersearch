@@ -1,7 +1,7 @@
 // pipeline/premise-reconcile — grouping, chunking with shared framing, verdict application, unverified framing flagged, maxUsd stop,
 // credit wait, dry estimate, billing key. Everything injected; no network, no DB.
 import { describe, it, expect } from 'vitest';
-import { premiseReconcileJob, groupByConcept, chunk, parseReconcile, SYSTEM, CHUNK, estCall } from '../../api/lib/pipeline/premise-reconcile.js';
+import { premiseReconcileJob, spanPresent, paraGroups, PARA_CAP, groupByConcept, chunk, parseReconcile, SYSTEM, CHUNK, estCall } from '../../api/lib/pipeline/premise-reconcile.js';
 import { SpendCapError } from '../../api/lib/spend-caps.js';
 import { currentAIContext } from '../../api/lib/ai-context.js';
 
@@ -10,12 +10,12 @@ const entry = (i, concept) => ({ docId: 1, title: 'Book', paraId: i, ord: i, tex
 const src = (list) => ({ name: 'premise-pilot-x.json', premises: list });
 const ANCHOR = 'I have created thee noble, why hast thou abased thyself';
 const hit = (id, core = true) => ({ id, text: id === 'h1' ? ANCHOR : `anchor ${id}`, title: 'Hidden Words', author: "Bahá'u'lláh", core });
-const verdictsFor = (m) => [...m[1].content.matchAll(/^\[(e\d+)\] /gm)].map((x) => x[1]);
+const verdictsFor = (m) => [...m[1].content.matchAll(/^\s*\[(e\d+)\] premise/gm)].map((x) => x[1]);
 const okReply = (m, over = {}) => ({ content: JSON.stringify({ framing: 'Two natures.', framingProof: [{ anchorId: 'a1', words: 'created thee noble' }], verdicts: verdictsFor(m).map((id) => ({ id, verdict: 'keep', reason: 'ok' })), ...over }), usage: { promptTokens: 1000, completionTokens: 100 } });
 function world({ list, ask, extra = {} }) {
   const w = { asked: [], billTo: [], logs: [], runs: [], sleeps: 0, searches: [] };
   const deps = {
-    readRun: () => src(list), search: async (q) => { w.searches.push(q); return { hits: [hit('h1'), hit('h2'), hit('h3', false)] }; }, isCore: async (h) => h.core,
+    readRun: () => src(list), paragraphs: async (id) => (extra.paras || {})[id] || [], search: async (q) => { w.searches.push(q); return { hits: [hit('h1'), hit('h2'), hit('h3', false)] }; }, isCore: async (h) => h.core,
     ask: async (m) => { w.asked.push(m); w.billTo.push(currentAIContext().billTo); return ask ? ask(m, w) : okReply(m); },
     sleep: async () => { w.sleeps++; }, draining: async () => false, log: async (k, t) => { w.logs.push(t); },
     writeRun: (n, o) => { w.runs.push({ n, o }); return `data/run/${n}`; }, now: () => new Date('2026-11-11T00:00:00Z'), ...extra,
@@ -30,7 +30,7 @@ describe('grouping', () => {
     expect(skipped.map((s) => s.id)).toEqual(['e4']);
     expect(groups[0].entries.map((e) => e.id)).toEqual(['e1', 'e2']);
   });
-  it('chunk splits at the limit', () => expect(chunk(Array.from({ length: 130 }), CHUNK).map((c) => c.length)).toEqual([60, 60, 10]));
+  it('chunk splits at the limit', () => expect(chunk(Array.from({ length: 70 }), CHUNK).map((c) => c.length)).toEqual([30, 30, 10]));
   it('parseReconcile rejects junk', () => { expect(parseReconcile('no')).toBeNull(); expect(parseReconcile('{"verdicts":[]}')).toMatchObject({ verdicts: [] }); });
   it('prompt: authority order, framing with distinctions, rescope/drop', () => {
     for (const t of ["Bahá'u'lláh and the Báb > 'Abdu'l-Bahá > Shoghi Effendi", 'two natures', 'rescope', 'drop', 'never invent']) expect(SYSTEM.toLowerCase()).toContain(t.toLowerCase());
@@ -65,7 +65,7 @@ describe('premiseReconcileJob', () => {
     expect(by.e2).toMatchObject({ verdict: 'rescope', newPremise: 'The higher nature is noble.', premise: 'premise 2' });
     expect(by.e3).toMatchObject({ verdict: 'drop', reason: 'overreach', newPremise: 'premise 3' });
     expect(by.e4.verdict).toBe('unjudged');
-    expect(r.concepts[0].counts).toEqual({ keep: 1, rescope: 1, drop: 1 });
+    expect(r.concepts[0].counts).toEqual({ keep: 1, rescope: 1, drop: 1, move: 0 });
     expect(w.runs[0].n).toMatch(/^premise-reconcile-.*\.json$/);
   });
   it('large concept is chunked and later chunks share the first framing', async () => {
@@ -102,5 +102,45 @@ describe('premiseReconcileJob', () => {
     expect((await premiseReconcileJob({ maxUsd: 5 }, world({ list: [entry(1, NOBLE), entry(2, NOBLE)], ask: boom, extra: { draining: async () => true } }).deps)).status).toBe('yielded');
     const cap = () => { throw new SpendCapError({ group: 'anthropic', spent: 20, cap: 20, caller: 'premise-pilot', retryAfterMs: 1 }); };
     expect((await premiseReconcileJob({ maxUsd: 5 }, world({ list: [entry(1, NOBLE), entry(2, NOBLE)], ask: cap }).deps)).status).toBe('cap');
+  });
+});
+
+const P53 = 'Human nature is the mirror of a noble station. Whosoever turneth unto this blessed Countenance shall manifest the potentialities of that inborn nature, and whosoever remaineth veiled therefrom shall be deprived.';
+const P566 = 'Man is the highest of created beings, and the station for which he was created is to know and love God.';
+describe('whole paragraph + v2 rules', () => {
+  it('prompt carries the whole paragraph (not the 600-char excerpt), once per paragraph, and the rules', async () => {
+    const long = P53 + ' ' + 'x'.repeat(900);
+    const list = [{ ...entry(1, NOBLE), paraId: 53, text: P53.slice(0, 40) }, { ...entry(2, NOBLE), paraId: 53, text: P53.slice(0, 40) }, { ...entry(3, NOBLE), paraId: 566, text: 'cut' }];
+    const { w, deps } = world({ list, extra: { paras: { 1: [{ id: 53, text: long }, { id: 566, text: P566 }] } } });
+    await premiseReconcileJob({ maxUsd: 5 }, deps);
+    const sys = w.asked[0][0].content, u = w.asked[0][1].content;
+    expect(u).toContain('whosoever remaineth veiled therefrom shall be deprived');
+    expect(u.split('Whosoever turneth unto this blessed Countenance').length - 1).toBe(1);   // two entries, one paragraph text
+    expect(u).toContain(P566);
+    expect(sys).toMatch(/POTENTIAL, a station humans are CALLED to, or a condition/);
+    expect(sys).toMatch(/never state it as a fact about people as they are/i);
+    expect(sys).toMatch(/Never assign a faculty or quality/);
+    expect(sys).toMatch(/"move"/);
+  });
+  it('paragraph capped at PARA_CAP; unreadable doc falls back to the excerpt', async () => {
+    const { w, deps } = world({ list: [{ ...entry(1, NOBLE), paraId: 9, text: 'EXCERPT-ONLY' }, { ...entry(2, NOBLE), docId: 2, paraId: 8, text: 'FALLBACK EXCERPT' }], extra: { paras: { 1: [{ id: 9, text: 'y'.repeat(PARA_CAP + 500) }] }, } });
+    await premiseReconcileJob({ maxUsd: 5 }, deps);
+    const u = w.asked[0][1].content;
+    expect(u).toContain('y'.repeat(PARA_CAP)); expect(u).not.toContain('y'.repeat(PARA_CAP + 1));
+    expect(u).toContain('FALLBACK EXCERPT');
+  });
+  it('paraGroups groups by doc + paragraph', () => expect(paraGroups([{ docId: 1, paraId: 1 }, { docId: 2, paraId: 1 }, { docId: 1, paraId: 1 }]).map((g) => g.length)).toEqual([2, 1]));
+  it('move is counted separately, carries its concept, and is never shown as dropped', async () => {
+    const { deps } = world({ list: [entry(1, NOBLE), entry(2, NOBLE)], ask: () => ({ content: JSON.stringify({ framing: 'F', framingProof: [], verdicts: [{ id: 'e1', verdict: 'move', concept: 'other: purpose of existence', reason: 'telos' }, { id: 'e2', verdict: 'drop', reason: 'x' }] }), usage: { promptTokens: 1, completionTokens: 1 } }) });
+    const r = await premiseReconcileJob({ maxUsd: 5 }, deps);
+    expect(r.entries[0]).toMatchObject({ verdict: 'move', movedTo: 'other: purpose of existence', newPremise: 'premise 1' });
+    expect(r.concepts[0].counts).toEqual({ keep: 0, rescope: 0, drop: 1, move: 1 });
+  });
+  it('framing proof matches across curly vs straight apostrophes and quotes', async () => {
+    expect(spanPresent("Every good habit belongs to man's spiritual nature", ['every good habit belongs to man\u2019s spiritual nature, and'])).toBe(true);
+    expect(spanPresent('\u201Cnoble\u201D quality of the spirit', ['the "noble" quality of the spirit'])).toBe(true);
+    const { deps } = world({ list: [entry(1, NOBLE), entry(2, NOBLE)], ask: (m) => okReply(m, { framingProof: [{ anchorId: 'a1', words: "created thee noble, why" }] }),
+      extra: { search: async () => ({ hits: [{ id: 'q', text: 'I have created thee noble, why hast thou abased thyself', title: 'T', author: 'B', core: true }] }) } });
+    expect((await premiseReconcileJob({ maxUsd: 5 }, deps)).concepts[0].framingUnverified).toBeUndefined();
   });
 });
