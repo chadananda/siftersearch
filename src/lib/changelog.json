@@ -1,6 +1,34 @@
 {
-  "generated": "2026-11-11T14:39:41.027Z",
+  "generated": "2026-11-11T18:46:25.148Z",
   "entries": [
+    {
+      "hash": "7ea1cb656",
+      "date": "2026-11-11",
+      "type": "Other",
+      "description": "Batched paragraph-alive check (correlated subquery scanned the book per claim, 0.4-1.5 s); reconcile parse-fail logs the ladder error",
+      "scope": null
+    },
+    {
+      "hash": "3aaeea3d1",
+      "date": "2026-11-11",
+      "type": "Other",
+      "description": "A candidate's facts from the book being reconciled, or from dead paragraphs, never ground its own link",
+      "scope": null
+    },
+    {
+      "hash": "28ec3ecc8",
+      "date": "2026-11-11",
+      "type": "Other",
+      "description": "Pre-researched person report (portrait, dates, kinship, timeline, cited facts) feeds person_profile and the writer's PEOPLE block",
+      "scope": null
+    },
+    {
+      "hash": "f4ecd56a1",
+      "date": "2026-11-11",
+      "type": "Other",
+      "description": "Anthropic out of credit is a wait, never a failure",
+      "scope": null
+    },
     {
       "hash": "fbce345a9",
       "date": "2026-11-11",
@@ -1001,136 +1029,38 @@
       "type": "New",
       "description": "AMD GPU worker path - whisper.cpp HIP ASR, :rocm image, host admission (refuse without proven GPU), boss whole orders, one host per order",
       "scope": "media"
-    },
-    {
-      "hash": "3860d1d7d",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "Repoint batch children to working source URLs (ops endpoint); sidecar records page and real source URL",
-      "scope": null
-    },
-    {
-      "hash": "13305ff01",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "Contributors are trusted - rights default asserted, clean works added without asking, 100 auto-adds/contributor/day",
-      "scope": null
-    },
-    {
-      "hash": "692e92a48",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "Plain downloads run on tower (siftersearch-dewey-fetch, bulk slice, fetch only); worker accepts DEPLOY_SECRET and DEWEY_OPS",
-      "scope": null
-    },
-    {
-      "hash": "9dfe285d2",
-      "date": "2026-10-28",
-      "type": "Fixed",
-      "description": "Import mediaFindJob in reports.js (media-find registration referenced it unimported)",
-      "scope": null
-    },
-    {
-      "hash": "b3fe5edcf",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "Add remaining ASR bench scripts",
-      "scope": "media"
-    },
-    {
-      "hash": "4cf4734f8",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "ASR engine benchmark harness (whisper.cpp HIP wins on boss: WER 2.7-8.3%, RTF 0.023-0.05)",
-      "scope": "media"
-    },
-    {
-      "hash": "f812c5232",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "Import readFileSync for /latency io counters",
-      "scope": null
-    },
-    {
-      "hash": "3b135e91a",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "Skip no-op UPDATE of reused paragraphs; writer /latency exposes process io counters",
-      "scope": null
-    },
-    {
-      "hash": "4f38196c4",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "Qdrant scripts default to QDRANT_URL (so one env var moves the engine); f16 recall check script",
-      "scope": null
-    },
-    {
-      "hash": "2d04ddce8",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "Qram units snapshot to /faster/qram-snapshots (drop-ins as installed on tower)",
-      "scope": null
-    },
-    {
-      "hash": "bacb06995",
-      "date": "2026-10-28",
-      "type": "Fixed",
-      "description": "No more CD-style spinning portraits — portraits are still; playing = a quiet pulsing ring; hover spins/tilts on disc portraits removed; reduced motion = none",
-      "scope": "media"
-    },
-    {
-      "hash": "f257ef6ee",
-      "date": "2026-10-28",
-      "type": "Test",
-      "description": "Update expected report names list (13 added by other agents)",
-      "scope": "ops"
-    },
-    {
-      "hash": "2529c1e0a",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "A same-hash second file is a duplicate, not a move (watcher flipped paths every scan, dirtying paragraphs: 99% of writer bytes); same-shelf rename does not dirty",
-      "scope": null
-    },
-    {
-      "hash": "63769646c",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "F16 build in 8 paragraph_id shards (one node thread + one qdrant connection thread each capped at ~1k pts/s)",
-      "scope": null
-    },
-    {
-      "hash": "66b79a251",
-      "date": "2026-10-28",
-      "type": "Docs",
-      "description": "Design note — one hardware-adaptive worker image, HTTP inputs for pods, tower-assign + pull results",
-      "scope": "media"
-    },
-    {
-      "hash": "a5c3442e3",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "F16 build health probe is /healthz (404 on /api/health made the guard wait forever); reject unknown modes",
-      "scope": null
-    },
-    {
-      "hash": "b337b6077",
-      "date": "2026-10-28",
-      "type": "New",
-      "description": "Boss is two memory pools — the monitor reads system RAM, PSI pressure, zram, VRAM, GTT, GPU busy/temp, per-process VRAM and service memory; guards admit by VRAM free + MemAvailable + pressure; docs/ops/boss-memory.md",
-      "scope": "ops"
-    },
-    {
-      "hash": "be2ca6bf9",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "Point the f16 build at phrase-vector-read-repo",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-11-11": [
+      {
+        "hash": "7ea1cb656",
+        "date": "2026-11-11",
+        "type": "Other",
+        "description": "Batched paragraph-alive check (correlated subquery scanned the book per claim, 0.4-1.5 s); reconcile parse-fail logs the ladder error",
+        "scope": null
+      },
+      {
+        "hash": "3aaeea3d1",
+        "date": "2026-11-11",
+        "type": "Other",
+        "description": "A candidate's facts from the book being reconciled, or from dead paragraphs, never ground its own link",
+        "scope": null
+      },
+      {
+        "hash": "28ec3ecc8",
+        "date": "2026-11-11",
+        "type": "Other",
+        "description": "Pre-researched person report (portrait, dates, kinship, timeline, cited facts) feeds person_profile and the writer's PEOPLE block",
+        "scope": null
+      },
+      {
+        "hash": "f4ecd56a1",
+        "date": "2026-11-11",
+        "type": "Other",
+        "description": "Anthropic out of credit is a wait, never a failure",
+        "scope": null
+      },
       {
         "hash": "fbce345a9",
         "date": "2026-11-11",
@@ -2157,132 +2087,6 @@
         "type": "New",
         "description": "AMD GPU worker path - whisper.cpp HIP ASR, :rocm image, host admission (refuse without proven GPU), boss whole orders, one host per order",
         "scope": "media"
-      },
-      {
-        "hash": "3860d1d7d",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "Repoint batch children to working source URLs (ops endpoint); sidecar records page and real source URL",
-        "scope": null
-      },
-      {
-        "hash": "13305ff01",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "Contributors are trusted - rights default asserted, clean works added without asking, 100 auto-adds/contributor/day",
-        "scope": null
-      },
-      {
-        "hash": "692e92a48",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "Plain downloads run on tower (siftersearch-dewey-fetch, bulk slice, fetch only); worker accepts DEPLOY_SECRET and DEWEY_OPS",
-        "scope": null
-      },
-      {
-        "hash": "9dfe285d2",
-        "date": "2026-10-28",
-        "type": "Fixed",
-        "description": "Import mediaFindJob in reports.js (media-find registration referenced it unimported)",
-        "scope": null
-      },
-      {
-        "hash": "b3fe5edcf",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "Add remaining ASR bench scripts",
-        "scope": "media"
-      },
-      {
-        "hash": "4cf4734f8",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "ASR engine benchmark harness (whisper.cpp HIP wins on boss: WER 2.7-8.3%, RTF 0.023-0.05)",
-        "scope": "media"
-      },
-      {
-        "hash": "f812c5232",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "Import readFileSync for /latency io counters",
-        "scope": null
-      },
-      {
-        "hash": "3b135e91a",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "Skip no-op UPDATE of reused paragraphs; writer /latency exposes process io counters",
-        "scope": null
-      },
-      {
-        "hash": "4f38196c4",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "Qdrant scripts default to QDRANT_URL (so one env var moves the engine); f16 recall check script",
-        "scope": null
-      },
-      {
-        "hash": "2d04ddce8",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "Qram units snapshot to /faster/qram-snapshots (drop-ins as installed on tower)",
-        "scope": null
-      },
-      {
-        "hash": "bacb06995",
-        "date": "2026-10-28",
-        "type": "Fixed",
-        "description": "No more CD-style spinning portraits — portraits are still; playing = a quiet pulsing ring; hover spins/tilts on disc portraits removed; reduced motion = none",
-        "scope": "media"
-      },
-      {
-        "hash": "f257ef6ee",
-        "date": "2026-10-28",
-        "type": "Test",
-        "description": "Update expected report names list (13 added by other agents)",
-        "scope": "ops"
-      },
-      {
-        "hash": "2529c1e0a",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "A same-hash second file is a duplicate, not a move (watcher flipped paths every scan, dirtying paragraphs: 99% of writer bytes); same-shelf rename does not dirty",
-        "scope": null
-      },
-      {
-        "hash": "63769646c",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "F16 build in 8 paragraph_id shards (one node thread + one qdrant connection thread each capped at ~1k pts/s)",
-        "scope": null
-      },
-      {
-        "hash": "66b79a251",
-        "date": "2026-10-28",
-        "type": "Docs",
-        "description": "Design note — one hardware-adaptive worker image, HTTP inputs for pods, tower-assign + pull results",
-        "scope": "media"
-      },
-      {
-        "hash": "a5c3442e3",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "F16 build health probe is /healthz (404 on /api/health made the guard wait forever); reject unknown modes",
-        "scope": null
-      },
-      {
-        "hash": "b337b6077",
-        "date": "2026-10-28",
-        "type": "New",
-        "description": "Boss is two memory pools — the monitor reads system RAM, PSI pressure, zram, VRAM, GTT, GPU busy/temp, per-process VRAM and service memory; guards admit by VRAM free + MemAvailable + pressure; docs/ops/boss-memory.md",
-        "scope": "ops"
-      },
-      {
-        "hash": "be2ca6bf9",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "Point the f16 build at phrase-vector-read-repo",
-        "scope": null
       }
     ]
   }
