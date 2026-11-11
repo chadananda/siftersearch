@@ -283,7 +283,9 @@ async function plannedSearchRun(query, { messages, given = {}, defaults = {}, li
   // A QUOTATION (6+ words, not a question) is also searched verbatim — keyword only, unscoped, the whole text — beside the
   // planned search: the plan's subject-stripping, scope and author preference were built for questions and lost exact
   // matches (known-item test 10-16: production found a passage's own words first 73% vs the engine's 86%).
-  const quotation = quotePhrase ? isVerbatimQuery(quotePhrase, 4) : isVerbatimQuery(query, 6) && !/\?\s*$/.test(query);
+  // Words the reader put in quotation marks are hunted as written at ANY length (11-11: "five diamonds", two words, skipped the
+  // exact pass; the authority-ranked pool held 8 other passages and the reply said nothing was found).
+  const quotation = quotePhrase ? (plan.quote?.via === 'quoted' || isVerbatimQuery(quotePhrase, 4)) : isVerbatimQuery(query, 6) && !/\?\s*$/.test(query);
   const verbatimQ = quotePhrase || query;
   // HINTS (Anís's phrase step, search/hints.js): the seeker's exact wordings hunted verbatim, a lookup's names (+ spellings)
   // by keyword — beside the plan; author / work / tradition only reorder

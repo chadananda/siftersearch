@@ -449,6 +449,16 @@ describe('plannedSearch — a quotation not found verbatim', () => {
     expect(r.timings.quote_meaning_ms).toBeUndefined();
     expect(r.hits[0].id).toBe(1002);
   });
+  it('two words the reader quoted still get the exact pass, and the passage holding them leads', async () => {
+    const sow = { id: 16177807, text: 'Five diamonds are worth more than five million stones.' };
+    const other = { id: 9, text: 'The Promulgation of Universal Peace on the oneness of mankind.' };
+    const e = engine(() => [other]);
+    const fn = async (q, opts) => (opts.keywordLayer === true && opts.semantic === false ? (e.calls.push(opts), { hits: [sow] }) : e.fn(q, opts));
+    const planner = async (i, o) => ({ ...(await planOf({ shape: 'quote' })(i, o)), quote: { phrase: 'five diamonds', via: 'quoted' } });
+    const r = await plannedSearch('find "five diamonds" in star of the west please', { planner, engine: fn, minResults: 1, qdrant: { phrase: true } });
+    expect(e.calls.some((c) => c.keywordLayer === true && c.semantic === false)).toBe(true);
+    expect(r.hits[0].id).toBe(16177807);
+  });
   it('a question is never re-searched as a quotation', async () => {
     const e = byMeaning({ id: 5, text: 'x' });
     await plannedSearch('why is a pure heart counselled first of all?', { planner: planOf({}), engine: e.fn, minResults: 1, qdrant: { phrase: true } });
