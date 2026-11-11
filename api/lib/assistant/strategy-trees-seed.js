@@ -187,7 +187,10 @@ const history_fact = tree('history_fact', 'h0', [
   ['h0', 'plan.phrasings', { n: 2 }, 'process', ['topic'], ['phrasings'], { done: 'h0b', fail: 'h0b' }],
   ['h0b', 'plan.histories', { n: 2 }, 'process', ['topic'], ['histories'], { done: 'h1', fail: 'h1' }],
   ['h1', 'search.together', { list: [
-    { element: 'search.fanout', params: { by: 'histories', tag: 'history_work', inner: { element: 'search.shelf', params: { query: '{{topic}}', work: '{{value}}', k: 4 } } } },
+    // each named history searched on each phrasing: inside The Dawn-Breakers "How was the Báb martyred?" (the topic) found Vaḥíd's martyrdom and
+    // Townshend; "the martyrdom of the Báb" finds "The martyrdom of the Báb took place at noon…" first (11-10). No phrasing → the topic.
+    { element: 'search.fanout', params: { by: 'histories', as: 'work', tag: 'history_work', inner: { element: 'search.fanout', params: { by: 'phrasings', tag: 'phrasing', inner: { element: 'search.shelf', params: { query: '{{value}}', work: '{{work}}', k: 3 } } } } } },
+    { element: 'search.fanout', params: { by: 'histories', tag: 'history_work', inner: { element: 'search.shelf', params: { query: '{{topic}}', work: '{{value}}', k: 2 } } } },
     { element: 'search.fanout', params: { by: 'phrasings', tag: 'phrasing', inner: { element: 'search.shelf', params: { query: '{{value}}', authority: ['history', 'scholarship'], k: 6 } } } },
     // the narrative histories (The Dawn-Breakers, Momen, Balyuzi) on their own: with the Guardian in the same search his short summaries took every slot
     // and "how was the Báb martyred?" never reached Nabíl's account (11-10); the Writings and the Guardian are excluded in the engine (tools.js notAuthor)

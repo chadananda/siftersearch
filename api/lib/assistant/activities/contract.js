@@ -43,15 +43,15 @@ export function paramProblems(activity, params, { acts = null, slots = [] } = {}
     const r = RULES[k]?.(v, activity);
     if (r !== undefined && r !== true) out.push(`param "${k}" ${r}`);
   }
-  const item = (it, where) => {
+  const item = (it, where, more = []) => {
     if (!it || typeof it !== 'object' || typeof it.element !== 'string') { out.push(`${where}: needs {element, params}`); return; }
     const stray = Object.keys(it).filter((x) => !ITEM_KEYS.includes(x));
     if (stray.length) out.push(`${where} (${it.element}): ${stray.join(', ')} must go inside "params", not beside "element"`);
     if (acts && !acts[it.element]) out.push(`${where}: unknown element ${it.element}`);
-    else out.push(...paramProblems(it.element, it.params, { acts, slots }).map((m) => `${where} (${it.element}): ${m}`));
+    else out.push(...paramProblems(it.element, it.params, { acts, slots: [...slots, ...more] }).map((m) => `${where} (${it.element}): ${m}`));
   };
   if (activity === 'search.together') { if (!Array.isArray(params?.list)) out.push('param "list" must be a list of {element, params}'); else params.list.forEach((it, i) => item(it, `list[${i}]`)); }
-  if (activity === 'search.fanout' && params?.inner) item(params.inner, 'inner');
+  if (activity === 'search.fanout' && params?.inner) item(params.inner, 'inner', params.as ? [params.as] : []);   // a fanout's `as` names its placeholder, a slot inside it
   const walk = (v, key) => {
     if (typeof v === 'string') {
       for (const [, w] of v.matchAll(SINGLE)) out.push(`param "${key}" has {${w}}: a unit slot is written {{${w}}}`);
@@ -59,7 +59,8 @@ export function paramProblems(activity, params, { acts = null, slots = [] } = {}
     } else if (Array.isArray(v)) v.forEach((x) => walk(x, key));
     else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) walk(x, k);
   };
-  walk(params, '');
+  // nested items were checked above, each with its own slots (a fanout's `as`)
+  walk(activity === 'search.fanout' ? { ...params, inner: undefined } : activity === 'search.together' ? { ...params, list: undefined } : params, '');
   return [...new Set(out)];
 }
 

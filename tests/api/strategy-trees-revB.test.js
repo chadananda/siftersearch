@@ -156,12 +156,12 @@ describe('history_fact: the narrative history reaches the writer (11-10 "How was
     expect(queries).toContainEqual(['the martyrdom of the Báb at Tabríz', 'history,scholarship']);
     expect(queries).toContainEqual(['How was the Báb martyred?', 'history,scholarship']);
   });
-  it('the standard histories the generator names are searched inside (work filter) on the question; none named → no in-work search', async () => {
+  it('the standard histories the generator names are searched inside (work filter) on each phrasing and on the question; none named → no in-work search', async () => {
     const calls = [];
     const tools = { fused_search: async (i) => { calls.push(i); return { passages: [] }; } };
     const gen = (hist) => ({ judges: { generate: async ({ kind }) => (kind === 'histories' ? (hist ? { ok: true, items: hist } : { ok: false, error: 'x' }) : { ok: true, items: ['the martyrdom of the Báb'] }) } });
     await run('history_fact', 'How was the Báb martyred?', { tools, units: {}, extra: gen(['The Dawn-Breakers']) });
-    expect(calls.filter((c) => c.filters?.work).map((c) => [c.query, c.filters.work])).toEqual([['How was the Báb martyred?', 'The Dawn-Breakers']]);
+    expect(calls.filter((c) => c.filters?.work).map((c) => [c.query, c.filters.work]).sort()).toEqual([['How was the Báb martyred?', 'The Dawn-Breakers'], ['the martyrdom of the Báb', 'The Dawn-Breakers']]);
     calls.length = 0;
     await run('history_fact', 'How was the Báb martyred?', { tools, units: {}, extra: gen(null) });
     expect(calls.some((c) => c.filters?.work)).toBe(false);

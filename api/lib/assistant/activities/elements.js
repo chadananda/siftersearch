@@ -243,12 +243,13 @@ E['search.together'] = { kind: 'tool', cls: 'code', edges: TOGETHER, scope: 'str
     const edge = live.length && live.every((e) => e === 'error') ? 'error' : n > 0 && edges.every((e) => ['thin', 'none', 'error'].includes(e)) && edges.includes('thin') ? 'thin' : classify(n, TOGETHER);
     const note = finish(s, p, edge, { count: n, read: { list: list.map((x) => x.element), edges: edges.join(',') } }); s.note.scope_excluded = u.scope_excluded - x0; s.note.members = members; return note;
   } };
-E['search.fanout'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', 'all_none', 'error'], scope: 'strategy', params: ['by', 'facets', 'inner', 'tag', 'stage'], reads: SCOPE, writes: ['found_passages', 'found_records', 'web_found', ...OUT],
+E['search.fanout'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', 'all_none', 'error'], scope: 'strategy', params: ['by', 'facets', 'inner', 'tag', 'as', 'stage'], reads: SCOPE, writes: ['found_passages', 'found_records', 'web_found', ...OUT],
   async run(s, p = {}) {   // the inner element once per value (compare_sides, sub_themes…), in parallel, each on its own units; items tagged with their value in field `tag` (default side)
-    const u = U(s), values = p.facets ?? u[p.by] ?? [];
+    // `as` names the placeholder (default {{value}}), so fanouts nest: histories as {{work}} × phrasings as {{value}}
+    const u = U(s), values = p.facets ?? u[p.by] ?? [], slot = `{{${p.as ?? 'value'}}}`;
     const runs = await Promise.all(values.map(async (v, i) => {
       const own = { ...u, found_passages: [], found_records: [], web_found: [], found_outcome: {}, missing: [], path: [], scope_excluded: 0 };
-      const step = { element: p.inner.element, params: deep(p.inner.params || {}, (x) => (typeof x === 'string' ? x.replaceAll('{{value}}', flat(v)) : x)) };
+      const step = { element: p.inner.element, params: deep(p.inner.params || {}, (x) => (typeof x === 'string' ? x.replaceAll(slot, flat(v)) : x)) };
       const edge = await run1(s, `${s.node}.${i}`, step, own).catch(() => 'error');
       return { v, own, edge };
     }));
