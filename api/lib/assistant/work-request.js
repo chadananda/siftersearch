@@ -77,7 +77,12 @@ const lib = async () => Promise.all([import('../dewey/title-index.js'), import('
  *  one country" opened Hugh Adamson's book of that name); an explicit request for a book still resolves every book. */
 // the other names a work is known by (config/work-names.json: "Book of Certitude", "Lord of Books" → the Kitáb-i-Íqán): data, not rules
 let NAMES = null;
-const nameMap = (list) => new Map(list.flatMap((w) => w.names.map((n) => [foldTitle(n), w.title])));
+const nameMap = (list) => new Map(list.filter((w) => w.title).flatMap((w) => w.names.map((n) => [foldTitle(n), w.title])));   // section entries: book-finder.js
+/** Every listed other name of a work whose title holds a listed title phrase ("KIQ" for The Kitáb-i-Íqán). */
+export function namesOf(title, list = null) {
+  const t = ` ${foldTitle(title)} `;
+  return (list ?? loadNames()).filter((w) => w.title && t.includes(` ${foldTitle(w.title)} `)).flatMap((w) => w.names);
+}
 const loadNames = () => { try { return JSON.parse(readFileSync(new URL('../../../config/work-names.json', import.meta.url), 'utf8')).works; } catch { return []; } };
 export function workName(text, list = null) {
   const map = list ? nameMap(list) : (NAMES ??= nameMap(loadNames()));

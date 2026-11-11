@@ -61,11 +61,24 @@ export function buildBookIndex({ docs = [], sections = [], aliases = [] } = {}) 
   // another name a work is known by ("Iqan", "Book of Certitude") is a title of every work whose title holds the listed one
   for (const w of aliases) {
     const want = titleTokens(w.title).join(' ');
-    if (!want) continue;
+    if (!w.title || !want) continue;
     const toks = [...new Set((w.names || []).flatMap(titleTokens))];
     for (let i = 0; i < entries.length; i++) {
       const e = entries[i];
       if (e.kind !== 'work' || !` ${e.phrase} `.includes(` ${want} `)) continue;
+      e.alias = (w.names || []).map((n) => titleTokens(n).join(' ')).filter(Boolean);
+      for (const t of toks) { let p = post.get(t); if (!p) post.set(t, p = []); p.push([i, 'l']); }
+    }
+  }
+  // a part of a book known by other names ("the Dispensation" → that letter of The World Order of Bahá'u'lláh): {section, in?, names}
+  for (const w of aliases) {
+    const want = titleTokens(w.section).join(' '), inBook = titleTokens(w.in).join(' ');
+    if (!w.section || !want) continue;
+    const toks = [...new Set((w.names || []).flatMap(titleTokens))];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      if (e.kind !== 'section' || !` ${e.phrase} `.includes(` ${want} `)) continue;
+      if (inBook && !` ${titleTokens(e.sec.book).join(' ')} `.includes(` ${inBook} `)) continue;
       e.alias = (w.names || []).map((n) => titleTokens(n).join(' ')).filter(Boolean);
       for (const t of toks) { let p = post.get(t); if (!p) post.set(t, p = []); p.push([i, 'l']); }
     }

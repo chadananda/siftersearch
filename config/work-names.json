@@ -1,20 +1,441 @@
 {
-  "_doc": "Other names a work is known by → the title phrase the library's title index resolves. Data, not code: add a line, no deploy logic. Read by api/lib/assistant/work-request.js (workName). A listed name opens the book even when it is not core literature: the list is the curation.",
+  "_doc": "Other names a work is known by → the title phrase the library's title index resolves. Data, not code: add a line, no deploy logic. Read by api/lib/assistant/work-request.js (workName). A listed name opens the book even when it is not core literature: the list is the curation. Entries with \"section\" (+ optional \"in\": the book's title phrase) name a part of a book (a letter, tablet, chapter) → the section index (book-finder.js); work-request.js skips them. Abbreviations are the standard reference forms (KIQ, GWB, WOB, PDC…); two-letter forms that are English words (he, ma, ba, pm, ud) are never listed bare.",
   "works": [
-    { "title": "Kitáb-i-Íqán", "names": ["Iqan", "Íqán", "Kitab Iqan", "Kitab-i-Iqan", "Book of Certitude", "The Book of Certitude", "Lord of Books", "Siyyid-i-Kutub", "Sayyid al-Kutub"] },
-    { "title": "Aqdas", "names": ["Kitab-i-Aqdas", "Kitab Aqdas", "Most Holy Book", "The Most Holy Book", "Kitab al-Aqdas"] },
-    { "title": "The Dawn-Breakers", "names": ["Dawn-Breakers", "Dawn Breakers", "Dawnbreakers", "Nabil's Narrative", "Nabíl’s Narrative", "Nabil's History"] },
-    { "title": "The Hidden Words", "names": ["Kalimat-i-Maknunih", "Kalimat-i-Maknunah", "Hidden Words"] },
-    { "title": "Seven Valleys", "names": ["Haft Vadi", "Haft-Vadi", "The Seven Valleys"] },
-    { "title": "Epistle to the Son of the Wolf", "names": ["Lawh-i-Ibn-i-Dhib", "Epistle to the Son of the Wolf"] },
-    { "title": "Some Answered Questions", "names": ["Mufavadat", "Table Talks", "SAQ"] },
-    { "title": "The Secret of Divine Civilization", "names": ["Secret of Divine Civilization", "Risaliy-i-Madaniyyih", "The Mysterious Forces of Civilization", "Mysterious Forces of Civilization"] },
-    { "title": "Gems of Divine Mysteries", "names": ["Javahiru'l-Asrar", "Javahir al-Asrar"] },
-    { "title": "God Passes By", "names": ["GPB"] },
-    { "title": "Gleanings", "names": ["Gleanings from the Writings", "Gleanings from the Writings of Bahá'u'lláh"] },
-    { "title": "The Gospel of Matthew", "names": ["Matthew", "Gospel of Matthew", "Gospel According to Matthew", "The Gospel According to Matthew", "Saint Matthew", "St Matthew"] },
-    { "title": "The Gospel of Mark", "names": ["Mark", "Gospel of Mark", "Gospel According to Mark", "The Gospel According to Mark", "Saint Mark", "St Mark"] },
-    { "title": "The Gospel of Luke", "names": ["Luke", "Gospel of Luke", "Gospel According to Luke", "The Gospel According to Luke", "Saint Luke", "St Luke"] },
-    { "title": "The Gospel of John", "names": ["John", "Gospel of John", "Gospel According to John", "The Gospel According to John", "Saint John", "St John"] }
+    {
+      "title": "Kitáb-i-Íqán",
+      "names": [
+        "Iqan",
+        "Íqán",
+        "Kitab Iqan",
+        "Kitab-i-Iqan",
+        "Book of Certitude",
+        "The Book of Certitude",
+        "Lord of Books",
+        "Siyyid-i-Kutub",
+        "Sayyid al-Kutub",
+        "KIQ",
+        "KI"
+      ]
+    },
+    {
+      "title": "Aqdas",
+      "names": [
+        "Kitab-i-Aqdas",
+        "Kitab Aqdas",
+        "Most Holy Book",
+        "The Most Holy Book",
+        "Kitab al-Aqdas",
+        "KA"
+      ]
+    },
+    {
+      "title": "The Dawn-Breakers",
+      "names": [
+        "Dawn-Breakers",
+        "Dawn Breakers",
+        "Dawnbreakers",
+        "Nabil's Narrative",
+        "Nabíl’s Narrative",
+        "Nabil's History",
+        "DB"
+      ]
+    },
+    {
+      "title": "The Hidden Words",
+      "names": [
+        "Kalimat-i-Maknunih",
+        "Kalimat-i-Maknunah",
+        "Hidden Words",
+        "HW",
+        "PHW",
+        "AHW",
+        "Persian Hidden Words",
+        "Arabic Hidden Words"
+      ]
+    },
+    {
+      "title": "Seven Valleys",
+      "names": [
+        "Haft Vadi",
+        "Haft-Vadi",
+        "The Seven Valleys",
+        "SV",
+        "7V"
+      ]
+    },
+    {
+      "title": "Epistle to the Son of the Wolf",
+      "names": [
+        "Lawh-i-Ibn-i-Dhib",
+        "Epistle to the Son of the Wolf",
+        "ESW"
+      ]
+    },
+    {
+      "title": "Some Answered Questions",
+      "names": [
+        "Mufavadat",
+        "Table Talks",
+        "SAQ"
+      ]
+    },
+    {
+      "title": "The Secret of Divine Civilization",
+      "names": [
+        "Secret of Divine Civilization",
+        "Risaliy-i-Madaniyyih",
+        "The Mysterious Forces of Civilization",
+        "Mysterious Forces of Civilization",
+        "SDC"
+      ]
+    },
+    {
+      "title": "Gems of Divine Mysteries",
+      "names": [
+        "Javahiru'l-Asrar",
+        "Javahir al-Asrar",
+        "GDM"
+      ]
+    },
+    {
+      "title": "God Passes By",
+      "names": [
+        "GPB",
+        "God Passes By"
+      ]
+    },
+    {
+      "title": "Gleanings",
+      "names": [
+        "Gleanings from the Writings",
+        "Gleanings from the Writings of Bahá'u'lláh",
+        "GWB",
+        "GL"
+      ]
+    },
+    {
+      "title": "The Gospel of Matthew",
+      "names": [
+        "Matthew",
+        "Gospel of Matthew",
+        "Gospel According to Matthew",
+        "The Gospel According to Matthew",
+        "Saint Matthew",
+        "St Matthew"
+      ]
+    },
+    {
+      "title": "The Gospel of Mark",
+      "names": [
+        "Mark",
+        "Gospel of Mark",
+        "Gospel According to Mark",
+        "The Gospel According to Mark",
+        "Saint Mark",
+        "St Mark"
+      ]
+    },
+    {
+      "title": "The Gospel of Luke",
+      "names": [
+        "Luke",
+        "Gospel of Luke",
+        "Gospel According to Luke",
+        "The Gospel According to Luke",
+        "Saint Luke",
+        "St Luke"
+      ]
+    },
+    {
+      "title": "The Gospel of John",
+      "names": [
+        "John",
+        "Gospel of John",
+        "Gospel According to John",
+        "The Gospel According to John",
+        "Saint John",
+        "St John"
+      ]
+    },
+    {
+      "title": "Four Valleys",
+      "names": [
+        "FV",
+        "4V",
+        "Chahar Vadi"
+      ]
+    },
+    {
+      "title": "Prayers and Meditations",
+      "names": [
+        "Prayers and Meditations by Baha'u'llah"
+      ]
+    },
+    {
+      "title": "Tablets of Bahá'u'lláh",
+      "names": [
+        "TB",
+        "Tablets revealed after the Aqdas",
+        "Tablets of Baha'u'llah revealed after the Kitab-i-Aqdas"
+      ]
+    },
+    {
+      "title": "Summons of the Lord of Hosts",
+      "names": [
+        "SLH",
+        "Summons",
+        "Suriy-i-Haykal",
+        "Surih of the Temple"
+      ]
+    },
+    {
+      "title": "Selections from the Writings of the Báb",
+      "names": [
+        "SWB",
+        "Selections from the Bab",
+        "Writings of the Bab"
+      ]
+    },
+    {
+      "title": "Selections from the Writings of 'Abdu'l-Bahá",
+      "names": [
+        "SWAB",
+        "SWA",
+        "Selections from Abdu'l-Baha"
+      ]
+    },
+    {
+      "title": "Paris Talks",
+      "names": [
+        "PT"
+      ]
+    },
+    {
+      "title": "Promulgation of Universal Peace",
+      "names": [
+        "PUP",
+        "Promulgation"
+      ]
+    },
+    {
+      "title": "Tablets of the Divine Plan",
+      "names": [
+        "TDP",
+        "Divine Plan tablets",
+        "Tablets of the Divine Plan"
+      ]
+    },
+    {
+      "title": "Will and Testament of 'Abdu'l-Bahá",
+      "names": [
+        "WT",
+        "Will and Testament",
+        "The Will and Testament"
+      ]
+    },
+    {
+      "title": "Memorials of the Faithful",
+      "names": [
+        "MF",
+        "Memorials"
+      ]
+    },
+    {
+      "title": "Traveller's Narrative",
+      "names": [
+        "TN",
+        "Traveler's Narrative",
+        "A Traveler's Narrative"
+      ]
+    },
+    {
+      "title": "World Order of Bahá'u'lláh",
+      "names": [
+        "WOB",
+        "World Order letters",
+        "the World Order letters",
+        "World Order of Baha'u'llah"
+      ]
+    },
+    {
+      "title": "Advent of Divine Justice",
+      "names": [
+        "ADJ",
+        "the Advent"
+      ]
+    },
+    {
+      "title": "Promised Day Is Come",
+      "names": [
+        "PDC",
+        "Promised Day"
+      ]
+    },
+    {
+      "title": "Citadel of Faith",
+      "names": [
+        "CF"
+      ]
+    },
+    {
+      "title": "Messages to the Bahá'í World",
+      "names": [
+        "MBW"
+      ]
+    },
+    {
+      "title": "Bahá'í Administration",
+      "names": [
+        "Baha'i Administration"
+      ]
+    },
+    {
+      "title": "Lights of Guidance",
+      "names": [
+        "LG",
+        "LoG"
+      ]
+    },
+    {
+      "title": "Compilation of Compilations",
+      "names": [
+        "CC",
+        "CoC"
+      ]
+    },
+    {
+      "title": "Promise of World Peace",
+      "names": [
+        "PWP",
+        "The Promise of World Peace"
+      ]
+    },
+    {
+      "title": "Kitab-i-Badi",
+      "names": [
+        "Badi",
+        "Kitáb-i-Badí‘"
+      ]
+    },
+    {
+      "section": "The Dispensation of Bahá'u'lláh",
+      "in": "World Order of Bahá'u'lláh",
+      "names": [
+        "Dispensation",
+        "the Dispensation",
+        "Dispensation letter",
+        "Dispensation of Baha'u'llah"
+      ]
+    },
+    {
+      "section": "The Goal of a New World Order",
+      "in": "World Order of Bahá'u'lláh",
+      "names": [
+        "Goal of a New World Order",
+        "Goal letter"
+      ]
+    },
+    {
+      "section": "The Unfoldment of World Civilization",
+      "in": "World Order of Bahá'u'lláh",
+      "names": [
+        "Unfoldment of World Civilization"
+      ]
+    },
+    {
+      "section": "The Golden Age of the Cause of Bahá'u'lláh",
+      "in": "World Order of Bahá'u'lláh",
+      "names": [
+        "Golden Age of the Cause",
+        "Golden Age letter"
+      ]
+    },
+    {
+      "section": "America and the Most Great Peace",
+      "in": "World Order of Bahá'u'lláh",
+      "names": [
+        "America and the Most Great Peace"
+      ]
+    },
+    {
+      "section": "The Fire Tablet",
+      "names": [
+        "Fire Tablet",
+        "Lawh-i-Qad-Ihtaraqa'l-Mukhlisun"
+      ]
+    },
+    {
+      "section": "Tablet of Ahmad",
+      "names": [
+        "Tablet of Ahmad",
+        "Lawh-i-Ahmad"
+      ]
+    },
+    {
+      "section": "Lawh-i-Hikmat",
+      "in": "Tablets of Bahá'u'lláh",
+      "names": [
+        "Tablet of Wisdom",
+        "Lawh-i-Hikmat"
+      ]
+    },
+    {
+      "section": "Kalimat-i-Firdawsiyyih",
+      "in": "Tablets of Bahá'u'lláh",
+      "names": [
+        "Words of Paradise",
+        "Kalimat-i-Firdawsiyyih"
+      ]
+    },
+    {
+      "section": "Lawh-i-Dunya",
+      "in": "Tablets of Bahá'u'lláh",
+      "names": [
+        "Tablet of the World",
+        "Lawh-i-Dunya"
+      ]
+    },
+    {
+      "section": "Bisharat",
+      "in": "Tablets of Bahá'u'lláh",
+      "names": [
+        "Glad-Tidings",
+        "Glad Tidings",
+        "Bisharat"
+      ]
+    },
+    {
+      "section": "Tarazat",
+      "in": "Tablets of Bahá'u'lláh",
+      "names": [
+        "Ornaments",
+        "Tarazat"
+      ]
+    },
+    {
+      "section": "Tajalliyat",
+      "in": "Tablets of Bahá'u'lláh",
+      "names": [
+        "Effulgences",
+        "Tajalliyat"
+      ]
+    },
+    {
+      "section": "Ishraqat",
+      "in": "Tablets of Bahá'u'lláh",
+      "names": [
+        "Splendours",
+        "Splendors",
+        "Ishraqat"
+      ]
+    },
+    {
+      "section": "Lawh-i-Maqsud",
+      "in": "Tablets of Bahá'u'lláh",
+      "names": [
+        "Tablet of Maqsud",
+        "Lawh-i-Maqsud"
+      ]
+    }
   ]
 }

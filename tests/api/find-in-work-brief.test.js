@@ -1,6 +1,6 @@
 // 11-11 "world order letters?": the title words alone name the work (→ its card), and meaning matches are brief (3, short excerpts).
 import { describe, it, expect } from 'vitest';
-import { wordsToFind, namesTheWork, briefExcerpt, inWorkReply, findInWorkAnswer } from '../../api/lib/assistant/find-in-work.js';
+import { wordsToFind, namesTheWork, sectionNamed, briefExcerpt, inWorkReply, findInWorkAnswer } from '../../api/lib/assistant/find-in-work.js';
 
 const WOB = 'The World Order of Bahá’u’lláh';
 describe('a topic that only names the work', () => {
@@ -17,6 +17,23 @@ describe('a topic that only names the work', () => {
     expect(searched).toBe(false);
     expect(got.book).toBe(found);
     expect(got.reply).toBeUndefined();
+  });
+});
+
+describe('a message that is one of the work\'s section titles', () => {
+  const SECS = [{ section_id: 1, level: 1, title: 'The World Order of Bahá’u’lláh', start_index: 0 }, { section_id: 2, level: 1, title: 'The Dispensation of Bahá’u’lláh', start_index: 300, end_index: 420 }];
+  it('names that section; a longer request does not', () => {
+    expect(sectionNamed('"Dispensation of Baha\'u\'llah"', SECS).section_id).toBe(2);
+    expect(sectionNamed('search it for "Dispensation of Baha\'u\'llah"', SECS)).toBeNull();
+  });
+  it('findInWorkAnswer gives the section card, no search (11-11)', async () => {
+    const found = { kind: 'work', via: 'pick', work: { doc: { id: 20894, title: WOB, author: 'Shoghi Effendi' } } };
+    let searched = false;
+    const got = await findInWorkAnswer({ messages: [{ role: 'user', content: '"Dispensation of Baha\'u\'llah"' }], topic: null,
+      deps: { bookFastPath: async () => found, quotedSpans: () => ["Dispensation of Baha'u'llah"], sectionsOf: async () => SECS }, search: async () => { searched = true; return null; } });
+    expect(searched).toBe(false);
+    expect(got.book.kind).toBe('section');
+    expect(got.book.sec).toMatchObject({ title: 'The Dispensation of Bahá’u’lláh', doc_id: 20894, book: WOB });
   });
 });
 

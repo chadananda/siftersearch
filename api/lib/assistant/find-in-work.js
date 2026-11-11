@@ -64,6 +64,15 @@ export function wordsToFind({ quoted = [], topic = null, titles = [] } = {}) {
 const GENRE = new Set(['letter', 'letters', 'book', 'books', 'tablet', 'tablets', 'text', 'texts', 'work', 'works', 'volume', 'writings', 'writing',
   'the', 'a', 'an', 'of', 'by', 'and', 'on', 'to', 'in', 'his', 'her', 'its', 'their', 'this', 'that', 'my', 'your', 'some', 'any', 'all']);
 const toks = (s) => foldText(s).split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+// The message, set aside what kind of text it is, IS one of the work's section titles (11-11: "Dispensation of Baha'u'llah" searched WOB
+// for its own letter's title) → that section. Same words both ways, so a longer request ("search WOB for …") is still a search. Pure.
+export function sectionNamed(text, sections = []) {
+  const bag = (s) => new Set(toks(s).filter((w) => !GENRE.has(w)));
+  const msg = bag(text);
+  if (!msg.size) return null;
+  const same = (a) => a.size === msg.size && [...a].every((w) => msg.has(w));
+  return [...sections].sort((x, y) => (x.level ?? 1) - (y.level ?? 1)).find((s) => same(bag(s.title))) || null;
+}
 export function namesTheWork(topic, titles = []) {
   const own = new Set(titles.filter(Boolean).flatMap(toks));
   const rest = toks(topic).filter((w) => !GENRE.has(w));
@@ -85,7 +94,16 @@ export async function findInWorkAnswer({ messages, names = [], by = null, topic 
   const sec = found.kind === 'section' ? found.sec : null;
   const doc = sec ? { id: sec.doc_id, title: sec.book, author: sec.author } : found.work.doc;
   if (!doc?.id) return null;
-  const words = wordsToFind({ quoted, topic, titles: [doc.title, sec?.title, ...names] });
+  if (!sec) {
+    const secs = await (deps.sectionsOf || (async (id) => (await import('../repos/sections-repo.js')).sectionsOfDoc(id)))(Number(doc.id)).catch(() => []);
+    const named = sectionNamed(text, secs);
+    if (named) {
+      decisions?.record?.('in-work:section', { by: 'code', saw: { text, work: doc.id }, chosen: named.title, reason: 'the message is this section\'s title: its card, not a search for it' });
+      return { book: { kind: 'section', via: 'in-work:section', sec: { ...named, doc_id: doc.id, book: doc.title, author: doc.author ?? null }, doc }, work: doc };
+    }
+  }
+  const other = await import('./work-request.js').then((m) => m.namesOf(doc.title)).catch(() => []);   // "KIQ", "World Order letters"
+  const words = wordsToFind({ quoted, topic, titles: [doc.title, sec?.title, ...names, ...other] });
   decisions?.record?.('in-work:resolve', { by: 'code', saw: { quoted, topic, work: doc.id, section: sec?.title ?? null }, chosen: words || 'none', reason: words ? null : 'no words to find: the work itself (its card)' });
   if (!words) return { book: found, work: doc };   // the work itself was asked for → the turn gives its card
   const run = search || (async (a) => (await import('./tools.js')).run('quote_search', a, { deps: deps.toolDeps || {} }));
