@@ -261,7 +261,13 @@ export function checkLinks(text, sources = []) {
     fixed += 1;
     return `${ws}${label}`;
   });
-  return { text: fixed ? out : src, fixed };
+  // a title (italic, a few capitalised words) whose OceanLibrary link opens another book proves that URL wrong for this reply, whatever
+  // the sources say (11-11 Vaḥíd: "*Revelation of Baha'u'llah*, Vol. 4" and its quotations → kjv-apocalypse-saint-john-of-patmos)
+  const titleLike = (label) => { const t = label.replace(/[*_]/g, '').trim(), w = t.split(/\s+/); return /^[*_]/.test(label.trim()) && !/^["“]/.test(t) && w.length <= 10 && w.filter((x) => /^\p{Lu}/u.test(x)).length * 2 >= w.length; };
+  const wrong = new Set();
+  for (const m of out.matchAll(MD_LINK)) if (/(^|\.)oceanlibrary\.com\//.test(m[3].replace(/^https?:\/\//, '')) && titleLike(m[2]) && !slugAgrees(m[3], m[2].replace(/,?\s*Vol(?:ume)?\.?\s*\d+.*$/i, ''))) wrong.add(bookOf(m[3]));
+  const out2 = wrong.size ? out.replace(MD_LINK, (m, ws, label, url) => (wrong.has(bookOf(url)) ? (fixed += 1, `${ws}${label}`) : m)) : out;
+  return { text: fixed ? out2 : src, fixed };
 }
 
 // CITATION LINKS — BLOCKING (battery 11-10): one citation, one link, one source.

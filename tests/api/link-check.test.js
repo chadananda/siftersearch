@@ -44,3 +44,15 @@ describe('checkLinks (battery round 3: hindus)', () => {
     expect(citeLinks(quote, [{ ...cat, text: '' }]).fixed).toBe(0);   // no text held → not judged
   });
 });
+
+describe('checkLinks — a title proves its OceanLibrary URL is another book (no sources needed)', () => {
+  const K = 'https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos';
+  it('unlinks the title and every quotation sharing that wrong URL; sound links stay', () => {
+    const t = `as [*Revelation of Baha'u'llah*, Vol. 4](${K}) records, he was [*peerless in learning*](${K}). See [*The Dawn-Breakers*](https://oceanlibrary.com/dawn-breakers_nabil).`;
+    expect(checkLinks(t, []).text).toBe("as *Revelation of Baha'u'llah*, Vol. 4 records, he was *peerless in learning*. See [*The Dawn-Breakers*](https://oceanlibrary.com/dawn-breakers_nabil).");
+  });
+  it('a quotation alone (no title to prove it wrong) is left', () => {
+    const t = `he was [*peerless in learning and knowledge, indomitable in his faith*](${K}).`;
+    expect(checkLinks(t, []).fixed).toBe(0);
+  });
+});
