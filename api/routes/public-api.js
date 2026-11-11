@@ -54,6 +54,7 @@ import { participantId as resolveParticipant, writeSessionCookieRaw, accountFrom
 import { optionalAuthenticate } from '../lib/auth.js';
 import { deriveThreadTitle, ownsThread, ownThreadsFilter, TITLE_AFTER_ROUNDS } from '../lib/threads.js';
 import { resolveLinks, findOriginals, getPassages } from '../lib/passage-links.js';
+import { sowMarkerUrl } from '../lib/sow-links.js';
 import { chatMessagesSchema } from '../lib/chat-messages-schema.js';
 
 const SITE_URL = 'https://siftersearch.com';
@@ -106,6 +107,9 @@ function getDocumentUrl(doc) {
 function getParagraphUrl(doc, paragraphIndex) {
   const ol = olSourceUrl(doc);
   if (ol) return ol;   // search.js already appended ?paraId=external_para_id when known
+  // Star of the West issue → bahai-education marker; the onSend output pass turns it into page + highlight
+  const sow = sowMarkerUrl(doc, paragraphIndex);
+  if (sow) return sow;
   return `${getDocumentUrl(doc)}#p${paragraphIndex}`;
 }
 
