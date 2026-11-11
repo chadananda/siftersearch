@@ -209,6 +209,7 @@ export async function hypeProgramJob(params = {}, deps = {}) {
       }
     };
     const spent0 = await d.spend.month();
+    let wrapped = false;   // a scan that began mid-library rescans once from the top before the tier is called written
     for (;;) {
       if (await settleAll()) return { ...sum, yielded: true, resume: { ...params } };
       const p = d.store.pause(); if (p) return stopFor(p);
@@ -237,6 +238,7 @@ export async function hypeProgramJob(params = {}, deps = {}) {
         if (sub.creditOut) { sum.paragraphs += sub.paragraphs; sum.requests += sub.requests; sum.batches += sub.batches.length; creditHit = sub.creditOut; markCredit(); break; }
         if (sub.batches.length) creditBack();
         const bad = sub.gated.map((g) => g.docId);   // a gate refusal (daily pace / month) is a WAIT, not a verdict on the doc: never added to the skip list
+        if (sub.gated.length && !sum.gatedWhy) sum.gatedWhy = sub.gated.slice(0, 3);   // why docs were refused (e.g. not yet disambiguated) — visible in the result
         sum.gated += sub.gated.length; sum.spendRefused += sub.spendRefused.length; save(bad);
         if (sub.spendRefused.length && !sub.paragraphs) refused = true;
         sum.paragraphs += sub.paragraphs; sum.requests += sub.requests; sum.batches += sub.batches.length;
@@ -250,6 +252,13 @@ export async function hypeProgramJob(params = {}, deps = {}) {
       if (!sent && refused) { if (await d.draining()) return { ...sum, yielded: true, resume: { ...params } }; await d.sleep(Math.min(pollMs, WAIT_CHUNK_MS)); continue; }   // the gate said not now: re-read the budget and try again
       if (!sent) {
         if (progressed) continue;
+        // a cursor left at the end by earlier runs found nothing → start once more from the top before calling the tier written
+        // (Chad 11-11: stale end-of-library cursors made a full core run 'complete' with 0 ¶ while ~$245 of core was pending)
+        if (!wrapped) {
+          wrapped = true; const mode = `:${noDisambig ? 'nd' : 'dis'}`, all = d.store.cursors(); let moved = false;
+          for (const [k, c] of Object.entries(all)) if (k.startsWith(`${tier}:`) && k.endsWith(mode) && c?.after) { d.store.setCursor(k, { ...c, after: 0 }); moved = true; }
+          if (moved) continue;
+        }
         // the tier is written: wait for its last checks (their grades may still pause it), then report
         while (await collectChecks()) { if (d.store.pause()) break; if (await d.draining()) return { ...sum, yielded: true, resume: { ...params } }; await d.sleep(pollMs); }
         const p2 = d.store.pause(); if (p2) return stopFor(p2);

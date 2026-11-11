@@ -200,6 +200,18 @@ describe('hypeProgramJob: run', () => {
     expect(w.submits.length).toBeGreaterThan(0);
     expect(w.submits.length).toBeLessThan(3);
   });
+  it('a cursor left at the end by an earlier run rescans once from the top before calling the tier complete', async () => {
+    const { w, deps } = fakeWorld();
+    for (const k of ['core:bahai:primary:dis', 'core:bahai:copy:dis', 'core:other:primary:dis', 'core:other:copy:dis']) store.setCursor(k, { after: 999, skip: [7] });
+    let served = false;
+    deps.select = async (a) => { w.selects.push(a); if (a.after === 0 && !served) { served = true; return docsOf(3); } return { docs: [], paragraphs: 0, cursor: a.after, exhausted: true }; };
+    const r = await hypeProgramJob({ tier: 'core', maxUsd: 5 }, deps);
+    expect(r).toMatchObject({ status: 'complete', paragraphs: 3 });
+    expect(w.selects.some((s) => s.after === 0)).toBe(true);
+    expect(store.cursors()['core:bahai:primary:dis'].skip).toContain(7);   // the skip list survives the rescan
+    const again = fakeWorld(); again.deps.select = async (a) => { again.w.selects.push(a); return { docs: [], paragraphs: 0, cursor: a.after, exhausted: true }; };
+    expect((await hypeProgramJob({ tier: 'core', maxUsd: 5 }, again.deps)).status).toBe('complete');   // nothing anywhere: still ends (one rescan, no loop)
+  });
   it('a docs-only no-op round (the planner sends nothing) skips those docs instead of spinning', async () => {
     const { w, deps } = fakeWorld({ select: [docsOf(3), docsOf(3)] });
     const sub = deps.makeHb; deps.makeHb = async (o) => { const hb = await sub(o); hb.submit = async () => ({ batches: [], paragraphs: 0, requests: 0, gated: [], spendRefused: [], over_budget: false, docs: 0 }); return hb; };
