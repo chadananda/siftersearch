@@ -231,6 +231,7 @@ describe('11-10 misses: copies of one text are one option; the extracted title r
     expect(opts.filter(([, v]) => /^“(The )?Dhammapada/.test(v))).toHaveLength(1);
     expect(opts.find(([, v]) => /^“(The )?Dhammapada/.test(v))[1]).toMatch(/^“The Dhammapada” — one text, 5 copies or translations in the library: (?=.*tr\. F\. Max Mueller)(?=.*a section of “Sacred Books of the East)/);
     expect(j.calls[0].instructions).toMatch(/find words or a passage in it/);
+    expect(j.calls[0].instructions).toMatch(/the book is the one searched IN/);   // 11-10: "Search The Dawn-Breakers for \"Letters of the Living\"" picked a UHJ letter titled "Letters of Living, Dawn-Breakers…"
     expect(j.fetchImpl).toHaveBeenCalledTimes(1); expect(extract).not.toHaveBeenCalled();
     expect(r.kind).toBe('work'); expect(r.work.doc.id).toBe(5001);
     expect(r.work.others.map((d) => d.id)).toEqual([5002, 5003]);   // the other translations, offered beside it

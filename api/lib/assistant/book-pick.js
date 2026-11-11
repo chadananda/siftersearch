@@ -65,7 +65,7 @@ export async function pickBook(messages, cands, { profile = {}, fetchImpl = jevF
   const call = await jevCall('book', async (signal) => {
     const res = await fetchImpl(ENDPOINT, { method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: modelFor('anis-book-pick').model, state: stateOf(messages, { profile }),
-        questions: { book: { type: 'choice', instructions: (alt ? 'The reader may be asking for an EXISTING work in the library, or for something new to be made. ' : '') + 'The reader asks for a particular book or text (a work, or one part of a larger work such as a letter, chapter or book of scripture) — to get it, open it, or find words or a passage in it. '
+        questions: { book: { type: 'choice', instructions: (alt ? 'The reader may be asking for an EXISTING work in the library, or for something new to be made. ' : '') + 'The reader asks for a particular book or text (a work, or one part of a larger work such as a letter, chapter or book of scripture) — to get it, open it, or find words or a passage in it. When the reader searches a book FOR some words, the book is the one searched IN; an item whose title merely holds the searched-for words is not it. '
           + (resolved?.length ? `The reader's description was identified as ${resolved.map(q).join(' or ')}; the item matching that title is the one asked for. ` : '')
           + 'Which of these library items is it? Each is labelled by its title, author or compiler, and tradition; a section names the work it is part of; one option may list several copies or translations of the same text. A study, talk or commentary ABOUT the text is not the text. Rank them.', criteria } } }),
       signal });
