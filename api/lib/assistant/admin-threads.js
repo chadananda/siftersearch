@@ -142,7 +142,9 @@ export async function turnTrace({ thread, messages, traces, titles }, turnId) {
   if (!k) return null;
   const t = await thread(k.thread);
   if (!t) return null;
-  const rows = (await messages(k.thread)).filter((r) => Number(r.round_index) === k.round);
+  const all = await messages(k.thread), rows = all.filter((r) => Number(r.round_index) === k.round);
+  // a round the thread does not have is said, with the rounds it has (11-11: ":2" of a one-round thread printed an empty turn)
+  if (!rows.length) return { missing: true, error: `no round ${k.round} in ${k.thread}`, rounds: [...new Set(all.map((r) => Number(r.round_index)))].sort((a, b) => a - b) };
   const q = rows.find((r) => r.role === 'user'), a = rows.find((r) => r.role === 'assistant');
   const tr = await traces(String(turnId));
   const names = await titles(hitDocIds(tr)).catch(() => new Map());
@@ -154,7 +156,7 @@ export async function turnTrace({ thread, messages, traces, titles }, turnId) {
     decisions: (Array.isArray(p.decisions) ? p.decisions : []).map((d) => ({ point: d.point, by: d.by, chosen: d.chosen, probabilities: d.probabilities ?? null, reason: d.reason ?? null,
       ...(d.by === 'code' && d.saw != null ? { saw: d.saw } : {}) })),
     // the strategy graph's steps with their wall ms (round 4: a 14 s prayer retrieval had no stage below 'planned-search' to blame)
-    ...(Array.isArray(p.steps) && p.steps.length ? { steps: p.steps.map((x) => ({ graph: x.graph ?? null, node: x.node, step: x.step, ms: x.ms ?? null, edge: x.edge ?? null, ...(Array.isArray(x.seen) ? { seen: x.seen } : {}) })) } : {}),
+    ...(Array.isArray(p.steps) && p.steps.length ? { steps: p.steps.map((x) => ({ graph: x.graph ?? null, node: x.node, step: x.step, ms: x.ms ?? null, edge: x.edge ?? null, ...(Array.isArray(x.seen) ? { seen: x.seen } : {}), ...(x.saw != null ? { saw: x.saw } : {}) })) } : {}),
     searches: searchesView(tr, names, 20), ...writerView(p.evidence, a?.content) };
 }
 

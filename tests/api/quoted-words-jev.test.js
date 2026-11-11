@@ -69,3 +69,20 @@ describe('judgeHolds names the holder of best standing as the source', () => {
     expect(r.passages.find((p) => p.id === 1).role).toBe('holder');
   });
 });
+
+describe('turn trace transparency', () => {
+  const msgs = async () => [{ round_index: 0, role: 'user', content: 'q' }, { round_index: 0, role: 'assistant', content: 'a', path_json: JSON.stringify({ steps: [{ graph: 'quote_trace@2', node: 'quoted', step: 'units.quoted_words@1', ms: 900, edge: 'found', saw: WORDS }] }) },
+    { round_index: 1, role: 'user', content: 'q2' }];
+  const deps = { thread: async () => ({}), messages: msgs, traces: async () => [], titles: async () => new Map() };
+  it('a round the thread does not have is said, with the rounds it has', async () => {
+    const { turnTrace } = await import('../../api/lib/assistant/admin-threads.js');
+    expect(await turnTrace(deps, 'conv_x:2')).toMatchObject({ missing: true, rounds: [0, 1] });
+  });
+  it("the words Jev picked show in the step and in the text view", async () => {
+    const { turnTrace } = await import('../../api/lib/assistant/admin-threads.js');
+    const { turnText } = await import('../../scripts/ops/trace-format.mjs');
+    const t = await turnTrace(deps, 'conv_x:0');
+    expect(t.steps[0].saw).toBe(WORDS);
+    expect(turnText(t)).toContain(`"${WORDS}"`);
+  });
+});

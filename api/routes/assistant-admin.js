@@ -50,6 +50,7 @@ export default async function anisAdminRoutes(fastify) {
   // ONE turn ("<thread>:<round>"): every search it made (top 20 each), the writer's passages, what the reply cites
   fastify.get('/anis/turns/:id/trace', { preHandler: requireInternal }, async (request, reply) => {
     const t = await turnTrace({ thread: anisThread, messages: anisThreadMessages, traces: tracesForTurn, titles: docTitles }, request.params.id);
+    if (t?.missing) return reply.code(404).send({ error: t.error, rounds: t.rounds });
     return t || reply.code(404).send({ error: 'no such turn (expected <thread>:<round>)' });
   });
 
