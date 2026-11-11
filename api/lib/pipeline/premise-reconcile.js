@@ -5,9 +5,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { withAIContext } from '../ai-context.js';
-import { spanIsPresent } from '../rag/enrich/retrieval.js';
 import { JUDGE_MODEL } from './hype-rubric.js';
-import { BUDGET_KEY, TEXT_CAP, CONCEPTS } from './premise-pilot.js';
+import { BUDGET_KEY, TEXT_CAP, CONCEPTS, spanPresent } from './premise-pilot.js';
+export { spanPresent };
 import { calculateCost } from '../model-registry.js';
 import { isCreditRefusal, isSpendCap, CREDIT_WAIT_MS } from '../spend-caps.js';
 
@@ -38,9 +38,6 @@ export const SYNONYMS = {
   'religion and the state': ['religion and government', 'separation of church and state'],
   'work as worship / labour and capital': ['work in the spirit of service is worship', 'profit sharing labour'],
 };
-// quotes/dashes normalised on both sides: a model returns straight quotes for the texts' curly ones (11-11: a4 framingProof flagged for that)
-const qnorm = (t) => String(t || '').replace(/[\u2018\u2019\u02BC\u2032\u00B4`]/g, "'").replace(/[\u201C\u201D\u00AB\u00BB]/g, '"').replace(/[\u2013\u2014]/g, '-');
-export const spanPresent = (span, texts) => spanIsPresent(qnorm(span), texts.map(qnorm));
 export const SYSTEM = `You reconcile PREMISES that were each inferred from ONE passage with what the religion's core texts say EXPLICITLY on the same concept.
 You get the CONCEPT, ANCHOR passages (core texts that address it directly), and ENTRIES (id, premise, proof) grouped under the whole PARAGRAPH each was inferred from.
 Authority order: Bahá'u'lláh and the Báb > 'Abdu'l-Bahá > Shoghi Effendi > others. An explicit statement outranks an inference.

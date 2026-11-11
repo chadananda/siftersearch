@@ -1,7 +1,7 @@
 // pipeline/premise-pilot — target selection (range, match + neighbours), unverified proof dropped + counted, empty premises fine,
 // maxUsd stop, credit refusal waits, result shape, billing key, policy gate. Everything injected; no network, no DB.
 import { describe, it, expect } from 'vitest';
-import { SYSTEM, premisePilotJob, selectParas, parsePremises, PILOT_TARGETS, CONCEPTS, EST_USD_PER_PARA } from '../../api/lib/pipeline/premise-pilot.js';
+import { SYSTEM, premisePilotJob, selectParas, parsePremises, PILOT_TARGETS, CONCEPTS, EST_USD_PER_PARA, spanPresent } from '../../api/lib/pipeline/premise-pilot.js';
 import { SpendCapError } from '../../api/lib/spend-caps.js';
 import { currentAIContext } from '../../api/lib/ai-context.js';
 import { assertAnthropicAllowed, isPremisePilotAllowed } from '../../api/lib/anthropic-policy.js';
@@ -106,6 +106,11 @@ describe('premisePilotJob', () => {
 });
 
 describe('parsePremises + policy', () => {
+  it("proof check tolerates straight quotes against the text's curly ones, still rejects absent words", () => {
+    const text = "Bahá\u2019u\u2019lláh said \u201Cjustice\u201D \u2014 the best beloved";
+    expect(spanPresent("Bahá'u'lláh said \"justice\" - the best beloved", [text])).toBe(true);
+    expect(spanPresent("the worst beloved", [text])).not.toBe(true);
+  });
   it('prompt carries the scope rule and keeps assumes-not-teaches', () => {
     expect(SYSTEM).toContain('Stay inside what the passage itself addresses');
     expect(SYSTEM).toContain('NAME that aspect');

@@ -5,6 +5,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { withAIContext } from '../ai-context.js';
 import { spanIsPresent } from '../rag/enrich/retrieval.js';
+// quotes/dashes normalised on both sides: a model returns straight quotes for the texts' curly ones (11-11: a4 framingProof flagged for that)
+const qnorm = (t) => String(t || '').replace(/[\u2018\u2019\u02BC\u2032\u00B4`]/g, "'").replace(/[\u201C\u201D\u00AB\u00BB]/g, '"').replace(/[\u2013\u2014]/g, '-');
+export const spanPresent = (span, texts) => spanIsPresent(qnorm(span), texts.map(qnorm));
 import { JUDGE_MODEL } from './hype-rubric.js';
 import { calculateCost } from '../model-registry.js';
 import { isCreditRefusal, isSpendCap, CREDIT_WAIT_MS } from '../spend-caps.js';
@@ -99,7 +102,7 @@ export async function premisePilotJob(params = {}, deps = {}) {
         if (!list) { out.unparsed++; return; }
         let kept = 0;
         for (const x of list) {
-          if (spanIsPresent(x.proof, [p.text]) !== true || !x.premise) { out.unverified++; out.dropped.push({ docId: doc.id ?? p.doc_id, title: doc.title, paraId: p.id, ord: p.ord, text: String(p.text).slice(0, TEXT_CAP), premise: x?.premise, concept: x?.concept, basis: x?.basis, proof: x?.proof, why: x?.why, strength: x?.strength, reason: 'proof-not-found' }); continue; }
+          if (spanPresent(x.proof, [p.text]) !== true || !x.premise) { out.unverified++; out.dropped.push({ docId: doc.id ?? p.doc_id, title: doc.title, paraId: p.id, ord: p.ord, text: String(p.text).slice(0, TEXT_CAP), premise: x?.premise, concept: x?.concept, basis: x?.basis, proof: x?.proof, why: x?.why, strength: x?.strength, reason: 'proof-not-found' }); continue; }
           kept++; out.byConcept[x.concept] = (out.byConcept[x.concept] || 0) + 1;
           out.premises.push({ docId: doc.id ?? p.doc_id, title: doc.title, paraId: p.id, ord: p.ord, text: String(p.text).slice(0, TEXT_CAP), premise: x.premise, concept: x.concept, basis: x.basis, proof: x.proof, why: x.why, strength: x.strength });
         }
