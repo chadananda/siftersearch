@@ -25,12 +25,14 @@ export function parseReference(text) {
   // "Gleanings 27", "Dawn-Breakers chapter 25", "Dawn-Breakers - Chapter 25" … and "chapter 25 of The Dawn-Breakers" (11-11: "chapter"
   // was not a unit word, so "Dawn-Breakers chapter" became the title and the turn fell through to an essay)
   const UNIT = "no\\.?|number|#|chapter|ch\\.?|section|sec\\.?|§|¶|para(?:graph)?\\.?|passage|prayer|verse|tablet|talk|letter|lesson|part";
-  const m = new RegExp(`^(?:the\\s+)?([\\p{L}][\\p{L}'’‘ʼ.\\- ]{2,60}?)[\\s,:\\-–—]+(?:(?:${UNIT})\\s*)?(\\d{1,4}|[ivxlcdm]{1,8})$`, 'iu').exec(t)
-    || ((r) => r && [r[0], r[3], r[2]])(new RegExp(`^(?:the\\s+)?(${UNIT})\\s*(\\d{1,4}|[ivxlcdm]{1,8})\\s+(?:of|in|from)\\s+(?:the\\s+)?([\\p{L}][\\p{L}'’‘ʼ.\\- ]{2,60})$`, 'iu').exec(t));
+  const m = ((r) => r && [r[0], r[1], r[3], r[2]])(new RegExp(`^(?:the\\s+)?([\\p{L}][\\p{L}'’‘ʼ.\\- ]{2,60}?)[\\s,:\\-–—]+(?:(${UNIT})\\s*)?(\\d{1,4}|[ivxlcdm]{1,8})$`, 'iu').exec(t))
+    || ((r) => r && [r[0], r[3], r[2], r[1]])(new RegExp(`^(?:the\\s+)?(${UNIT})\\s*(\\d{1,4}|[ivxlcdm]{1,8})\\s+(?:of|in|from)\\s+(?:the\\s+)?([\\p{L}][\\p{L}'’‘ʼ.\\- ]{2,60})$`, 'iu').exec(t));
   if (!m) return null;
   const raw = m[2], num = /^\d+$/.test(raw) ? Number(raw) : ROMAN.test(raw) ? romanToInt(raw) : null;
   const title = m[1].replace(/[,\s:\-–—]+$/, '').trim();
-  return num && title.split(/\s+/).length <= 6 ? { title, num } : null;
+  // the unit word, when it names a whole division ("chapter 25" is a chapter, never paragraph 25)
+  const unit = /^(?:chapter|ch|section|sec|§|part|talk|lesson|letter|tablet)/i.exec(m[3] || '')?.[0].toLowerCase().replace(/^ch$/, 'chapter').replace(/^sec$/, 'section');
+  return num && title.split(/\s+/).length <= 6 ? { title, num, ...(unit ? { unit } : {}) } : null;
 }
 
 /** The number a heading carries ("Chapter 33", "XXXIII. On ...", "33 — ...", "Verse 183"), or null. Pure. */
@@ -163,7 +165,10 @@ export async function resolveLookup(messages, deps = {}) {
   if (intent === 'reference') {
     const ref = parseReference(text);
     const w = ref && await titled([ref.title], { min: 0.9 }).catch(() => null);
-    if (!w) return null;
+    // which step resolved the reference (11-11: "Dawn-Breakers - Chapter 25" fell to search and the trace could not say why)
+    const step = (via, r) => { deps.decisions?.record('lookup:reference', { by: 'code', saw: { ref, work: w ? `${w.doc.id} ${w.doc.title}` : null },
+      options: ['display number', 'verse table', 'chapter heading', 'section table', 'none'], chosen: r ? via : 'none', reason: r ? `${r.passages?.length ?? 0} passages` : via }); return r; };
+    if (!w) return step(ref ? 'work not found' : 'no reference pattern', null);
     // a numbered reference answers with the WHOLE numbered unit (Chad 11-04: "Gleanings 27" is all of section XXVII, never one line)
     const repo = deps.paragraphsByPn && deps.paragraphsInRange && deps.headingStarts ? {} : await import('../paragraphs-repo.js');
     const byPn = deps.paragraphsByPn || repo.paragraphsByPn, inRange = deps.paragraphsInRange || repo.paragraphsInRange;
@@ -177,26 +182,34 @@ export async function resolveLookup(messages, deps = {}) {
     };
     // 1. display numbers (pn): the numbered paragraph and the rest of ITS section (Gleanings pn "XXVII" → "XXVII.2" … "XXVII.6");
     //    a work numbered by paragraph (pn "27", next "28") stays that one paragraph
-    for (const pn of [ref.num, toRoman(ref.num)].filter(Boolean)) {
-      const rows = await byPn(w.doc.id, pn).catch(() => []);
-      if (rows.length !== 1) continue;
-      const first = rows[0];
-      const section = await runFrom(w.doc.id, first.paragraph_index, inRange, (r) => r.paragraph_index === first.paragraph_index
-        || (pnOf(r) != null ? String(pnOf(r)).startsWith(`${pn}.`) : (r.heading || '') === (first.heading || '')));
-      return answer(w.doc, section.length ? section : [first], { label: `${w.doc.title}, ${pn}` });
-    }
+    const byDisplay = async () => {
+      for (const pn of [ref.num, toRoman(ref.num)].filter(Boolean)) {
+        const rows = await byPn(w.doc.id, pn).catch(() => []);
+        if (rows.length !== 1) continue;
+        const first = rows[0];
+        const section = await runFrom(w.doc.id, first.paragraph_index, inRange, (r) => r.paragraph_index === first.paragraph_index
+          || (pnOf(r) != null ? String(pnOf(r)).startsWith(`${pn}.`) : (r.heading || '') === (first.heading || '')));
+        return step('display number', await answer(w.doc, section.length ? section : [first], { label: `${w.doc.title}, ${pn}` }));
+      }
+      return undefined;
+    };
+    // a named division ("chapter 25") is a chapter first: paragraph 25 answered "Dawn-Breakers - Chapter 25" with one line (11-11)
+    if (!ref.unit) { const r = await byDisplay(); if (r !== undefined) return r; }
     const heads = await (starts ? starts(w.doc.id).catch(() => []) : []);
     // 2. works numbered by verse straight through (Dhammapada 183 = verse 183, not chapter 183): counted inside the edition's chapter
-    const verse = await byVerseTable(w, ref, heads, inRange);
-    if (verse) return answer(verse.doc, verse.rows, verse.extra);
+    const verse = !ref.unit && await byVerseTable(w, ref, heads, inRange);
+    if (verse) return step('verse table', await answer(verse.doc, verse.rows, verse.extra));
     // 3. numbered chapter headings: every row under that heading
     const row = byHeadingNumber(heads, ref.num);
     if (row) {
       const rows = await runFrom(w.doc.id, row.paragraph_index, inRange, (r) => (r.heading || '') === (row.heading || ''));
-      return answer(w.doc, rows.length ? rows : [row], { label: `${w.doc.title}, ${ref.num}` });
+      return step('chapter heading', await answer(w.doc, rows.length ? rows : [row], { label: `${w.doc.title}, ${ref.num}` }));
     }
     // 4. chapters numbered only by order (numbering.js tables: SAQ, Paris Talks)
-    return done(await bySectionTable(w, ref, { ...deps, paragraphsInRange: inRange }, link));
+    const sec = done(await bySectionTable(w, ref, { ...deps, paragraphsInRange: inRange }, link));
+    if (sec) return step('section table', sec);
+    if (ref.unit) { const r = await byDisplay(); if (r !== undefined) return r; }
+    return step(`no numbered unit ${ref.num} (${heads.length} headings)`, null);
   }
   if (intent === 'book') return bookOf({ min: 0.86 });
   // quote: Jev saw wording to find. Two things can answer it: a work whose TITLE is the wording ("Epistle to the Son of the Wolf")

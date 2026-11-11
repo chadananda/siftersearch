@@ -18,11 +18,11 @@ describe('parsing', () => {
   it('reads a numbered reference', () => {
     expect(parseReference('Gleanings 27')).toEqual({ title: 'Gleanings', num: 27 });
     expect(parseReference('Hidden Words no. 12')).toEqual({ title: 'Hidden Words', num: 12 });
-    expect(parseReference('Gleanings section CXXVII')).toEqual({ title: 'Gleanings', num: 127 });
+    expect(parseReference('Gleanings section CXXVII')).toEqual({ title: 'Gleanings', num: 127, unit: 'section' });
   });
   it('a chapter named either way round: "Dawn-Breakers chapter 25", "- Chapter 25", "chapter XXV of the Dawn-Breakers" (11-11)', () => {
     for (const q of ['Dawn-Breakers chapter 25', 'Dawn-Breakers - Chapter 25', 'chapter 25 of the Dawn-Breakers', 'Chapter XXV of The Dawn-Breakers?'])
-      expect(parseReference(q)).toEqual({ title: 'Dawn-Breakers', num: 25 });
+      expect(parseReference(q)).toEqual({ title: 'Dawn-Breakers', num: 25, unit: 'chapter' });
   });
   it('a title with no number is no reference (Jev decides intent; this only parses the target)', () => {
     expect(parseReference('Gleanings')).toBeNull();
@@ -82,6 +82,23 @@ describe('resolveLookup (mocked deps)', () => {
       headingStarts: async () => [{ id: 1, paragraph_index: 3, heading: '32. A', text: 'a' }, { id: 2, paragraph_index: 9, heading: '33. B', text: P }],
       withLinks: async (h) => h.map((x) => ({ ...x, url: 'https://x/saq#9' })) });
     expect(r).toMatchObject({ kind: 'reference', passages: [{ paragraph_index: 9, source_url: 'https://x/saq#9' }] });
+  });
+  it('a named chapter is the chapter, not the paragraph numbered 25; the trace records the step (11-11 Dawn-Breakers)', async () => {
+    const seen = [];
+    const r = await resolveLookup(user('Dawn-Breakers - Chapter 25'), { intent: 'reference', findTitled: async () => GL,
+      decisions: { record: (k, d) => seen.push([k, d.chosen]) },
+      paragraphsByPn: async (id, n) => (String(n) === '25' ? [{ id: 7, paragraph_index: 25, text: 'One numbered line.' }] : []),
+      paragraphsInRange: async (id, a) => [{ id: 2, paragraph_index: 900, heading: 'CHAPTER XXV', text: P }, { id: 3, paragraph_index: 901, heading: 'CHAPTER XXV', text: 'More of it.' }].filter((x) => x.paragraph_index >= a),
+      headingStarts: async () => [{ id: 1, paragraph_index: 880, heading: 'CHAPTER XXIV', text: 'a' }, { id: 2, paragraph_index: 900, heading: 'CHAPTER XXV', text: P }],
+      withLinks: async (h) => h.map((x) => ({ ...x, url: `https://x/db#${x.paragraph_index}` })) });
+    expect(r).toMatchObject({ kind: 'reference', passages: [{ paragraph_index: 900 }, { paragraph_index: 901 }] });
+    expect(seen).toEqual([['lookup:reference', 'chapter heading']]);
+  });
+  it('a named chapter with no chapter headings still falls back to the display number', async () => {
+    const r = await resolveLookup(user('Gleanings section 27'), { intent: 'reference', findTitled: async () => GL, headingStarts: async () => [],
+      paragraphsInRange: async () => [], paragraphsByPn: async (id, n) => (String(n) === '27' ? [{ id: 5, paragraph_index: 40, text: P }] : []),
+      sectionTable: async () => null, withLinks: async (h) => h.map((x) => ({ ...x, url: 'https://x/g#40' })) });
+    expect(r).toMatchObject({ kind: 'reference', passages: [{ paragraph_index: 40 }] });
   });
   it('a bare title Jev named resolves through the title index (diacritics are the index\'s fold)', async () => {
     let seen;
