@@ -1,6 +1,6 @@
 // r16 11-11 (Shaykh Aḥmad): the writer told the reader "(which I can cite by title only)", and cited a slug-titled .docx scrape.
 import { describe, it, expect } from 'vitest';
-import { dropLinkAside, formPass } from '../../api/lib/assistant/lint.js';
+import { dropLinkAside, plainSources, formPass } from '../../api/lib/assistant/lint.js';
 import { unslug, anisUserPayload } from '../../api/lib/assistant/prompt.js';
 
 describe('link asides never reach the reader', () => {
@@ -28,5 +28,16 @@ describe('a slug-titled scrape takes the title of the book it is', () => {
   it('no matching book → unchanged', () => {
     const other = { ...db, source_title: 'God Passes By' };
     expect(unslug([other, slug])[1]).toBe(slug);
+  });
+});
+
+describe('retrieval talk becomes source talk', () => {
+  it('rewrites the r17 phrasings, counts them, leaves quotes and ordinary uses', () => {
+    const r = plainSources('The first passage returned, a Tablet, does not speak of him. The library\'s results here did not include his writings. The passages here show the opening. The passages don\'t record his reason.');
+    expect(r.text).toBe('The first source I found, a Tablet, does not speak of him. The sources I found did not include his writings. The sources show the opening. The sources don\'t record his reason.');
+    expect(r.fixed).toBe(4);
+    expect(plainSources('This passage of the Íqán is famous.').fixed).toBe(0);
+    expect(plainSources('> The passages here show it').fixed).toBe(0);
+    expect(formPass('The passages here show the opening.').repairs.retrieval_talk).toBe(1);
   });
 });

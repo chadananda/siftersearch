@@ -162,8 +162,8 @@ export function finalForm(text) { return formPass(text).text; }
 /** finalForm with what it repaired, for the turn's path (forensics counts form.search_denial as a WRITER defect). Pure. */
 export function formPass(text, { sources = [] } = {}) {
   const uw = unwrapLinks(text), den = dropSearchDenial(uw.text), def = dropDeflection(den.text), off = dropSearchOffer(def.text), lk = checkLinks(off.text, sources);
-  const ct = citeLinks(lk.text, sources), lr = lastResortLast(ct.text), la = dropLinkAside(lr.text), nm = dropNumberMarkers(la.text), em = repairEmphasis(safeLinkText(nm.text));
-  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), ...(nm.fixed ? { number_markers: nm.fixed } : {}), ...(la.fixed ? { link_aside: la.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
+  const ct = citeLinks(lk.text, sources), lr = lastResortLast(ct.text), la = dropLinkAside(lr.text), rt = plainSources(la.text), nm = dropNumberMarkers(rt.text), em = repairEmphasis(safeLinkText(nm.text));
+  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), ...(nm.fixed ? { number_markers: nm.fixed } : {}), ...(la.fixed ? { link_aside: la.fixed } : {}), ...(rt.fixed ? { retrieval_talk: rt.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
     ...(ct.fixed ? { cite_links: ct.fixed } : {}), ...(lr.fixed ? { last_resort: lr.fixed } : {}), ...(em.fixed ? { emphasis: em.fixed } : {}) } };
 }
 
@@ -176,6 +176,21 @@ const LINK_ASIDE = /\s*\((?:which |that |though )?(?:I |we )?(?:can |could )?(?:
 export function dropLinkAside(text) {
   let fixed = 0;
   const out = String(text || '').split('\n').map((l) => (/^\s*>/.test(l) ? l : l.replace(LINK_ASIDE, () => { fixed += 1; return ''; }))).join('\n');
+  return { text: fixed ? out : String(text || ''), fixed };
+}
+
+// RETRIEVAL TALK (prompt rule: never mention "passages" or "search results"; r17 11-11 Siyyid Káẓim: "The first passage returned, …",
+// "The library's results here did not include …", "The passages here show …"): the machinery's nouns become the reader's — the
+// sources. Counted (repairs.retrieval_talk) so the writer's slip is noted for correction. Outside block quotes. Pure.
+const RETRIEVAL_TALK = [
+  [/\b([Tt])he first passage (?:returned|retrieved|found|here)\b/g, (m, t) => `${t}he first source I found`],
+  [/\b([Tt])he library'?s results(?: here)?\b/g, (m, t) => `${t}he sources I found`],
+  [/\b([Tt])he (?:retrieved |returned )?passages(?: (?:here|returned|retrieved|provided|I found|I have))?(?= (?:do|did|don't|didn't|does|show|leave|say|give|record|contain|include|hold|are|were)\b)/g, (m, t) => `${t}he sources`],
+  [/\b([Ii]n|[Ff]rom) (?:the )?(?:search )?results(?: here)?\b/g, (m, w) => `${w} the sources`],
+];
+export function plainSources(text) {
+  let fixed = 0;
+  const out = String(text || '').split('\n').map((l) => (/^\s*>/.test(l) ? l : RETRIEVAL_TALK.reduce((x, [re, f]) => x.replace(re, (...a) => { fixed += 1; return f(...a); }), l))).join('\n');
   return { text: fixed ? out : String(text || ''), fixed };
 }
 
