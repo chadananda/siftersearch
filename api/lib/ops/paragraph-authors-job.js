@@ -143,6 +143,8 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, all
       }
       if (!n) { if (stale.has(r.id)) updates.push({ id: r.id, authors: JSON.parse(r.authors), prev: stale.get(r.id) }); continue; }
       if (n.changed) stats.author_changed++;
+      // a dry run shows what it would write: two changed paragraphs per book, forty at most
+      if (n.changed && !write && (stats.samples ||= []).length < 40 && stats.samples.filter((x) => x.doc === d.id).length < 2) stats.samples.push({ doc: d.id, id: r.id, from: r.authors, to: n.authors });
       if (n.authors.some((e) => e.role === 'quoted' && e.basis === 'window')) stats.quoted_added++;
       updates.push({ id: r.id, authors: n.authors, ...(n.changed ? { model: MODEL } : {}), prev: stale.get(r.id) || { authors: r.authors, authors_model: r.authors_model } });
     }
@@ -165,7 +167,7 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, all
       for (let attempt = 1; attempt <= 2; attempt++) {
         try { await runBook(d); break; } catch (e) {
           if (e.yielded) { stats.yielded = true; break; }
-          if (attempt === 2) stats.errors++; else await new Promise((r) => setTimeout(r, 30000));
+          if (attempt === 2) { stats.errors++; if ((stats.error_samples ||= []).length < 10) stats.error_samples.push(`${d.id}: ${String(e?.message || e).slice(0, 200)}`); } else await new Promise((r) => setTimeout(r, 30000));
         }
       }
       if (stats.yielded) break;
