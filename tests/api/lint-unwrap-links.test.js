@@ -12,6 +12,11 @@ describe('unwrapLinks', () => {
     const t = 'See [*Gleanings*](https://oceanlibrary.com/gleanings) and [[1]](https://x.org/a).';
     expect(unwrapLinks(t).text).toBe(t);
   });
+  it('a quotation in link brackets with no link loses the brackets', () => {
+    expect(unwrapLinks('the Báb: [*“Seventeen Letters were enrolled.”*] Lists').text).toBe('the Báb: *“Seventeen Letters were enrolled.”* Lists');
+    const linked = '[*“Seventeen Letters.”*](https://oceanlibrary.com/x)';
+    expect(unwrapLinks(linked).text).toBe(linked);
+  });
   it('runs in the exit form pass', () => {
     expect(formPass('As [[*Some Answered Questions*](https://oceanlibrary.com/saq)] says.').text).toContain('As [*Some Answered Questions*](https://oceanlibrary.com/saq) says.');
   });

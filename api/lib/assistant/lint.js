@@ -167,11 +167,13 @@ export function formPass(text, { sources = [] } = {}) {
     ...(ct.fixed ? { cite_links: ct.fixed } : {}), ...(lr.fixed ? { last_resort: lr.fixed } : {}), ...(em.fixed ? { emphasis: em.fixed } : {}) } };
 }
 
-// A link wrapped in square brackets ("[[*The Báb*](url)]", 11-10 Letters of the Living) shows its brackets to the reader: unwrapped. Pure.
+// A link wrapped in square brackets ("[[*The Báb*](url)]") or a quotation in link brackets with no link ("[*“Seventeen Letters…”*]"),
+// 11-10 Letters of the Living: the reader sees the brackets — unwrapped. Pure.
 export function unwrapLinks(text) {
   let fixed = 0;
   const out = String(text || '').replace(/\[(\[[^\[\]\n]+\]\(https?:\/\/[^\s)]+\))\](?!\()/g, (m, link) => { fixed += 1; return link; });
-  return { text: fixed ? out : String(text || ''), fixed };
+  const out2 = out.replace(/\[(\*["“][^\[\]\n]+["”]\*)\](?![(\[])/g, (m, q) => { fixed += 1; return q; });   // a quotation in link brackets with no link
+  return { text: fixed ? out2 : String(text || ''), fixed };
 }
 
 // THE LINK CHECK — BLOCKING (battery 11-10 "main book of the Hindus": `[*Bhagavad-Gita*](…) [https://…](https://…)`, a Mahabharata
