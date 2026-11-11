@@ -296,6 +296,17 @@ describe('scripture reference', () => {
     expect(await scriptureReference({ question: 'what is love', decisions, deps })).toBeNull();
     expect(decisions.list().at(-1)).toMatchObject({ point: 'reference:parse', chosen: 'none' });
   });
+  it('every sūra by name after a sūra word; "what is that surah?" reads the subject carried from the last turn (11-10, Kawthar)', async () => {
+    for (const q of ["suratu'l-Kawthar", 'Súratu’l-Kawthar', 'Surah al-Kawthar', 'Surat al-Kauthar']) expect(parseScriptureRef(q)).toMatchObject({ kind: 'quran', sura: 108 });
+    expect(parseScriptureRef('Surat an-Nur')).toMatchObject({ sura: 24 }); expect(parseScriptureRef('Sura Ikhlas')).toMatchObject({ sura: 112 });
+    expect(parseScriptureRef('Muhammad in the Quran')).toBeNull(); expect(parseScriptureRef('the river Kawthar')).toBeNull();
+    const decisions = decisionLog();
+    const deps = { listDocs: async () => ({ docs: [] }), findSections: async (q) => { deps.asked = q; return [{ doc_id: 21206, book: 'The Qur’án', title: 'Sūra CVIII.', start_index: 5, end_index: 8 }]; },
+      paragraphsInRange: async () => [{ id: 1, paragraph_index: 5, text: 'Lo! We have given thee Abundance;' }], withLinks: async (h) => h };
+    const out = await scriptureReference({ question: 'what is that surah? share it please', query: "suratu'l-Kawthar", decisions, deps });
+    expect(deps.asked).toBe('Sūra CVIII'); expect(out.passages[0].text).toMatch(/Abundance/);
+    expect(decisions.list()[0]).toMatchObject({ point: 'reference:parse', chosen: 'quran', saw: { carried: "suratu'l-Kawthar" } });
+  });
 });
 
 describe('Qur’án by the verse table (launch gate 11-03: 2:255 gave Ṭálút from the approximate Yusuf Ali place)', () => {

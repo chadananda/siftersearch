@@ -1,7 +1,7 @@
 // Battery round 3 (11-10, "main book of the Hindus"): links whose label is a bare URL, or names a source the link does not open,
 // never reach the reader (lint.js checkLinks, run by formPass at every reply's exit). Pure.
 import { describe, it, expect } from 'vitest';
-import { checkLinks, slugAgrees, formPass } from '../../api/lib/assistant/lint.js';
+import { checkLinks, slugAgrees, formPass, citeLinks } from '../../api/lib/assistant/lint.js';
 
 const GITA = 'https://oceanlibrary.com/bhagavad-gita/?paraId=para_116';
 const SOURCES = [
@@ -32,5 +32,15 @@ describe('checkLinks (battery round 3: hindus)', () => {
   });
   it('formPass runs it with the turn\'s sources', () => {
     expect(formPass(LIVE, { sources: SOURCES }).repairs.links).toBe(3);
+  });
+  it('a quotation linked to a place that lacks its words → the place that holds them, else unlinked (11-10 Kawthar)', () => {
+    const OOL = 'https://oceanoflights.org/bab-pub01-37-ar/#(%D8%AA%D9%81%D8%B3%D9%8A%D8%B1)(%DA%A9%D9%88%D8%AB%D8%B1)';
+    const QUR = 'https://oceanlibrary.com/meaning-of-the-glorious-quran_muhammad/?paraId=para_6110';
+    const quote = '[*"then pray unto your Lord and sacrifice."*](' + OOL + ')';
+    const cat = { title: "A Catalogue of the Báb's Writings", url: OOL, text: 'تفسير سوره کوثر — commentary on the sura of Kawthar, written in Shiraz' };
+    const pick = { title: 'The Meaning of the Glorious Qur’án', url: QUR, text: 'So pray unto thy Lord, then pray unto your Lord and sacrifice.' };
+    expect(citeLinks(quote + ' — the Báb', [cat, pick]).text).toBe(`[*"then pray unto your Lord and sacrifice."*](${QUR}) — the Báb`);
+    expect(citeLinks(quote, [cat]).text).toBe('*"then pray unto your Lord and sacrifice."*');
+    expect(citeLinks(quote, [{ ...cat, text: '' }]).fixed).toBe(0);   // no text held → not judged
   });
 });

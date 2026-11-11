@@ -39,6 +39,16 @@ export const roman = (n) => { const t = [[1000, 'M'], [900, 'CM'], [500, 'D'], [
 // so it resolves like "Qur'an 1" (reference resolution after Jev's decision, never intent)
 const ORDINAL = { opening: 1, first: 1, second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10, eleventh: 11, twelfth: 12 };
 const SURA_NAMES = { fatiha: 1, fatihah: 1, fatihat: 1, baqara: 2, baqarah: 2, nur: 24, yasin: 36, rahman: 55, kahf: 18, maryam: 19, yusuf: 12, ikhlas: 112, falaq: 113, nas: 114, mulk: 67, waqia: 56, waqiah: 56 };
+// every sūra by name (11-10, "what is that surah?" after "suratu'l-Kawthar": 17 names knew no Kawthar → research cited Browne's Lawḥ-i-Sulṭán).
+// These only count after a sūra word ("Súratu'l-Kawthar", "Surah al-Kawthar", "Sura Nur"): many are ordinary words or names (nur, nas, Muhammad).
+const SURA_ALL = ('fatiha fatihah|baqara baqarah|imran|nisa|maida maidah|anam|araf|anfal|tawba tawbah taubah baraa|yunus|hud|yusuf|rad|ibrahim|hijr|nahl|isra|kahf|maryam'
+  + '|taha|anbiya|hajj|muminun muminoon|nur|furqan|shuara|naml|qasas|ankabut|rum|luqman|sajda sajdah|ahzab|saba|fatir|yasin|saffat|sad|zumar|ghafir mumin|fussilat|shura'
+  + '|zukhruf|dukhan|jathiya jathiyah|ahqaf|muhammad|fath|hujurat|qaf|dhariyat|tur|najm|qamar|rahman|waqia waqiah|hadid|mujadila mujadilah|hashr|mumtahana mumtahanah|saff'
+  + '|jumua jumuah jumuah|munafiqun munafiqoon|taghabun|talaq|tahrim|mulk|qalam|haqqa haqqah|maarij|nuh|jinn|muzzammil|muddathir muddaththir|qiyama qiyamah|insan dahr'
+  + '|mursalat|naba|naziat|abasa|takwir|infitar|mutaffifin|inshiqaq|buruj|tariq|ala|ghashiya ghashiyah|fajr|balad|shams|layl lail|duha|sharh inshirah|tin|alaq|qadr'
+  + '|bayyina bayyinah|zalzala zalzalah zilzal|adiyat|qaria qariah|takathur|asr|humaza humazah|fil|quraysh quraish|maun|kawthar kauthar kawsar kausar|kafirun kafiroon'
+  + '|nasr|masad lahab|ikhlas|falaq|nas').split('|').reduce((o, names, i) => { for (const n of names.split(' ')) o[n] = i + 1; return o; }, {});
+const SURA_WORD_RE = new RegExp(`\\bs[uú]ra(?:h|t|tu|tul|tal)?[-\\s]*(?:(?:al|an|ar|as|ash|at|az|ad|adh|ul|l)[-\\s]+)?(${Object.keys(SURA_ALL).join('|')})\\b`, 'i');
 const ORD_RE = new RegExp(`\\b(?:the\\s+)?(${Object.keys(ORDINAL).join('|')}|last)\\s+(?:chapter|s[uú]rah?|book)\\s+(?:of|in)\\s+(?:the\\s+)?(?:holy\\s+|noble\\s+)?((?:[123]\\s*)?[a-z]+(?:\\s+[a-z]+)?)`, 'i');
 const SURA_RE = new RegExp(`\\b(?:s[uú]rat?h?\\s+)?(?:al|an|ar|ya)?[-\\s]?(${Object.keys(SURA_NAMES).join('|')})\\b`, 'i');
 function numberedChapter(t) {
@@ -49,6 +59,8 @@ function numberedChapter(t) {
     const n = o[1].toLowerCase() === 'last' ? (quran ? 114 : null) : ORDINAL[o[1].toLowerCase()];
     if (n) return t.replace(o[0], ` ${quran ? 'Quran' : book} ${quran ? '' : 'chapter '}${n} `);
   }
+  const w = SURA_WORD_RE.exec(t);
+  if (w) return t.replace(w[0], ` Quran ${SURA_ALL[w[1].toLowerCase()]} `);
   const m = SURA_RE.exec(t);
   return m && (/s[uú]ra|al[-\s]|qur|koran/i.test(t)) ? t.replace(m[0], ` Quran ${SURA_NAMES[m[1].toLowerCase()]} `) : t;
 }
@@ -110,8 +122,9 @@ async function quranExact(ref, { listDocs, paragraphsInRange, fields, decisions 
 
 export async function scriptureReference(ctx) {
   const { question, decisions = NO_LOG, deps = {} } = ctx;
-  const ref = parseScriptureRef(question);
-  decisions.record('reference:parse', { by: 'code', saw: question, options: ['bible', 'quran', 'gita', 'none'], chosen: ref?.kind ?? 'none', reason: ref ? ref.label : 'no chapter-and-verse pattern' });
+  // the message itself, else the subject Jev carried over from the last turn (ctx.query, strategies.js refers-back: "what is that surah?")
+  const ref = parseScriptureRef(question) || (ctx.query && ctx.query !== question ? parseScriptureRef(ctx.query) : null);
+  decisions.record('reference:parse', { by: 'code', saw: ref && !parseScriptureRef(question) ? { question, carried: ctx.query } : question, options: ['bible', 'quran', 'gita', 'none'], chosen: ref?.kind ?? 'none', reason: ref ? ref.label : 'no chapter-and-verse pattern' });
   if (!ref) return null;
   const listDocs = deps.listDocs || (await import('../docs-repo.js')).listDocs;
   const sectionsOfDoc = deps.sectionsOfDoc || (await import('../repos/sections-repo.js')).sectionsOfDoc;

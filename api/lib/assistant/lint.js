@@ -258,6 +258,16 @@ export function citeLinks(text, sources = []) {
     fixed += 1;
     return `[${label}](${u})`;
   });
+  // (2a) a quotation linked to a PLACE whose source text lacks the words (11-10 Kawthar: Qur'án 108:2–3 linked to an Ocean of Lights
+  //      catalogue range that does not hold it) → the place of a source that does, else the quotation stands unlinked. Only a
+  //      source we hold text for is judged; a URL may hold balanced parens (Ocean of Lights "#(start)(end)").
+  src = src.replace(/\[([*_\s]*["“][^\[\]\n]+)\]\((https?:\/\/(?:[^\s()]|\([^\s()]*\))+)\)/g, (m, label, u) => {
+    const q = quoteWords(label), own = srcs.find((x) => x.url === u);
+    if (!paraLevel(u) || q.split(' ').length < 4 || !own?.text || foldT(own.text).includes(q)) return m;
+    const s = srcs.find((x) => x.text && paraLevel(x.url) && foldT(x.text).includes(q));
+    fixed += 1;
+    return s ? `[${label}](${s.url})` : label;
+  });
   // (2) a quotation linked to a whole book → the paragraph of that book holding the words
   src = src.replace(/\[([*_\s]*["“][^\[\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, label, u) => {
     if (paraLevel(u)) return m;
