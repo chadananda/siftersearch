@@ -25,6 +25,7 @@ const ENCUMBERED_RANGE = 3;   // the most consecutive paragraphs of a copyrighte
 import { slugifyPath } from '../lib/slug.js';
 import { headOf } from '../lib/text/head-of.js';
 import { rankByTitle } from '../lib/title-rank.js';
+import { chatMessagesSchema } from '../lib/chat-messages-schema.js';
 
 const SITE_URL = 'https://siftersearch.com';
 
@@ -1120,16 +1121,7 @@ export default async function chatRoutes(fastify) {
         type: 'object',
         required: ['messages'],
         properties: {
-          messages: {
-            type: 'array', minItems: 1, maxItems: 50,
-            items: {
-              type: 'object', required: ['role', 'content'],
-              properties: {
-                role: { type: 'string', enum: ['user', 'assistant'] },
-                content: { type: 'string', maxLength: 4000 }
-              }
-            }
-          },
+          messages: chatMessagesSchema(),
           conversationId: { type: 'string' },
           researchContext: { type: 'string' },
           // Site-scoped chatbot location (e.g. 'bahaiteachings.org'). When

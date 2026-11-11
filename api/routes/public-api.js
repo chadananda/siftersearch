@@ -54,6 +54,7 @@ import { participantId as resolveParticipant, writeSessionCookieRaw, accountFrom
 import { optionalAuthenticate } from '../lib/auth.js';
 import { deriveThreadTitle, ownsThread, ownThreadsFilter, TITLE_AFTER_ROUNDS } from '../lib/threads.js';
 import { resolveLinks, findOriginals, getPassages } from '../lib/passage-links.js';
+import { chatMessagesSchema } from '../lib/chat-messages-schema.js';
 
 const SITE_URL = 'https://siftersearch.com';
 
@@ -1351,17 +1352,7 @@ export default async function publicApiRoutes(fastify) {
         type: 'object',
         required: ['messages'],
         properties: {
-          messages: {
-            type: 'array', minItems: 1, maxItems: 50,
-            description: 'Conversation history. Last message is the current query. If conversation_id is provided, only the LAST message is appended (server replays prior history from the session).',
-            items: {
-              type: 'object', required: ['role', 'content'],
-              properties: {
-                role: { type: 'string', enum: ['user', 'assistant'] },
-                content: { type: 'string', maxLength: 4000 }
-              }
-            }
-          },
+          messages: chatMessagesSchema({ description: 'Conversation history. Last message is the current query. If conversation_id is provided, only the LAST message is appended (server replays prior history from the session).' }),
           researchContext: { type: 'string', description: 'Optional prior research context to continue from' },
           conversation_id: { type: 'string', description: 'Optional. If provided, the server loads prior messages from chat_sessions and appends the new turn. If omitted, a fresh conversation_id is generated and returned in the first SSE event.' }
         }
