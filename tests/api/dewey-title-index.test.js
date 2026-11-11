@@ -68,3 +68,17 @@ describe('precision on the real library\'s confusables (10-19 battery)', () => {
     expect(top('Some Answered Questions: Study Guide')).toBe(12);   // asked for the guide → the guide
   });
 });
+
+describe('sura spellings (11-11: Phelps’ English found, the Báb’s Arabic Tafsír-i-Súriy-i-Kawthar missed)', () => {
+  const k = buildIndex([
+    { id: 20171, title: 'Tafsír-i-Súriy-i-Kawthar', author: 'The Báb', paragraph_count: 400 },
+    { id: 956819, title: "Tafsir-i-Suratu'l-Kawthar (Commentary on the Surah of Kawthar) (provisional translation)", author: 'The Báb', paragraph_count: 300 },
+    { id: 7, title: 'Tafsír-i-Súriy-i-Qalam', author: "'Abdu'l-Bahá", paragraph_count: 50 },
+  ]);
+  it('the English gloss finds the translation', () => expect(matchTitle(k, 'Commentary on the Surah of Kawthar', { min: 0.86 })[0]?.doc.id).toBe(956819));
+  it.each(["Tafsir-i-Suratu'l-Kawthar", 'Tafsír-i-Súrih-i-Kawthar', 'Surat al-Kawthar'])('%s finds the original and the translation', (t) => {
+    const ids = matchTitle(k, t, { min: 0.86 }).map((h) => h.doc.id);
+    expect(ids).toEqual(expect.arrayContaining([20171, 956819]));
+    expect(ids).not.toContain(7);
+  });
+});

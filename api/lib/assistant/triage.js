@@ -57,10 +57,12 @@ export const DEPTH_Q = 'Read with the conversation, the reader and the channel: 
 // conversation, never a word rule; where it goes (a link, or by email) is the second question.
 export const DOCUMENTS = {
   text: 'no document is wanted: the answer is ordinary text in this reply (the default; a table, list or timeline in the reply is not a document)',
-  pdf_previous: 'the person asks for what the assistant ALREADY gave (its previous reply: a timeline, an answer, a list) as a printable PDF document, a download or an emailed file, and nothing new needs looking up',
-  pdf_new: 'the person asks for something not yet answered (a timeline, a study, an answer) AND wants it as a printable PDF document: the library is searched first, the result is delivered as the PDF',
+  pdf_previous: 'the person asks for what the assistant ALREADY gave (its previous reply: a timeline, an answer, a list), unchanged, as a document: a printable PDF, a download, a file, or sent to them by email; nothing new needs looking up',
+  pdf_new: 'the person asks for something not yet given, or a new arrangement of what was found (a side-by-side of an original and its translation, a table, a compilation, a timeline, a study), AND wants it as a document: a printable PDF, a file, a handout, or emailed to them; the library is searched first, the result is delivered as the PDF',
 };
-export const DOCUMENT_Q = 'Does the latest user message, read with the conversation, ask for the answer as a PDF document (printable, downloadable, "as a PDF", "email me a PDF")? Choose text unless a document is clearly asked for.';
+// 11-11 live: "Can you prepare a side by side translation document and email it to me?" was read as text (the question named
+// only PDFs), and the writer told the reader it could not prepare a document or send an email
+export const DOCUMENT_Q = 'Does the latest user message, read with the conversation, ask for the answer as a document: a PDF, a printable or downloadable copy, a file, a handout, or a document prepared and emailed to them (in any words: "as a PDF", "email me a PDF", "prepare a document and email it to me")? Choose text unless a document is clearly asked for.';
 export const DELIVERIES = {
   link: 'a download link in the reply (the default when the person does not say how they want the document)',
   email: 'the person wants the document sent to them by email',
