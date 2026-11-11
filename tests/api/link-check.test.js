@@ -65,3 +65,19 @@ describe('a gloss link to an unrelated bahai-library page is unlinked (r17 Lette
     expect(checkLinks(ok).fixed).toBe(0);
   });
 });
+
+describe('checkLinks: a work linked off OceanLibrary while the reply opens it there (11-11 grandmother turn)', () => {
+  const LTL = 'https://oceanlibrary.com/living-the-life_bahaullah/?paraId=para_36&selectionString=x';
+  it('the title follows the quotation to OceanLibrary', () => {
+    const t = `Shoghi Effendi, as quoted in [*Living the Life*](https://bahai-library.com/compilation_living_the_life), points back: [*"sorrow is like furrows"*](${LTL}).`;
+    const { text, fixed } = checkLinks(t, []);
+    expect(fixed).toBe(1);
+    expect(text).toContain('[*Living the Life*](https://oceanlibrary.com/living-the-life_bahaullah)');
+    expect(text).not.toContain('bahai-library.com');
+  });
+  it('another work on bahai-library stays', () => {
+    const t = `See [*Paradise of Justice*](https://bahai-library.com/buck_masumian_paradise_justice) and [*"sorrow is like furrows"*](${LTL}).`;
+    expect(checkLinks(t, []).fixed).toBe(0);
+  });
+});
+

@@ -375,7 +375,16 @@ export function checkLinks(text, sources = []) {
       && !slug.some((w) => t.some((x) => x.startsWith(w.slice(0, 4)) || w.startsWith(x.slice(0, 4)))); };
   const out2 = wrong.size || [...out.matchAll(MD_LINK)].some((m) => gloss(m[2], m[3]))
     ? out.replace(MD_LINK, (m, ws, label, url) => (wrong.has(bookOf(url)) || gloss(label, url) ? (fixed += 1, `${ws}${label}`) : m)) : out;
-  return { text: fixed ? out2 : src, fixed };
+  // a work's title linked to another host while the reply already opens that work on OceanLibrary (11-11 grandmother turn: "as quoted
+  // in [*Living the Life*](bahai-library.com/compilation_living_the_life)", its quotation linked to oceanlibrary.com/living-the-life_bahaullah)
+  const olBooks = [...out2.matchAll(MD_LINK)].map((m) => m[3]).filter((u) => /(^|\.)oceanlibrary\.com\//.test(u.replace(/^https?:\/\//, '')));
+  const olFor = (label) => { const t = label.replace(/[*_]/g, '').trim(); const u = olBooks.find((x) => words(t).length >= 2 && slugAgrees(x, t) && words(bookOf(x).split('/')[1].replace(/[-_]/g, ' ')).filter((w) => words(t).includes(w)).length >= Math.min(2, words(t).length)); return u ? `https://${bookOf(u)}` : null; };
+  const out3 = olBooks.length ? out2.replace(MD_LINK, (m, ws, label, url) => {
+    if (/(^|\.)oceanlibrary\.com\//.test(url.replace(/^https?:\/\//, '')) || !titleLike(label)) return m;
+    const ol = olFor(label); if (!ol) return m;
+    fixed += 1; return `${ws}[${label}](${ol})`;
+  }) : out2;
+  return { text: fixed ? out3 : src, fixed };
 }
 
 // CITATION LINKS — BLOCKING (battery 11-10): one citation, one link, one source.
