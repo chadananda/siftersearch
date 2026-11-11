@@ -512,12 +512,23 @@ export function makeStore() {
       const ent = (await db.queryAll(`SELECT id, canonical_name name FROM graph_entities WHERE id=?`, [entityId]))[0];
       if (!ent) return null;
       const ex = (excludeDocs || []).filter((d) => d != null);
-      const facts = await db.queryAll(
-        `SELECT c.statement, c.relation, c.time_value AS whenv, c.time_basis, c.proof_verbatim FROM entity_claims c
+      // Over-fetch, then keep the claims whose paragraph is alive — one batched check (a correlated per-claim
+      // subquery scanned the whole book per claim: 0.4–1.5 s for Quddús, 11-11).
+      const rows = await db.queryAll(
+        `SELECT c.statement, c.relation, c.time_value AS whenv, c.time_basis, c.proof_verbatim, c.doc_id, c.para_id FROM entity_claims c
            WHERE c.entity_id=? AND (c.status IS NULL OR c.status='supported')${ex.length ? ` AND c.doc_id NOT IN (${ex.map(() => '?').join(',')})` : ''}
-             AND (c.para_id IS NULL OR EXISTS (SELECT 1 FROM content p WHERE p.doc_id=c.doc_id AND COALESCE(p.external_para_id, 'p' || p.id)=c.para_id AND p.deleted_at IS NULL))
            ORDER BY (c.time_value IS NULL), c.time_value LIMIT ?`,
-        [entityId, ...ex, limit]);
+        [entityId, ...ex, limit * 5]);
+      const live = new Set();
+      const ids = [...new Set(rows.map((r) => /^p(\d+)$/.exec(r.para_id || '')?.[1]).filter(Boolean).map(Number))];
+      if (ids.length) for (const r of await db.queryAll(`SELECT id, doc_id FROM content WHERE id IN (${ids.map(() => '?').join(',')}) AND deleted_at IS NULL`, ids)) live.add(`${r.doc_id}|p${r.id}`);
+      const ext = rows.filter((r) => r.para_id && !/^p\d+$/.test(r.para_id));
+      if (ext.length) {
+        const docs = [...new Set(ext.map((r) => r.doc_id))], pids = [...new Set(ext.map((r) => r.para_id))];
+        for (const r of await db.queryAll(`SELECT doc_id, external_para_id pid FROM content WHERE doc_id IN (${docs.map(() => '?').join(',')})
+            AND external_para_id IN (${pids.map(() => '?').join(',')}) AND deleted_at IS NULL`, [...docs, ...pids])) live.add(`${r.doc_id}|${r.pid}`);
+      }
+      const facts = rows.filter((r) => !r.para_id || live.has(`${r.doc_id}|${r.para_id}`)).slice(0, limit);
       return { id: ent.id, name: ent.name, facts: facts.map((f) => ({ statement: f.statement, relation: f.relation, when: f.whenv, basis: f.time_basis, proof: f.proof_verbatim })) };
     },
 
