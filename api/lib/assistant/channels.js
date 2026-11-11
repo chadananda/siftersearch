@@ -43,5 +43,13 @@ export function frameFor(channel = {}, depth = null) {
   return channel?.frame ?? null;
 }
 
+/** A letter greets its reader by the name their mail client sends (11-11: replies opened "Hello!" — the From name never
+ *  reached the writer). Display names are reader-controlled: one line, ≤60 chars, no quotes. Pure. */
+export function greetByName(frame, channel = {}, name = null) {
+  const n = String(name || '').replace(/[\u0000-\u001f"<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60);
+  if (!frame || channel?.renderer !== 'email-html' || !n || n.includes('@')) return frame;
+  return `${frame} The reader's mail client gives their name as "${n}": greet them by it (the given name, when it reads as a person's name).`;
+}
+
 /** Formats a channel can display: drop any whose needs the channel lacks. */
 export const supports = (channel, needs = []) => needs.every((n) => channel.capabilities.includes(n));

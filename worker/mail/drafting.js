@@ -89,7 +89,7 @@ export async function draftJob(env, db, m, { call = tower } = {}) {
   // commands (10-23: Chad's NEW question got the next Dawn-Breakers page)
   const inThread = READING_THREAD.test(m.subject || '') || !!(await db.prepare(`SELECT 1 x FROM mail_messages WHERE thread_key = ? AND direction = 'out'
     AND status = 'sent' AND subject LIKE '%Reading]%' LIMIT 1`).bind(m.thread_key).first());
-  await call(env, '/draft', { async: true, job: key, messages: await threadMessages(db, m.thread_key, m.id), email: m.from_addr,
+  await call(env, '/draft', { async: true, job: key, messages: await threadMessages(db, m.thread_key, m.id), email: m.from_addr, name: m.from_name || null,
     reading: { inThread }, ...(attachments.length ? { attachments } : {}) });
   return null;
 }

@@ -3,7 +3,7 @@
 // and speed can change without code. Deps: openai SDK, anis/prompt.js.
 import OpenAI from 'openai';
 import { anisSystem, anisUserPayload, anisDirection } from './prompt.js';
-import { frameFor } from './channels.js';
+import { frameFor, greetByName } from './channels.js';
 import { logAIUsage } from '../ai-services.js';
 import { assertSpendCap } from '../spend-caps.js';
 import { noteProviderError } from '../spend-alerts.js';
@@ -29,7 +29,7 @@ export { replyCap } from './reply-cap.js';
 export async function anisCraft({ user_question, retrieved_quotes, conversation_summary, persona_name, mission, companion_append, conversational = false, entities = null, peopleAnswer = null, target = null, onUsage = null, direction = {}, llm, onChunk, signal }) {
   // System = soul + house style (constant → cached prefix); everything about THIS reply goes in the user message.
   // the length frame follows Jev's depth for this turn (channels.js frameFor), never a word count
-  const dir = anisDirection({ channelFrame: frameFor(direction.channel, direction.depth), stance: direction.stance ?? null, guarded: !!direction.guarded,
+  const dir = anisDirection({ channelFrame: greetByName(frameFor(direction.channel, direction.depth), direction.channel, direction.readerName), stance: direction.stance ?? null, guarded: !!direction.guarded,
     conversational, mission, companionAppend: companion_append, formatHow: direction.format?.how ?? null, question: user_question, scenario: direction.scenario ?? direction.role ?? null });
   // Per-model request shape from the registry: Haiku 5.5 and the GPT-5 family reject temperature; GPT-5 counts
   // max_completion_tokens and should not reason for a chat reply (reasoning_effort minimal).
