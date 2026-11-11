@@ -61,5 +61,9 @@ describe('ops reports (server-side)', () => {
     expect(c.by_tier).toEqual({ core: { live: 60, covered: 50, missing: 10 }, gray: { live: 20, covered: 20, missing: 0 }, supplemental: { live: 40, covered: 30, missing: 10 } });
     expect(c.rows[0]).toMatchObject({ religion: "Baha'i", tier: 'core', scope: 'primary' });
     expect(c.rows.find((r) => r.tier === 'gray')).toMatchObject({ religion: 'Islam', scope: 'supplemental' });   // scope = the doc's CURRENT scope
+    // per-doc view (author stamp ignored) never reports less coverage than the per-author one; the worst docs carry ids
+    expect(c.doc_only.covered).toBeGreaterThanOrEqual(c.covered_paragraphs);
+    expect(c.missing_docs).toBe(c.missing_docs_top.length);
+    for (const d of c.missing_docs_top) expect(d.live).toBeGreaterThan(d.covered);
   });
 });

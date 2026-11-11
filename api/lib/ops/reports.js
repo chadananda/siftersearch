@@ -167,6 +167,22 @@ export const REPORTS = {
       const row = agg.get(g) || { religion: r.religion || 'Other', tier, scope: r.scope, live: 0, covered: 0 };
       row.live += r.paragraphs; row.covered += c; agg.set(g, row);
     }
+    // the same, matched per DOC only (ignores the author stamp): a gap that closes here is re-attribution, not unindexed text
+    const covDoc = new Map(), liveDoc = new Map();
+    for (const r of covered) covDoc.set(r.doc_id, (covDoc.get(r.doc_id) || 0) + r.paragraphs);
+    for (const [, r] of byKey) {
+      const tier = doctrinalTier({ religion: r.religion, collection: r.collection, title: r.title, author: r.doc_author }, { author: r.author });
+      const e = liveDoc.get(r.doc_id) || { doc_id: r.doc_id, title: r.title, religion: r.religion, live: 0, liveByTier: {} };
+      e.live += r.paragraphs; e.liveByTier[tier] = (e.liveByTier[tier] || 0) + r.paragraphs; liveDoc.set(r.doc_id, e);
+    }
+    const docOnly = { live: 0, covered: 0, missing: 0, docs_with_core_missing: 0 }, worst = [];
+    for (const e of liveDoc.values()) {
+      const c = Math.min(e.live, covDoc.get(e.doc_id) || 0);
+      docOnly.live += e.live; docOnly.covered += c;
+      if (e.live - c > 0) { worst.push({ doc_id: e.doc_id, title: e.title, religion: e.religion, live: e.live, covered: c, core: e.liveByTier.core || 0 }); if (e.liveByTier.core) docOnly.docs_with_core_missing++; }
+    }
+    docOnly.missing = docOnly.live - docOnly.covered;
+    worst.sort((a, b) => b.core - a.core || (b.live - b.covered) - (a.live - a.covered));
     const rows = [...agg.values()].map((r) => ({ ...r, missing: r.live - r.covered }));
     const order = { core: 0, gray: 1, supplemental: 2 };
     rows.sort((x, y) => order[x.tier] - order[y.tier] || y.missing - x.missing);
@@ -177,7 +193,8 @@ export const REPORTS = {
     const perPara = coveredTotal ? spent / coveredTotal : 0;
     const missing = rows.reduce((n, r) => n + r.missing, 0);
     return { months, spent_usd: +spent.toFixed(2), covered_paragraphs: coveredTotal, usd_per_paragraph: +perPara.toFixed(6), missing_paragraphs: missing,
-      est_usd_to_finish: +(missing * perPara).toFixed(0), note: 'upper bound: identical phrase text is embedded once', by_tier, rows };
+      est_usd_to_finish: +(missing * perPara).toFixed(0), note: 'upper bound: identical phrase text is embedded once', by_tier,
+      doc_only: docOnly, missing_docs_top: worst.slice(0, 25), missing_docs: worst.length, rows };
   },
 };
 
