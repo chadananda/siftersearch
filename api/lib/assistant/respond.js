@@ -5,6 +5,7 @@
 // Deps (lazy, injectable for tests): routes/chat.js executeSearch, companion/.
 
 import { extractPhrases, fixedPhrases, hintsOf } from './phrases.js';
+import { reportToEntity } from '../person-report.js';
 import { religionsReply } from './library-facts.js';
 import { findWork, workReply, workLead, workOffer, workAboutQuery, aboutWork, WORK_HOW, linkTitles, dropPreamble } from './work-request.js';
 import { workUrl } from '../source-links.js';
@@ -557,6 +558,8 @@ async function defaultDeps() {
 }
 
 // A live chat's one-round research has no brief: the writer works from the passages themselves (researcher.js ONE_ROUND).
+// a strategy's person reports (fetch.person_report → found_records) → the writer's PEOPLE entries (prompt.js), their links allowed
+const personEntities = (records) => { const e = (records || []).filter((r) => r?.kind === 'person_report').map(reportToEntity).filter(Boolean); return e.length ? { entities: e } : {}; };
 const QUICK_RESEARCH_HOW = 'Write the reply from the passages found for this question. Answer what the person is reaching for: a quick question gets a direct answer first; a study question gets an organised answer — a short bold lead for each part, the passages that carry it quoted in their exact words (linked as the house style says), the distinctions that matter and specifics (names, dates, references). A STORY or a SEQUENCE of events (what happened, how it unfolded, a timeline) is told fully and in order from the passages — each event with its date and place, the people in it, and the narrators’ own words quoted (Nabíl, Shoghi Effendi, the historians) — drawing on every source found, not one; never a summary of a summary. When the reader names a period, every event given lies inside it: check each date against the period, and leave out (or mark as earlier background) what falls outside. Doctrine rests on the Writings and Shoghi Effendi first; a scholar or an institution is commentary, named as such. A passage from the web is named as from the web, never as scripture. Never volunteer what could not be found; give what is known. End with the thread to pull, as an invitation — no summary, no remarks about sources.';
 const QUOTE_MISS_HOW = 'The person asked to find a quotation and this search found no passage containing those words — say that (never that the library lacks them). Say so plainly in one or two sentences, quoting their wording back. Do NOT offer related passages, people, events or other topics, and do not guess a source. Suggest checking the exact wording or giving the author, work or a few more words.';
 // In a thread, a miss may be wording the conversation already sourced (r5): point back to that source instead of absence.
@@ -769,7 +772,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
     : fast?.passages ? { passages: fast.origin?.passages || fast.passages, _plan: { shape: fast.kind === 'reference' ? 'lookup' : 'quote', lookup: fast.kind, ...(fast.phrase ? { quote: { phrase: fast.phrase, via: 'lookup-code' } } : {}) } }
     : sourced ? { passages: [], _plan: { shape: 'source', sourceHunt: sourced.hunt } } : original ? { passages: [], _plan: original.plan }
     : conversational ? { passages: [], _plan: plan }
-    : strat ? { passages: strat.passages || [], _plan: strat.plan }
+    : strat ? { passages: strat.passages || [], _plan: strat.plan, ...personEntities(strat.records) }
     : language ? { passages: [], _plan: { shape: 'language' } }
     : position?.passages?.length ? { passages: position.passages, _plan: { shape: 'position', themes: position.themes } }
     : study ? { passages: [], _plan: { shape: 'define', term: study.term, root: study.root, via: 'ctai' } } : await phrasesP.then((p) => {

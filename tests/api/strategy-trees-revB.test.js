@@ -233,7 +233,7 @@ describe('person_profile: who one person was, from the histories (11-11: the pla
     const P = (id, title) => ({ id, title, authority: 'history', score: 0.5, text: `passage ${id}`, religion: "Bahá'í", document_id: id, paragraph_index: 1 });
     const people = [];
     const tools = { fused_search: async (i) => { calls.push(i); return { passages: i.filters?.work ? [1, 2, 3, 4].map((n) => P(n, 'The Dawn-Breakers')) : [] }; },
-      biography_search: async (i) => { people.push(i.query); return { people: [{ id: 9, name: 'Quddús', evidence: [{ statement: 'the last Letter of the Living', source: 'The Dawn-Breakers', paraId: 'para_1' }] }] }; } };
+      biography_lookup: async (i) => { people.push(i.name); return { found: true, person: { id: 9, name: 'Quddús', portrait: null, facts: [{ statement: 'the last Letter of the Living', source: 'The Dawn-Breakers' }] }, others: [] }; } };
     const jev = async ({ question }) => { asked.push(question); return { choice: 'primary record' }; };
     const s = await run('person_profile', 'Tell me about Quddús', { tools, units: { topic: 'Quddús' }, jev,
       extra: { judges: { generate: async ({ kind }) => ({ ok: true, items: kind === 'histories' ? ['The Dawn-Breakers', 'God Passes By'] : ['the life of Quddús'] }) } } });
@@ -241,8 +241,8 @@ describe('person_profile: who one person was, from the histories (11-11: the pla
     expect(calls.some((c) => c.filters?.work === 'God Passes By')).toBe(true);
     expect(calls.every((c) => !/biography|martyrdom/.test(c.query))).toBe(true);
     expect(asked[0]).toMatch(/tell who Quddús was/);
-    expect(people).toEqual(['Quddús']);   // the person index first: its cited facts reach the writer as found_records
-    expect(s.units.found_records.some((r) => r.name === 'Quddús')).toBe(true);
+    expect(people).toEqual(['Quddús']);   // the person report first (biography_lookup): its cited timeline/facts reach the writer's PEOPLE block
+    expect(s.units.found_records.some((r) => r.kind === 'person_report' && r.name === 'Quddús')).toBe(true);
     expect(path(s)[0]).toBe('p0');
     expect(path(s).at(-1)).toBe('h5');
     expect(TPL['person_profile.life']).toMatch(/never say the library lacks a detail a passage below gives/);

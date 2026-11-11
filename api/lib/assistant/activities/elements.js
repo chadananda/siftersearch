@@ -142,6 +142,9 @@ const E = {
     thin: (items, p) => p.mode === 'close' && !items.some((x) => x.role === 'source') }),
   'fetch.person': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'biography_search', rank: true, params: ['name'], reads: ['named_person'], into: 'found_records',
     input: (s, p, u) => ({ query: text(s, u, p.name, '{{named_person}}') }), take: (o) => o?.people, thin: () => false }),
+  // the named person's pre-researched report (biography_lookup: portrait, dates, kinship, built life timeline, cited facts) → found_records beside the passages
+  'fetch.person_report': retrieval({ edges: ['one', 'none', 'error'], tool: 'biography_lookup', params: ['name'], reads: ['named_person'], into: 'found_records',
+    input: (s, p, u) => ({ name: text(s, u, p.name, '{{named_person}}') }), take: (o) => (o?.found ? [{ kind: 'person_report', ...o.person, others: o.others }] : []), thin: () => false }),
   'fetch.renderings': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'rendering_lookup', rank: true, params: ['term', 'translator'], reads: ['term'],
     gate: (s, u, p) => /[\u0600-\u06FF]/.test(text(s, u, p.term, '{{term_arabic}}', '{{term}}')),   // Arabic script only: Latin → Arabic is the term_arabic unit (Jev), not the tool
     input: (s, p, u) => ({ term_arabic: text(s, u, p.term, '{{term_arabic}}', '{{term}}'), ...(p.translator ? { translator: p.translator } : {}) }), take: (o) => (o?.found ? o.passages : []), thin: () => false,
@@ -700,6 +703,7 @@ export const ELEMENT_META = {
   'fetch.person': m('Finds the person record the question names (several bearers of a name come back as several).', 'named_person', 'found_records (people)', ['biography_search']),
   'fetch.original': m('Finds the Arabic or Persian original of an English passage.', 'quoted_words or found_passages', 'found_passages', ['original_lookup']),
   'fetch.translation': m('Finds the existing English translations of an original-language text.', 'quoted_words or found_passages', 'found_passages', ['translation_lookup']),
+  'fetch.person_report': m('The named person’s biography report: portrait, life dates, family, the built life timeline and cited facts (one person; other bearers of the name listed).', 'named_person', 'found_records (person_report)', ['biography_lookup']),
   'fetch.renderings': m('How the authorized translator rendered a word, with counts and paired passages.', 'term', 'found_passages + found_records', ['rendering_lookup']),
   'fetch.edition': m('The found passage in the other editions of its work family, any tradition and language: its original-language edition (want=original) or its parallel translations (want=translations), aligned by reference number, else by meaning; never translated. None held → a record naming the missing language.', 'found_passages', 'found_passages + found_records (absence)', ['edition_lookup']),
   'fetch.align': m('Attaches each passage’s recorded original and translations.', 'found_passages', 'found_passages (annotated)', ['links_lookup']),

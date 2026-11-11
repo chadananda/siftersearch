@@ -180,7 +180,7 @@ export function anisUserPayload({ question, conversation = '', passages: given =
   const lines = passages.map((p, i) => `${passageHeader(p, i)}\nURL: ${publicUrl(p.citation_url) || '(none — name the title in italics, unlinked; never tell the reader whether a source has a link)'}\n${passageText(p)}`);
   // Each piece of evidence goes with its verbatim PROOF — the model reads what the source actually says.
   const cite = (e) => `${e.statement}${e.when ? ` (${e.when})` : ''} — ${e.source || 'source'}${publicUrl(e.url) ? ` URL: ${publicUrl(e.url)}` : ''}${e.proof ? ` — proof: "${String(e.proof).slice(0, 220)}"` : ''}`;
-  const people = (entities || []).map((p) => `- ${p.name}: ${(p.evidence || []).map(cite).join('; ')}`);
+  const people = (entities || []).map((p) => `- ${p.name}${p.aliases?.length ? ` (also called ${p.aliases.slice(0, 6).join(', ')})` : ''}${p.summary ? ` — ${p.summary}` : ''}: ${(p.evidence || []).map(cite).join('; ')}`);   // aliases/summary: a person report (person-report.js)
   let peopleBlock = '';
   if (peopleAnswer) {
     const sect = (title, rows) => (rows.length ? `\n${title}:\n${rows.join('\n')}` : '');
