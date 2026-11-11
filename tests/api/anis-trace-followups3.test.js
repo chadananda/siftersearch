@@ -23,7 +23,7 @@ describe('1. names: ordinary sentence-initial word, highest-confidence person', 
     let body; const fetchImpl = async (u, o) => { body = JSON.parse(o.body); return { ok: true, json: async () => ({ answers: {} }) }; };
     await chooseStrategy([{ role: 'user', content: 'Trace how Abdu\'l-Bahá uses "Most Great Justice" across his talks' }], { apiKey: 'k', fetchImpl });
     const q = Object.entries(body.questions).find(([k]) => k.startsWith('kind_'))?.[1];
-    expect(q.criteria.neither).toMatch(/STARTS the sentence/); expect(q.instructions).toMatch(/ordinary command word is neither/);
+    expect(q.criteria.neither).toMatch(/STARTS the sentence/); expect(q.instructions).toMatch(/ordinary command word or an acknowledgment .* is neither/); expect(q.criteria.subject).toMatch(/ABOUT/); expect(q.criteria.neither).toMatch(/Great/);
   });
   it('planner: in_named + by_person on one search.shelf, or named_person read without by_person, is rejected; the prompt says so', () => {
     expect(DESIGN_SYSTEM).toMatch(/Never put in_named and by_person on the same search.shelf/);

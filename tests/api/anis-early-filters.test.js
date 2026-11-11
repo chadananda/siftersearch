@@ -18,7 +18,7 @@ describe('Jev fills the filter units in the same call', () => {
     expect(namedUnits(a, ["According to 'Abdu'l-Bahá", 'Some Answered Questions'], Q)).toEqual({ named_person: "'Abdu'l-Bahá", named_work: 'Some Answered Questions', topic: 'what happens to the soul after death?' });
   });
   it('namedUnits: below-confidence or "neither" kinds set nothing (topic stays the question)', () => {
-    expect(namedUnits({ kind_1: ans('work', 0.3), kind_2: ans('neither') }, ['Rumi', 'fana'], 'Rumi on fana')).toEqual({ named_subjects: ['fana'] });   // a subject is carried (about_person), never a hard filter
+    expect(namedUnits({ kind_1: ans('work', 0.3), kind_2: ans('subject') }, ['Rumi', 'fana'], 'Rumi on fana')).toEqual({ named_subjects: ['fana'] });   // a subject is carried (about_person), never a hard filter
   });
   it('chooseStrategy returns the units, asks kind_N + subject_religion in ONE call, and the subject tradition is a turn-only scope', async () => {
     let body;
@@ -184,13 +184,15 @@ describe('namedUnits: topic remnants after a removed span (11-09 widget turns)',
   it('lone apostrophe tokens are dropped', () => {
     expect(namedUnits(p(), ["'Abdu'l-Bahá"], 'Trace how \'Abdu\'l-Bahá uses "Most Great Justice" across his talks').topic).toBe('Trace how uses "Most Great Justice" across his talks');
   });
-  it('a person the question is ABOUT is "neither" (Jev); a bare asking frame around it → the person is the topic', () => {
-    expect(namedUnits({ kind_1: ans('neither') }, ['Ṭáhirih'], 'Who was Ṭáhirih?')).toEqual({ topic: 'Ṭáhirih', named_subjects: ['Ṭáhirih'] });
-    expect(namedUnits({ kind_1: ans('neither') }, ['Vaḥíd'], 'Tell me about Vaḥíd')).toEqual({ topic: 'Vaḥíd', named_subjects: ['Vaḥíd'] });
-    expect(namedUnits({ kind_1: ans('neither') }, ['Vaḥíd'], 'Can you tell me about Vaḥíd?')).toEqual({ topic: 'Vaḥíd', named_subjects: ['Vaḥíd'] });
+  it('a person the question is ABOUT is "subject" (Jev); a bare asking frame around it → the person is the topic', () => {
+    expect(namedUnits({ kind_1: ans('subject') }, ['Ṭáhirih'], 'Who was Ṭáhirih?')).toEqual({ topic: 'Ṭáhirih', named_subjects: ['Ṭáhirih'] });
+    expect(namedUnits({ kind_1: ans('subject') }, ['Vaḥíd'], 'Tell me about Vaḥíd')).toEqual({ topic: 'Vaḥíd', named_subjects: ['Vaḥíd'] });
+    expect(namedUnits({ kind_1: ans('subject') }, ['Vaḥíd'], 'Can you tell me about Vaḥíd?')).toEqual({ topic: 'Vaḥíd', named_subjects: ['Vaḥíd'] });
   });
   it('a question with its own content beyond the subject keeps the whole question (no topic)', () => {
-    expect(namedUnits({ kind_1: ans('neither') }, ['Báb'], 'When did the Báb declare His mission?')).toEqual({ named_subjects: ['Báb'] });
-    expect(namedUnits({ kind_1: ans('neither', 0.3) }, ['Vaḥíd'], 'Tell me about Vaḥíd')).toEqual({});
+    expect(namedUnits({ kind_1: ans('subject') }, ['Báb'], 'When did the Báb declare His mission?')).toEqual({ named_subjects: ['Báb'] });
+    expect(namedUnits({ kind_1: ans('subject', 0.3) }, ['Vaḥíd'], 'Tell me about Vaḥíd')).toEqual({});
+    // 11-11 email: an acknowledgment is "neither", never a subject; the person asked about is the topic
+    expect(namedUnits({ kind_1: ans('neither'), kind_2: ans('subject') }, ['Great', 'Quddus'], 'Great. What can you tell me about Quddus?')).toEqual({ topic: 'Quddus', named_subjects: ['Quddus'] });
   });
 });

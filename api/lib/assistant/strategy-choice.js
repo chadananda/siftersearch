@@ -47,8 +47,10 @@ const bookAsk = (span) => `In the latest message, is "${span}" a particular BOOK
 
 // Early filters (Chad 11-09): what each name span IS (a work, a person, neither) and which tradition the question is about are Jev's answers in this SAME call
 // (typed choices only); code resolves them — a span becomes named_work / named_person, the topic is the question minus those spans (a search phrase, not the whole question).
-const KINDS = { work: 'a written WORK: a book, tablet, treatise or scripture (its title)', person: 'a PERSON or author whose own teaching or writing the reader asks about (the words they said or wrote, "X on grace", "what X teaches")', neither: 'a concept, place, event, tradition, or a person the question is ABOUT (who they were, their life, story, childhood, death), anything else — including an ordinary word (a verb such as Trace, Compare, Find, Show) that is capitalised only because it STARTS the sentence' };
-const kindAsk = (span) => `In the latest message, what does "${span}" name — a written work, a person whose own teaching or writing is asked about (not a person whose life or story is asked about), or neither? A capitalised first word of the message is a name only when it really is one; an ordinary command word is neither.`;
+// "subject" and "neither" are separate options: one "neither" for both a person the question is ABOUT and an ordinary capitalised word made
+// "Great" (an acknowledgment) the named subject and split Quddús's vote below confidence (11-11 email "Great. What can you tell me about Quddus?")
+const KINDS = { work: 'a written WORK: a book, tablet, treatise or scripture (its title)', person: 'a PERSON or author whose own teaching or writing the reader asks about (the words they said or wrote, "X on grace", "what X teaches")', subject: 'a person, place, event, concept or tradition the question is ABOUT (who they were, their life, story, childhood, death; what happened there; what it means)', neither: 'not a name or subject at all: an ordinary word capitalised only because it STARTS the sentence — a command word (Trace, Compare, Find, Show), an acknowledgment, thanks or greeting (Great, Thanks, Okay, Hello, Yes)' };
+const kindAsk = (span) => `In the latest message, what is "${span}" — a written work, a person whose own teaching or writing is asked about, a subject the question is about (a person's life or story, a place, event or concept), or neither (no name or subject at all)? A capitalised first word of a sentence is a name only when it really is one; an ordinary command word or an acknowledgment ("Great.", "Thanks!") is neither.`;
 // a language names no tradition (round 5: "What does the Arabic word irfán mean?" → Islam scoped out the Bahá'í Writings that use the word)
 const LANGUAGE_IS_NOT_A_TRADITION = ' A language is not a tradition: "the Arabic word …", "in Persian", "the Hebrew term …", "the Sanskrit …" name the language of a word, which several traditions share — choose a tradition only when the message names or plainly means the tradition itself.';
 const SUBJECT_ASK = `Does the latest message ask about the texts, teachers or teachings of one particular religion or tradition ("Buddhist anatta", "Sufi Rumi on fana", "Augustine on grace")? Choose it. "none" when it names no tradition.${LANGUAGE_IS_NOT_A_TRADITION}`;
@@ -56,7 +58,7 @@ const FRAME = /^(?:according to|as (?:stated|explained|written|said) (?:in|by)|p
 const FUNCTION_WORDS = /^(?:who|what|whom|whose|which|when|where|why|how|was|were|is|are|am|be|did|do|does|the|a|an|of|to|in|on|and|or|about|tell|me)\W*$/i;   // question/function words carry no search content
 const ASK_WORDS = /^(?:can|could|would|will|you|please|i|know|like|more|some|anything|something|give|explain|describe|say|said)\W*$/i;   // an asking frame's words ("can you tell me about …")
 const frameless = (n) => String(n).replace(FRAME, '').trim();
-/** Jev's span kinds → { named_work, named_person, named_subjects (his "neither" spans), topic } (units for the tree's `request`). Pure. */
+/** Jev's span kinds → { named_work, named_person, named_subjects (his "subject" spans), topic } (units for the tree's `request`). Pure. */
 export function namedUnits(a = {}, spans = [], question = '', min = MIN_CONFIDENCE) {
   const kinds = spans.map((n, i) => ({ name: frameless(n), raw: n, ...choice(a[`kind_${i + 1}`]) })).filter((k) => k.name && ['work', 'person'].includes(k.choice) && (k.confidence ?? 0) >= min);
   const best = (c) => kinds.filter((k) => k.choice === c).sort((x, y) => (y.confidence ?? 0) - (x.confidence ?? 0))[0];   // the highest-confidence span of each kind
@@ -65,10 +67,12 @@ export function namedUnits(a = {}, spans = [], question = '', min = MIN_CONFIDEN
     // remnants of a removed span (structure): lone quote/apostrophe tokens, a dangling "?" or "Who was ?"-style gap
     .replace(/(^|\s)['"’‘“”]+(?=\s|$)/g, ' ').replace(/\s+([?!.,;:])/g, '$1').replace(/^[?!.,;:\s]+/, '').replace(/\s+/g, ' ').trim();
   const words = rest.split(/[\s]+/).filter((w) => /[\p{L}\p{N}]{2,}/u.test(w) && !FUNCTION_WORDS.test(w));
-  // the message is only an asking frame around subjects Jev read as "neither" ("Tell me about Vaḥíd", "Who was Ṭáhirih?") → the subjects are the topic;
+  // the message is only an asking frame around subjects Jev read as "subject" ("Tell me about Vaḥíd", "Who was Ṭáhirih?") → the subjects are the topic;
   // the whole question as the topic sent "tell me about" to the literal layer (11-11: Sutta Nipata, Mahabharata for Vaḥíd)
-  const subjects = spans.filter((n, i) => { const k = choice(a[`kind_${i + 1}`]); return k?.choice === 'neither' && (k.confidence ?? 0) >= min; }).map(frameless).filter(Boolean);
-  const bare = subjects.length && !kinds.length && !subjects.reduce((q, n) => q.split(n).join(' '), String(question)).split(/\s+/).some((w) => /[\p{L}\p{N}]{2,}/u.test(w) && !FUNCTION_WORDS.test(w) && !ASK_WORDS.test(w));
+  const subjects = spans.filter((n, i) => { const k = choice(a[`kind_${i + 1}`]); return k?.choice === 'subject' && (k.confidence ?? 0) >= min; }).map(frameless).filter(Boolean);
+  // Jev's "neither" spans (an acknowledgment "Great.", a sentence-initial command word) carry nothing: they never keep the whole question as the topic
+  const empty = spans.filter((n, i) => { const k = choice(a[`kind_${i + 1}`]); return k?.choice === 'neither' && (k.confidence ?? 0) >= min; });
+  const bare = subjects.length && !kinds.length && ![...subjects, ...empty].reduce((q, n) => q.split(n).join(' '), String(question)).split(/\s+/).some((w) => /[\p{L}\p{N}]{2,}/u.test(w) && !FUNCTION_WORDS.test(w) && !ASK_WORDS.test(w));
   return { ...(work ? { named_work: work.name } : {}), ...(person ? { named_person: person.name } : {}), ...(subjects.length ? { named_subjects: subjects } : {}), ...(kinds.length && words.length >= 2 ? { topic: rest } : bare ? { topic: subjects.join(' ') } : {}) };
 }
 
