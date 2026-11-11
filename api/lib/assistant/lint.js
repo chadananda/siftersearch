@@ -181,7 +181,36 @@ export function unwrapLinks(text) {
     fixed += cut.length;
     return [...line].filter((_, i) => !cut.includes(i)).join('');
   }).join('\n');
-  return { text: fixed ? out3 : String(text || ''), fixed };
+  const cl = closeOrphans(out3);
+  fixed += cl.fixed;
+  return { text: fixed ? cl.text : String(text || ''), fixed };
+}
+
+// A link the writer opened over a multi-line block quotation ends in a "](url)" whose "[" sits lines above (11-10, Suratu'l-Kawthar):
+// the orphan close is dropped, its paragraph rejoins the quotation it ends (one blank line after "> " lines), and the url moves to an
+// unlinked "— *Title*" attribution right after it, so the place link survives. Pure.
+function closeOrphans(text) {
+  const lines = text.split('\n');
+  let fixed = 0;
+  for (let i = 0; i < lines.length; i += 1) {
+    let depth = 0, at = -1;
+    for (let k = 0; k < lines[i].length; k += 1) { const c = lines[i][k]; if (c === '[') depth += 1; else if (c === ']') { if (depth) depth -= 1; else if (lines[i][k + 1] === '(') { at = k; break; } } }
+    if (at < 0) continue;
+    const m = /^\]\((https?:\/\/[^\s)]+)\)/.exec(lines[i].slice(at));
+    if (!m) continue;
+    lines[i] = lines[i].slice(0, at) + lines[i].slice(at + m[0].length);
+    fixed += 1;
+    let top = i; while (top > 0 && lines[top - 1].trim()) top -= 1;   // this paragraph's first line
+    if (top >= 2 && !lines[top - 1].trim() && /^>/.test(lines[top - 2]) && !/^>/.test(lines[top])) {
+      lines[top - 1] = '>';
+      for (let k = top; k <= i; k += 1) lines[k] = `> ${lines[k]}`;
+    }
+    let n = i + 1; while (n < lines.length && !lines[n].trim()) n += 1;
+    const att = n < lines.length && /^(>\s*)?—\s*\*([^*\[\]\n]+)\*\s*$/.exec(lines[n]);
+    if (att) lines[n] = lines[n].replace(`*${att[2]}*`, `[*${att[2]}*](${m[1]})`);
+    i -= 1;   // the same line may hold another orphan
+  }
+  return { text: lines.join('\n'), fixed };
 }
 
 // THE LINK CHECK — BLOCKING (battery 11-10 "main book of the Hindus": `[*Bhagavad-Gita*](…) [https://…](https://…)`, a Mahabharata

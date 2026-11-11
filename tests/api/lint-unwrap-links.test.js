@@ -22,6 +22,13 @@ describe('unwrapLinks', () => {
     const ok = 'See [*A*](https://x.org/a) and [[PASSAGES]] here.\n[*B*](https://x.org/b)';
     expect(unwrapLinks(ok).text).toBe(ok);
   });
+  it('a link opened over a multi-line quotation: the orphan close goes, the verse rejoins the quote, the url moves to the attribution', () => {
+    const w = 'In Pickthall:\n\n> [*"Lo! We have given thee Abundance;*\n> *So pray unto thy Lord, and sacrifice.*\n\n*Lo! it is thy insulter."*](https://oceanlibrary.com/q/?paraId=para_6529)\n\n> — *The Meaning of the Glorious Qur’án*';
+    const out = unwrapLinks(w).text;
+    expect(out).toBe('In Pickthall:\n\n> *"Lo! We have given thee Abundance;*\n> *So pray unto thy Lord, and sacrifice.*\n>\n> *Lo! it is thy insulter."*\n\n> — [*The Meaning of the Glorious Qur’án*](https://oceanlibrary.com/q/?paraId=para_6529)');
+    const ok = 'A [*b*](https://x.org/b) and ](not a link)';
+    expect(unwrapLinks(ok).text).toBe(ok);
+  });
   it('runs in the exit form pass', () => {
     expect(formPass('As [[*Some Answered Questions*](https://oceanlibrary.com/saq)] says.').text).toContain('As [*Some Answered Questions*](https://oceanlibrary.com/saq) says.');
   });

@@ -180,9 +180,12 @@ export async function findTitled(cands, opts = {}) {
 export function otherCopies(sorted, asked) {
   const seen = new Set([sorted[0].title]);
   // other copies worth offering: not a foreword / introduction stub split off a book (11-01 live: GPB's "also holds" listed two)
-  const stub = (d) => /\b(?:foreword|introduction|preface|afterword|glossary|notes|index|bibliography)\b/i.test(d.title) || (d.paragraph_count ?? 99) < 20;
-  // …and not a work ABOUT the book ("God Passes By: Outline and cross-reference of chapters")
-  return sorted.slice(1).filter((d) => !stub(d) && !derived(d.title, asked) && !seen.has(d.title) && seen.add(d.title)).slice(0, 2);
+  const stub = (d) => /\b(?:foreword|introduction|preface|afterword|glossary|notes|index|bibliography)\b|\bchapters?\s+(?:[ivxlc]+|\d+)\b/i.test(d.title) || (d.paragraph_count ?? 99) < 20;
+  // …and not a work ABOUT the book ("God Passes By: Outline and cross-reference of chapters"), nor
+  // a recording sharing the title (11-10: Nabíl's Dawn-Breakers offered "Dawn Breakers", a William Sears talk). Authors are no test:
+  // translations of one text carry their translators' names (Dhammapada)
+  const recording = (d) => /^(?:media|audio|video|talks?|recordings?)$/i.test(String(d.collection || '').trim());
+  return sorted.slice(1).filter((d) => !stub(d) && !recording(d) && !derived(d.title, asked) && !seen.has(d.title) && seen.add(d.title)).slice(0, 2);
 }
 
 const NO_AUTHOR = /^(?:unknown|anonymous|n\/?a|none|various|-+|\?+)$/i;
