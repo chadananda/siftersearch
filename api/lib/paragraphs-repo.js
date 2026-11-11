@@ -8,6 +8,7 @@ import { paragraphAuthor } from './authorship/effective.js';
 import { olCiteTitle } from './library/ol-works.js';
 import { paragraphLocator } from './refs/locator.js';
 import { paraNum } from './sections.js';
+import { topSections, sectionPlace } from './refs/section-place.js';
 
 /** Paragraph row + its doc row → the search document (no vectors). `authority` = the doc's, when the caller has it. */
 export function paragraphDoc(p, doc, authority = null) {
@@ -82,7 +83,36 @@ export async function paragraphsByIds(ids) {
       out.push(paragraphDoc(r, doc));
     }
   }
+  await withSectionPlaces(out);
   return out;
+}
+
+// A sectioned book (its letters, chapters) cites "#section.paragraph" where the row has no traditional number (refs/section-place.js).
+// Per book: its top-level sections + its non-heading paragraph indexes, read once and cached (search hydrate stays one query per new book).
+const SHAPES = new Map(), SHAPE_TTL = 3600000, SHAPE_MAX = 128;
+async function bookShape(docId, now = Date.now()) {
+  const hit = SHAPES.get(docId);
+  if (hit && now - hit.at < SHAPE_TTL) return hit;
+  const secs = await queryAll('SELECT level, title, start_index, end_index, paragraphs FROM doc_sections WHERE doc_id = ? ORDER BY ord', [docId], 'search:section-places');
+  const tops = topSections(secs);
+  const body = tops.length ? (await queryAll(`SELECT paragraph_index FROM content WHERE doc_id = ? AND deleted_at IS NULL
+      AND COALESCE(blocktype, 'paragraph') NOT LIKE 'heading%' ORDER BY paragraph_index`, [docId], 'search:section-body')).map((r) => r.paragraph_index) : [];
+  if (SHAPES.size >= SHAPE_MAX) SHAPES.delete(SHAPES.keys().next().value);
+  const shape = { tops, body, at: now };
+  SHAPES.set(docId, shape);
+  return shape;
+}
+export async function withSectionPlaces(rows, { shape = bookShape } = {}) {
+  const want = rows.filter((r) => !/^#/.test(r.locator || '') && r.para_no != null && !/^heading/.test(r.blocktype || ''));
+  const docs = [...new Set(want.map((r) => Number(r.doc_id)))];
+  const shapes = new Map(await Promise.all(docs.map(async (d) => [d, await shape(d).catch(() => null)])));
+  for (const r of want) {
+    const at = sectionPlace(shapes.get(Number(r.doc_id)) || {}, r.paragraph_index);
+    if (!at) continue;
+    r.locator = at.locator;
+    if (at.section && at.section !== r.title) r.subdocument = at.section;
+  }
+  return rows;
 }
 
 /** The aligned ORIGINAL of each paragraph (original_text — Shoghi Effendi's source text beside his English), for answers

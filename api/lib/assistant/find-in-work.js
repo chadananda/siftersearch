@@ -4,6 +4,21 @@ import { SITE } from '../source-links.js';
 import { foldText, holdsWords, boldWords, excerptOf } from './quote-search.js';
 export { foldText, holdsWords, boldWords, excerptOf };
 
+// Meaning matches in chat are BRIEF (Chad 11-11, "world order letters?" printed 8 whole paragraphs): the closest 3, each its opening sentences
+// up to ~45 words, ending "…" when cut; the link under it opens the whole passage in the book.
+const MEANING_SHOW = 3, BRIEF_WORDS = 45;
+export function briefExcerpt(text, max = BRIEF_WORDS) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  if (t.split(' ').length <= max) return t;
+  const sents = t.split(/(?<=[.!?]["”’)\]]*)\s+/u);
+  let out = '';
+  for (const s of sents) { const next = out ? `${out} ${s}` : s; if (out && next.split(' ').length > max) break; out = next; if (out.split(' ').length >= max) break; }
+  const w = out.split(' ');
+  return w.length > max + 15 ? `${w.slice(0, max).join(' ').replace(/[,;:—–-]+$/, '')} …` : out.length < t.length ? `${out} …` : out;
+}
+const brief = (r) => r.passages.slice(0, MEANING_SHOW).map((p) => ({ ...p, excerpt: briefExcerpt(p.excerpt) }));
+const closest = (n) => (n === 1 ? 'This passage is' : `These ${n} passages are`);
+
 /** The reply, built by code (no writer): each place as a quoted passage with its linked citation; a count line only when there are several. Pure. */
 export function inWorkReply(r, { section = null } = {}) {
   const name = section || r.work.title || 'this work';
@@ -22,7 +37,8 @@ export function inWorkReply(r, { section = null } = {}) {
     return `${r.total} places in ${title} mention ${q}:\n\n${r.passages.map(item).join('\n\n')}${more}`;
   }
   if (r.mode === 'meaning') {
-    return `No passage in ${title} has the exact words ${q}. ${r.passages.length === 1 ? 'This passage is' : `These ${r.passages.length} passages are`} the closest to them in meaning:\n\n${r.passages.map(item).join('\n\n')}`;
+    const top = brief(r);
+    return `No passage in ${title} has the exact words ${q}. ${closest(top.length)} the closest to them in meaning:\n\n${top.map(item).join('\n\n')}`;
   }
   return `I searched all of ${title} for ${q}: the words are not in it, and no passage in it comes close in meaning.`;
 }
@@ -40,7 +56,18 @@ export function passageCards(r, { cover = null } = {}) {
 export function wordsToFind({ quoted = [], topic = null, titles = [] } = {}) {
   const t = titles.filter(Boolean).map(foldText);
   const q = quoted.map((s) => String(s).replace(/^[\s.,;:!?'"—–-]+|[\s.,;:!?'"—–-]+$/g, '').trim()).filter((s) => s && !t.includes(foldText(s)));
-  return q[0] || (topic && !t.includes(foldText(topic)) ? topic : null);
+  return q[0] || (topic && !namesTheWork(topic, titles) ? topic : null);
+}
+
+// A topic made only of the work's own title words (+ what kind of text it is) names the work — no words to find in it
+// (11-11: "world order letters?" searched WOB for "world order letters" instead of giving the book). Word resolution, not intent.
+const GENRE = new Set(['letter', 'letters', 'book', 'books', 'tablet', 'tablets', 'text', 'texts', 'work', 'works', 'volume', 'writings', 'writing',
+  'the', 'a', 'an', 'of', 'by', 'and', 'on', 'to', 'in', 'his', 'her', 'its', 'their', 'this', 'that', 'my', 'your', 'some', 'any', 'all']);
+const toks = (s) => foldText(s).split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+export function namesTheWork(topic, titles = []) {
+  const own = new Set(titles.filter(Boolean).flatMap(toks));
+  const rest = toks(topic).filter((w) => !GENRE.has(w));
+  return own.size > 0 && rest.every((w) => own.has(w));
 }
 
 /**
@@ -59,8 +86,8 @@ export async function findInWorkAnswer({ messages, names = [], by = null, topic 
   const doc = sec ? { id: sec.doc_id, title: sec.book, author: sec.author } : found.work.doc;
   if (!doc?.id) return null;
   const words = wordsToFind({ quoted, topic, titles: [doc.title, sec?.title, ...names] });
-  decisions?.record?.('in-work:resolve', { by: 'code', saw: { quoted, topic, work: doc.id, section: sec?.title ?? null }, chosen: words || 'none', reason: words ? null : 'no words to find: research instead' });
-  if (!words) return null;
+  decisions?.record?.('in-work:resolve', { by: 'code', saw: { quoted, topic, work: doc.id, section: sec?.title ?? null }, chosen: words || 'none', reason: words ? null : 'no words to find: the work itself (its card)' });
+  if (!words) return { book: found, work: doc };   // the work itself was asked for → the turn gives its card
   const run = search || (async (a) => (await import('./tools.js')).run('quote_search', a, { deps: deps.toolDeps || {} }));
   const res = await run({ query: words, works: [Number(doc.id)], ...(sec ? { from: sec.start_index, to: sec.end_index ?? sec.start_index } : {}) });
   if (!res) return null;
@@ -83,7 +110,7 @@ export function quoteReply(r, { scope = null } = {}) {
     const more = r.total > r.passages.length ? `\n\nThose are the first ${r.passages.length} of the ${r.total}; ask for the rest and I will continue from there.` : '';
     return r.total === 1 ? item(r.passages[0]) : `${r.total} passages in ${where} hold ${q}:\n\n${r.passages.map(item).join('\n\n')}${more}`;
   }
-  if (r.mode === 'meaning') return `No passage in ${where} has the exact words ${q}. ${r.passages.length === 1 ? 'This passage is' : `These ${r.passages.length} passages are`} the closest to them in meaning:\n\n${r.passages.map(item).join('\n\n')}`;
+  if (r.mode === 'meaning') { const top = brief(r); return `No passage in ${where} has the exact words ${q}. ${closest(top.length)} the closest to them in meaning:\n\n${top.map(item).join('\n\n')}`; }
   return `I searched ${where} for ${q}: the words are not there, and no passage comes close in meaning.`;
 }
 

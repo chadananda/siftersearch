@@ -367,6 +367,7 @@ describe('search a named book for quoted words', () => {
   });
   it('…no quoted words beside the book → the card as before', async () => {
     const got = await findInWorkAnswer({ messages: user('Do you have The Dawn-Breakers?'), deps: { bookFastPath: async () => ({ kind: 'work', work: { doc: DB[0], others: [] } }) }, search: vi.fn() });
-    expect(got).toBeNull();
+    expect(got.reply).toBeUndefined();   // no search reply: the work itself goes back for its card
+    expect(got.book.kind).toBe('work');
   });
 });
