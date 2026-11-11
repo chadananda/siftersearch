@@ -329,6 +329,13 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   if (bookOn || probe) {
     const found = await timed('book', () => bookFn({ messages, names: [u.named_work, ...(probe ? [u.topic] : [])].filter(Boolean), by: u.named_person ?? null, profile, decisions, ...(probe ? { alt: probe } : { onHeld: (f) => { held = f; } }) }),
       (r) => (r ? { kind: r.kind, via: r.via } : null)).catch(() => null);
+    // the book strategy covers "find words in it" (book-pick.js): words quoted beside the resolved book → the in-work find ON that book, not its card
+    // (11-10: 'Search The Dawn-Breakers for "Letters of the Living"' — Jev: book, the triage gave no in_work). No quoted words → null → the card.
+    if (!probe && inWorkFn && (found?.kind === 'work' || found?.kind === 'section')) {
+      const got = await timed('in_work', () => inWorkFn({ messages, names: [], by: null, topic: null, profile, decisions, deps: { bookFastPath: async () => found } }),
+        (r) => (r ? { work: r.work?.id, mode: r.result?.mode, total: r.result?.total } : null)).catch(() => null);
+      if (got?.reply) return inWorkAnswer(got, ex, { gate: 'strategy', via: 'book', ...(jevFallback ? { jev_fallback: jevFallback } : {}), decisions: decisions.list() });
+    }
     if (found?.kind === 'work') return bookAnswer(found.work, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
     if (found?.kind === 'section') return sectionCard(found, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
   }

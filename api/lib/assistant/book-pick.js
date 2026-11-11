@@ -107,7 +107,11 @@ export async function bookFastPath({ messages, names = [], by = null, profile = 
     decisions.record('book:candidates', { by: 'code', saw: { message: msg, also, by, via, ms: found?.ms ?? null, ...(alt ? { probe: alt } : {}) }, chosen: `${cands.length} candidates`, reason: cands.map((c) => `${c.key} ${c.label}`).join('; ') || null });
     if (!cands.length) return null;
     const p = await pick(messages, cands, { profile, onJev, ...(alt ? { alt } : {}), ...(via === 'extracted' ? { resolved: msg.split('\n') } : {}), ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
-    const hit = p?.choice && !['none', 'new'].includes(p.choice) && (p.confidence ?? 0) >= MIN_CONFIDENCE ? cands.find((c) => c.key === p.choice) : null;
+    // Jev gave NO answer (timeouts, 11-10 night: 4 of 4 calls at the 1000 ms limit) → code resolves the name it can: the finder's top
+    // candidate when its whole title stands in the reader's words ("Search The Dawn-Breakers for …"). An answer of "none" is never overridden.
+    const byName = !p && !alt && cands[0]?.kind === 'work' && ` ${fold(text)} `.includes(` ${coreTitle(cands[0])} `) ? cands[0] : null;
+    if (byName) decisions.record('book:by-name', { by: 'code', saw: { message: text, title: byName.doc.title }, chosen: byName.key, reason: 'Jev gave no answer; the top candidate\'s whole title is in the message' });
+    const hit = byName || (p?.choice && !['none', 'new'].includes(p.choice) && (p.confidence ?? 0) >= MIN_CONFIDENCE ? cands.find((c) => c.key === p.choice) : null);
     decisions.record('book:pick', { by: 'jev', saw: { candidates: cands.map((c) => `${c.key} ${c.label}`) }, options: [...cands.map((c) => c.key), ...(alt ? ['new'] : []), 'none'], probabilities: jevProbabilities(p),
       chosen: hit ? hit.key : p?.choice === 'new' ? 'new' : 'none', reason: !p ? 'no answer (see jev:timeout)' : hit ? null : p.choice === 'new' ? alt : p.choice === 'none' ? 'nothing fits' : 'low confidence', ms: p?.ms ?? null });
     // a NEAR MISS (Jev's top pick is a candidate, under the floor) is held for the turn: a later Jev call that also says book

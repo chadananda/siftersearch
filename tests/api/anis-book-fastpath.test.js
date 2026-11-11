@@ -332,3 +332,41 @@ describe('book path: near miss held, weak lookup book runs first (battery round 
     expect(r.reply).toBe('CARD 20992'); expect(respond).not.toHaveBeenCalled();
   });
 });
+
+// 11-10 night (manual Dawn-Breakers round): 'Search The Dawn-Breakers for "Letters of the Living"' — Jev: book; the pick timed out 4 of 4
+// calls (no answer) → no book → research "found no excerpt from The Dawn-Breakers". Earlier the pick took the UHJ letter whose title holds the phrase.
+describe('search a named book for quoted words', () => {
+  const DB = [{ id: 21310, title: 'The Dawn-Breakers', author: 'Nabil Zarandi', religion: BH, collection: null, paragraph_count: 1224 },
+    { id: 8801, title: 'Letters of Living, Dawn-Breakers, Quddús, Terraces', author: 'Universal House of Justice', religion: BH, collection: 'Administrative', paragraph_count: 27 }];
+  const dbFind = (msg, o = {}) => bookCandidates(msg, { ...o, retrievers: [lexicalRetriever(buildBookIndex({ docs: DB, sections: [] }))] });
+  const MSG = 'Search The Dawn-Breakers for "Letters of the Living"';
+  it('Jev gives no answer → code takes the top candidate whose whole title is in the message (recorded by code)', async () => {
+    const j = jev(), log = decisionLog();
+    const r = await bookFastPath({ messages: user(MSG), names: ['Letters of the Living'], decisions: log, deps: { fetchImpl: j.fetchImpl, find: dbFind, extract: vi.fn(async () => []) } });
+    expect(r.kind).toBe('work'); expect(r.work.doc.id).toBe(21310);
+    expect(log.list().find((d) => d.point === 'book:by-name')).toMatchObject({ by: 'code', chosen: 'c1' });
+  });
+  it('Jev answers "none" → never overridden by the title rule', async () => {
+    const j = jev({ choice: 'none', confidence: 0.9 }, { choice: 'none', confidence: 0.9 });
+    expect(await bookFastPath({ messages: user(MSG), deps: { fetchImpl: j.fetchImpl, find: dbFind, extract: vi.fn(async () => []) } })).toBeNull();
+  });
+  it('the turn: book strategy + quoted words → the in-work find on the resolved book, not its card', async () => {
+    const tri = { malicious: 0.01, complete: 0.99, stop_request: 0, stance: { choice: 'curious' }, kind: { choice: 'research', confidence: 0.9 }, outcome: { choice: 'search', confidence: 0.9 }, features: { first: true, turn: 0, words: 8, short: false } };
+    const strat = { strategy: { choice: 'book', confidence: 0.9 }, sides: [], sources: {}, decisions: [], units: { named_work: 'Letters of the Living' } };
+    const finds = [], j = jev({ choice: 'c1', confidence: 0.9 });
+    const deps = { titleOnly: async () => null, triage: async () => tri, strategy: async () => strat, state: { load: async () => emptyState(), append: async () => {} },
+      bookPick: (a) => bookFastPath({ ...a, deps: { fetchImpl: j.fetchImpl, find: dbFind, extract: vi.fn(async () => []) } }),
+      findInWork: async (a) => { finds.push(a); return findInWorkAnswer({ ...a, search: async (x) => ({ mode_used: 'literal', total: 1, works: [{ id: x.works[0], title: 'The Dawn-Breakers', author: 'Nabíl' }],
+        passages: [{ excerpt: 'These were the **Letters of the Living**.', place: '#90', url: 'https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_90', work: 'The Dawn-Breakers' }] }) }); },
+      titleAnswer: async (w) => ({ reply: `CARD ${w.doc.id}`, citations: [] }),
+      respond: async () => ({ reply: 'researched', citations: [], retrieved: [], plan: { shape: 'topic' }, timings: {} }),
+      open: async () => ({ conversationId: 'c', round: 0 }), close: async () => {}, fail: async () => {}, card: async () => null, outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {} };
+    const r = await anisTurn({ messages: user(MSG), participant: { id: 's', authed: true }, clientKey: 's', onEvent: () => {}, deps });
+    expect(r.reply).not.toMatch(/^CARD/); expect(r.reply).toMatch(/Letters of the Living/); expect(r.reply).toContain('para_90');
+    expect(finds).toHaveLength(1);
+  });
+  it('…no quoted words beside the book → the card as before', async () => {
+    const got = await findInWorkAnswer({ messages: user('Do you have The Dawn-Breakers?'), deps: { bookFastPath: async () => ({ kind: 'work', work: { doc: DB[0], others: [] } }) }, search: vi.fn() });
+    expect(got).toBeNull();
+  });
+});
