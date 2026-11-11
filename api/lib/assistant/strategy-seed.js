@@ -4,7 +4,7 @@
 // ('unmatched' = the default respond graph, called 'other' before 11-08). Activities named here are code (activities/index.js).
 
 import { NARRATION_TEMPLATES } from './narration-seed.js';
-import { TREE_TEMPLATES, TREE_STEPS, TREE_GRAPHS, TREE_IDS, TREE_DESCRIPTIONS, LOOKUP_TREE_STEPS, LOOKUP_TREE_GRAPHS, LOOKUP_TREE_IDS } from './strategy-trees-seed.js';
+import { TREE_TEMPLATES, TREE_STEPS, TREE_GRAPHS, TREE_IDS, TREE_DESCRIPTIONS, TREE_EXEMPLARS, LOOKUP_TREE_STEPS, LOOKUP_TREE_GRAPHS, LOOKUP_TREE_IDS } from './strategy-trees-seed.js';
 import { GENERAL_TEMPLATES, GENERAL_STEPS, GENERAL_STRATEGY } from './strategy-general.js';
 
 export const SEED_VERSION = 1;
@@ -174,6 +174,6 @@ export const STRATEGIES = [
   GENERAL_STRATEGY,   // the planner's safety net: no description, so never a Jev option
 ];
 // starter trees seed ACTIVE (Chad 11-09: "we need to start somewhere"); improvements after that go through candidates
-export const TREE_STRATEGIES = [...TREE_IDS.map((id) => ({ ...strategy(id, id, TREE_GRAPHS[id], 2, TREE_DESCRIPTIONS[id]), status: 'active', created_by: 'seed-trees' })),
+export const TREE_STRATEGIES = [...TREE_IDS.map((id) => ({ ...strategy(id, id, TREE_GRAPHS[id], 2, TREE_DESCRIPTIONS[id]), exemplars: TREE_EXEMPLARS[id] ?? [], status: 'active', created_by: 'seed-trees' })),
   ...LOOKUP_TREE_IDS.map((id) => ({ ...strategy(id, id, LOOKUP_TREE_GRAPHS[id], 2, TREE_DESCRIPTIONS[id]), status: 'active', created_by: 'seed-trees' }))];   // quote_trace, term, original: v2 trees above the v1 lookup graphs
 export const END_NODE = END;

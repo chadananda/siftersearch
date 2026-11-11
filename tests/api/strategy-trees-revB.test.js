@@ -3,9 +3,9 @@
 import { describe, it, expect } from 'vitest';
 import { graphFor, runGraph, entryUnits } from '../../api/lib/assistant/activities/graph.js';
 import { ELEMENTS } from '../../api/lib/assistant/activities/elements.js';
-import { TEMPLATES } from '../../api/lib/assistant/strategy-seed.js';
+import { TEMPLATES, TREE_STRATEGIES } from '../../api/lib/assistant/strategy-seed.js';
 import { TREE_GRAPHS, TREE_STEPS, TREE_TEMPLATES, TREE_DESCRIPTIONS } from '../../api/lib/assistant/strategy-trees-seed.js';
-import { validateCandidate } from '../../api/lib/assistant/strategy-design.js';
+import { validateCandidate, DESIGN_SYSTEM } from '../../api/lib/assistant/strategy-design.js';
 import { catalog } from '../../api/lib/repos/strategies-repo.js';
 import { generateList } from '../../api/lib/assistant/judges.js';
 import { withAIContext, currentAIContext } from '../../api/lib/ai-context.js';
@@ -15,7 +15,7 @@ const TPL = Object.fromEntries(TEMPLATES.map((t) => [t.id, t.text]));
 const NONE = async () => ({ passages: [] });
 const EMPTY = { fused_search: NONE, hype_search: NONE, originals_search: NONE, web_search: async () => null };
 const path = (s) => s.trace.map((t) => t.node);
-const NEW = ['claim_check', 'timeline', 'history_fact', 'history_event'];
+const NEW = ['claim_check', 'timeline', 'history_fact', 'history_event', 'person_profile'];
 
 async function run(id, q, { tools = {}, units = {}, jev, extra = {} } = {}) {
   const g = graphFor(id, 2);
@@ -224,6 +224,34 @@ describe('history_event: what happened, told from the histories (11-10: "How was
     expect(TREE_DESCRIPTIONS.history_event).toMatch(/how was the Báb martyred/);
     expect(TREE_DESCRIPTIONS.history_fact).toMatch(/Not for: Tell me the story of how Quddús was martyred/);
     expect(TREE_DESCRIPTIONS.history_event).toMatch(/Not for: When did the Báb declare His mission/);
+  });
+});
+
+describe('person_profile: who one person was, from the histories (11-11: the planner\'s tree searched "Quddús life history biography martyrdom" once and never reached The Dawn-Breakers)', () => {
+  it('searches inside the named histories on each phrasing, and Jev judges whether each passage tells who the person was', async () => {
+    const calls = [], asked = [];
+    const P = (id, title) => ({ id, title, authority: 'history', score: 0.5, text: `passage ${id}`, religion: "Bahá'í", document_id: id, paragraph_index: 1 });
+    const tools = { fused_search: async (i) => { calls.push(i); return { passages: i.filters?.work ? [1, 2, 3, 4].map((n) => P(n, 'The Dawn-Breakers')) : [] }; } };
+    const jev = async ({ question }) => { asked.push(question); return { choice: 'primary record' }; };
+    const s = await run('person_profile', 'Tell me about Quddús', { tools, units: { topic: 'Quddús' }, jev,
+      extra: { judges: { generate: async ({ kind }) => ({ ok: true, items: kind === 'histories' ? ['The Dawn-Breakers', 'God Passes By'] : ['the life of Quddús'] }) } } });
+    expect(calls.some((c) => c.filters?.work === 'The Dawn-Breakers' && c.query === 'the life of Quddús')).toBe(true);
+    expect(calls.some((c) => c.filters?.work === 'God Passes By')).toBe(true);
+    expect(calls.every((c) => !/biography|martyrdom/.test(c.query))).toBe(true);
+    expect(asked[0]).toMatch(/tell who Quddús was/);
+    expect(path(s).at(-1)).toBe('h5');
+    expect(TPL['person_profile.life']).toMatch(/never say the library lacks a detail a passage below gives/);
+  });
+  it('the planner is told: never pad a query with keywords, and a who-was search is about_person, not by_person', () => {
+    expect(DESIGN_SYSTEM).toMatch(/Never pad a query with keywords/);
+    expect(DESIGN_SYSTEM).toMatch(/who-was \/ life-of question needs about_person, never by_person/);
+    expect(DESIGN_SYSTEM).not.toMatch(/origin founded date/);
+  });
+  it('keeps the live card and its exemplars; the seed row replaces the planner\'s v1', () => {
+    expect(TREE_DESCRIPTIONS.person_profile).toMatch(/^Asks WHO a single named person was/);
+    const row = TREE_STRATEGIES.find((x) => x.id === 'person_profile');
+    expect(row.exemplars).toContain('Tell me about Vaḥíd');
+    expect(row.created_by).toBe('seed-trees');
   });
 });
 

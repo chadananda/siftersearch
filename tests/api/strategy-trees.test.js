@@ -345,7 +345,7 @@ describe('seeded rows and the ratchet', () => {
     }
   });
   it('the starter trees: an active v2 above the one-node v1 (seeding retires v1, rollback restores it), nodes kinded with reads/writes, synthesis edges marked', () => {
-    expect(TREE_IDS.sort()).toEqual(['claim_check', 'comparison', 'compilation', 'guidance', 'history_event', 'history_fact', 'prayer', 'reference', 'timeline', 'understanding']);
+    expect(TREE_IDS.sort()).toEqual(['claim_check', 'comparison', 'compilation', 'guidance', 'history_event', 'history_fact', 'person_profile', 'prayer', 'reference', 'timeline', 'understanding']);
     for (const id of TREE_IDS.filter(HAS_V1)) {
       const v1 = STRATEGIES.find((s) => s.id === id && s.version === 1), v2 = STRATEGIES.find((s) => s.id === id && s.version === 2);
       expect(v1.status).toBe('active'); expect(Object.keys(v1.graph.nodes).length).toBe(1); expect(v2).toMatchObject({ status: 'active', parent_version: 1 });
