@@ -211,7 +211,7 @@ export async function resolveLookup(messages, deps = {}) {
     const secs = topsOf ? (await topsOf(w.doc.id).catch(() => [])).filter((x) => headingNumber(x.title) === ref.num) : [];
     if (secs.length === 1 && Number.isInteger(secs[0].start_index)) {
       const s0 = secs[0], rows = await inRange(w.doc.id, s0.start_index, s0.end_index ?? s0.start_index).catch(() => []);
-      return step('section title', await answer(w.doc, rows, { label: `${w.doc.title}, ${s0.title}` }));
+      return step('section title', await answer(w.doc, rows, { label: `${w.doc.title}, ${s0.title}`, unit_title: s0.title }));
     }
     // 4. chapters numbered only by order (numbering.js tables: SAQ, Paris Talks)
     const sec = done(await bySectionTable(w, ref, { ...deps, paragraphsInRange: inRange }, link));

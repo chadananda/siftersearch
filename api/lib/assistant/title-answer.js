@@ -108,10 +108,43 @@ export async function namedWork(name, { find = findTitled } = {}) {
   return { ...w, others: (w.others || []).filter((o) => f(o.title).includes(f(w.doc.title)) || f(w.doc.title).includes(f(o.title))) };
 }
 
+/** An ALL-CAPS heading in reading case ("CHAPTER XXV" → "Chapter XXV", "BAHÁ’U’LLÁH’S JOURNEY TO KARBILÁ" → "Bahá’u’lláh’s Journey to
+ *  Karbilá"); a heading with any lower case is returned as it is. Roman numerals stay capitals. Pure. */
+const SMALL = new Set(['a', 'an', 'and', 'at', 'by', 'for', 'from', 'in', 'of', 'on', 'or', 'the', 'to', 'with']);
+export function softCaps(s) {
+  const t = String(s || '').trim();
+  if (!t || /\p{Ll}/u.test(t)) return t;
+  return t.split(/(\s+)/).map((w, i) => {
+    if (/^\s+$/.test(w) || /^[IVXLCDM]+[.:,]?$/.test(w)) return w;
+    const l = w.toLocaleLowerCase();
+    return i > 0 && SMALL.has(l) ? l : l.replace(/\p{L}/u, (c) => c.toLocaleUpperCase());
+  }).join('');
+}
+
+const SECTION_PROMPT = (sec, text) => `Summarise this part of "${sec.book}"${sec.author ? ` by ${sec.author}` : ''} — "${sec.title}" — for a reader who has just asked for it.
+2 to 4 sentences, at most 90 words, plain prose: what happens or is taught in it, naming the people, places and events it actually covers.
+Use ONLY the text below: no dates, names or facts that are not in it, never quote, no preamble, no heading.
+Text:
+${text}`;
+/** A section's summary, written once from its OWN text (Haiku, role anis-work-summary) and cached by book + start. → text or null. */
+export async function sectionSummary(sec, { complete = null } = {}) {
+  const key = `s:${sec.doc_id}:${sec.start_index}`, hit = load().get(key);
+  if (hit) return hit;
+  const text = String(sec.text || '').slice(0, 12000).trim();
+  if (!text) return null;
+  const call = complete || (async (msgs) => (await import('../ai.js')).chatCompletion(msgs, { ...modelFor('anis-work-summary'), temperature: 0, maxTokens: 220, thinking: false, caller: 'anis-section-summary' }));
+  const out = await call([{ role: 'user', content: SECTION_PROMPT(sec, text) }]).catch(() => null);
+  const s = String(out?.content ?? out?.text ?? out ?? '').trim();
+  if (!s || s.split(/\s+/).length > 160) return null;
+  load().set(key, s); save();
+  return s;
+}
+const SUMMARY_WAIT = 8000;   // ms: a slow model never holds the reply; the write finishes and caches for the next reader
+
 /** A SUB-DOCUMENT was asked for ("The Dispensation of Bahá’u’lláh", "Matthew"): its card — the section's title, the work it is part of,
  *  the link to where it starts. sec = { doc_id, book, author, title, start_index, end_index, paragraphs, first_para_id }; doc = its book's row.
  *  → { reply, citations, book }. No model: the section's own words are not summarised on the hot path. */
-export async function sectionAnswer({ sec, doc = null }, { onEvent = () => {}, link = null, card = cardFields } = {}) {
+export async function sectionAnswer({ sec, doc = null }, { onEvent = () => {}, link = null, card = cardFields, summary = sectionSummary, wait = SUMMARY_WAIT } = {}) {
   const bare = doc || { id: sec.doc_id, title: sec.book, author: sec.author };
   const [url0, parent] = await Promise.all([(link || sectionLink)(sec, bare).catch(() => null), card(bare).catch(() => bare)]);
   const url = url0 || workUrl(parent) || null;
@@ -122,7 +155,11 @@ export async function sectionAnswer({ sec, doc = null }, { onEvent = () => {}, l
   onEvent({ type: 'book', book });
   const t = url ? `[*${sec.title}*](${url})` : `*${sec.title}*`;
   const lead = `${t} is in the library, part of *${parent.title ?? sec.book}*${by ? ` by ${by}` : ''}${sec.paragraphs ? ` (${sec.paragraphs} paragraphs)` : ''}.`;
-  const reply = [lead, WORK_FOLLOW_UP].join('\n\n');
+  // the card went out above; the section's own summary follows when its text came with it (a numbered chapter) — cached after the first
+  let timer;
+  const sum = sec.text ? await Promise.race([summary(sec).catch(() => null), new Promise((r) => { timer = setTimeout(() => r(null), wait); timer.unref?.(); })]) : null;
+  clearTimeout(timer);
+  const reply = [sum, lead, WORK_FOLLOW_UP].filter(Boolean).join('\n\n');
   onEvent({ type: 'text', content: reply });
   const citations = [{ title: parent.title ?? sec.book, author: by, url, religion: parent.religion ?? null, document_id: parent.id ?? sec.doc_id, paragraph_index: sec.start_index ?? null, text: '' }];
   return { reply, citations, book };

@@ -11,7 +11,7 @@ import { runStrategy } from '../../api/lib/assistant/strategies.js';
 import { anisRespond } from '../../api/lib/assistant/respond.js';
 import { decisionLog } from '../../api/lib/assistant/decision-log.js';
 import { buildBookIndex, lexicalSearch, lexicalRetriever, bookCandidates } from '../../api/lib/assistant/book-finder.js';
-import { titleAnswer, sectionAnswer } from '../../api/lib/assistant/title-answer.js';
+import { titleAnswer, sectionAnswer, sectionSummary, softCaps } from '../../api/lib/assistant/title-answer.js';
 import { anisTurn } from '../../api/lib/assistant/turn.js';
 import { emptyState } from '../../api/lib/assistant/units.js';
 import { makeStrikes } from '../../api/lib/assistant/strikes.js';
@@ -147,6 +147,27 @@ describe('book fast path', () => {
     expect(ev[0]).toMatchObject({ type: 'book', book: { title: 'The Dispensation of Bahá’u’lláh', url: 'https://oceanlibrary.com/wob?paraId=para_188', section: { of: 'The World Order of Bahá’u’lláh', start_index: 188 } } });
     expect(r.reply).toContain('[*The Dispensation of Bahá’u’lláh*](https://oceanlibrary.com/wob?paraId=para_188) is in the library, part of *The World Order of Bahá’u’lláh* by Shoghi Effendi');
     expect(r.citations[0]).toMatchObject({ document_id: 301, paragraph_index: 188 });
+  });
+  it('a numbered chapter\'s card: the card event first, then its summary written from ITS OWN text (once, cached), then the line', async () => {
+    const ev = [], complete = vi.fn(async (msgs) => { expect(msgs[0].content).toContain('Mullá Ḥusayn rode to Karbilá'); return { content: 'Bahá’u’lláh journeys to Karbilá.' }; });
+    const sec = { doc_id: 21308, book: 'The Dawn-Breakers', author: 'Nabil Zarandi', title: 'Chapter XXV', start_index: 777000 + Math.floor(Math.random() * 1e5), paragraphs: 25, text: 'Mullá Ḥusayn rode to Karbilá.' };
+    const summary = (x) => sectionSummary(x, { complete });
+    const r = await sectionAnswer({ sec }, { onEvent: (e) => ev.push(e.type), link: async () => 'https://oceanlibrary.com/db?paraId=para_1774', card: async (d) => d, summary });
+    expect(ev).toEqual(['book', 'text']);
+    expect(r.reply).toMatch(/^Bahá’u’lláh journeys to Karbilá\.\n\n\[\*Chapter XXV\*\]\(https:\/\/oceanlibrary\.com/);
+    await sectionAnswer({ sec }, { link: async () => null, card: async (d) => d, summary });
+    expect(complete).toHaveBeenCalledTimes(1);
+  });
+  it('a summary that is slow never holds the chapter card: the reply goes without it', async () => {
+    const sec = { doc_id: 1, book: 'B', title: 'Chapter 2', start_index: 5, paragraphs: 30, text: 'words' };
+    const r = await sectionAnswer({ sec }, { link: async () => null, card: async (d) => d, summary: () => new Promise(() => {}), wait: 20 });
+    expect(r.reply).toMatch(/^\[\*Chapter 2\*\]\([^)]*\) is in the library/);
+  });
+  it('softCaps: ALL-CAPS headings in reading case, roman numerals kept; mixed case untouched', () => {
+    expect(softCaps('CHAPTER XXV')).toBe('Chapter XXV');
+    expect(softCaps('BAHÁ’U’LLÁH’S JOURNEY TO KARBILÁ')).toBe('Bahá’u’lláh’s Journey to Karbilá');
+    expect(softCaps('THE SIEGE OF THE FORT OF S̱HAYḴH ṬABARSÍ')).toBe('The Siege of the Fort of S̱hayḵh Ṭabarsí');
+    expect(softCaps('His visit to Najaf')).toBe('His visit to Najaf');
   });
   it('no description and no cached summary → the card at once, the summary written AFTER (never awaited)', async () => {
     const ev = [], later = vi.fn(() => new Promise(() => {}));   // a write that never finishes must not hold the card

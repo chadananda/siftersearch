@@ -168,7 +168,22 @@ describe('resolveLookup (mocked deps)', () => {
       sectionAnswer: async ({ sec, doc }) => { card = { sec, doc }; return { reply: `CARD ${sec.title}`, citations: [] }; },
       respond: async () => ({ reply: 'r', citations: [], retrieved: [], plan: {}, timings: {} }) };
     const r = await anisTurn({ messages: user('Dawn-Breakers - Chapter 25'), participant: { id: 's' }, clientKey: 's', onEvent: () => {}, deps });
-    expect(r.reply).toBe('CARD CHAPTER XXV'); expect(picked).toBe(0); expect(card.sec.doc_id).toBe(50);
+    expect(r.reply).toBe('CARD Chapter XXV'); expect(picked).toBe(0); expect(card.sec.doc_id).toBe(50);
+    expect(card.sec.text).toContain('p39');   // the chapter's own text rides with the card (its summary is written from it)
+  });
+  it('a chapter found as a doc section is carded as the book names it: "Chapter XXV: <its title line>", marginal notes never the name', async () => {
+    const titles = [];
+    for (const heading of ['BAHÁ’U’LLÁH’S JOURNEY TO KARBILÁ', 'His visit to Najaf']) {
+      const passages = Array.from({ length: 25 }, (_, i) => ({ id: 900 + i, paragraph_index: 1300 + i, heading, text: `p${i}` }));
+      const deps = { open: async () => ({ conversationId: 'c', round: 0 }), close: async () => {}, fail: async () => {}, outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {},
+        titleOnly: async () => null, card: async () => null,
+        triage: async () => ({ malicious: 0.01, complete: 0.99, stop_request: 0, kind: { choice: 'research', confidence: 0.9 }, stance: { choice: 'curious' }, lookup: { choice: 'reference', confidence: 1 } }),
+        lookup: async () => ({ kind: 'reference', ref: { title: 'Dawn-Breakers', num: 25, unit: 'chapter' }, label: 'The Dawn-Breakers, CHAPTER XXV', unit_title: 'CHAPTER XXV', work: { doc: { id: 21308, title: 'The Dawn-Breakers' } }, passages }),
+        sectionAnswer: async ({ sec }) => { titles.push(sec.title); return { reply: 'x', citations: [] }; },
+        respond: async () => ({ reply: 'r', citations: [], retrieved: [], plan: {}, timings: {} }) };
+      await anisTurn({ messages: user('Dawn-Breakers - Chapter 25'), participant: { id: 's' }, clientKey: 's', onEvent: () => {}, deps });
+    }
+    expect(titles).toEqual(['Chapter XXV: Bahá’u’lláh’s Journey to Karbilá', 'Chapter XXV']);
   });
   it('quoted words found only in commentary make no quote candidate (Chad 11-03: core literature only)', async () => {
     const famous = [{ ...COMMENTARY, text: `As Bahá’u’lláh wrote: ${P}` }, { ...CORE, collection: 'Pilgrim Notes', book_authority: 7, text: P },

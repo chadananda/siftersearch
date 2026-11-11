@@ -18,7 +18,7 @@ import { turnMeta } from './turn-meta.js';
 import { progressText } from './progress.js';
 import { chooseStrategy, strategyOf } from './strategy-choice.js';
 import { isUnmatched as unmatchedName } from './strategy-seed.js';
-import { titleOnly, titleAnswer, sectionAnswer } from './title-answer.js';
+import { titleOnly, titleAnswer, sectionAnswer, softCaps } from './title-answer.js';
 import { bookFastPath } from './book-pick.js';
 import { timeoutDecision, jevTimeoutsOf } from './jev-call.js';   // W3: Jev chooses the strategy from context
 import { jevBackup } from './jev-backup.js';   // Jev timed out → one Haiku answers the same typed options (11-10)
@@ -82,6 +82,14 @@ export async function defaultDeps() {   // exported for the strategy dry run (st
 // (type · models · usd · latency) — what the daily conversation digest shows (Chad 10-22). An outer meter is reused.
 // the "something new" option Jev weighs beside the existing works when his strategy would MAKE or chat rather than open a book
 const LONG_UNIT = 20;   // paragraphs: a numbered reference longer than this is carded, not quoted
+// a numbered unit's card title: the section's own title ("CHAPTER XXV") + the chapter's ALL-CAPS title line when the book has one
+// (its mixed-case headings are marginal notes, not the chapter's name); else the first heading. Pure.
+const unitTitle = (lk, first) => {
+  const h = String(first?.heading || '').trim(), caps = h && !/\p{Ll}/u.test(h);
+  if (!lk.unit_title) return h ? softCaps(h) : null;
+  const t = softCaps(lk.unit_title);
+  return caps && softCaps(h) !== t ? `${t}: ${softCaps(h)}` : t;
+};
 const PROBE_ALT = {
   compilation: 'a NEW compilation gathered on this topic (not an existing work in the library)',
   about: 'a question or conversation about Anís or the library itself, not a particular work',
@@ -360,8 +368,11 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   if (lk?.kind === 'reference' && lk.passages?.length > LONG_UNIT && lk.work?.doc) {
     const ps = lk.passages, first = ps[0], doc = lk.work.doc;
     decisions.record('reference:chapter-card', { by: 'code', saw: { label: lk.label ?? null, paragraphs: ps.length }, chosen: 'chapter card', reason: `more than ${LONG_UNIT} paragraphs: the card, not the whole text` });
-    return sectionCard({ doc, sec: { doc_id: doc.id, book: doc.title, author: doc.author ?? null, title: first.heading || lk.label || `${doc.title}, ${lk.ref?.num}`,
-      start_index: first.paragraph_index, end_index: ps.at(-1).paragraph_index, paragraphs: ps.length, first_para_id: first.id } }, ex, { gate: 'lookup', via: 'reference', decisions: decisions.list() });
+    // the card names the chapter as the book does ("Chapter XXV: Bahá’u’lláh’s Journey to Karbilá"), and carries its text so the
+    // reader gets what the chapter covers (11-11: Chad flagged the non-specific summary), written from the chapter itself
+    return sectionCard({ doc, sec: { doc_id: doc.id, book: doc.title, author: doc.author ?? null, title: unitTitle(lk, first) || lk.label || `${doc.title}, ${lk.ref?.num}`,
+      start_index: first.paragraph_index, end_index: ps.at(-1).paragraph_index, paragraphs: ps.length, first_para_id: first.id,
+      text: ps.map((p) => p.text).filter(Boolean).join('\n') } }, ex, { gate: 'lookup', via: 'reference', decisions: decisions.list() });
   }
   // a SHORT turn Jev read as a search ("more", "and the Báb?", "in Persian") gets its self-contained query from the history
   // and the card (short-turn.js) — respond.js searches those words, not the bare message
