@@ -32,3 +32,23 @@ describe('findPrayers fan-out (battery 11-10 prayer-healing)', () => {
     expect(wide.every((c) => c.worksDone === false)).toBe(true);
   });
 });
+
+// Live 11-12 "Give me the Remover of Difficulties prayer" (no tradition): every tradition's first meaning hit counted as 'named', so a
+// Christian intercession outranked the Báb's "Is there any Remover of difficulties save God?". The name in the text is the evidence.
+describe('findPrayers across traditions: the name in the text leads', () => {
+  const P = {
+    Christian: { document_id: 19757, paragraph_index: 300, religion: 'Christian', text: 'We bring before Thee, O Lord, the troubles and perils of people and nations.', heading: 'Prayers' },
+    "Baha'i": { document_id: 20762, paragraph_index: 65, religion: "Baha'i", authority: 'writings', text: 'Is there any Remover of difficulties save God? Say: Praised be God! He is God!', heading: 'General Prayers' },
+  };
+  const d = {
+    search: async (layer, { filters = {} }) => ({ passages: filters.documentId != null ? [] : Object.values(P).filter((p) => p.religion === filters.tradition) }),
+    findDocuments: async () => ({ docs: [] }), paragraphsInRange: async () => [],
+  };
+  it('the Bahá’í prayer carrying the name comes first; the other first hit is only "first for the name"', async () => {
+    const r = await findPrayers({ name: 'Remover of Difficulties', traditions: ['Christian', "Baha'i"] }, d);
+    expect(r.candidates[0].document_id).toBe(20762);
+    expect(r.candidates[0].signals).toContain('named');
+    const c = r.candidates.find((x) => x.document_id === 19757);
+    if (c) expect(c.signals).not.toContain('named');
+  });
+});

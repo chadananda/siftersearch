@@ -26,12 +26,14 @@ const keyOf = (p) => `${p.document_id}:${p.paragraph_index}`;
 /** The candidates' ranking (signals only) → number. Pure. */
 export function prayerSignals(p, { name = null, works = new Set(), top = new Set() } = {}) {
   const sig = [];
-  // named: the text or its heading carries the name, or the engine ranks it FIRST for the name (a meaning hit: "the Lord's Prayer" → Matthew 6:9)
-  if (name && (fold(`${p.heading || ''} ${p.text}`).includes(fold(name)) || top.has(keyOf(p)))) sig.push('named');
+  // named: the text or its heading carries the name. A meaning hit (the engine ranks it FIRST for the name: "the Lord's Prayer" → Matthew 6:9)
+  // counts the same inside one tradition, but every tradition has a first hit, so across traditions the name in the text leads (findPrayers, 11-12)
+  if (name && fold(`${p.heading || ''} ${p.text}`).includes(fold(name))) sig.push('named');
+  else if (name && top.has(keyOf(p))) sig.push('first for the name');
   if (addressesGod(p.text)) sig.push('addresses God');
   if (works.has(Number(p.document_id))) sig.push('prayer work');
   if (prayerScore({ title: p.heading || '' }) > 0 || prayerScore({ title: p.title || '' }) > 0) sig.push('prayer title');
-  const w = { named: 3, 'addresses God': 2, 'prayer work': 2, 'prayer title': 1 };
+  const w = { named: 3, 'first for the name': 3, 'addresses God': 2, 'prayer work': 2, 'prayer title': 1 };
   const standing = standingOf(p);
   return { signals: sig, prayer_score: sig.reduce((n, s) => n + w[s], 0) + (STANDING[standing] ?? 0), standing };
 }
@@ -93,9 +95,10 @@ export async function findPrayers(a = {}, d = {}) {
     return { candidates: r.candidates.slice(0, limit), tradition, traditions: [{ tradition, count: r.candidates.length }], works: r.works,
       searched: [{ tradition, how: r.how, works: r.works.map((w) => w.title), found: r.candidates.length }] };
   }
+  const named = (x) => (x.candidates[0].signals.includes('named') ? 1 : 0);   // the name in a tradition's best prayer outranks another's first hit
   const per = await Promise.all((a.traditions || TRADITIONS).map(async (t) => ({ t, ...(await oneTradition(t, a, d)) })));
   const real = per.map((x) => ({ ...x, candidates: x.candidates.filter((c) => c.signals.length) })).filter((x) => x.candidates.length)
-    .sort((x, y) => y.candidates[0].prayer_score - x.candidates[0].prayer_score);
+    .sort((x, y) => named(y) - named(x) || y.candidates[0].prayer_score - x.candidates[0].prayer_score);
   // round-robin: each tradition's best, then each one's second… so a choice over the top 8 spans the traditions
   const mixed = []; for (let i = 0; mixed.length < limit && real.some((x) => x.candidates[i]); i++) for (const x of real) if (x.candidates[i] && mixed.length < limit) mixed.push(x.candidates[i]);
   return { candidates: mixed, tradition: null, traditions: real.map((x) => ({ tradition: x.t, count: x.candidates.length })), works: per.flatMap((x) => x.works),
