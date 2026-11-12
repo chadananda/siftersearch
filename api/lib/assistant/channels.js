@@ -5,14 +5,16 @@
 export const CHANNELS = {
   'widget-chat': {
     description: 'a small chat window embedded on a website; brief answers',
-    frame: 'Reply in about 150 words unless the question truly needs more. Quote briefly.',
+    frame: 'Reply in about 150 words unless the question truly needs more. Quote briefly.'
+      + ' Give the shortest reply that fully answers what was asked: no preamble, no restating the question, no commentary, summaries or offers the reader did not ask for — they can always ask for more. A passage, table or document they asked for is given whole.',
     capabilities: ['links', 'lists', 'quotes'], linkCap: 1, newsCap: 1, renderer: 'markdown-lite', privileged: false,
     live: true, progress: true,   // progress: narrate.js says what is happening while a longer stage runs (a future voice channel sets it too)
     // a reader watches the screen: first text within seconds (respond.js liveResearch, the thinking-off writer)
   },
   'site-chat': {
     description: 'the chat on siftersearch.com; brief-to-moderate answers',
-    frame: 'Reply in about 150–250 words unless the question truly needs more.',
+    frame: 'Usually under 150 words unless the question truly needs more.'
+      + ' Give the shortest reply that fully answers what was asked: no preamble, no restating the question, no commentary, summaries or offers the reader did not ask for — they can always ask for more. A passage, table or document they asked for is given whole.',
     capabilities: ['links', 'lists', 'quotes', 'tables', 'headings'], linkCap: 2, newsCap: 1, renderer: 'markdown', privileged: false,
     live: true, progress: true,
   },

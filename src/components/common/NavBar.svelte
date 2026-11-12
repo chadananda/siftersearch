@@ -4,6 +4,7 @@
   import { getConnectionStatus, onConnectionStatusChange } from '../../lib/api.js';
   import TierBadge from '../TierBadge.svelte';
   import AuthModal from '../AuthModal.svelte';
+  import { ANIS_SAMPLES, SAMPLES_FOR_EVERYONE } from '../../lib/anis-samples.js';
   // Props
   let { currentPage = 'search', showAboutModal = $bindable(false), hideLogo = false } = $props();
 
@@ -117,7 +118,12 @@
   }
 
   // Handle click outside to close dropdowns
+  // sample questions (Chad 11-12: a toolbar menu, not in the input field) — a pick is sent to the home chat (ChatInterface listens)
+  let showSamples = $state(false);
+  function pickSample(smp) { showSamples = false; window.dispatchEvent(new CustomEvent('anis-sample', { detail: smp })); }
+
   function handleClickOutside(event) {
+    if (showSamples && !event.target.closest('.samples-container')) showSamples = false;
     if (showNavMenu && !event.target.closest('.menu-pill-container')) {
       showNavMenu = false;
     }
@@ -170,6 +176,24 @@
     <!-- Right side: Nav links + hamburger + user menu -->
     <div class="navbar-right">
       <!-- Nav links that progressively appear as space allows -->
+      {#if currentPage === 'home' && (isAdmin || SAMPLES_FOR_EVERYONE)}
+        <div class="samples-container">
+          <button type="button" class="nav-link samples-btn" class:active={showSamples} aria-haspopup="menu" aria-expanded={showSamples} title="Sample questions" onclick={() => showSamples = !showSamples}>
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/></svg>
+            <span class="nav-label samples-label">Samples</span>
+          </button>
+          {#if showSamples}
+            <div class="samples-list" role="menu" aria-label="Sample questions" tabindex="-1" onkeydown={(e) => { if (e.key === 'Escape') showSamples = false; }}>
+              {#each ANIS_SAMPLES as smp (smp.strategy)}
+                <button type="button" role="menuitem" class="sample-item" onclick={() => pickSample(smp)}>
+                  <span class="sample-label">{smp.label}</span>
+                  <span class="sample-q">{smp.before ? `${smp.before[0]} → ` : ''}{smp.q}</span>
+                </button>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/if}
       <nav class="navbar-nav" aria-label="Main navigation">
         <!-- Library and Discuss are public -->
         <a href="/library" class="nav-link show-sm" class:active={currentPage === 'library'}>
@@ -475,6 +499,18 @@
     gap: 0.25rem;
   }
 
+  .samples-container { position: relative; }
+  .samples-btn { display: inline-flex; background: transparent; border: 0; cursor: pointer; }
+  .samples-label { display: none; }
+  @media (min-width: 900px) { .samples-label { display: inline; } }
+  .samples-list { position: absolute; top: calc(100% + 0.4rem); right: 0; z-index: 60; width: min(30rem, calc(100vw - 2rem)); max-height: min(70vh, 32rem); overflow-y: auto;
+    display: flex; flex-direction: column; background: var(--surface-1, light-dark(#fff, #1e293b)); border: 1px solid var(--border-default, rgba(128,128,128,0.35));
+    border-radius: 0.75rem; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+  .sample-item { display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; padding: 0.5rem 0.75rem; text-align: left; background: transparent; border: 0;
+    border-bottom: 1px solid rgba(128,128,128,0.15); cursor: pointer; color: var(--text-primary, inherit); }
+  .sample-item:hover, .sample-item:focus-visible { background: rgba(128,128,128,0.15); outline: none; }
+  .sample-label { font-size: 0.8rem; font-weight: 600; color: var(--accent-primary-text, inherit); }
+  .sample-q { font-size: 0.78rem; opacity: 0.8; }
   .nav-link {
     display: none;
     align-items: center;

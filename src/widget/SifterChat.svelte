@@ -18,7 +18,7 @@
   import { widgetSegments } from '../../api/lib/assistant/widgets/segments.js';
   import { BUILD, tagFor } from './version.js';
   let { token = '', api = 'https://siftersearch.com', accent = '', name = '', mission = '', opened = '', samples = '', fullscreen = '' } = $props();
-  // "Try a sample" menu (one showcase question per strategy): on by default (Chad 11-10); a host turns it off with
+  // sample-questions menu (header icon; one showcase question per strategy): on by default (Chad 11-10); a host turns it off with
   // samples="off"/"false", a reader with ?anis-samples=0 (remembered on this browser; ?anis-samples brings it back)
   let showSamples = $state(true);
   let sampleOpen = $state(false);
@@ -235,6 +235,8 @@
           // the reply's quoted blockquotes → passage cards; the book(s) the answer is about (both drawn once the reply is complete)
           else if (ev.type === 'quote_cards' && Array.isArray(ev.cards)) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.quoteCards = ev.cards; messages = [...messages]; } }
           else if (ev.type === 'widget' && ev.widget?.id) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.widgets = [...(last.widgets || []), ev.widget]; messages = [...messages]; } }
+          // follow-up questions as pills under the last reply (Chad 11-12); a tap sends it
+          else if (ev.type === 'followups' && Array.isArray(ev.items)) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.followups = ev.items; messages = [...messages]; } }
           else if (ev.type === 'books' && Array.isArray(ev.books)) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.books = ev.books; messages = [...messages]; } }
           else if (ev.type === 'citations' && Array.isArray(ev.citations)) { pendCites = ev.citations; }
           else if (ev.type === 'complete') { if (Array.isArray(ev.citations) && ev.citations.length) pendCites = ev.citations; streamDone = true; }
@@ -461,12 +463,27 @@
     {#if open}
       <section class="panel" aria-label="{cfg.name} chat" onkeydown={isolateKey} onkeyup={isolate} onkeypress={isolate} use:contain>
         <header>
-          <span class="roundel" aria-hidden="true"><svg viewBox="0 0 512 512"><path fill="currentColor" d={OCEAN_D}/></svg></span>
+          <a class="roundel" href="https://oceanlibrary.com" target="_blank" rel="noopener" title="Open Ocean 2.0" aria-label="Open Ocean 2.0 (oceanlibrary.com) in a new tab"><svg viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" d={OCEAN_D}/></svg></a>
           <span class="titles">
             <span class="title">{cfg.name}</span>
             <span class="subtitle">Ocean companion</span>
           </span>
           <span class="hbtns">
+            {#if showSamples}
+              <button class="icon" aria-label="Sample questions" aria-haspopup="menu" aria-expanded={sampleOpen} disabled={busy} onclick={() => (sampleOpen = !sampleOpen)} title="Sample questions">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/></svg>
+              </button>
+              {#if sampleOpen}
+                <div class="sample-list" role="menu" tabindex="-1" onkeydown={(e) => { if (e.key === 'Escape') sampleOpen = false; }}>
+                  {#each ANIS_SAMPLES as smp (smp.strategy)}
+                    <button type="button" role="menuitem" class="sample-item" onclick={() => runSample(smp)}>
+                      <span class="sample-label">{smp.label}</span>
+                      <span class="sample-q">{smp.before ? `${smp.before[0]} → ` : ''}{smp.q}</span>
+                    </button>
+                  {/each}
+                </div>
+              {/if}
+            {/if}
             <button class="icon profile" aria-label={connectedEmail ? `Account: ${connectedEmail}` : 'Connect for email summaries'} aria-expanded={profileOpen} onclick={profileClick} title={connectedEmail ? connectedEmail : 'Connect'}>
               {#if connectedEmail && connectedPic}
                 <img class="pavatar" src={connectedPic} alt="" referrerpolicy="no-referrer" />
@@ -507,7 +524,7 @@
         <div class="bodywrap">
           <svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" d={OCEAN_D}/></svg>
           <div class="body" bind:this={bodyEl} role="log" aria-live="polite">
-            {#each messages as m}
+            {#each messages as m, mi}
               <div class="msg {m.role}" class:done={m.done}>
                 {#if m.role === 'assistant'}
                   <span class="avatar" aria-hidden="true"><svg viewBox="0 0 512 512"><path fill="currentColor" d={OCEAN_D}/></svg></span>
@@ -564,6 +581,9 @@
                       {/each}
                     </div>
                   {/if}
+                  {#if m.followups?.length && !m.pending && mi === messages.length - 1}
+                    <div class="nextq">{#each m.followups as q}<button type="button" disabled={busy} onclick={() => { input = q; send(); }}>{q}</button>{/each}</div>
+                  {/if}
                 </div>
               </div>
             {/each}
@@ -587,21 +607,6 @@
             {/if}
           </div>
         </div>
-        {#if showSamples}
-          <div class="sample-menu">
-            <button type="button" class="sample-btn" aria-haspopup="menu" aria-expanded={sampleOpen} disabled={busy} onclick={() => sampleOpen = !sampleOpen}>Try a sample</button>
-            {#if sampleOpen}
-              <div class="sample-list" role="menu" tabindex="-1" onkeydown={(e) => { if (e.key === 'Escape') sampleOpen = false; }}>
-                {#each ANIS_SAMPLES as smp (smp.strategy)}
-                  <button type="button" role="menuitem" class="sample-item" onclick={() => runSample(smp)}>
-                    <span class="sample-label">{smp.label}</span>
-                    <span class="sample-q">{smp.before ? `${smp.before[0]} → ` : ''}{smp.q}</span>
-                  </button>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/if}
         <footer>
           <textarea
             rows="1"
@@ -714,6 +719,7 @@
     color: #fff;
   }
   .roundel {
+    color: inherit; text-decoration: none; display: block;
     width: 38px; height: 38px; flex-shrink: 0; border-radius: 50%;
     background: rgba(255,255,255,.16); padding: 7px;
     box-shadow: inset 0 0 0 1px rgba(255,255,255,.22);
@@ -854,6 +860,11 @@
   }
   @keyframes shimmer { from { background-position: 170% 0; } to { background-position: -70% 0; } }
 
+  .nextq { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+  .nextq button { font: inherit; font-size: 12.5px; line-height: 1.3; text-align: left; cursor: pointer; padding: 4px 11px; border-radius: 13px;
+    color: var(--accent-deep); background: transparent; border: 1px solid color-mix(in srgb, var(--accent-deep) 35%, transparent); }
+  .nextq button:hover:not(:disabled) { background: color-mix(in srgb, var(--gold) 12%, transparent); }
+  .nextq button:disabled { opacity: .5; cursor: default; }
   .cites { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 7px; }
   .cites a {
     font-size: 12px; letter-spacing: .02em; text-decoration: none;
@@ -868,11 +879,7 @@
   .error { color: #a33; font-size: 13px; padding: 4px 2px; }
 
   footer { display: flex; gap: 9px; padding: 12px 14px 8px; background: transparent; }
-  .sample-menu { position: relative; padding: 6px 14px 0; }
-  .sample-btn { padding: 3px 10px; font-size: 12px; color: inherit; opacity: .8; background: transparent; border: 1px solid rgba(128,128,128,.4); border-radius: 999px; cursor: pointer; }
-  .sample-btn:hover:not(:disabled) { opacity: 1; border-color: var(--accent, currentColor); }
-  .sample-btn:disabled { opacity: .4; cursor: default; }
-  .sample-list { position: absolute; bottom: calc(100% + 4px); left: 10px; right: 10px; z-index: 30; max-height: 55vh; overflow-y: auto; display: flex; flex-direction: column; background: #fff; color: #1e293b; border: 1px solid rgba(128,128,128,.35); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+  .sample-list { position: absolute; top: 62px; left: 10px; right: 10px; z-index: 30; max-height: 55vh; overflow-y: auto; display: flex; flex-direction: column; background: #fff; color: #1e293b; border: 1px solid rgba(128,128,128,.35); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
   .sample-item { display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 8px 12px; background: transparent; border: 0; border-bottom: 1px solid rgba(128,128,128,.15); color: inherit; cursor: pointer; }
   .sample-item:hover, .sample-item:focus-visible { background: rgba(128,128,128,.12); outline: none; }
   .sample-label { font-size: 13px; font-weight: 600; }

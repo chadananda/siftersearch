@@ -559,6 +559,9 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
         deepReport = { researchId: job.researchId, offered: true };
       }
     }
+    // follow-up pills (Chad 11-12): asked now, beside the cards, shown under the reply — live chat only, best effort
+    const fu = d.followups ?? (deps ? null : async (...a) => (await import('./followups.js')).followups(...a));
+    const nextP = fu && channel.live && !replaced && typeof reply === 'string' && reply.trim() ? fu(resolved?.query || text, reply).catch(() => []) : null;
     const lint = lintReply(reply);
     // passage cards (Chad 11-10): each quoted blockquote → its book's tiny cover + the linked citation; the work Jev named, cited in the
     // reply → its book card. Live chat only: the clients swap a blockquote for its card; email/PDF/voice keep the plain reply.
@@ -567,6 +570,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       ? await timed('quote-cards', () => qc(reply, [...(r.citations || []), ...(r.retrieved || [])], { namedWork: u.named_work ?? null })).catch(() => null) : null;
     if (present?.cards?.length) onEvent({ type: 'quote_cards', cards: present.cards });
     if (present?.books?.length) onEvent({ type: 'books', books: present.books });
+    const next = nextP ? await timed('followups', () => nextP) : [];
+    if (next?.length) onEvent({ type: 'followups', items: next });
     // tree end: code appends what the turn gave (every quoted/listed item), the thread entry, and what stayed open
     try {
       const cites = (r.citations || []).map((c) => ({ document_id: c.document_id, paragraph_index: c.paragraph_index ?? null, text: c.text || undefined, id: c.id })).filter((c) => c.document_id != null || c.id != null);
