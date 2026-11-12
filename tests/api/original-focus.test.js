@@ -89,6 +89,12 @@ describe('opening_lookup', () => {
     const none = await tools.run('opening_lookup', { work: 'Tablet of Aḥmad', n: 1, linked: true }, { deps: { ...deps, getParagraphs, rankTitled, resolveLinks: async () => new Map(), getLinkMeta: async () => new Map() } });
     expect(none.passages.map((p) => p.document_id)).toEqual([1616]);
   });
+  it('an opening skips the page\'s own notes (11-12 Hidden Words: "(Click here…)")', async () => {
+    const getParagraphs = async () => ['(Click here to jump to a specific page (in a lightly formatted version).)', '(Click here to see a copy which is interlinked.)', 'He is the Glory of Glories.', 'O SON OF SPIRIT! My first counsel is this: Possess a pure, kindly and radiant heart.']
+      .map((text, i) => ({ id: i + 1, paragraph_index: i, text }));
+    const r = await tools.run('opening_lookup', { document_id: 5, n: 2 }, { deps: { ...deps, getParagraphs, getLinkMeta: async () => new Map() } });
+    expect(r.passages.map((p) => p.paragraph_index)).toEqual([2, 3]);
+  });
   it('linked: a copy whose parenthetical the reader DID say comes first (11-12 "first three Arabic Hidden Words" opened a bahai-library "Click here…" page)', async () => {
     const rankTitled = async () => ({ sorted: [{ id: 28628, title: 'Hidden Words' }, { id: 927205, title: 'The Hidden Words' }, { id: 20750, title: 'The Hidden Words (Arabic)' }] });
     const getParagraphs = vi.fn(async (d) => [{ id: d * 10, paragraph_index: 0, text: `t${d}` }]);

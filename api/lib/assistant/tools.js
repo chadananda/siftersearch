@@ -514,7 +514,8 @@ const ENTRIES = [
       // fails CLOSED like context_lookup: consecutive paragraphs of a copyrighted (or rights-unknown) book are not a short excerpt
       const enc = await (await dep(ctx, 'encumberedAmong', 'rights'))([docId]).catch((e) => { throw new ToolError('rights_unavailable', `rights check failed (${e?.message || e}) — not reading a book whose rights are unknown`, true); });
       if (enc.has(docId)) return { passages: [], copyright: true };
-      const rows = (await (await dep(ctx, 'getParagraphs', 'docs'))(docId, { proseOnly: true, limit: n + 6, offset: 0 })).filter((r) => String(r.text ?? '').trim()).slice(0, n);
+      // a scraped page's own notes and links are not the work ("(Click here to jump to a specific page…)", "View by number": 11-12 Hidden Words)
+      const rows = (await (await dep(ctx, 'getParagraphs', 'docs'))(docId, { proseOnly: true, limit: n + 6, offset: 0 })).filter((r) => !pageNote(r.text)).slice(0, n);
       const meta = ctx?.meta || (await (await dep(ctx, 'getLinkMeta', 'docs'))([docId]).catch(() => new Map())).get(docId) || {};
       const linked = await (await dep(ctx, 'withLinks', 'links'))(rows.map((r) => ({ id: r.id, doc_id: docId, paragraph_index: r.paragraph_index, text: r.text, title: meta.title }))).catch(() => []);
       return { passages: rows.map((r, i) => toPassage({ ...r, title: meta.title, author: meta.author, religion: meta.religion, year: meta.year, document_id: docId, source_url: linked[i]?.url || null })), copyright: false };
@@ -642,6 +643,8 @@ export const unsaidQualifier = (title, said) => { const have = new Set(words(sai
 // a title qualifier the reader DID say ("the Arabic Hidden Words" → "The Hidden Words (Arabic)") marks the copy they asked for
 export const saidQualifier = (title, said) => { const have = new Set(words(said));
   return [...String(title || '').matchAll(/\(([^)]*)\)/g)].some((m) => { const w = words(m[1]).filter((x) => x.length > 2); return w.length > 0 && w.every((x) => have.has(x)); }); };
+// a paragraph that is the page's apparatus, not the work's text: empty, or wholly in parentheses (a short line stays: "هو الله" opens many tablets). Pure.
+export const pageNote = (t) => { const x = String(t ?? '').trim(); return !x || /^\(.*\)$/s.test(x); };
 async function linkedCopy(work, n, ctx, said = '') {
   const { sorted } = await (await dep(ctx, 'rankTitled', 'works'))([work], { byline: true });
   const read = await dep(ctx, 'getParagraphs', 'docs'), links = await dep(ctx, 'resolveLinks', 'plinks');
