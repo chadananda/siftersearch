@@ -11,6 +11,7 @@
   // that tune the widget without touching the DB profile. ONE public domain; the edge worker proxies /api.
   import { ANIS_SAMPLES } from '../lib/anis-samples.js';
   import { richLinks } from './rich-link.js';
+  import { tableAt } from './rich-table.js';
   import { styleQuotes } from '../../api/lib/quote-style.js';
   import { quoteSegments } from '../../api/lib/quote-blocks.js';
   import { BUILD, tagFor } from './version.js';
@@ -253,7 +254,7 @@
     return c.document_id ? `https://siftersearch.com/document/${c.document_id}` : null;
   }
   // Minimal, safe rich text: escape ALL html, then rebuild [text](https://…) links,
-  // **bold**, *italics*, "> " blockquotes and "- " bullets (the crafter formats for
+  // **bold**, *italics*, "> " blockquotes, "- " bullets and pipe tables (the crafter formats for
   // comprehension — blockquoted passages, bulleted lists, bolded key facts).
   function renderRich(t) {
     const esc = String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -266,7 +267,9 @@
     const flushQuote = () => {
       if (quoteRun.length) { out.push('<blockquote>' + quoteRun.join('<br>') + '</blockquote>'); quoteRun = []; }
     };
-    for (const line of lines) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i], table = tableAt(lines, i, inline);
+      if (table) { flushQuote(); out.push(table.html); i = table.next - 1; continue; }
       const bq = line.match(/^\s*&gt;\s?(.*)$/);
       if (bq) { quoteRun.push(inline(bq[1])); continue; }
       flushQuote();
@@ -819,6 +822,8 @@
   .bubble :global(em.quote[dir="rtl"]) { font-style: normal; unicode-bidi: isolate; }
   .bubble :global(blockquote.quote) { color: var(--quote); font-style: normal; }
   .bubble :global(.quote a) { color: inherit; }
+  .bubble :global(table) { border-collapse: collapse; margin: .5em 0; width: 100%; font-size: .9em; display: block; overflow-x: auto; }
+  .bubble :global(th), .bubble :global(td) { border: 1px solid color-mix(in srgb, currentColor 20%, transparent); padding: .3em .5em; vertical-align: top; text-align: start; }
   .bubble :global(.li) { display: block; padding-left: .95em; text-indent: -0.95em; }
 
   /* Streaming caret — a breathing quill of accent-to-gold light. */
