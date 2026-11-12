@@ -4,6 +4,7 @@ import { normalizeQuestion, questionHash } from '../answer-cache.js';
 
 // Measured 11-12 (config embeddings): the same question reworded 0.91; a narrower/broader question on the topic 0.73–0.81; another topic < 0.5.
 export const SAME_QUESTION = 0.88;
+export const MAX_PASSAGES = 24;
 export const RESEARCH_THRESHOLD = 0.75;   // a related question's research is still a start (it is passages, not a reply); "How do Baha'is pray?" vs a longer form = 0.80
 const defaultRepo = async () => import('../repos/research-sets-repo.js');
 // Question embedding: createEmbedding (api/lib/ai.js, config.ai.embeddings.model) — the same call answer-cache's prep path uses.
@@ -44,6 +45,9 @@ export async function captureResearch(question, passagesUsed, { kind = 'question
     .filter((p) => p.id != null && !seen.has(p.id) && seen.add(p.id));
   if (!passages.length) return null;
   const existing = await repo.researchSetByHash(questionHash(question));
+  // a candidate grows: this answer's passages first, then the earlier ones it did not use (curation prunes; curated sets are never touched)
+  if (existing?.status === 'candidate') for (const p of existing.passages || []) if (p.id != null && !seen.has(p.id) && seen.add(p.id)) passages.push(p);
+  passages.splice(MAX_PASSAGES);
   const embedding = existing?.embedding ? null : await embed(question);
   return repo.upsertResearchCandidate({ question, hash: questionHash(question), embedding, kind, passages, gaps });
 }

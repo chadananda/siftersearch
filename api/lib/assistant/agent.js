@@ -140,6 +140,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     const r = await raw.researchLookup(researchQ).catch((err) => { console.warn(`[anis] research lookup failed: ${err.message}`); return null; });
     if (!r?.passages?.length) return 'no research held for this question yet — research it with the tools';
     const same = r.similarity >= SAME_QUESTION;
+    if (same && r.question) researchQ = r.question;   // a reworded question grows the set it matched, not a duplicate
     return `${same ? 'research held for this question' : `research held for a RELATED question ("${r.question}")`} (${r.status}): start from these; search further for what they do not cover${same ? '' : ' — this question may need more'}\n\n${show(give(r.passages))}`;
   };
   run.work_notes_lookup = async ({ title }) => {

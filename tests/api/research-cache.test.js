@@ -45,6 +45,13 @@ describe('captureResearch', () => {
     expect(s.passages).toEqual([{ id: 5, document_id: 2, paragraph_index: 3 }]);
     expect(await captureResearch('q two', [], { embed: async () => [1, 0], repo })).toBeNull();
   });
+  it('a candidate grows: the new answer\'s passages first, then earlier ones it did not use', async () => {
+    const repo = memRepo([set(1, 'q one', [1, 0])]);
+    const s = await captureResearch('q one', [{ id: 7 }, { id: 1 }], { embed: async () => [1, 0], repo });
+    expect(s.passages.map((p) => p.id)).toEqual([7, 1]);
+    const t = await captureResearch('q one', [{ id: 8 }], { embed: async () => [1, 0], repo });
+    expect(t.passages.map((p) => p.id)).toEqual([8, 7, 1]);
+  });
   it('never overwrites a curated set, only adds hits', async () => {
     const repo = memRepo([set(1, 'q one', [1, 0], 'curated')]);
     await captureResearch('q one', [{ id: 99 }], { embed: async () => [1, 0], repo });
