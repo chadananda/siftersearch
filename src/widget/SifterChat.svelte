@@ -14,7 +14,7 @@
   import { tableAt } from './rich-table.js';
   import { settled } from './stream-tail.js';
   import { styleQuotes } from '../../api/lib/quote-style.js';
-  import { quoteSegments } from '../../api/lib/quote-blocks.js';
+  import { quoteSegments, coverAt } from '../../api/lib/quote-blocks.js';
   import SideBySide from '../components/widgets/SideBySide.svelte';
   import { widgetSegments } from '../../api/lib/assistant/widgets/segments.js';
   import { BUILD, tagFor } from './version.js';
@@ -130,8 +130,10 @@
   // Book card (inline: this is a compiled custom element, no child components). Cover through the image worker, sized by srcset.
   function coverSrc(u, w) {
     const abs = /^https?:/.test(u) ? u : `${api.replace(/\/$/, '')}${u.startsWith('/') ? '' : '/'}${u}`;
-    return `${abs}${abs.includes('?') ? '&' : '?'}tr=w-${w},q-80,e-sharpen`;
+    return coverAt(abs, w);   // the image service's own size parameter (a Star of the West scan on bahai-education.org/ix takes w=, not tr=)
   }
+  // a passage card shows the quote: its quoted blocks leave the text
+  const withoutQuote = (text) => String(text || '').replace(/^(?:>.*(?:\n|$))+/gm, '').replace(/\n{3,}/g, '\n\n').trim();
   // The card shows the description; drop it from the reply text when the reply opens with it.
   function withoutBookLead(text, book) {
     const d = (book?.description || '').trim();
@@ -237,6 +239,9 @@
           else if (ev.type === 'chunk' && typeof ev.text === 'string') { stopStatus(); if (gotLive) replay += ev.text; else pendBuf += ev.text; }
           else if (ev.type === 'book' && ev.book?.title) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.book = ev.book; messages = [...messages]; } }
           // the reply's quoted blockquotes → passage cards; the book(s) the answer is about (both drawn once the reply is complete)
+          // one found passage (in_work / find_passage, code-built reply) → its card: cover (a Star of the West issue's own scan), the
+          // passage, the citation (11-12: the widget dropped this event, so the right SoW answer showed no issue thumbnail)
+          else if (ev.type === 'passage' && ev.passage?.excerpt) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.passages = [...(last.passages || []), ev.passage]; messages = [...messages]; } }
           else if (ev.type === 'quote_cards' && Array.isArray(ev.cards)) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.quoteCards = ev.cards; messages = [...messages]; } }
           else if (ev.type === 'widget' && ev.widget?.id) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.widgets = [...(last.widgets || []), ev.widget]; messages = [...messages]; } }
           // follow-up questions as pills under the last reply (Chad 11-12); a tap sends it
@@ -563,6 +568,19 @@
                           : phase === 'deepening-more' ? 'Still searching — combing the historical records…'
                           : 'Searching the ocean of texts…'}</span>
                       {:else}
+                        {#each m.passages || [] as pc}
+                          <figure class="qcard">
+                            {#if pc.cover_url}
+                              <a class="qcard-cover" href={pc.url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                                <img src={coverSrc(pc.cover_url, 96)} srcset={[48, 96, 144].map((w) => `${coverSrc(pc.cover_url, w)} ${w}w`).join(', ')} sizes="44px" alt="" loading="lazy" decoding="async" />
+                              </a>
+                            {/if}
+                            <div class="qcard-body">
+                              <div class="qcard-text">{@html renderRich(`“${pc.excerpt}”`)}</div>
+                              <p class="qcard-cite">— {#if pc.url}<a href={pc.url} target="_blank" rel="noopener">{#if pc.author}{pc.author}, {/if}<em>{pc.title}</em>{#if pc.place}, {pc.place}{/if}</a>{:else}{#if pc.author}{pc.author}, {/if}<em>{pc.title}</em>{#if pc.place}, {pc.place}{/if}{/if}</p>
+                            </div>
+                          </figure>
+                        {/each}
                         {#if m.widgets?.length}
                           <!-- a display widget (side_by_side): the reply's marker + table swapped for the component; the text around it as usual -->
                           {#each widgetSegments(m.pending ? settled(m.content) : m.content, m.widgets) as ws}{#if ws.kind === 'widget'}<SideBySide widget={ws.widget} />{:else}{@html renderRich(ws.md)}{/if}{/each}
@@ -583,22 +601,14 @@
                             {:else}{@html renderRich(seg.md)}{/if}
                           {/each}
                         {:else}
-                        {@html renderRich((m.pending ? settled : (x) => x)(m.book ? withoutBookLead(m.content, m.book) : m.content))}{#if m.pending}<span class="caret" aria-hidden="true"></span>{/if}
+                        {@html renderRich((m.pending ? settled : (x) => x)(m.book ? withoutBookLead(m.content, m.book) : m.passages?.length && !m.pending ? withoutQuote(m.content) : m.content))}{#if m.pending}<span class="caret" aria-hidden="true"></span>{/if}
                         {/if}
                       {/if}
                     {:else}{m.content}{/if}
                   </div>
                   {/if}
                   {#each m.books || [] as b (b.id)}{@render bookCard(b)}{/each}
-                  {#if m.citations?.length}
-                    <div class="cites">
-                      {#each [...new Map(m.citations.filter((c) => citationHref(c, m.content)).map((c) => [linkBase(citationHref(c, m.content)), c])).values()].slice(0, 4) as c, ci}
-                        {#if citationHref(c, m.content)}
-                          <a href={citationHref(c, m.content)} target="_blank" rel="noopener" style="animation-delay:{ci * 80}ms">{c.title || 'source'}</a>
-                        {/if}
-                      {/each}
-                    </div>
-                  {/if}
+                  <!-- no source pills (Chad 11-12): the reply's citations are its links; the cards show the books -->
                   {#if m.followups?.length && !m.pending && mi === messages.length - 1}
                     <div class="nextq">{#each m.followups as q}<button type="button" disabled={busy} onclick={() => { input = q; send(); }}>{q}</button>{/each}</div>
                   {/if}
@@ -894,16 +904,6 @@
     color: var(--accent-deep); background: transparent; border: 1px solid color-mix(in srgb, var(--accent-deep) 35%, transparent); }
   .nextq button:hover:not(:disabled) { background: color-mix(in srgb, var(--gold) 12%, transparent); }
   .nextq button:disabled { opacity: .5; cursor: default; }
-  .cites { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 7px; }
-  .cites a {
-    font-size: 12px; letter-spacing: .02em; text-decoration: none;
-    color: var(--accent-deep); background: color-mix(in srgb, var(--gold) 9%, transparent);
-    border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
-    border-radius: 11px; padding: 3px 11px;
-    animation: arrive .45s cubic-bezier(.22,1,.36,1) both;
-    transition: background .15s, transform .15s;
-  }
-  .cites a:hover { background: color-mix(in srgb, var(--gold) 20%, transparent); transform: translateY(-1px); }
 
   .error { color: #a33; font-size: 13px; padding: 4px 2px; }
 
@@ -946,10 +946,9 @@
     .qcard .qcard-cite { color: #a59d8c; }
     .qcard .qcard-cite em { color: #f1ede3; }
     .bubble.lit::first-letter { color: color-mix(in srgb, var(--accent) 45%, #cfe1ff); }
-    .bubble :global(a), .cites a { color: color-mix(in srgb, var(--accent) 30%, #cfe1ff); }
+    .bubble :global(a) { color: color-mix(in srgb, var(--accent) 30%, #cfe1ff); }
     .nextq button { color: #c4cddb; border-color: rgba(196, 205, 219, .3); }   /* subtle, never unreadable (Chad 11-12) */
     .nextq button:hover:not(:disabled) { color: #eef1f6; border-color: rgba(196, 205, 219, .55); }
-    .cites a { background: color-mix(in srgb, var(--gold) 8%, transparent); border-color: color-mix(in srgb, var(--gold) 40%, transparent); }
     .stage { background-image: linear-gradient(90deg, #6d7789 0%, color-mix(in srgb, var(--accent) 40%, #cfe1ff) 45%, var(--gold-soft) 55%, #6d7789 100%); }
     footer { border-top: 1px solid #232a35; }
     textarea { background: #171c23; color: #e9e6dd; border-color: #313a48; }
@@ -970,7 +969,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .bubble-btn, .panel, .msg, .rule, .cites a { animation: none; }
+    .bubble-btn, .panel, .msg, .rule { animation: none; }
     .stage { animation: none; color: #9a8f7a; background: none; }
     .caret { animation: none; opacity: .75; }
   }

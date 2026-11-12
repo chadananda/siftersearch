@@ -13,7 +13,8 @@
   import SideBySide from './widgets/SideBySide.svelte';
   import { widgetSegments } from '../../api/lib/assistant/widgets/segments.js';
   // the passage card shows the quote + citation: drop the reply's leading blockquote, keep anything else
-  const withoutQuote = (text) => String(text || '').replace(/^(?:>.*(?:\n|$))+\s*/, '');
+  // the passage card shows the quote: every quoted block leaves the text (the light writer may open with a sentence before it)
+  const withoutQuote = (text) => String(text || '').replace(/^(?:>.*(?:\n|$))+/gm, '').replace(/\n{3,}/g, '\n\n').trim();
   // the book card already shows the description: the reply's first paragraph (the same words) is not shown twice
   const withoutBookLead = (text, book) => { const d = String(book?.description || '').trim(); const t = String(text || ''); return d && t.startsWith(d) ? t.slice(d.length).replace(/^\s+/, '') : t; };
   import { toCurlyQuotes } from '../lib/text-utils.js';

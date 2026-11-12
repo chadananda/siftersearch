@@ -58,8 +58,10 @@ export async function quoteCards(reply, sources, { namedWork = null, docs = defa
       place: source.place || placeOf(block.attribution, title) || placeOf(block.attribution, source.title), cover_url: coverOf(d) };
   }).filter((c) => c.title);
   let books = [];
+  // a book a quote card already shows (its cover beside the quote) gets no second card (Chad 11-12)
+  const carded = new Set(cards.map((c) => Number(c.work_id)));
   if (named.length) {
-    const ds = named.map((id) => rows.get(id)).filter(Boolean);
+    const ds = named.filter((id) => !carded.has(Number(id))).map((id) => rows.get(id)).filter(Boolean);
     const urls = await links(ds).catch(() => null);
     books = ds.map((d) => ({ id: d.id, title: d.title, author: d.author || null, year: d.year ?? null, url: urls?.get?.(d.id) ?? null, cover_url: coverOf(d),
       description: null, sufficient: false })).filter((b) => b.title && b.url);

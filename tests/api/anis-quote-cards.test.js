@@ -63,8 +63,14 @@ describe('quoteCards (server)', () => {
     expect(books).toEqual([]);
   });
   it('the work Jev named, cited in the reply → its book card (below the text, the reply still shown)', async () => {
-    const { books } = await quoteCards(REPLY, SOURCES, { namedWork: 'The Hidden Words', docs, links });
+    const reply = `${REPLY.split('And elsewhere:')[0]}See *The Hidden Words*, Arabic 5 ([link](${U2})).`;
+    const { books } = await quoteCards(reply, SOURCES, { namedWork: 'The Hidden Words', docs, links });
     expect(books).toEqual([expect.objectContaining({ id: 22, title: 'The Hidden Words', url: 'https://oceanlibrary.com/book/22', sufficient: false })]);
+  });
+  it('the named work already has a quote card (its cover beside the quote) → no second book card (Chad 11-12)', async () => {
+    const { cards, books } = await quoteCards(REPLY, SOURCES, { namedWork: 'The Hidden Words', docs, links });
+    expect(cards.map((c) => c.work_id)).toContain(22);
+    expect(books).toEqual([]);
   });
   it('no blockquote and no named work → no DB read', async () => {
     let read = 0;
