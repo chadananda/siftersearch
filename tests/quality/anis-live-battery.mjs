@@ -106,7 +106,9 @@ export function check(c, r) {
   if (c.book && c.card_ms && r.at.book > c.card_ms) f.push(`card slow ${r.at.book} ms > ${c.card_ms}`);
   const titles = [...r.citations, ...r.sources].map((x) => `${x.title ?? ''} ${x.author ?? ''}`).join(' | ');
   if (c.cite && !c.cite.test(titles)) f.push(`no expected citation (${titles.slice(0, 80) || 'none'})`);
-  if (c.text && !c.text.test(r.text)) f.push('expected words missing');
+  // transliteration marks fold away ("S̱hayḵh Aḥmad" carries combining underlines a plain /shaykh/ never matches)
+  const folded = String(r.text ?? '').normalize('NFKD').replace(/\p{M}/gu, '');
+  if (c.text && !c.text.test(r.text) && !c.text.test(folded)) f.push('expected words missing');
   // a find that found: the count line and the places, nothing after (Chad 11-10: "leave it at that if found")
   if (c.only && r.text.split(/\n+/).some((l, i) => i > 0 && l.trim() && !/^\s*[-*>\d]/.test(l))) f.push('discusses beyond the reference');
   if (c.ms && r.ms > c.ms) f.push(`slow ${r.ms} ms > ${c.ms}`);
