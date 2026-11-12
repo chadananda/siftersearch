@@ -90,10 +90,15 @@ export const SCRAPE_HOST = /^https?:\/\/(?:www\.)?(?:bahai-library\.com|oceanofl
 // a PERIODICAL volume (The Bahá'í World reprints documents; 11-12 decentralization: the House's Constitution cited as "The Baha'i
 // World … Volume XVI (Baha'i Era 130–…") gives way the same way: the standalone document holding the same words
 export const PERIODICAL = /^The Bah[aá][’']?[ií] World\b/i;
+// an EXCERPT book of one writer (11-12 decentralization: Shoghi Effendi's "not purely democratic" cited from *Call to the Nations*, which
+// excerpts *The World Order of Bahá’u’lláh*): his own book holding the words takes the slot — never another excerpt book or last resort
+export const EXCERPTS = /^Call to the Nations\b/i;
+const fromExcerpt = (q, j, provisional) => ownHolder(q, j.writer, j.span, provisional) && Number(q.document_id) !== Number(j.p.document_id)
+  && !EXCERPTS.test(q.title || '') && !LAST_RESORT.test(q.title || '');
 const hostCopy = (q, j, provisional) => betterCopy(q, j, provisional) && !SCRAPE_HOST.test(String(q.source_url || q.url || '')) && q.authority !== 'scholarship'
   && !PERIODICAL.test(q.title || '');
 const fits = (q, j, provisional) => (j.kind === 'copy' ? betterCopy(q, j, provisional) : j.kind === 'host' ? hostCopy(q, j, provisional) : j.kind === 'self' ? selfOrigin(q, j, provisional)
-  : j.kind === 'published' ? published(q, j, provisional) : ownHolder(q, j.writer, j.span, provisional));
+  : j.kind === 'published' ? published(q, j, provisional) : j.kind === 'excerpt' ? fromExcerpt(q, j, provisional) : ownHolder(q, j.writer, j.span, provisional));
 
 /**
  * passages → { passages, swapped: [{ from, to, writer }], searches, late, ms }. Each quoted passage's slot goes to the writer's
@@ -126,9 +131,10 @@ async function ownPass(passages, { search = null, link = null, budgetMs = OWN_SO
   // 'copy' (a passage of a poor copy: a slug-titled scrape), 'host' (a scrape-host edition: the words in a published book), 'published' (a last-resort source: the writer's published work instead)
   const kindOf = (p) => (keep?.(p) ? null : quotedElsewhere(p, DOCTRINAL) ? 'elsewhere' : slugTitle(p.title) ? 'copy'
     : LAST_RESORT.test(p.title || '') && canon(p.author) ? 'published'
+    : EXCERPTS.test(p.title || '') && DOCTRINAL.has(canon(p.author)) ? 'excerpt'
     : DOCTRINAL.has(canon(p.author)) && canon(p.author) === canon(p.book_author || p.author) && quotedOnly(p.text).length ? 'self' : SCRAPE_HOST.test(String(p.source_url || '')) || PERIODICAL.test(p.title || '') ? 'host' : null);
   const jobs = passages.map((p, i) => ({ p, i, kind: only && !only.has(keyOf(p)) ? null : kindOf(p) })).filter((j) => j.kind && (!onlyKinds || onlyKinds.has(j.kind)))
-    .map((j) => ({ ...j, writer: j.kind === 'copy' || j.kind === 'host' ? null : canon(j.p.author), span: j.kind === 'self' ? quotedOnly(j.p.text)[0] : j.kind === 'copy' || j.kind === 'host' || j.kind === 'published' ? (words(j.p.text).length >= MIN_WORDS ? clip(j.p.text) : null) : quotedSpan(j.p.text) })).filter((j) => j.span);
+    .map((j) => ({ ...j, writer: j.kind === 'copy' || j.kind === 'host' ? null : canon(j.p.author), span: j.kind === 'self' ? quotedOnly(j.p.text)[0] : j.kind === 'copy' || j.kind === 'host' || j.kind === 'published' || j.kind === 'excerpt' ? (words(j.p.text).length >= MIN_WORDS ? clip(j.p.text) : null) : quotedSpan(j.p.text) })).filter((j) => j.span);
   if (!jobs.length) return done();
   for (const j of jobs) j.own = passages.find((q) => q !== j.p && fits(q, j, isProvisional)) || null;
   const need = jobs.filter((j) => !j.own && search);
@@ -141,7 +147,7 @@ async function ownPass(passages, { search = null, link = null, budgetMs = OWN_SO
     const lookup = async (j) => {
       // a last-resort letter: a compilation often carries an excerpt from mid-paragraph (Lights of Guidance's "…the Guardian has
       // re-emphasized the necessity of avoiding over centralization"), so 12-word windows from its middle are tried beside the opening (a letter is often one long sentence)
-      if (j.kind === 'published' || j.kind === 'host') {
+      if (j.kind === 'published' || j.kind === 'host' || j.kind === 'excerpt') {
         const w = words(j.p.text), at = (f) => w.slice(Math.floor(w.length * f), Math.floor(w.length * f) + 12).join(' ');
         // (12–15 words, not the 40-word clip: a compilation splits a letter into shorter paragraphs)
         const spans = w.length >= 36 ? [w.slice(0, 15).join(' '), at(1 / 3), at(2 / 3)] : [j.span];
@@ -172,7 +178,7 @@ async function ownPass(passages, { search = null, link = null, budgetMs = OWN_SO
   const lead = passages.slice(), tail = [];
   // a poor copy holds the same words as its better copy: dropped, never kept as context (the writer cited the scrape, 11-11);
   // a last-resort letter is not kept either: left in as context the writer still cited it (11-12 decentralization)
-  for (const j of found) { lead[j.i] = j.own; if (j.kind !== 'copy' && j.kind !== 'host' && j.kind !== 'published') tail.push(j.p); }
+  for (const j of found) { lead[j.i] = j.own; if (!['copy', 'host', 'published', 'excerpt'].includes(j.kind)) tail.push(j.p); }
   const seen = new Set();
   const out = [...lead, ...tail].filter((p) => { const k = keyOf(p); if (seen.has(k)) return false; seen.add(k); return true; });
   return { passages: out, swapped: found.map((j) => ({ from: keyOf(j.p), to: keyOf(j.own), writer: j.writer, kind: j.kind })), searches: need.length, late, ms: Date.now() - t0 };

@@ -77,6 +77,15 @@ describe('own source: the last-resort source gives way (battery round 4 timeline
     const r = await preferOwnWork([ul], { search: async () => [ul, comp], shape: toPassage });
     expect(r.passages.map((p) => p.id)).toEqual([12]);
   });
+  it('an excerpt book (Call to the Nations) → his own book holding the words; another excerpt book is no swap (11-12)', async () => {
+    const D = 'The Administrative Order of the Faith of Bahá’u’lláh must in no wise be regarded as purely democratic in character inasmuch as the basic assumption which requires all democracies to depend fundamentally upon getting their mandate from the people is altogether lacking.';
+    const ctn = toPassage({ ...upl, id: 9, document_id: 1200, title: 'Call to the Nations', text: D });
+    const r = await preferOwnWork([ctn], { search: async () => [ctn, { ...wob, text: `${D} More.` }], shape: toPassage });
+    expect(r.passages.map((p) => p.id)).toEqual([31]);
+    const other = { ...wob, id: 77, document_id: 1300, title: 'Call to the Nations (excerpts)', text: D };
+    const r2 = await preferOwnWork([ctn], { search: async () => [ctn, other], shape: toPassage });
+    expect(r2.passages.map((p) => p.id)).toEqual([9]);
+  });
   it('a compilation holding a mid-paragraph sentence of the letter (not its opening) → the compilation (Lights of Guidance)', async () => {
     const T = 'It is in view of this constant expansion and increasing complexity of the activities of the believers in every land that the Guardian has re-emphasized the necessity of avoiding over-centralization in the affairs of the national body at this time, so that it may be relieved of detail and routine work.';
     const ul = toPassage({ ...upl, id: 4800, title: 'Shoghi Effendi: Uncompiled Letters', text: T });
