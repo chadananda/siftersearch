@@ -78,14 +78,14 @@ describe('own source: the last-resort source gives way (battery round 4 timeline
     expect(r.passages.map((p) => p.id)).toEqual([12, 4700]);
   });
   it('a compilation holding a mid-paragraph sentence of the letter (not its opening) → the compilation (Lights of Guidance)', async () => {
-    const T = 'It is in view of this constant expansion that the work grows. The Guardian has re-emphasized the necessity of avoiding over-centralization in the affairs of the national body at this time. Short end.';
+    const T = 'It is in view of this constant expansion and increasing complexity of the activities of the believers in every land that the Guardian has re-emphasized the necessity of avoiding over-centralization in the affairs of the national body at this time, so that it may be relieved of detail and routine work.';
     const ul = toPassage({ ...upl, id: 4800, title: 'Shoghi Effendi: Uncompiled Letters', text: T });
     const log = { id: 8680, document_id: 77, paragraph_index: 8680, title: 'Lights of Guidance', author: SE, book_author: 'Helen Hornby', religion: B,
-      source_url: 'https://oceanlibrary.com/lights-of-guidance/?paraId=para_8680', text: '...the Guardian has re-emphasized the necessity of avoiding over centralization in the affairs of the national body at this time.' };
+      source_url: 'https://oceanlibrary.com/lights-of-guidance/?paraId=para_8680', text: '...the Guardian has re-emphasized the necessity of avoiding over centralization in the affairs of the national body at this time, so that it may be relieved of detail and routine work.' };
     const asked = [];
-    const r = await preferOwnWork([ul], { search: async (span) => { asked.push(span); return /Guardian/.test(span) ? [log] : []; }, shape: toPassage });
+    const r = await preferOwnWork([ul], { search: async (span) => { asked.push(span); return /^It is/.test(span) ? [] : [log]; }, shape: toPassage });
     expect(r.passages.map((p) => p.id)).toEqual([8680, 4800]);
-    expect(asked.length).toBe(2);
+    expect(asked.length).toBe(3);
   });
 });
 

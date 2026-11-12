@@ -18,7 +18,6 @@ const MAX_WORDS = 40, MIN_WORDS = 5;
 const canon = (n) => firstPerson(n || '') || n || null;
 const words = (s) => String(s || '').trim().split(/\s+/).filter(Boolean);
 const clip = (s) => words(s).slice(0, MAX_WORDS).join(' ');
-const sentences = (s) => String(s || '').split(/(?<=[.!?])["”’]?\s+(?=["“‘]?[A-Z])/).map((x) => x.trim()).filter(Boolean);
 // a shaped hit can lack id and index: never let two paragraphs of one document share a key (they deduped into one, 11-11)
 const keyOf = (p) => p?.id ?? p?.paragraph_id ?? `${p?.document_id}:${p?.paragraph_index ?? String(p?.text || '').slice(0, 80)}`;
 
@@ -137,9 +136,10 @@ async function ownPass(passages, { search = null, link = null, budgetMs = OWN_SO
     const deadline = new Promise((r) => { timer = setTimeout(r, left(), LATE); });
     const lookup = async (j) => {
       // a last-resort letter: a compilation often carries an excerpt from mid-paragraph (Lights of Guidance's "…the Guardian has
-      // re-emphasized the necessity of avoiding over centralization"), so its two longest later sentences are tried beside the opening
+      // re-emphasized the necessity of avoiding over centralization"), so 12-word windows from its middle are tried beside the opening (a letter is often one long sentence)
       if (j.kind === 'published') {
-        const alts = sentences(j.p.text).slice(1).filter((x) => words(x).length >= 8).sort((a, b) => words(b).length - words(a).length).slice(0, 2).map(clip);
+        const w = words(j.p.text), at = (f) => w.slice(Math.floor(w.length * f), Math.floor(w.length * f) + 12).join(' ');
+        const alts = w.length >= 36 ? [at(1 / 3), at(2 / 3)] : [];
         const tries = await Promise.all([j.span, ...alts].map(async (span) => {
           const hits = await search(span, { author: j.writer }, { timeoutMs: left() }).catch(() => []);
           return (Array.isArray(hits) ? hits : []).find((h) => fits(h, { ...j, span }, isProvisional)) || null;
