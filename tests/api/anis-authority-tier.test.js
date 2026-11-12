@@ -143,7 +143,7 @@ describe('researcher: the Writings in their original languages beside the Englis
     const { run } = toolRunner({ search: async () => [], originals: async () => [{ ...ORIG_FA, english: 'O people of wealth and power' }], translationsOf: async () => new Map() });
     const out = await run.originals_search({ query: 'wealth' });
     expect(out).toMatch(/ORIGINAL — its linked translation is P2/);
-    expect(out).toMatch(/\[P2\][^\n]*EXISTING TRANSLATION: translation\nO people of wealth and power/);
+    expect(out).toMatch(/\[P2\][^\n]*EXISTING TRANSLATION: translation · English translation of the original P1\nO people of wealth and power/);
   });
   it('no originals pass for another tradition; originals_search runs it alone', async () => {
     let n = 0;

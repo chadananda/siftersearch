@@ -4,7 +4,7 @@ import { normalizeQuestion, questionHash } from '../answer-cache.js';
 
 // Measured 11-12 (config embeddings): the same question reworded 0.91; a narrower/broader question on the topic 0.73–0.81; another topic < 0.5.
 export const SAME_QUESTION = 0.88;
-export const RESEARCH_THRESHOLD = 0.80;   // a related question's research is still a start (it is passages, not a reply)
+export const RESEARCH_THRESHOLD = 0.75;   // a related question's research is still a start (it is passages, not a reply); "How do Baha'is pray?" vs a longer form = 0.80
 const defaultRepo = async () => import('../repos/research-sets-repo.js');
 // Question embedding: createEmbedding (api/lib/ai.js, config.ai.embeddings.model) — the same call answer-cache's prep path uses.
 const defaultEmbed = async (q) => (await (await import('../ai.js')).createEmbedding(q)).embedding;

@@ -33,9 +33,10 @@ export function pickRendering(list = []) {
     .sort((a, b) => COPY_CLASSES.indexOf(a.cls) - COPY_CLASSES.indexOf(b.cls) || a.i - b.i);
   return ranked.length ? { ...ranked[0], rendering: RENDERING_CLASSES.has(ranked[0].cls) } : null;
 }
-/** The head for the English shown beside original ref: a translation is named one; any other copy is named by its class. */
-export const renderingTitle = (title, ref, pick) => (!pick || pick.rendering ? `${title} (English translation of the original ${ref})`
-  : `${title} (${pick.cls.replace(/-/g, ' ')} copy of the original ${ref} — not its own translation)`);
+/** The note on the English shown beside original ref: a translation is named one; any other copy is named by its class. A note, never the
+ *  title — the title becomes the citation's link text (11-12: "(The Kitáb-i-Aqdas (English translation of the original P39))" reached a reply). */
+export const renderingNote = (ref, pick) => (!pick || pick.rendering ? `English translation of the original ${ref}`
+  : `${pick.cls.replace(/-/g, ' ')} copy of the original ${ref} — not its own translation`);
 /** How many original-language Writings a Bahá'í search keeps beside its English hits (the per-language quota). */
 export const ORIGINALS_QUOTA = 3;
 // a shown passage head in Arabic/Persian: "[P3] Title — Author (fa) · …" (show())
@@ -151,7 +152,7 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
       const ref = add(p);
       const pick = pickRendering(linked.get?.(p.id));
       const t = pick?.t || (p.english ? { ...p, id: `${p.id}-en`, text: p.english, language: 'en', english: undefined, translation: translationLabel(null, null) } : null);
-      const tref = t ? add({ ...t, translation: t.translation || 'translation', title: renderingTitle(t.title || p.title, ref, pick?.t === t ? pick : null) }) : null;
+      const tref = t ? add({ ...t, translation: t.translation || 'translation', title: t.title || p.title, note: renderingNote(ref, pick?.t === t ? pick : null) }) : null;
       const o = found.get(ref);
       if (o && !o.note) o.note = tref ? (pick && pick.t === t && !pick.rendering
         ? `ORIGINAL — no translation of this work is linked; its English appears in ${tref}, a ${pick.cls.replace(/-/g, ' ')} copy: quote that verbatim beside this original line and name it as that copy, not as the translation`

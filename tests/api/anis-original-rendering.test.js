@@ -1,7 +1,7 @@
 // The English beside an original-language hit is that work's translation, not whichever copy linked first (11-04 digest
 // #147, writer half). A compilation or a quoting letter is the fallback and is named by its class. Several works, not one.
 import { describe, it, expect } from 'vitest';
-import { pickRendering, renderingTitle } from '../../api/lib/assistant/researcher.js';
+import { pickRendering, renderingNote } from '../../api/lib/assistant/researcher.js';
 
 const bahaullah = 'Bahá’u’lláh';
 const gleanings = { id: 1, title: 'Gleanings from the Writings of Bahá’u’lláh', author: bahaullah, religion: 'Bahá’í' };
@@ -23,7 +23,7 @@ describe('pickRendering', () => {
     expect(c.rendering).toBe(false);
     const q = pickRendering([quoting]);
     expect(q.cls).toBe('quoted-authoritative');
-    expect(renderingTitle(quoting.title, 'P2', q)).toBe('The Advent of Divine Justice (quoted authoritative copy of the original P2 — not its own translation)');
+    expect(renderingNote('P2', q)).toBe('quoted authoritative copy of the original P2 — not its own translation');
   });
   it('equal classes keep the link order (best first)', () => {
     const g2 = { ...gleanings, id: 9 };
@@ -32,7 +32,7 @@ describe('pickRendering', () => {
   it('nothing linked → null; a translation keeps the plain head', () => {
     expect(pickRendering([])).toBeNull();
     expect(pickRendering(undefined)).toBeNull();
-    expect(renderingTitle(iqan.title, 'P1', pickRendering([iqan]))).toBe('The Kitáb-i-Íqán (English translation of the original P1)');
-    expect(renderingTitle('Inline English', 'P4', null)).toBe('Inline English (English translation of the original P4)');
+    expect(renderingNote('P1', pickRendering([iqan]))).toBe('English translation of the original P1');
+    expect(renderingNote('P4', null)).toBe('English translation of the original P4');
   });
 });
