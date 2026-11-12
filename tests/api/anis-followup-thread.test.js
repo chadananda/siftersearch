@@ -62,9 +62,14 @@ describe('Jev decides what a follow-up refers to', () => {
     const mkF = (a) => async () => ({ ok: true, json: async () => ({ answers: { strategy: ans('history_fact'), refers_back: a } }) });
     const sub = await chooseStrategy(thread('How did he die?'), { apiKey: 'k', fetchImpl: mkF(ans('subject')), options: { history_fact: 'h', unmatched: 'x' } });
     expect(sub.refersBack).toBe(true); expect(sub.aboutReply).toBeUndefined();
-    expect(sub.decisions.find((d) => d.point === 'refers-back')).toMatchObject({ chosen: 'subject', options: ['own', 'subject', 'previous'] });
+    expect(sub.decisions.find((d) => d.point === 'refers-back')).toMatchObject({ chosen: 'subject', options: ['own', 'subject', 'previous', 'extend'] });
     const rep = await chooseStrategy(thread('is that quote authentic?'), { apiKey: 'k', fetchImpl: mkF(ans('previous')), options: { history_fact: 'h', unmatched: 'x' } });
     expect(rep.refersBack).toBe(true); expect(rep.aboutReply).toBe(true);
+  });
+  it('"add two from Abdu’l-Bahá" extends the previous reply: its subject stays the last topic (11-12 justice compilation searched "add two")', async () => {
+    const f = async () => ({ ok: true, json: async () => ({ answers: { strategy: ans('compilation'), refers_back: ans('extend') } }) });
+    const r = await chooseStrategy(thread('add two from Abdu’l-Bahá'), { apiKey: 'k', fetchImpl: f, options: { compilation: 'c', unmatched: 'x' } });
+    expect(r.refersBack).toBe(true); expect(r.aboutReply).toBeUndefined();
   });
   it('entryUnits: a new question about the same subject searches the last topic glued to the new question; a message about the reply searches the last topic', () => {
     const g = graphFor('comparison', 2), glued = `${Q1} How did she die?`, ctx = { query: glued, question: 'How did she die?', messages: thread('How did she die?'), state, channel: { id: 'site-chat' } };
