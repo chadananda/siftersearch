@@ -684,7 +684,9 @@ for (const [name, unit, kind, reads, what] of [['plan.subthemes', 'sub_themes', 
   ['plan.phrasings', 'phrasings', 'phrasings', ['topic'], 'search phrases in the words the texts use'], ['plan.histories', 'histories', 'histories', ['topic'], 'the standard histories that narrate a subject']]) {
   E[name] = { kind: 'tool', cls: 'llm', edges: ['done', 'fail'], scope: 'strategy', params: ['n', 'stage'], reads, writes: [unit],
     async run(s, p = {}) {
-      const u = U(s), subject = reads.map((k) => flat(u[k])).find((x) => String(x).trim()) || u.current_user_question, n = p.n ?? 4, tradition = tradOf(u);
+      // a follow-up that takes its subject from the last turn (Jev's refers_back) plans from that subject, never the follow-up's own words
+      // (11-12: "add two from Abdu'l-Bahá" after a justice compilation planned sub-themes of "add two" — arithmetic)
+      const u = U(s), subject = [...(u.refers_back ? ['follows_topic'] : []), ...reads].map((k) => flat(u[k])).find((x) => String(x ?? '').trim()) || u.current_user_question, n = p.n ?? 4, tradition = tradOf(u);
       const meter = currentAIContext().meter, m0 = Array.isArray(meter) ? meter.length : 0;
       let items = [], via = 'model', error = null;
       try {

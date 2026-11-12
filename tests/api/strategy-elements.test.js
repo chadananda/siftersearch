@@ -261,6 +261,8 @@ describe('rank / shape / plan', () => {
   it('plan.subthemes: generator or the topic default', async () => {
     expect(await ELEMENTS['plan.subthemes'].run(mk({ subthemes: async () => ['a', 'b'] }, { topic: 't' }), {})).toBe('done');
     const s = mk({}, { topic: 't' }); expect(await ELEMENTS['plan.subthemes'].run(s, {})).toBe('fail'); expect(s.units.sub_themes).toEqual(['t']);
+    // a follow-up that takes its subject from the last turn plans from that subject (11-12 "add two from Abdu’l-Bahá" planned "add two")
+    const f = mk({}, { topic: 'add two', refers_back: true, follows_topic: 'justice' }); await ELEMENTS['plan.subthemes'].run(f, {}); expect(f.units.sub_themes).toEqual(['justice']);
   });
 });
 
