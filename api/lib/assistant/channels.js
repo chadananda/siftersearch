@@ -8,6 +8,7 @@ export const CHANNELS = {
     frame: 'Reply in under about 80 words: two to four sentences and at most one short quotation, unless the person asked for more. Quote briefly.'
       + ' Give the shortest reply that fully answers what was asked: no preamble, no restating the question, no commentary, summaries or offers the reader did not ask for — they can always ask for more. A passage, table or document they asked for is given whole.',
     capabilities: ['links', 'lists', 'quotes'], linkCap: 1, newsCap: 1, renderer: 'markdown-lite', privileged: false,
+    engine: 'agent',   // Chad 11-12: one agent owns the turn, strategies are its tools (no routed front door)
     live: true, progress: true,   // progress: narrate.js says what is happening while a longer stage runs (a future voice channel sets it too)
     // a reader watches the screen: first text within seconds (respond.js liveResearch, the thinking-off writer)
   },
@@ -16,6 +17,7 @@ export const CHANNELS = {
     frame: 'Reply in under about 80 words: two to four sentences and at most one short quotation, unless the person asked for more.'
       + ' Give the shortest reply that fully answers what was asked: no preamble, no restating the question, no commentary, summaries or offers the reader did not ask for — they can always ask for more. A passage, table or document they asked for is given whole.',
     capabilities: ['links', 'lists', 'quotes', 'tables', 'headings'], linkCap: 2, newsCap: 1, renderer: 'markdown', privileged: false,
+    engine: 'agent',
     live: true, progress: true,
   },
   email: {

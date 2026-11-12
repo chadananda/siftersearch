@@ -7,6 +7,7 @@
 // jev_pick, then the choice is forced (pin.keepChoice: not forced — a decision-step theory runs wherever Jev routes to its graph). → { reply, path, steps, ms, usd, jev_pick, status }. Deps: turn.js, strategy-choice.js.
 import { withAIContext } from '../ai-context.js';
 import { anisTurn, defaultDeps } from './turn.js';
+import { channelFor } from './channels.js';
 import { chooseStrategy, strategyOptions } from './strategy-choice.js';
 import { UNMATCHED, isUnmatched } from './strategy-seed.js';
 
@@ -49,7 +50,7 @@ export async function tryStrategy({ question, history = [], pin = null, caller =
   const meter = [];
   const t0 = Date.now();
   const r = await withAIContext({ billTo: caller, meter, strategyPin: pin, replay: true, trace: { route: `replay:${pin ? `${pin.row.id}@${pin.row.version}` : 'current'}` } },
-    () => turn({ messages: [...history, { role: 'user', content: question }], channel: 'widget-chat', deps: turnDeps, ...(engine ? { engine } : {}) }));
+    () => turn({ messages: [...history, { role: 'user', content: question }], channel: 'widget-chat', deps: turnDeps, engine: engine ?? channelFor('widget-chat').engine }));
   const usd = meter.reduce((n, c) => n + (c.usd || 0), 0);
   return { reply: r?.reply ?? '', status: r?.status ?? null, path: r?.path ?? null, steps: r?.path?.steps ?? r?.steps ?? [], ms: Date.now() - t0,
     usd: Math.round(usd * 1e6) / 1e6, jev_pick: jevPick, conversationId: r?.conversationId ?? null };

@@ -130,6 +130,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   const shown = [];   // the cards the reader saw (book, passage, quote_cards, books): a warmed answer replays them
   const onEvent = (ev) => { if (CARD_EVENTS.has(ev?.type)) shown.push(ev); rawEvent(ev); const p = ev?.type === 'stage' ? progressText(ev.stage) : null; if (p) rawEvent({ type: 'progress', stage: ev.stage, text: p }); };
   const channel = channelFor(channelName, { trusted });
+  // the channel's engine (channels.js; Chad 11-12: site/widget chat = the agent) unless the caller chose one; tests (deps) keep the routed default
+  if (engine === undefined && !deps && channel.engine) engine = channel.engine;
   const text = lastUser(messages);
   const name = profile.persona_name || 'Anís';
   const seed = `${text}:${new Date().toISOString().slice(0, 10)}`;
@@ -636,6 +638,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       if (openedSection && codePatch) codePatch = { ...codePatch, given: [...(codePatch.given || []), { turn: turnNo ?? 0, kind: 'section', ref: openedSection }] };
     } catch { codePatch = null; }
     const path = await finish(reply, 'answered', { engine: 'anis', ...(deepReport ? { deep_report: deepReport } : {}), ...(documentInfo ? { document: documentInfo } : {}), evidence: r.evidence ?? null, recipe: r.plan?.shape ?? null,
+      ...(r.agent ? { agent: r.agent } : {}),   // the agent's trace: steps [{tool, args, ms, cache, count}], searches, nudged, cache tally
       ...(r.steps ? { steps: r.steps } : {}),   // the strategy graph's trace [{node, step@v, ms, edge}], beside path.jev_calls
       // how the strategy was chosen (jev | jev:cached | backstop + why) and what the search was fed, for the thread view
       plan: { shape: r.plan?.shape ?? null, provenance: r.plan?.provenance ?? null, reason: r.plan?.reason ?? null, overridden: r.plan?.overridden ?? null,
