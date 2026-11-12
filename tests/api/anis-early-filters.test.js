@@ -1,6 +1,6 @@
 // Early filters (Chad 11-09): Jev's span kinds + subject religion → hard search filters; named work/author outrank authority; thin → widen; the judge reads the tree trace.
 import { describe, it, expect } from 'vitest';
-import { chooseStrategy, namedUnits } from '../../api/lib/assistant/strategy-choice.js';
+import { chooseStrategy, namedUnits, titleOptions } from '../../api/lib/assistant/strategy-choice.js';
 import { ELEMENTS } from '../../api/lib/assistant/activities/elements.js';
 import { graphFor, runGraph, entryUnits } from '../../api/lib/assistant/activities/graph.js';
 import { TEMPLATES } from '../../api/lib/assistant/strategy-seed.js';
@@ -200,5 +200,17 @@ describe('namedUnits: topic remnants after a removed span (11-09 widget turns)',
     const r = await chooseStrategy([{ role: 'user', content: 'Give me the Remover of Difficulties prayer' }], { apiKey: 'k', fetchImpl, options: { prayer: 'p', unmatched: 'x' } });
     expect(r.patch.turnOnly?.scope?.religions_specified).toBeUndefined();
     expect(r.decisions.find((d) => d.point === 'subject-religion')).toMatchObject({ chosen: null });
+  });
+  it('the copy wanted is not the title: Jev picks “Tablet of Aḥmad” out of “Arabic Tablet of Aḥmad” (offered by structure)', async () => {
+    expect(Object.keys(titleOptions('Arabic Tablet of Aḥmad'))).toEqual(['Arabic Tablet of Aḥmad', 'Tablet of Aḥmad', 'Arabic Tablet']);
+    expect(titleOptions('Gleanings')).toBeNull();
+    let body;
+    const fetchImpl = async (u, o) => { body = JSON.parse(o.body); return { ok: true, json: async () => ({ answers: { strategy: ans('original'), kind_2: ans('work'), title_2: ans('Tablet of Aḥmad'), scope_religion: ans('unchanged') } }) }; };
+    const r = await chooseStrategy([{ role: 'user', content: 'Make me a side-by-side of the Arabic Tablet of Aḥmad with the authorized English' }], { apiKey: 'k', fetchImpl, options: { original: 'o', unmatched: 'x' } });
+    expect(body.questions.title_2.criteria).toHaveProperty('Tablet of Aḥmad');
+    expect(r.units.named_work).toBe('Tablet of Aḥmad');
+  });
+  it('a person span keeps its whole name whatever the title answer', () => {
+    expect(namedUnits({ kind_1: ans('person'), title_1: ans('Ḥusayn') }, ['Mullá Ḥusayn'], 'Who was Mullá Ḥusayn?').named_person).toBe('Mullá Ḥusayn');
   });
 });

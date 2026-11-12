@@ -67,9 +67,21 @@ const FRAME = /^(?:according to|as (?:stated|explained|written|said) (?:in|by)|p
 const FUNCTION_WORDS = /^(?:who|what|whom|whose|which|when|where|why|how|was|were|is|are|am|be|did|do|does|the|a|an|of|to|in|on|and|or|about|tell|me)\W*$/i;   // question/function words carry no search content
 const ASK_WORDS = /^(?:can|could|would|will|you|please|i|know|like|more|some|anything|something|give|explain|describe|say|said)\W*$/i;   // an asking frame's words ("can you tell me about …")
 const frameless = (n) => String(n).replace(FRAME, '').trim();
+// A span's own title (11-12 battery: "the Arabic Tablet of Aḥmad" resolved to an essay ABOUT the tablet, "Arabic Hidden Words" to
+// nothing — the word saying which copy is wanted was read as part of the name). Code offers the span and the span less its first or
+// last word (structure, no word list); Jev chooses which is the title. The copy wanted (its language) is the strategy's job.
+export function titleOptions(span) {
+  const w = frameless(span).split(/\s+/).filter(Boolean);
+  if (w.length < 2) return null;
+  const trim = (xs) => { const ys = [...xs]; while (ys.length && !/\p{Lu}/u.test(ys.at(-1))) ys.pop(); while (ys.length && !/\p{Lu}/u.test(ys[0])) ys.shift(); return ys.join(' '); };
+  const opts = [...new Set([w.join(' '), trim(w.slice(1)), trim(w.slice(0, -1))].filter((x) => x && /\p{L}{3,}/u.test(x)))];
+  return opts.length > 1 ? Object.fromEntries(opts.map((o, i) => [o, i ? `${o}: the title — the other word only says which copy is wanted` : `${o}: the whole span is the title`])) : null;
+}
+const titleAsk = (span) => `In the latest message, if "${span}" names a written work: which is the work's own title, as a library catalogue lists it? A word that only says WHICH copy the reader wants — its language, script, edition or translation ("the Arabic …", "the Persian …", "the authorized …") — is not part of the title; a word the title itself carries stays.`;
 /** Jev's span kinds → { named_work, named_person, named_subjects (his "subject" spans), topic } (units for the tree's `request`). Pure. */
 export function namedUnits(a = {}, spans = [], question = '', min = MIN_CONFIDENCE) {
-  const kinds = spans.map((n, i) => ({ name: frameless(n), raw: n, ...choice(a[`kind_${i + 1}`]) })).filter((k) => k.name && ['work', 'person'].includes(k.choice) && (k.confidence ?? 0) >= min);
+  const titled = (n, i) => { const t = choice(a[`title_${i + 1}`]), o = titleOptions(n); return t?.choice && o?.[t.choice] && (t.confidence ?? 0) >= min ? t.choice : frameless(n); };
+  const kinds = spans.map((n, i) => { const k = choice(a[`kind_${i + 1}`]); return { name: k?.choice === 'work' ? titled(n, i) : frameless(n), raw: n, ...k }; }).filter((k) => k.name && ['work', 'person'].includes(k.choice) && (k.confidence ?? 0) >= min);
   const best = (c) => kinds.filter((k) => k.choice === c).sort((x, y) => (y.confidence ?? 0) - (x.confidence ?? 0))[0];   // the highest-confidence span of each kind
   const work = best('work'), person = best('person');
   const rest = kinds.reduce((q, k) => q.replace(k.raw, '\u0000'), String(question)).replace(/(?:\b(?:according to|as (?:stated|explained|written|said) (?:in|by)|in|from|by|on|per)\s+)?\u0000(?:['’]s\b)?[\s,;:'"’‘“”()-]*/gi, ' ')
@@ -116,6 +128,7 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
         ...Object.fromEntries(SIDE_KEYS.map((k, i) => [k, { type: 'choice', instructions: `If the latest message compares or asks about several traditions, which is the ${ORD[i]} tradition it names or means? Otherwise "none".${LANGUAGE_IS_NOT_A_TRADITION}`, criteria: SIDES }])),
         ...Object.fromEntries(spans.map((n, i) => [`book_${i + 1}`, { type: 'choice', instructions: bookAsk(n), criteria: SIDES }])),
         ...Object.fromEntries(spans.map((n, i) => [`kind_${i + 1}`, { type: 'choice', instructions: kindAsk(n), criteria: KINDS }])),
+        ...Object.fromEntries(spans.flatMap((n, i) => { const o = titleOptions(n); return o ? [[`title_${i + 1}`, { type: 'choice', instructions: titleAsk(n), criteria: o }]] : []; })),
         subject_religion: { type: 'choice', instructions: SUBJECT_ASK, criteria: SIDES },
         work_place: { type: 'choice', instructions: 'Does the LATEST user message ask to read a particular place in a work (a book, tablet, chapter or commentary named now or in the thread)? Which place?', criteria: WORK_PLACE },
         ...patchQuestions(st, TRADITIONS, turn),

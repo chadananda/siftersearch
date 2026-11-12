@@ -19,7 +19,7 @@ describe('chooseStrategy (Jev decides, never keywords)', () => {
     const f = jev({ strategy: { choice: 'comparison', confidence: 0.86, distribution: { comparison: 0.86, understanding: 0.1 } },
       side_a: { choice: 'Islam', confidence: 0.9 }, side_b: { choice: 'Christian', confidence: 0.8 }, side_c: { choice: 'none', confidence: 0.9 } });
     const s = await chooseStrategy(msgs, { profile: { default_tradition: "Baha'i" }, apiKey: 'k', fetchImpl: f });
-    expect(Object.keys(jev.last.questions)).toEqual(['strategy', 'side_a', 'side_b', 'side_c', 'book_1', 'kind_1', 'subject_religion', 'work_place', 'scope_religion', 'scope_span', 'authority_floor', 'reply_language', 'reads_script']);   // + the state-patch questions (units.js)
+    expect(Object.keys(jev.last.questions)).toEqual(['strategy', 'side_a', 'side_b', 'side_c', 'book_1', 'kind_1', 'title_1', 'subject_religion', 'work_place', 'scope_religion', 'scope_span', 'authority_floor', 'reply_language', 'reads_script']);   // + the state-patch questions (units.js)
     expect(jev.last.questions.strategy.type).toBe('choice'); expect(Object.keys(jev.last.questions.strategy.criteria)).toEqual(Object.keys(STRATEGIES));
     expect(jev.last.state).toMatch(/Baha'i/); expect(jev.last.state).toMatch(/forgiveness/);
     expect(s.strategy.choice).toBe('comparison'); expect(s.sides).toEqual(['Islam', 'Christian']); expect(strategyOf(s)).toBe('comparison');
