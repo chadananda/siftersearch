@@ -48,6 +48,10 @@ describe('renderRefs', () => {
     expect(renderRefs('"Words." ([[P1]], [[P2]])', { found, works: new Map() })).toBe('"Words." ([Prayers and Meditations](u1))');
     expect(renderRefs('x [[P2]][[P3]].', { found, works: new Map() })).toBe('x ([Prayers and Meditations](u2); [Gleanings](u3)).');
   });
+  it('the same citation twice across a full stop is given once', () => {
+    const found = new Map([['P1', { document_id: 9, source_url: 'u1', title: 'Writings' }]]);
+    expect(renderRefs('"Words" [[P1]]. [[P1]]', { found, works: new Map() })).toBe('"Words" ([Writings](u1)).');
+  });
   const found = new Map([['P1', { ...P, ref: 'P1' }], ['W1', { text: 'x', title: 'Web: news', source_url: 'https://news.example/x', web: true }]]);
   const works = new Map([['B1', { title: 'The Dawn-Breakers', url: 'https://siftersearch.com/library/dawn-breakers' }]]);
   it('groups, dedups and drops', () => {

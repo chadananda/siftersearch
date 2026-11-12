@@ -82,7 +82,9 @@ export function renderRefs(text, { found, works }) {
         .map((p) => `[${p.web ? 'web: ' : ''}${clip(p.title || 'source', 70)}](${p.source_url})`);
       return links.length ? ` (${links.join('; ')})` : '';
     })
-    .replace(/[ \t]+([.,;:!?])/g, '$1');
+    .replace(/[ \t]+([.,;:!?])/g, '$1')
+    // the same citation twice in a row ("(X). (X)": two refs of one book across a full stop, 11-12 decentralization) → once
+    .replace(/(\(\[[^\]\n]+\]\([^)\s]+\)\))([.,;:]?)\s*\1/g, '$1$2');
 }
 
 const STATUS = { research_lookup: () => 'Checking earlier research', book_card: (a) => `Finding ${clip(a.title, 60)}`, search_in_work: (a) => `Searching ${clip(a.work, 40)}`, find_passage: (a) => `Finding the passage: ${clip(a.query, 50)}`,
