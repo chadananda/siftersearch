@@ -2,6 +2,7 @@
 // live books are HOLLOW (no paragraph with text) or carry empty rows. Full scans (~1 min on tower): call ONLY out of
 // process, never from the API. Callers: scripts/ops/deletions-report.mjs, scripts/ops/hollow-report.mjs. Deps: db.js.
 import { queryAll } from '../db.js';
+import { INDEXABLE_DOC_SQL } from '../search/excluded-docs.js';
 
 /** Paragraphs soft-deleted per day (UTC) × doc source over the last `days` days, with how many docs were affected. */
 export async function deletionsByDay(days = 14) {
@@ -44,6 +45,6 @@ export async function liveParagraphsByDocAuthors() {
   return queryAll(`SELECT c.doc_id, d.religion, d.collection, d.title, d.author AS doc_author, COALESCE(d.scope, 'primary') AS scope,
       c.authors, COUNT(*) AS paragraphs
     FROM content c JOIN docs d ON d.id = c.doc_id
-    WHERE c.deleted_at IS NULL AND d.deleted_at IS NULL AND d.duplicate_of IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(c.text) > 0
-    GROUP BY c.doc_id, c.authors`);
+    WHERE c.deleted_at IS NULL AND d.deleted_at IS NULL AND ${INDEXABLE_DOC_SQL} AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(c.text) > 0
+    GROUP BY c.doc_id, c.authors`);   // INDEXABLE: retired duplicates and tag index pages are withheld from search by design, not missing
 }
