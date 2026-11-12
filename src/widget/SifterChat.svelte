@@ -9,7 +9,7 @@
   // Transcript persists in localStorage per token. Soft WebAudio feedback (synthesized, muteable).
   // token/api from the loader; accent/name/mission are optional per-page overrides (data-* attrs)
   // that tune the widget without touching the DB profile. ONE public domain; the edge worker proxies /api.
-  import { ANIS_SAMPLES } from '../lib/anis-samples.js';
+  import { ANIS_SAMPLES, pickStarters } from '../lib/anis-samples.js';
   import { richLinks } from './rich-link.js';
   import { tableAt } from './rich-table.js';
   import { styleQuotes } from '../../api/lib/quote-style.js';
@@ -91,8 +91,9 @@
         if (accent) cfg.accent = accent;
         if (name) cfg.name = name;
         try { messages = JSON.parse(localStorage.getItem(storeKey()) || '[]'); } catch { messages = []; }
-        const hello = c.greetings?.length ? c.greetings[Math.floor(Math.random() * c.greetings.length)] : c.greeting;
-        if (!messages.length && hello) messages = [{ role: 'assistant', content: hello, done: true }];
+        greet = () => { const hello = c.greetings?.length ? c.greetings[Math.floor(Math.random() * c.greetings.length)] : c.greeting;
+          return hello ? [{ role: 'assistant', content: hello, done: true, followups: pickStarters() }] : []; };
+        if (!messages.length) messages = greet();
         track('widget_load');
         maybeOfferOnetap();   // a restored transcript may already qualify — don't wait for the next answer
       })
@@ -137,7 +138,8 @@
     const t = text.trimStart();
     return t.startsWith(d) ? t.slice(d.length).trimStart() : text;
   }
-  function newConversation() { messages = []; persist(); errorMsg = ''; resetOpen = false; }
+  let greet = () => [];
+  function newConversation() { messages = greet(); persist(); errorMsg = ''; resetOpen = false; }
   async function startOver() {
     try { await fetch(`${api}/api/v1/companion`, { method: 'DELETE', credentials: 'include' }); } catch { /* local reset still happens */ }
     try { localStorage.removeItem(`sifter-chat-sid:${token}`); } catch { /* private mode */ }
@@ -369,7 +371,7 @@
   function onKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
   // The panel is its own world: keys and wheel/touch never reach the host page (whose shortcuts, e.g. Space = play/pause,
   // can't see inside the shadow root and would act on keys typed here). Escape closes the panel here, since it no longer bubbles.
-  function isolateKey(e) { if (e.key === 'Escape') open = false; e.stopPropagation(); }
+  function isolateKey(e) { if (e.key === 'Escape') { if (sampleOpen) sampleOpen = false; else open = false; } e.stopPropagation(); }
   const isolate = (e) => e.stopPropagation();
   function contain(node) {   // Svelte attaches wheel/touchmove passively; preventDefault needs a non-passive listener
     node.addEventListener('wheel', containWheel, { passive: false });
@@ -435,8 +437,16 @@
     window.addEventListener('sifter-chat:open', onOpen);
     return () => window.removeEventListener('sifter-chat:open', onOpen);
   });
+  // the sample menu closes on a click anywhere outside it (composedPath: the widget lives in a shadow root)
+  let sampleEl = $state(null), sampleBtn = $state(null);
   $effect(() => {
-    const esc = (e) => { if (e.key === 'Escape' && open) open = false; };
+    if (!sampleOpen) return;
+    const away = (e) => { const path = e.composedPath(); if (!path.includes(sampleEl) && !path.includes(sampleBtn)) sampleOpen = false; };
+    window.addEventListener('pointerdown', away, true);
+    return () => window.removeEventListener('pointerdown', away, true);
+  });
+  $effect(() => {
+    const esc = (e) => { if (e.key !== 'Escape') return; if (sampleOpen) sampleOpen = false; else if (open) open = false; };
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
   });
@@ -471,11 +481,11 @@
           </span>
           <span class="hbtns">
             {#if showSamples}
-              <button class="icon" aria-label="Sample questions" aria-haspopup="menu" aria-expanded={sampleOpen} disabled={busy} onclick={() => (sampleOpen = !sampleOpen)} title="Sample questions">
+              <button bind:this={sampleBtn} class="icon" aria-label="Sample questions" aria-haspopup="menu" aria-expanded={sampleOpen} disabled={busy} onclick={() => (sampleOpen = !sampleOpen)} title="Sample questions">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/></svg>
               </button>
               {#if sampleOpen}
-                <div class="sample-list" role="menu" tabindex="-1" onkeydown={(e) => { if (e.key === 'Escape') sampleOpen = false; }}>
+                <div bind:this={sampleEl} class="sample-list" role="menu" tabindex="-1" onkeydown={(e) => { if (e.key === 'Escape') sampleOpen = false; }}>
                   {#each ANIS_SAMPLES as smp (smp.strategy)}
                     <button type="button" role="menuitem" class="sample-item" onclick={() => runSample(smp)}>
                       <span class="sample-label">{smp.label}</span>
