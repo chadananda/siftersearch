@@ -1,6 +1,9 @@
 // work-extract.js: a selection made FROM one work (Chad 11-12, the Tablets of the Divine Plan prayers table).
 import { describe, it, expect } from 'vitest';
 import { extractFromWork, extractReply, sectionAt, pickChunk } from '../../api/lib/assistant/work-extract.js';
+import { anisTurn } from '../../api/lib/assistant/turn.js';
+import { emptyState } from '../../api/lib/assistant/units.js';
+import { makeStrikes } from '../../api/lib/assistant/strikes.js';
 
 const rows = [
   { id: 1, paragraph_index: 0, text: 'Tablet to the Northeastern States', heading: 'Tablet 1' },
@@ -37,5 +40,33 @@ describe('work-extract', () => {
   });
   it('sectionAt takes the deepest section holding the paragraph', () => {
     expect(sectionAt([...secs, { title: 'Part', start_index: 0, end_index: 9, level: 0 }], 2)).toBe('Tablet 1');
+  });
+});
+
+describe('the turn: Jev\'s from_work lookup', () => {
+  const turn = (extract) => {
+    const seen = { respond: [] };
+    const tri = { malicious: 0.01, complete: 0.99, stop_request: 0, stance: { choice: 'curious' }, kind: { choice: 'research', confidence: 0.9 }, lookup: { choice: 'from_work', confidence: 0.9 },
+      outcome: { choice: 'search', confidence: 0.9 }, features: { first: false, turn: 1, words: 14, short: false } };
+    const strat = { strategy: { choice: 'compilation', confidence: 0.7 }, refersBack: true, units: { named_work: 'Tablets of the Divine Plan' } };
+    const d = { titleOnly: async () => null, triage: async () => tri, strategy: async () => strat, state: { load: async () => emptyState(), append: async () => {} },
+      lookup: async () => null, bookPick: async () => ({ kind: 'work', work: { doc: { id: 7, title: 'Tablets of the Divine Plan' } }, via: 'pick' }), extractFromWork: extract,
+      respond: async (a) => { seen.respond.push(a); return { reply: 'built', citations: [], retrieved: [], plan: { shape: 'topic' }, timings: {} }; },
+      open: async () => ({ conversationId: 'c', round: 1 }), close: async () => {}, fail: async () => {}, card: async () => null, outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {} };
+    return { seen, run: () => anisTurn({ messages: msgs, participant: { id: 's', authed: true }, clientKey: 's', onEvent: () => {}, deps: d }) };
+  };
+  it('the selection is made from the work → the table, no research', async () => {
+    const h = turn(async ({ doc }) => ({ result: { query: 'prayers', mode: 'extract', total: 1, passages: [] }, reply: `**1 prayer** in *${doc.title}*:`, work: doc }));
+    const r = await h.run();
+    expect(r.reply).toBe('**1 prayer** in *Tablets of the Divine Plan*:');
+    expect(h.seen.respond).toHaveLength(0);
+  });
+  it('nothing could be made → Unmatched (the strategy builder) with the work still named, never Jev\'s library-wide pick', async () => {
+    const h = turn(async () => null);
+    await h.run();
+    const s = h.seen.respond[0].direction.strategy;
+    expect(s.strategy.choice).toBe('unmatched');
+    expect(s.strategy.was).toBe('compilation');
+    expect(s.units.named_work).toBe('Tablets of the Divine Plan');
   });
 });

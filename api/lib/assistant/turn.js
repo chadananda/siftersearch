@@ -337,6 +337,11 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     decisions.record('from-work:work', { by: 'code', saw: { focus: focus?.id ?? null, named_work: u.named_work ?? null }, chosen: doc?.id ?? null, reason: useFocus ? 'no work named this turn: the work the previous turn gave' : 'the work Jev named' });
     const got = doc?.id ? await timed('from_work', () => extractFn({ messages, doc, section: sec, decisions }), (r) => (r ? { work: r.work?.id, total: r.result?.total } : null)).catch(() => null) : null;
     if (got?.reply) return inWorkAnswer(got, ex, { gate: 'lookup', route: 'from_work', ...(jevFallback ? { jev_fallback: jevFallback } : {}), ...(useFocus ? { via: 'focus' } : {}), decisions: decisions.list() });
+    // the selection could not be made → UNMATCHED, the strategy builder, does exactly what was asked (Chad 11-12: "Under no circumstances
+    // do we fail to do exactly what the user asked for") — never Jev's library-wide pick, never plain research; the work stays named
+    const was = strat?.strategy?.choice ?? null;
+    strat = { ...(strat || {}), strategy: { ...(strat?.strategy || {}), choice: 'unmatched', was, via: 'from_work' }, units: { ...u, named_work: doc?.title ?? u.named_work ?? null } };
+    decisions.record('from-work:unmatched', { by: 'code', saw: { work: doc?.id ?? null, picked: got ? 'nothing' : 'no work' }, chosen: 'unmatched', reason: `the selection from the work could not be made; was ${was}` });
   }
   // IN-WORK FIND (Chad 11-10, 'search for "private property" in God Passes By' got "I can't run a literal search from here"):
   // Jev's lookup says in_work (the triage call — it still answers when the strategy call times out, so the request is never lost)
