@@ -1,6 +1,6 @@
 // Qdrant search layers: filter mapping, request shapes, and hit shapes (fetch mocked — no network).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { toQdrantFilter, searchPhrases, searchKeywordQdrant, searchHypeQdrant, searchConceptsQdrant, bestPerParagraphQuery, authorKey, resolveQdrantFilters, withQdrantCallLog } from '../../api/lib/search/qdrant-layers.js';
+import { toQdrantFilter, searchPhrases, searchKeywordQdrant, searchHypeQdrant, searchConceptsQdrant, searchPremisesQdrant, bestPerParagraphQuery, authorKey, resolveQdrantFilters, withQdrantCallLog } from '../../api/lib/search/qdrant-layers.js';
 
 vi.mock('../../api/lib/ai-services.js', () => ({ logAIUsage: () => {} }));   // hermetic: no telemetry writes
 vi.mock('../../api/lib/docs-repo.js', () => ({
@@ -142,6 +142,19 @@ describe('layers', () => {
       ['concepts/points/query', 4], ['concepts/points/query', 8], ['concepts/points/query/groups', 2]]);
     expect(calls[3].body).toMatchObject({ group_by: 'paragraph_id', group_size: 1 });
     expect(r.hits.map((h) => h.paragraph_id)).toEqual([11, 13]);
+  });
+
+  it('premises: own collection, hits flagged implied with the question position k; a collection not built yet is an empty layer', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url, init) => {
+      const body = JSON.parse(init.body); calls.push({ url, body });
+      if (url.includes('generativelanguage')) return { ok: true, json: async () => ({ embedding: { values: [0.1, 0.2] } }) };
+      return { ok: true, json: async () => ({ result: { points: [{ score: 0.9, payload: { paragraph_id: 21, doc_id: 2, k: 1 } }, { score: 0.8, payload: { paragraph_id: 21, doc_id: 2, k: 0 } }] } }) };
+    }));
+    const r = await searchPremisesQdrant('do the unborn have rights?', { limit: 3 });
+    expect(calls[1].url).toMatch(/\/collections\/premises\/points\/query$/);
+    expect(r.hits).toEqual([{ paragraph_id: 21, doc_id: 2, score: 0.9, k: 1, implied: true }]);
+    vi.stubGlobal('fetch', vi.fn(async (url) => url.includes('generativelanguage') ? { ok: true, json: async () => ({ embedding: { values: [0.3] } }) } : { ok: false, status: 404, text: async () => 'Collection `premises` doesn\'t exist' }));
+    expect(await searchPremisesQdrant('another question entirely', { limit: 3 })).toEqual({ hits: [] });
   });
 
   it('bestPerParagraphQuery: a short page (fewer points than asked) is final — no escalation', async () => {

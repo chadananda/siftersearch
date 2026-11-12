@@ -2152,6 +2152,18 @@ export const migrations = {
       key TEXT PRIMARY KEY, rows_json TEXT NOT NULL, model TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
     logger.info('Migration 200 complete: sbs_alignments');
   },
+  201: async () => {
+    // PREMISE CLAIMS (premise-pilot → premise-reconcile, Chad 11-12): what a paragraph IMPLIES, never states — premise (the passage's own terms),
+    // implies (the modern debate it bears on), questions_json (1-3 short first-principle questions answered by implication), proof (verbatim words).
+    // para_id = content.id (the Qdrant paragraph_id); external_para_id = the concept_claims form. One run's rows for a paragraph are replaced together.
+    await query(`CREATE TABLE IF NOT EXISTS premise_claims (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, doc_id INTEGER NOT NULL, para_id INTEGER NOT NULL, external_para_id TEXT,
+      premise TEXT NOT NULL, implies TEXT, questions_json TEXT NOT NULL DEFAULT '[]', proof TEXT, concept TEXT, basis TEXT,
+      verdict TEXT, run_file TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+    await query('CREATE INDEX IF NOT EXISTS idx_premise_claims_para ON premise_claims(para_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_premise_claims_doc ON premise_claims(doc_id)');
+    logger.info('Migration 201 complete: premise_claims');
+  },
 };
 
 export const graphMigrations = {

@@ -25,6 +25,15 @@ describe('researcher', () => {
     expect(seen[0].tools.map((t) => t.function.name)).toContain('rendering_lookup');
     expect(String(seen[1].messages.at(-1).content)).toMatch(/\[P1\] Gleanings/);
   });
+  it('an implied hit carries "IMPLIED (not stated): premise — bears on: implies" in its head, and the house style says to word it as implication', async () => {
+    const seen = [];
+    const replies = [{ tool_calls: [call('a', 'combined_search', { query: 'do the unborn have rights' })] }, { content: 'BRIEF:\nReaching for: x\n- y: P1\nKEEP: P1' }];
+    const create = async (params) => { seen.push(params); return { choices: [{ message: replies.shift() }] }; };
+    const hit = { ...GLEANINGS, id: 21, implied_by: { question: 'Do the unborn have rights?', premise: 'The unborn child inherits.', implies: 'the moral status of the unborn' } };
+    await research({ messages: [{ role: 'user', content: 'Do the unborn have rights?' }], create, tools: { search: async () => [hit] } });
+    expect(String(seen[1].messages.at(-1).content)).toMatch(/\[P1\] .* · IMPLIED \(not stated\): The unborn child inherits\. — bears on: the moral status of the unborn/);
+    expect((await import('../../api/lib/assistant/prompt.js')).HOUSE_STYLE).toMatch(/headed IMPLIED[^\n]*this passage implies/);
+  });
   it('the last round offers no tools, so it always ends with a brief', async () => {
     let n = 0;
     const create = async (params) => ({ choices: [{ message: params.tools ? { tool_calls: [call(`c${n++}`, 'combined_search', { query: 'x' })] } : { content: 'BRIEF:\nReaching for: x\n- y [own]\nKEEP:' } }] });

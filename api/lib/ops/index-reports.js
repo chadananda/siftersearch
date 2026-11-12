@@ -26,6 +26,7 @@ export const INDEX_REPORTS = {
   // A clean run marks its docs for the follow loop (ops/index-follow.js); { scanOnly: true } is the dry run (est_usd, no spend)
   'hype-index': (p = {}) => followedIndexJob('hype', p),
   'concept-index': (p = {}) => followedIndexJob('concepts', p),
+  'premise-index': (p = {}) => phraseIndexJob({ ...p, field: 'premises' }),   // implied questions (premise_claims → `premises`); params { docs, maxUsd, budgetKey?, scanOnly? }
   'phrase-f16-build': phraseF16BuildJob,   // storage plan R12: phrases (main+hot) → float16 collection on qdrant-main (/faster); params { mode: setup|copy|reconcile|finish }
   'section-index': sectionIndexJob,
   'keyword-fill': keywordFillJob,       // params: { ids?, limit?, scope?, significant? } — BM25 gaps from the ledger, core first (Chad 10-16)
@@ -37,5 +38,5 @@ export const INDEX_REPORTS = {
 };
 // lanes: phrase indexing alone (measured: one at a time is fastest on the interim SSD); HyPE/concepts/sections beside it;
 // BM25 on /fast in its own lane; coverage re-measures
-export const INDEX_LANES = { index: ['phrase-index', 'phrase-hot-reconcile', 'phrase-hot-fold'], backup: ['vectors-backup'], f16: ['phrase-f16-build'], index2: ['hype-index', 'concept-index', 'section-index', 'hype-hot-reconcile', 'hype-hot-fold'], keyword: ['keyword-fill'], coverage: ['coverage-refresh', 'stamp-voices', 'stamp-site', 'doc-author-restamp'] };
+export const INDEX_LANES = { index: ['phrase-index', 'phrase-hot-reconcile', 'phrase-hot-fold'], backup: ['vectors-backup'], f16: ['phrase-f16-build'], index2: ['hype-index', 'concept-index', 'premise-index', 'section-index', 'hype-hot-reconcile', 'hype-hot-fold'], keyword: ['keyword-fill'], coverage: ['coverage-refresh', 'stamp-voices', 'stamp-site', 'doc-author-restamp'] };
 export const INDEX_JOB_NAMES = Object.keys(INDEX_REPORTS);

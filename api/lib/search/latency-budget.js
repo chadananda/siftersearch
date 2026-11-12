@@ -12,6 +12,7 @@ export const ENGINE_BUDGETS = Object.freeze({
   phrase: { ms: 450, note: 'embed + phrases query' },
   qhype: { ms: 450, note: 'embed + hype groups query' },
   qconcept: { ms: 450, note: 'embed + concepts groups query' },
+  qpremise: { ms: 450, note: 'embed + implied-question query (premises collection)' },
   canon: { ms: 500, note: 'OFFSET = embed wait + canonical-docs phrases query (starts with the first wave). 11-05 24h: p50 276 / p95 1769, phrases call wall p50 36 / p95 177 ms; the tail is the embed (p95 1490), see embed:<k>' },
   doctrinal: { ms: 500, note: 'authoritative phrases pass' },
   doctrinal_hype: { ms: 500, note: 'authoritative hype pass' },

@@ -401,6 +401,20 @@ export async function searchConceptsQdrant(query, { limit = 30, filters, timeout
   return { hits: best.map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, ...rankFields(p.payload) })) };
 }
 
+/** → { hits: [{ paragraph_id, doc_id, score, k, implied: true }] } — IMPLIED QUESTIONS (premise-pilot: "Do the unborn have rights?" answered
+ *  by implication, not by the passage's own words), one point per question, best per paragraph; same Gemini vector as phrases/HyPE.
+ *  Built by the phrase indexer --field premises; `k` = the question's position (premise-repo impliedFor maps it back). Kept apart from
+ *  HyPE on purpose. A collection not built yet is an empty layer, not an error. */
+export async function searchPremisesQdrant(query, { limit = 30, filters, timeoutMs, params = SEARCH_PARAMS.concept } = {}) {
+  const vector = await geminiQueryVector(query);
+  const body = { query: vector, using: 'literal', with_payload: ['paragraph_id', 'doc_id', 'k', ...RANK_PAYLOAD], params: searchParams(params), filter: toQdrantFilter(filters) };
+  try {
+    const best = await bestPerParagraphQuery((n) => qdrant('/collections/premises/points/query', { ...body, limit: n }, timeoutMs),
+      () => qdrant('/collections/premises/points/query/groups', { ...body, group_by: 'paragraph_id', group_size: 1, limit }, timeoutMs), limit);
+    return { hits: best.map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, k: p.payload.k ?? 0, implied: true, ...rankFields(p.payload) })) };
+  } catch (err) { if (/ 404 /.test(err.message)) return { hits: [] }; throw err; }
+}
+
 /** → { hits: [{ paragraph_id, doc_id, score }] } — BM25 over whole paragraphs with our folding. */
 export async function searchKeywordQdrant(query, { limit = 30, filters, timeoutMs } = {}) {
   const sparse = bm25Query(query);

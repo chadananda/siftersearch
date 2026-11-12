@@ -24,6 +24,10 @@
 //   node scripts/phrase-index/indexer.mjs --field concepts --scope library --store /tank/sifter/concept-vectors/vectors.db \
 //        --collection concepts --budget-key concepts-build --embed --qdrant --max-usd 5
 //        (concept claims: each proof-checked claim statement is a unit, point id = paragraph × 1000 + k; only docs with claims)
+//   node scripts/phrase-index/indexer.mjs --field premises --docs 21307 --store /tank/sifter/premise-vectors/vectors.db \
+//        --collection premises --budget-key premises-build --embed --qdrant --max-usd 1
+//        (premise-pilot IMPLIED questions from premise_claims: each question is a unit, point id = paragraph × 1000 + k; k = position in
+//         api/lib/premise-questions.js flattenQuestions — search maps a hit's k back to the question. Never mixed into HyPE.)
 import Database from 'better-sqlite3';
 import { limiterFromEnv, stateFileFor } from './embed-limiter.mjs';
 import { createSyncEmbedder, watchWait } from './embed-sync.mjs';
@@ -41,6 +45,7 @@ import { doctrinalTier } from '../../api/lib/authority.js';
 import { authorKey } from '../../api/lib/search/qdrant-layers.js';
 import { INDEXABLE_DOC_SQL, TAG_INDEX_SQL } from '../../api/lib/search/excluded-docs.js';
 import { parseStoredHypQuestions } from '../../api/lib/search/hype.js';
+import { flattenQuestions } from '../../api/lib/premise-questions.js';
 import { logAIUsage } from '../../api/lib/ai-services.js';   // every Gemini batch is ALSO a row in the shared spend ledger
 import { noteProviderError, isExhaustion } from '../../api/lib/spend-alerts.js';
 
@@ -55,7 +60,7 @@ const SCRIPT = arg('script', 'all');                      // library only: arabi
 const TIER = arg('tier', 'all');                          // core | gray | supplemental | all (default: unchanged scope behaviour)
 if (!['core', 'gray', 'supplemental', 'all'].includes(TIER)) throw new Error(`--tier must be core|gray|supplemental|all, got '${TIER}'`);
 const RELIGION = arg('religion', 'all');                  // library only: bahai | other | all (plan order: Bahá'í first)
-const FIELD = arg('field', 'text');                       // 'original' = the bilingual layer: content.original_text; 'hype' = HyPE questions; 'concepts' = concept claims
+const FIELD = arg('field', 'text');                       // 'original' = the bilingual layer: content.original_text; 'hype' = HyPE questions; 'concepts' = concept claims; 'premises' = implied questions (premise_claims)
 const DOCS = (arg('docs', '') || (arg('docs-file') ? readFileSync(arg('docs-file'), 'utf8') : '')).split(/[,\s]+/).map(Number).filter(Boolean);   // --docs-file: a list too long for argv (E2BIG)
 const TIER_ON = TIER !== 'all' && !DOCS.length;            // an explicit --docs list wins
 const MODEL = 'gemini-embedding-2', DIMS = 3072, BATCH = 96, CONC = +arg('concurrency', 16), LIMIT = +arg('limit', 0);
@@ -129,19 +134,22 @@ function source() {
   const col = FIELD === 'original' ? 'c.original_text' : 'c.text';
   const rel = RELIGION === 'bahai' ? " AND d.religion = 'Baha''i'" : RELIGION === 'other' ? " AND d.religion <> 'Baha''i'" : '';
   const claimsOf = "(SELECT json_group_array(cc.statement) FROM concept_claims cc WHERE cc.doc_id = c.doc_id AND cc.para_id = COALESCE(c.external_para_id, 'p' || c.id) AND cc.proof_ok = 1)";
+  const questionsOf = "(SELECT json_group_array(q) FROM (SELECT pc.questions_json AS q FROM premise_claims pc WHERE pc.para_id = c.id ORDER BY pc.id))";
   // TIER: documents are chosen in JS (the rule is not SQL), both scopes, read one document at a time like --docs. A non-Bahá'í document has
   // one tier; a Bahá'í document may mix writers (compilations), so it is a candidate for every tier and keep() tests each paragraph.
   const tierIds = TIER_ON ? src.prepare(`SELECT d.id, d.religion, d.collection, d.title, d.author FROM docs d WHERE d.deleted_at IS NULL AND ${INDEXABLE_DOC_SQL}${rel} ORDER BY d.id`).all()
     .filter((d) => /^bah/i.test(String(d.religion || '')) || doctrinalTier(d) === TIER).map((d) => d.id) : null;
   const list = DOCS.length ? DOCS : tierIds;
   const where = list ? 'd.id = ?' : FIELD === 'concepts' && !DOCS.length ? 'd.id IN (SELECT DISTINCT doc_id FROM concept_claims)'
+    : FIELD === 'premises' && !DOCS.length ? 'd.id IN (SELECT DISTINCT doc_id FROM premise_claims)'
     : SCOPE === 'library' ? `d.scope = 'primary'${rel}` : SCOPE === 'supplemental' ? `d.scope = 'supplemental'${rel}` : "d.religion = 'Baha''i'";
   // PAGED by content.id, each page its own short read: ONE .iterate() over the whole scope held a single read transaction
   // for the entire build (12–27 h), so the WAL could never be checkpointed — it grew to 12 GB, and the worker restarted the
   // API every 15 min trying to free it (the 2026-10-03 "restart storm"). Never stream a long build through one statement.
   const page = src.prepare(`SELECT c.id, c.doc_id, ${col} AS text, ${FIELD === 'original' ? 'COALESCE(c.original_lang, d.language)' : 'd.language'} AS language,
-      c.authors, d.author, d.title, d.religion, d.collection, d.scope${FIELD === 'hype' ? ', c.hyp_questions, c.hyp_thesis' : ''}${FIELD === 'concepts' ? `, ${claimsOf} AS claims` : ''} FROM content c JOIN docs d ON d.id = c.doc_id
+      c.authors, d.author, d.title, d.religion, d.collection, d.scope${FIELD === 'hype' ? ', c.hyp_questions, c.hyp_thesis' : ''}${FIELD === 'concepts' ? `, ${claimsOf} AS claims` : ''}${FIELD === 'premises' ? `, ${questionsOf} AS qs` : ''} FROM content c JOIN docs d ON d.id = c.doc_id
     WHERE ${where} AND d.deleted_at IS NULL AND ${INDEXABLE_DOC_SQL} AND c.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(${col}) > 0
+      ${FIELD === 'premises' ? 'AND EXISTS (SELECT 1 FROM premise_claims pc WHERE pc.para_id = c.id)' : ''}
       ${FIELD === 'hype' ? "AND (COALESCE(c.hyp_questions, '') <> '' OR COALESCE(c.hyp_thesis, '') <> '')" : ''}
       AND c.id > ? ORDER BY c.id LIMIT 5000`);
   // An explicit --docs list is read ONE DOCUMENT AT A TIME on the doc_id index (10-14): as `d.id IN (<thousands>) …
@@ -189,12 +197,16 @@ const putSkip = store.prepare('INSERT OR REPLACE INTO skipped (paragraph_id, doc
 const unskip = store.prepare('DELETE FROM skipped WHERE paragraph_id = ?');
 const saveSkips = store.transaction((list) => { for (const r of list) putSkip.run(...r); });
 
-// The units of one paragraph: its phrases, (--field hype) its HyPE questions + thesis, or (--field concepts) its claims.
+// The units of one paragraph: its phrases, (--field hype) its HyPE questions + thesis, or (--field concepts) its claims, or (--field premises) its implied questions.
 const HYPE_SEG = 'hype-v1';
 function unitsFor(p, seg) {
   if (FIELD === 'concepts') {
     let claims = []; try { claims = JSON.parse(p.claims || '[]').filter(Boolean); } catch { /* none */ }
     return claims.slice(0, 998).map((text, k) => ({ pointId: p.id * 1000 + k, k, start: null, end: null, segV: 'concept-v1', embedText: text }));
+  }
+  if (FIELD === 'premises') {
+    let rows = []; try { rows = JSON.parse(p.qs || '[]'); } catch { /* none */ }
+    return flattenQuestions(rows).map((text, k) => ({ pointId: p.id * 1000 + k, k, start: null, end: null, segV: 'premise-v1', embedText: text }));
   }
   if (FIELD !== 'hype') return unitsOf({ id: p.id, text: p.text, lang: seg });
   const qs = parseStoredHypQuestions(p.hyp_questions).slice(0, 998), thesis = String(p.hyp_thesis || '').trim();
@@ -240,7 +252,7 @@ function unitize(paras) {
     }
     // Points the paragraph no longer has (re-segmented into fewer phrases, re-hyped to fewer questions, claims re-extracted)
     // leave the store and the collection. Phrase text checks only when one of its units changed; hype/concepts always did.
-    if (FIELD === 'hype' || FIELD === 'concepts' || changed) {
+    if (FIELD === 'hype' || FIELD === 'concepts' || FIELD === 'premises' || changed) {
       const keep = new Set(units.map((u) => u.pointId));
       for (const { point_id: id } of unitsInBlock.all(p.id * 1000, p.id * 1000 + 999)) if (!keep.has(id)) { dropUnit.run(id); stale.push(id); }
     }
