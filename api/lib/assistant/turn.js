@@ -392,8 +392,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       deps: { ...(finder ? { bookFastPath: finder } : {}) }, ...(useFocus ? { focus } : {}) }), (r) => (r ? { work: r.work?.id, mode: r.result?.mode, total: r.result?.total } : null)).catch(() => null);
     if (got?.reply) { const a = await inWorkAnswer(got, ex, { gate: 'lookup', strategy_timed_out: !strat || strat.by === 'haiku', ...(jevFallback ? { jev_fallback: jevFallback } : {}), ...(useFocus ? { via: 'focus' } : {}), decisions: decisions.list() }); if (a) return a; missToUnmatched('in_work', got.work?.title); }
     // the words named only the work ("world order letters?") → the book card, never a search of the work for its own title
-    if (!useFocus && got?.book?.kind === 'work') return bookAnswer(got.book.work, ex, { gate: 'lookup', via: got.book.via, decisions: decisions.list() });
-    if (got?.book?.kind === 'section') return sectionCard(got.book, ex, { gate: 'lookup', via: got.book.via, decisions: decisions.list() });
+    if (!useFocus && !missed && got?.book?.kind === 'work' && !(await cardMisses(got.book.work.doc.title))) return bookAnswer(got.book.work, ex, { gate: 'lookup', via: got.book.via, decisions: decisions.list() });
+    if (!missed && got?.book?.kind === 'section' && !(await cardMisses(got.book.sec?.title ?? got.book.sec?.book))) return sectionCard(got.book, ex, { gate: 'lookup', via: got.book.via, decisions: decisions.list() });
   }
   // FIND A PASSAGE (Chad 11-10: "Find quote is the tool; the strategy and context provide the filters"): Jev's lookup says find_passage (the passage
   // that says X, no book named) → quote_search held to Jev's units: the religions he scoped (this turn / conversation, never a host default),
