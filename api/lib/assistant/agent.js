@@ -65,12 +65,16 @@ WRITING:
 
 /** [[P3]] / [[P3, P5]] / [[B1]] (single brackets too) → links from what the tools returned; any other ref is dropped. Pure. */
 export function renderRefs(text, { found, works }) {
-  return String(text || '')
+  const G = /\[\[?([PW]\d+(?:\s*[,;]\s*[PW]\d+)*)\]\]?(?!\()/.source;
+  let t = String(text || '');
+  // "[[P1]] [[P2]]" / "[[P1]], [[P2]]" → "[[P1, P2]]": one citation, never "( (a), (b))" (11-12 prayer across two paragraphs)
+  for (let prev = null; prev !== t;) { prev = t; t = t.replace(new RegExp(`${G}\\s*[,;]?\\s*${G}`, 'g'), '[[$1, $2]]'); }
+  return t
     .replace(/\(\s*(\[\[?[PW]\d+(?:\s*[,;]\s*[PW]\d+)*\]\]?)\s*\)/g, '$1')   // "([[P1]])" → one pair of parens
     .replace(/\*{0,2}\[\[?(B\d+)\]\]?\*{0,2}(?!\()/g, (m, r) => { const w = works.get(r); return w ? (w.url ? `[*${w.title}*](${w.url})` : `*${w.title}*`) : ''; })
     .replace(/\s*\[\[?((?:[PW]\d+)(?:\s*[,;]\s*[PW]\d+)*)\]\]?(?!\()/g, (m, list) => {
       const seen = new Set();
-      const links = list.split(/\s*[,;]\s*/).map((r) => found.get(r)).filter((p) => p?.source_url && !seen.has(p.source_url) && seen.add(p.source_url))
+      const links = list.split(/\s*[,;]\s*/).map((r) => found.get(r)).filter((p) => { const k = p?.document_id ?? p?.source_url; return p?.source_url && !seen.has(k) && seen.add(k); })
         .map((p) => `[${p.web ? 'web: ' : ''}${clip(p.title || 'source', 70)}](${p.source_url})`);
       return links.length ? ` (${links.join('; ')})` : '';
     })

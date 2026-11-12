@@ -42,6 +42,12 @@ describe('agent: refs become links; nothing else does', () => {
 });
 
 describe('renderRefs', () => {
+  it('adjacent refs become one citation; two paragraphs of one document are one link', () => {
+    const found = new Map([['P1', { document_id: 9, source_url: 'u1', title: 'Prayers and Meditations' }], ['P2', { document_id: 9, source_url: 'u2', title: 'Prayers and Meditations' }],
+      ['P3', { document_id: 4, source_url: 'u3', title: 'Gleanings' }]]);
+    expect(renderRefs('"Words." ([[P1]], [[P2]])', { found, works: new Map() })).toBe('"Words." ([Prayers and Meditations](u1))');
+    expect(renderRefs('x [[P2]][[P3]].', { found, works: new Map() })).toBe('x ([Prayers and Meditations](u2); [Gleanings](u3)).');
+  });
   const found = new Map([['P1', { ...P, ref: 'P1' }], ['W1', { text: 'x', title: 'Web: news', source_url: 'https://news.example/x', web: true }]]);
   const works = new Map([['B1', { title: 'The Dawn-Breakers', url: 'https://siftersearch.com/library/dawn-breakers' }]]);
   it('groups, dedups and drops', () => {
