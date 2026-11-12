@@ -167,8 +167,8 @@ export function finalForm(text) { return formPass(text).text; }
 /** finalForm with what it repaired, for the turn's path (forensics counts form.search_denial as a WRITER defect). Pure. */
 export function formPass(text, { sources = [] } = {}) {
   const uw = unwrapLinks(text), den = dropSearchDenial(uw.text), cov = dropCoverageDisclaimer(den.text), def = dropDeflection(cov.text), off = dropSearchOffer(def.text), uc = dropUnsupportedCount(off.text, sources), qc = dropQuoteInCite(uc.text), lk = checkLinks(qc.text, sources);
-  const ct = citeLinks(lk.text, sources), lr = lastResortLast(ct.text), la = dropLinkAside(lr.text), rt = plainSources(la.text), nm = dropNumberMarkers(rt.text), rq0 = dropRepeatedQuote(nm.text), da = dropDoubleAttribution(rq0.text), rc = dropRepeatedCite(da.text), rq = { text: rc.text, fixed: rq0.fixed }, em = repairEmphasis(safeLinkText(rq.text));
-  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), ...(cov.dropped ? { coverage_disclaimer: cov.dropped } : {}), ...(uc.fixed ? { unsupported_count: uc.fixed } : {}), ...(qc.fixed ? { quote_in_cite: qc.fixed } : {}), ...(rq.fixed ? { repeated_quote: rq.fixed } : {}), ...(da.fixed ? { double_attribution: da.fixed } : {}), ...(rc.fixed ? { repeated_cite: rc.fixed } : {}), ...(nm.fixed ? { number_markers: nm.fixed } : {}), ...(la.fixed ? { link_aside: la.fixed } : {}), ...(rt.fixed ? { retrieval_talk: rt.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
+  const ct = citeLinks(lk.text, sources), lr = lastResortLast(ct.text), la = dropLinkAside(lr.text), rt = plainSources(la.text), nm = dropNumberMarkers(rt.text), rq0 = dropRepeatedQuote(nm.text), da = dropDoubleAttribution(rq0.text), rc = dropRepeatedCite(da.text), pr = dropPlainCiteRun(rc.text, sources), rq = { text: pr.text, fixed: rq0.fixed }, em = repairEmphasis(safeLinkText(rq.text));
+  return { text: em.text, repairs: { ...(uw.fixed ? { wrapped_links: uw.fixed } : {}), ...(cov.dropped ? { coverage_disclaimer: cov.dropped } : {}), ...(uc.fixed ? { unsupported_count: uc.fixed } : {}), ...(qc.fixed ? { quote_in_cite: qc.fixed } : {}), ...(rq.fixed ? { repeated_quote: rq.fixed } : {}), ...(da.fixed ? { double_attribution: da.fixed } : {}), ...(rc.fixed ? { repeated_cite: rc.fixed } : {}), ...(pr.fixed ? { plain_cite_run: pr.fixed } : {}), ...(nm.fixed ? { number_markers: nm.fixed } : {}), ...(la.fixed ? { link_aside: la.fixed } : {}), ...(rt.fixed ? { retrieval_talk: rt.fixed } : {}), search_denial: den.dropped, search_offer: off.dropped, ...(def.dropped ? { deflection: def.dropped } : {}), ...(lk.fixed ? { links: lk.fixed } : {}),
     ...(ct.fixed ? { cite_links: ct.fixed } : {}), ...(lr.fixed ? { last_resort: lr.fixed } : {}), ...(em.fixed ? { emphasis: em.fixed } : {}) } };
 }
 
@@ -260,6 +260,27 @@ const placeIn = (label, tail) => {
   const t = String(tail || '').trim() || (String(label).replace(/[*_]/g, '').match(/,\s*((?:#|§|p\.?\s*|pp?\.\s*|para\.?\s*)[\d.:–-]+)\s*$/i) || [])[1] || '';
   return t.replace(/\s+/g, '').toLowerCase();
 };
+// A RUN OF ONE UNLINKED CITATION (11-12 examples: "(Memories of the Holy Family)" after every sentence of one story; "(X) (X)"
+// side by side). In a paragraph, a plain "(Title)" naming a turn source is dropped when the next citation in that paragraph is the
+// same title — the run is cited once, at its end; one standing before a blockquote that names the same title goes too. Pure.
+export function dropPlainCiteRun(text, sources = []) {
+  const titles = [...new Set(sources.map((x) => foldT(x?.title)).filter((t) => t.length > 3))];
+  if (!titles.length) return { text: String(text ?? ''), fixed: 0 };
+  const isCite = (inner) => { const t = foldT(inner); return t.length > 3 && titles.some((x) => t === x || t.startsWith(`${x} `) || x.startsWith(`${t} `)); };
+  let fixed = 0;
+  const paras = String(text ?? '').split(/\n{2,}/);
+  const out = paras.map((para, i) => {
+    if (/^\s*>/.test(para)) return para;
+    const hits = [...para.matchAll(/[ \t]*\(([^()\n]{3,160})\)/g)].filter((m) => isCite(m[1]));
+    const next = paras[i + 1] || '';
+    const drop = new Set(hits.filter((m, k) => (hits[k + 1] ? foldT(hits[k + 1][1]) === foldT(m[1])
+      : /^\s*>/.test(next) && /:$/.test(para.slice(0, m.index).trimEnd()) && para.slice(m.index + m[0].length).trim() === '' && foldT(next).includes(foldT(m[1])))).map((m) => m.index));
+    if (!drop.size) return para;
+    fixed += drop.size;
+    return para.replace(/[ \t]*\(([^()\n]{3,160})\)/g, (m, inner, off) => (drop.has(off) ? '' : m));
+  });
+  return fixed ? { text: out.join('\n\n'), fixed } : { text: String(text ?? ''), fixed: 0 };
+}
 export function dropRepeatedCite(text) {
   let fixed = 0;
   const out = String(text ?? '').split(/\n{2,}/).map((para) => {

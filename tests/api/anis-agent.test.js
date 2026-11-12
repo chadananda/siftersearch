@@ -161,3 +161,14 @@ describe('renderRefs stray bold', () => {
     expect(renderRefs('**6. The sweetness of prayer** **\n\n**a** and **b**', { found: new Map(), works: new Map() })).toBe('**6. The sweetness of prayer**\n\n**a** and **b**');
   });
 });
+
+describe('dropPlainCiteRun', () => {
+  it('one story cited once at the end of its run; a doubled cite once; a cite before a blockquote of the same title goes', async () => {
+    const { dropPlainCiteRun } = await import('../../api/lib/assistant/lint.js');
+    const src = [{ title: 'Memories of the Holy Family' }, { title: 'Light of the World' }];
+    expect(dropPlainCiteRun('A did x. (Memories of the Holy Family) He did y. (Memories of the Holy Family)', src).text).toBe('A did x. He did y. (Memories of the Holy Family)');
+    expect(dropPlainCiteRun('He wrote x (Light of the World) (Light of the World)', src).text).toBe('He wrote x (Light of the World)');
+    expect(dropPlainCiteRun('He wrote: (Light of the World)\n\n> "I treat"\n> — Light of the World', src).text).toBe('He wrote:\n\n> "I treat"\n> — Light of the World');
+    expect(dropPlainCiteRun('He said (an aside) here. (Light of the World)', src).text).toBe('He said (an aside) here. (Light of the World)');
+  });
+});
