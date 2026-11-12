@@ -48,3 +48,9 @@ describe('safeLinkText — brackets inside a link\'s text become parens', () => 
     expect(safeLinkText('No links here [just brackets].')).toBe('No links here [just brackets].');
   });
 });
+describe('markdownDefects: a space-flanked star is text, not emphasis (11-12 ahmad-sbs)', () => {
+  it('the Arabic verse separator " * " in a table cell is valid; an unclosed *word still is not', () => {
+    expect(markdownDefects('| هَذِهِ وَرْقَةُ ٱلْفِرْدَوْسِ * بِأَلْحَانِ قُدْسٍ * | Lo, the *Nightingale* |')).toEqual([]);
+    expect(markdownDefects('an *open emphasis never closed').map((d) => d.id)).toEqual(['unbalanced-emphasis']);
+  });
+});

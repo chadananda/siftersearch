@@ -230,9 +230,11 @@ const E = {
         // a message that names nothing of its own ("who translated it?") is about what the thread last showed (11-12: Jev read it as its own question,
         // the anchor came back empty and the turn said it would "rather not guess a name")
         if (!pos?.doc && !u.quoted_words && !u.named_work && !u.scripture_reference && u.last_passages?.length) {
-          const x = u.last_passages[0], c = await call(s, 'context_lookup', { document_id: x.document_id, paragraph_index: x.paragraph_index, before: 0, after: 0 });
-          const items = (c?.passages || []).slice(0, 1).map((y) => ({ ...y, anchor: true }));
-          if (items.length) { merge(u, 'found_passages', items); return finish(s, p, 'one', { count: 1, read: { last_passages: [x] } }); }
+          // one passage per WORK the last turn showed (11-12 kawthar "who translated it?" after a side-by-side: the Arabic came first, the translation was never read)
+          const per = [...new Map(u.last_passages.map((x) => [x.document_id, x])).values()].slice(0, 3);
+          const items = (await Promise.all(per.map((x) => call(s, 'context_lookup', { document_id: x.document_id, paragraph_index: x.paragraph_index, before: 0, after: 0 }).then((c) => c?.passages?.[0] ?? null, () => null))))
+            .filter(Boolean).map((y, i) => ({ ...y, anchor: i === 0 }));
+          if (items.length) { merge(u, 'found_passages', items); return finish(s, p, 'one', { count: items.length, read: { last_passages: per } }); }
         }
         if (pos?.doc) {
           const c = await call(s, 'context_lookup', { document_id: pos.doc, paragraph_index: pos.paragraph ?? 0, before: 0, after: 0 });

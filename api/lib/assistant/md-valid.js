@@ -14,7 +14,9 @@ export function markdownDefects(text) {
     if (NESTED.test(body)) { out.push({ id: 'nested-link', at: body.match(NESTED)[0].slice(0, 80) }); continue; }
     const flat = body.replace(LINK, (m, t) => `${t} `);   // link text stays (its emphasis counts), the URL goes
     if (/\]\(/.test(flat)) out.push({ id: 'broken-link', at: flat.slice(Math.max(0, flat.indexOf('](') - 40), flat.indexOf('](') + 20) });
-    const prose = flat.split('\n').map((l) => l.replace(/^\s*[*-]\s+/, '')).join('\n');   // list bullets are not emphasis
+    // list bullets are not emphasis; nor is a star with whitespace on both sides (CommonMark: no flanking run) — the Arabic verse
+    // separator " * " in the Tablet of Aḥmad's original (11-12 ahmad-sbs)
+    const prose = flat.split('\n').map((l) => l.replace(/^\s*[*-]\s+/, '').replace(/(^|[\s|])\*+(?=[\s|]|$)/g, '$1')).join('\n');
     const bold = (prose.match(/\*\*/g) || []).length;
     const single = (prose.replace(/\*\*/g, '').match(/\*/g) || []).length;
     if (bold % 2 || single % 2) out.push({ id: 'unbalanced-emphasis', at: prose.slice(0, 80) });
