@@ -32,7 +32,7 @@ import dotenv from 'dotenv';
 import { mkdirSync, statfsSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { unitsOf, unitChange, vecKey, packF16, unpackF16, arabicShare, paragraphLang, estTokens } from '../../api/lib/phrase-vectors.js';
+import { unitsOf, unitChange, labelsStale, vecKey, packF16, unpackF16, arabicShare, paragraphLang, estTokens } from '../../api/lib/phrase-vectors.js';
 import { faShare } from '../../api/lib/arabic-script.js';
 import { dirBytes, hotVerdict, parseMemAvailable } from './hot-space.mjs';
 import { boilerplateTexts, keepSiteParagraph } from '../../api/lib/site-boilerplate.js';
@@ -176,7 +176,7 @@ const skipWhy = (text, p = null) => {
 };
 const keep = (text, p = null) => !skipWhy(text, p);
 
-const haveUnit = store.prepare('SELECT seg_v, key, start, "end", upserted FROM units WHERE point_id = ?');
+const haveUnit = store.prepare('SELECT seg_v, key, start, "end", upserted, religion, author, collection, scope FROM units WHERE point_id = ?');
 const restamp = store.prepare('UPDATE units SET seg_v = ? WHERE point_id = ?');
 const putUnit = store.prepare(`INSERT INTO units (point_id, paragraph_id, doc_id, k, start, "end", seg_v, key, fa_share, religion, author, lang_label, field, lang_group, collection, scope, upserted)
   VALUES (@pointId, @pid, @doc, @k, @start, @end, @segV, @key, @fa, @religion, @author, @lang, @field, @group, @collection, @scope, 0)
@@ -211,6 +211,7 @@ const stale = [];
 // Paragraphs → units (stored) + texts still needing a vector. Returns the pending map for this chunk.
 function unitize(paras) {
   const pending = new Map(), buf = [], relabel = [];
+  let relabeled = 0;
   for (const p of paras) {
     const { seg, group } = paragraphLang(p.text, p.language);
     const units = unitsFor(p, seg);
@@ -221,9 +222,12 @@ function unitize(paras) {
       const how = unitChange(old, u, key), same = how !== 'changed';
       if (how === 'restamp') relabel.push([u.segV, u.pointId]);
       if (!same) changed++;
-      if (!same)
-        buf.push({ ...u, pid: String(p.id), doc: String(p.doc_id), key, fa: faShare(u.embedText), religion: p.religion, author: paragraphAuthor(p),
-          lang: p.language, field: FIELD, group, collection: p.collection || null, scope: p.scope || 'primary' });
+      const labels = { religion: p.religion, author: paragraphAuthor(p), collection: p.collection || null, scope: p.scope || 'primary' };
+      const relabelOnly = same && labelsStale(old, labels);
+      if (relabelOnly) relabeled++;
+      if (!same || relabelOnly)
+        buf.push({ ...u, pid: String(p.id), doc: String(p.doc_id), key, fa: faShare(u.embedText), ...labels,
+          lang: p.language, field: FIELD, group });
       // An unchanged unit already UPSERTED had its vector (the upsert joins vec), so skip the lookup: vec's key index is
       // gigabytes on /tank's spinning disk and one random seek per unit held a re-run of already-indexed documents to a
       // crawl (10-14, job 92: 36 s CPU in 15 min, sdc 93% busy). A stored-but-never-upserted unit is still checked.
@@ -238,7 +242,7 @@ function unitize(paras) {
   }
   if (FIELD === 'text') store.transaction(() => { for (const p of paras) unskip.run(p.id); })();
   tx(buf); if (relabel.length) store.transaction(() => relabel.forEach((r) => restamp.run(...r)))();
-  return { pending, units: buf.length };
+  return { pending, units: buf.length - relabeled, relabeled };
 }
 
 // Where the time goes (ms, summed over the run; embed is wall time of the concurrent API calls): logged on every chunk/done line
@@ -414,24 +418,24 @@ async function build() {
   note({ phase: 'start', docs: DOCS.length ? DOCS : undefined, scope: DOCS.length ? undefined : SCOPE, tier: TIER_ON ? TIER : undefined, field: FIELD, embed_mode: EMBED_MODE, target: `${UP.url}/${UP.coll}` });
   if (has('qdrant')) await waiting(`qdrant collection ${UP.coll}`, ensureCollection());
   const { src, rows } = source(); const t0 = Date.now();
-  let paras = 0, units = 0, embedded = 0, sent = 0, batch = [], embedTokens = 0, embedMs = 0, shownAt = 0;
+  let paras = 0, units = 0, relabeled = 0, embedded = 0, sent = 0, batch = [], embedTokens = 0, embedMs = 0, shownAt = 0;
   const flush = async () => {
     let t1 = Date.now();
-    const r = unitize(batch); units += r.units; batch = []; T.unitize_ms += Date.now() - t1; t1 = Date.now();
+    const r = unitize(batch); units += r.units; relabeled += r.relabeled; batch = []; T.unitize_ms += Date.now() - t1; t1 = Date.now();
     note({ phase: 'unitized', paragraphs: paras, units: r.units, to_embed: r.pending.size });
     // mid-chunk progress: the same 'chunk' line (the parent shows it in the activity feed) with live counts, at most once a minute;
     // embed_tokens_per_hour = tokens embedded / time spent embedding (Gemini's real throughput, re-reads excluded)
     const progress = (done, toks) => {
       if (Date.now() - shownAt < 60000) return; shownAt = Date.now();
       const ms = embedMs + (Date.now() - t1);
-      log({ phase: 'chunk', paragraphs: paras, units, embedded: embedded + done, upserted: sent, spent: spentRow(), month_usd: +monthSpent().toFixed(2),
+      log({ phase: 'chunk', paragraphs: paras, units, relabeled, embedded: embedded + done, upserted: sent, spent: spentRow(), month_usd: +monthSpent().toFixed(2),
         paras_per_hour: Math.round(paras / ((Date.now() - t0) / 3.6e6)), in_chunk: `${done}/${r.pending.size}`,
         embed_tokens_per_hour: ms > 0 ? Math.round((embedTokens + toks) / (ms / 3.6e6)) : 0 });
     };
     if (has('embed')) { let toks = 0; embedded += await embedPending(r.pending, (d, t) => { toks = t; progress(d, t); }); embedTokens += toks; }
     T.embed_ms += Date.now() - t1; embedMs += Date.now() - t1;
     if (has('qdrant')) { note({ phase: 'upserting', embedded }); sent += await waiting(`qdrant upsert to ${UP.coll}`, upsert()); }
-    log({ phase: 'chunk', paragraphs: paras, units, embedded, upserted: sent, spent: spentRow(), month_usd: +monthSpent().toFixed(2),
+    log({ phase: 'chunk', paragraphs: paras, units, relabeled, embedded, upserted: sent, spent: spentRow(), month_usd: +monthSpent().toFixed(2),
       paras_per_hour: Math.round(paras / ((Date.now() - t0) / 3.6e6)), timing: timing() });
   };
   let skips = [];
@@ -445,7 +449,7 @@ async function build() {
   if (batch.length && !stopped) await flush();
   if (skips.length) saveSkips(skips);
   src.close();
-  log({ phase: stopped ? 'stopped' : 'done', reason: stopped, paragraphs: paras, units, embedded, upserted: sent, spent: spentRow(),
+  log({ phase: stopped ? 'stopped' : 'done', reason: stopped, paragraphs: paras, units, relabeled, embedded, upserted: sent, spent: spentRow(),
     minutes: +((Date.now() - t0) / 6e4).toFixed(1), timing: timing() });
 }
 

@@ -23,6 +23,10 @@ export function unitChange(old, u, key) {
   return old.seg_v === u.segV ? 'same' : 'restamp';
 }
 
+/** Same text, stale filter labels: the paragraph was re-attributed (author) or its doc moved (religion/collection/scope) after it
+ *  was indexed. The vector is unchanged (no embed, $0) but Qdrant filters on these, so the point must be re-sent. Pure. */
+export const labelsStale = (old, labels) => !!old && ['religion', 'author', 'collection', 'scope'].some((f) => (old[f] ?? '') !== (labels[f] ?? ''));
+
 export const vecKey = (model, dims, text) => createHash('sha1').update(`${model}\u0000${dims}\u0000${text}`).digest('hex');
 
 export const packF16 = (v) => Buffer.from(new Float16Array(v).buffer);

@@ -1,6 +1,6 @@
 // Phrase-indexer pure helpers: units of a paragraph, the vector cache key, half-precision storage, Arabic-script share.
 import { describe, it, expect } from 'vitest';
-import { unitsOf, unitChange, vecKey, packF16, unpackF16, arabicShare, pointId, paragraphLang, normLang, estTokens } from '../../api/lib/phrase-vectors.js';
+import { unitsOf, unitChange, labelsStale, vecKey, packF16, unpackF16, arabicShare, pointId, paragraphLang, normLang, estTokens } from '../../api/lib/phrase-vectors.js';
 import { segment, SEG_VERSION, segVersion } from '../../api/lib/phrases.js';
 
 describe('unitsOf', () => {
@@ -88,4 +88,13 @@ describe('unitChange (a segmentation bump never re-sends identical units)', () =
   it('no stored unit → changed', () => expect(unitChange(undefined, u, 'k')).toBe('changed'));
   it('hype/concept units have no span: null and undefined match', () =>
     expect(unitChange({ key: 'k', start: null, end: null, seg_v: 'hype-v1' }, { segV: 'hype-v1' }, 'k')).toBe('same'));
+});
+
+describe('labelsStale (re-attributed paragraph → re-send the point, no embed)', () => {
+  const old = { religion: "Baha'i", author: 'Shoghi Effendi', collection: 'Letters', scope: 'primary' };
+  it('same labels → false', () => expect(labelsStale(old, { ...old })).toBe(false));
+  it('new author → true', () => expect(labelsStale(old, { ...old, author: "Abdu'l-Baha" })).toBe(true));
+  it('doc moved scope → true', () => expect(labelsStale(old, { ...old, scope: 'supplemental' })).toBe(true));
+  it('null and missing compare equal', () => expect(labelsStale({ ...old, collection: null }, { ...old, collection: undefined })).toBe(false));
+  it('no stored unit → false (that is a new unit, not a relabel)', () => expect(labelsStale(undefined, old)).toBe(false));
 });
