@@ -40,7 +40,27 @@ const clauseOf = (sent, words) => {
   const fullEnd = hit.at(-1) === cl.length - 1;
   return `${hit[0] > 0 ? '…' : ''}${body}${fullEnd ? '' : '…'}`;
 };
+// A cut excerpt can keep half of a quotation (11-12, Star of the West: "… Five diamonds are worth more than five million stones.\" …"):
+// the mark whose partner was cut away goes with the cut — a closer with no opener before it, an opener with no closer after it. Only cut
+// excerpts (opening or ending "…"); a whole passage keeps its marks as written. Pure.
+export function balanceQuotes(s) {
+  const t = String(s ?? '');
+  const head = /^…/.test(t), tail = /…$/.test(t);
+  if (!head && !tail) return t;
+  const c = [...t];
+  const drop = new Set();
+  const open = [];
+  c.forEach((ch, i) => { if (ch === '“') open.push(i); else if (ch === '”') { if (open.length) open.pop(); else if (head) drop.add(i); } });
+  if (tail) open.forEach((i) => drop.add(i));
+  const straight = c.map((ch, i) => (ch === '"' ? i : -1)).filter((i) => i >= 0);
+  if (straight.length % 2) drop.add(head ? straight[0] : tail ? straight.at(-1) : -1);
+  return drop.size ? c.filter((_, i) => !drop.has(i)).join('').replace(/ {2,}/g, ' ') : t;
+}
+
 export function excerptOf(text, words) {
+  return balanceQuotes(excerptCut(text, words));
+}
+function excerptCut(text, words) {
   const t = String(text || '').replace(/\s+/g, ' ').trim();
   const sents = t.split(/(?<=[.!?]["”’)\]]*)\s+(?=["“‘(\[]?\p{Lu})/u);
   const idx = sents.map((s, i) => (holdsWords(s, words) ? i : -1)).filter((i) => i >= 0);

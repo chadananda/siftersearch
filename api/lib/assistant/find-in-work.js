@@ -2,8 +2,8 @@
 // citation (+ a card), n = count line + passages, meaning = labelled. Deps: quote-search.js (the search + text helpers, re-exported here).
 import { SITE } from '../source-links.js';
 import { sowCoverUrl, isSowWork, sowIssueIds } from '../sow-links.js';
-import { foldText, holdsWords, boldWords, excerptOf } from './quote-search.js';
-export { foldText, holdsWords, boldWords, excerptOf };
+import { foldText, holdsWords, boldWords, excerptOf, balanceQuotes } from './quote-search.js';
+export { foldText, holdsWords, boldWords, excerptOf, balanceQuotes };
 
 // Meaning matches in chat are BRIEF (Chad 11-11, "world order letters?" printed 8 whole paragraphs): the closest 3, each its opening sentences
 // up to ~45 words, ending "…" when cut; the link under it opens the whole passage in the book.
@@ -22,8 +22,8 @@ export function briefExcerpt(text, max = BRIEF_WORDS) {
 export function briefAround(text, match, max = BRIEF_WORDS) {
   const t = String(text || '').replace(/\s+/g, ' ').trim();
   const at = match ? t.indexOf(match) : -1;
-  if (at <= 0 || briefExcerpt(t, max).replace(/ …$/, '').length >= at + match.length) return briefExcerpt(t, max);
-  return `… ${briefExcerpt(t.slice(at), max)}`;
+  if (at <= 0 || briefExcerpt(t, max).replace(/ …$/, '').length >= at + match.length) return balanceQuotes(briefExcerpt(t, max));
+  return balanceQuotes(`… ${briefExcerpt(t.slice(at), max)}`);
 }
 const brief = (r) => r.passages.slice(0, MEANING_SHOW).map((p) => ({ ...p, excerpt: briefAround(p.excerpt, p.match) }));
 const closest = (n) => (n === 1 ? 'This passage is' : `These ${n} passages are`);
@@ -34,8 +34,11 @@ export function inWorkReply(r, { section = null } = {}) {
   const title = `*${name}*`;
   const q = `“${r.query}”`;
   // each place is the passage itself, quoted, with its citation (the link) under it — no list, no paraphrase (Chad 11-10)
+  // a hit in another document of the work (Star of the West: one document per issue) cites ITS issue, not the work's first one (11-12:
+  // "v1, i1" labelled a v1 no. 17 link)
   const item = (p) => {
-    const cite = p.place ? `*${name}*, ${p.place}` : `*${name}*`;
+    const own = !section && p.work && r.work.id != null && Number(p.document_id ?? p.doc_id) !== Number(r.work.id) ? p.work : name;
+    const cite = p.place ? `*${own}*, ${p.place}` : `*${own}*`;
     const by = p.credit ?? named(p.author) ?? named(r.work.author);
     return `> “${p.excerpt}”\n>\n> — ${by ? `${by}, ` : ''}${p.url ? `[${cite}](${p.url})` : cite}`;
   };

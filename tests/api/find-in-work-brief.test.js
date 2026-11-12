@@ -77,3 +77,22 @@ describe('sectionAbout: which part of the book in focus (11-11 golden age)', () 
     expect(got.book.kind).toBe('section'); expect(got.book.sec.title).toBe('The Golden Age of the Cause of Bahá’u’lláh'); expect(search).not.toHaveBeenCalled();
   });
 });
+
+// Live 11-12 'find "five diamonds" in star of the west': a stray quote mark from a cut quotation, and the work's first issue named on a
+// hit in issue 17.
+import { balanceQuotes, inWorkReply as replyOf } from '../../api/lib/assistant/find-in-work.js';
+describe('cut quotations and the hit’s own issue (11-12)', () => {
+  it('a closer whose opener was cut away goes; whole passages keep their marks', () => {
+    expect(balanceQuotes('… **Five diamonds** are worth more than five million stones." …')).toBe('… **Five diamonds** are worth more than five million stones. …');
+    expect(balanceQuotes('… he said. ” Then he left.')).toBe('… he said. Then he left.');
+    expect(balanceQuotes('He said, “Come here and see …')).toBe('He said, Come here and see …');
+    expect(balanceQuotes('He said, "come." And went.')).toBe('He said, "come." And went.');
+    expect(balanceQuotes('… “a” and “b” …')).toBe('… “a” and “b” …');
+  });
+  it('a hit in another issue cites that issue, not the work’s first', () => {
+    const r = { work: { id: 13234, title: 'Star of the West, v1, i1' }, query: 'five diamonds', mode: 'literal', total: 1,
+      passages: [{ document_id: 15300, work: 'Star of the West, v1, i17', place: '#44', url: 'https://x/v1.17-p8', excerpt: '**Five diamonds** …' }] };
+    expect(replyOf(r)).toContain('[*Star of the West, v1, i17*, #44](https://x/v1.17-p8)');
+    expect(replyOf({ ...r, passages: [{ ...r.passages[0], document_id: 13234 }] })).toContain('[*Star of the West, v1, i1*, #44]');
+  });
+});
