@@ -462,13 +462,16 @@ const FIGURES = [
   ['uhj', /\b[Tt]he Universal House of Justice\b/u],
 ];
 const figureOf = (name) => FIGURES.find(([, re]) => re.test(String(name || '')))?.[0] || null;
-// A Guardian letter that speaks of him in the third person was written by his secretary on his behalf.
-const ON_BEHALF = /\b(?:the (?:beloved )?Guardian|Shoghi Effendi)\b|\b(?:asked|instructed|wishes|directed) (?:me|us) to\b|\bon (?:his|the Guardian['’]s) behalf\b/i;
+// A Guardian letter that names him ("Shoghi Effendi"), or has "the Guardian" AS ITS SUBJECT ("wishes / feels / was pleased"), was
+// written by his secretary on his behalf. A bare "the Guardian" is not enough: his own books speak of the Guardianship (11-12: God Passes
+// By's "unique in the annals" credited to "a letter written on behalf of Shoghi Effendi"), and his own books are never on-behalf.
+const ON_BEHALF = /\bShoghi Effendi\b|\bthe (?:beloved )?Guardian\s+(?:(?:has|had|is|was|would|does|did|very much|very|most|greatly|deeply|also|therefore|certainly|fully)\s+){0,2}(?:wish|feel|felt|ask|instruct|direct|desire|hope|pleased|appreciat|urg|want|request|assur|trust|pray|grateful|regret|advis|sorry|delighted|happy|glad|thank|values?|considers?|believes?|does not)|\b(?:asked|instructed|wishes|directed) (?:me|us) to\b|\bon (?:his|the Guardian['’]s) behalf\b|\bdirected by (?:Shoghi Effendi|the (?:beloved )?Guardian)\b/i;
+const SE_OWN_BOOK = /\b(?:God Passes By|World Order of Bah|Advent of Divine Justice|Promised Day Is Come|Dispensation of Bah|Call to the Nations)/i;
 
 /** The credit a passage's words carry: its writer, or "a letter written on behalf of Shoghi Effendi". Pure. */
 export function creditOf(p) {
   const who = p?.source_author || '';
-  return figureOf(who) === 'shoghieffendi' && ON_BEHALF.test(p?.text || '') ? 'a letter written on behalf of Shoghi Effendi' : who;
+  return figureOf(who) === 'shoghieffendi' && !SE_OWN_BOOK.test(p?.source_title || p?.title || '') && ON_BEHALF.test(p?.text || '') ? 'a letter written on behalf of Shoghi Effendi' : who;
 }
 
 const SPEECH = '(?:states?|stated|writes?|wrote|says?|said|explains?|explained|notes?|noted|affirms?|affirmed|declares?|declared|teaches|taught|urges?|urged|warns?|warned|counsels?|counselled|reminds?|reminded|adds?|added|observes?|observed|stresses|stressed|emphasi[sz]es|emphasi[sz]ed|describes?|described|calls?|called|puts? it|assures?|assured|asserts?|asserted|reveals?|revealed|proclaims?|proclaimed)';
@@ -492,7 +495,7 @@ export function fixQuoteSpeakers(text, passages) {
       const words = m[1];
       if (words.trim().split(/\s+/).length < 5) continue;
       const before = line.slice(0, m.index);
-      const start = Math.max(before.search(/[.!?]\s[^.!?]*$/) + 1, 0);
+      const start = Math.max(before.search(/[.!?][*_”"’)]*\s[^.!?]*$/) + 1, 0);   // a sentence after a bold heading ("…personal.** He")
       const sentence = before.slice(start);
       const hit = [...sentence.matchAll(speakerRe)].at(-1);
       if (!hit) continue;
@@ -510,7 +513,7 @@ export function fixQuoteSpeakers(text, passages) {
       if (!p) continue;
       const at = start + hit.index + hit[0].indexOf(named);
       const credit = creditOf(p);
-      const sentStart = line.slice(start, at).replace(/^[\s>*_-]+/, '') === '';   // a credit opening its sentence is capitalised
+      const sentStart = line.slice(start, at).replace(/^[*_”"’)]*[\s>*_-]+/, '') === '';   // a credit opening its sentence is capitalised
       edits.push([at, named.length, sentStart ? credit[0].toUpperCase() + credit.slice(1) : credit]);
     }
     let out = line;

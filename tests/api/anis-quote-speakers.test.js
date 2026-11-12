@@ -12,6 +12,11 @@ const GL = { source_author: 'Bahá’u’lláh', citation_url: 'u3', source_titl
 
 describe('creditOf', () => {
   it('a Guardian letter that speaks of him in the third person is written on his behalf', () => expect(creditOf(BEHALF)).toBe('a letter written on behalf of Shoghi Effendi'));
+  it('his own book speaking of the Guardianship is his, not an on-behalf letter (11-12 God Passes By)', () => {
+    expect(creditOf({ source_author: 'Shoghi Effendi', source_title: 'God Passes By', text: 'The Administrative Order is unique in the annals of the world’s religious systems, and the Guardian of the Faith is its interpreter.' })).toBe('Shoghi Effendi');
+    expect(creditOf({ source_author: 'Shoghi Effendi', source_title: 'Letters', text: 'Its institutions, the Guardian and the House of Justice, are twin pillars.' })).toBe('Shoghi Effendi');
+    expect(creditOf({ source_author: 'Shoghi Effendi', source_title: 'Letters', text: 'The Guardian was very pleased to receive your letter.' })).toBe('a letter written on behalf of Shoghi Effendi');
+  });
   it('his own writing is his', () => expect(creditOf(ADJ)).toBe('Shoghi Effendi'));
 });
 
