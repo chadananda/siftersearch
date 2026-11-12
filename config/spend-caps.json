@@ -103,6 +103,11 @@
       {
         "from": "2026-11-10",
         "usd": 5
+      },
+      {
+        "from": "2026-11-12",
+        "usd": 20,
+        "why": "Chad 11-12: test battery turns (Anís server pipeline on test traffic) — 'raise improve cap to $20 and rerun'"
       }
     ],
     "sbs": [
