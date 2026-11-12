@@ -58,10 +58,10 @@ describe('own source: the last-resort source gives way (battery round 4 timeline
     source_url: 'https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_4601', text: W });
   const wob = { id: 31, document_id: 900, paragraph_index: 31, title: 'The World Order of Bahá’u’lláh', author: SE, book_author: SE, religion: B,
     source_url: 'https://oceanlibrary.com/world-order-of-bahaullah/?paraId=para_31', text: `${W} His Dispensation opened.` };
-  it('an Uncompiled Published Letters passage → the same words in a published work of the writer; the letters kept as context', async () => {
+  it('an Uncompiled Published Letters passage → the same words in a published work of the writer; the letters dropped', async () => {
     const asked = [];
     const r = await preferOwnWork([upl], { search: async (span, f) => { asked.push(f); return [upl, wob]; }, shape: toPassage });
-    expect(r.passages.map((p) => p.id)).toEqual([31, 4601]);
+    expect(r.passages.map((p) => p.id)).toEqual([31]);
     expect(r.swapped[0]).toMatchObject({ kind: 'published', writer: SE });
     expect(asked[0].author).toBe(SE);
   });
@@ -75,7 +75,7 @@ describe('own source: the last-resort source gives way (battery round 4 timeline
     const comp = { id: 12, document_id: 945906, paragraph_index: 12, title: 'Consultation', author: SE, book_author: 'Universal House of Justice', religion: B,
       source_url: 'https://oceanlibrary.com/consultation/?paraId=para_12', text: C };
     const r = await preferOwnWork([ul], { search: async () => [ul, comp], shape: toPassage });
-    expect(r.passages.map((p) => p.id)).toEqual([12, 4700]);
+    expect(r.passages.map((p) => p.id)).toEqual([12]);
   });
   it('a compilation holding a mid-paragraph sentence of the letter (not its opening) → the compilation (Lights of Guidance)', async () => {
     const T = 'It is in view of this constant expansion and increasing complexity of the activities of the believers in every land that the Guardian has re-emphasized the necessity of avoiding over-centralization in the affairs of the national body at this time, so that it may be relieved of detail and routine work.';
@@ -84,7 +84,7 @@ describe('own source: the last-resort source gives way (battery round 4 timeline
       source_url: 'https://oceanlibrary.com/lights-of-guidance/?paraId=para_8680', text: '...the Guardian has re-emphasized the necessity of avoiding over centralization in the affairs of the national body at this time, so that it may be relieved of detail and routine work.' };
     const asked = [];
     const r = await preferOwnWork([ul], { search: async (span) => { asked.push(span); return /^It is/.test(span) ? [] : [log]; }, shape: toPassage });
-    expect(r.passages.map((p) => p.id)).toEqual([8680, 4800]);
+    expect(r.passages.map((p) => p.id)).toEqual([8680]);
     expect(asked.length).toBe(3);
   });
 });

@@ -139,8 +139,9 @@ async function ownPass(passages, { search = null, link = null, budgetMs = OWN_SO
       // re-emphasized the necessity of avoiding over centralization"), so 12-word windows from its middle are tried beside the opening (a letter is often one long sentence)
       if (j.kind === 'published') {
         const w = words(j.p.text), at = (f) => w.slice(Math.floor(w.length * f), Math.floor(w.length * f) + 12).join(' ');
-        const alts = w.length >= 36 ? [at(1 / 3), at(2 / 3)] : [];
-        const tries = await Promise.all([j.span, ...alts].map(async (span) => {
+        // (12–15 words, not the 40-word clip: a compilation splits a letter into shorter paragraphs)
+        const spans = w.length >= 36 ? [w.slice(0, 15).join(' '), at(1 / 3), at(2 / 3)] : [j.span];
+        const tries = await Promise.all(spans.map(async (span) => {
           const hits = await search(span, { author: j.writer }, { timeoutMs: left() }).catch(() => []);
           return (Array.isArray(hits) ? hits : []).find((h) => fits(h, { ...j, span }, isProvisional)) || null;
         }));
@@ -165,8 +166,9 @@ async function ownPass(passages, { search = null, link = null, budgetMs = OWN_SO
   const found = jobs.filter((j) => j.own);
   if (!found.length) return done({ searches: need.length, late });
   const lead = passages.slice(), tail = [];
-  // a poor copy holds the same words as its better copy: dropped, never kept as context (the writer cited the scrape, 11-11)
-  for (const j of found) { lead[j.i] = j.own; if (j.kind !== 'copy' && j.kind !== 'host') tail.push(j.p); }
+  // a poor copy holds the same words as its better copy: dropped, never kept as context (the writer cited the scrape, 11-11);
+  // a last-resort letter is not kept either: left in as context the writer still cited it (11-12 decentralization)
+  for (const j of found) { lead[j.i] = j.own; if (j.kind !== 'copy' && j.kind !== 'host' && j.kind !== 'published') tail.push(j.p); }
   const seen = new Set();
   const out = [...lead, ...tail].filter((p) => { const k = keyOf(p); if (seen.has(k)) return false; seen.add(k); return true; });
   return { passages: out, swapped: found.map((j) => ({ from: keyOf(j.p), to: keyOf(j.own), writer: j.writer, kind: j.kind })), searches: need.length, late, ms: Date.now() - t0 };
