@@ -297,3 +297,11 @@ describe('a dropped quotation leaves nothing behind that points at it', () => {
       .toBe('He wrote five words of invented text here, and five more invented words here.');
   });
 });
+
+import { isHeading } from '../../api/lib/assistant/quotes.js';
+describe('isHeading', () => {
+  it('a bold line with a trailing (Author) is a heading; a sentence with a bold opening is not', () => {
+    expect(isHeading('**1. The wisdom of prayer** (‘Abdu’l-Bahá)')).toBe(true);
+    expect(isHeading('**Prayer** is the ladder (Bahá’u’lláh) said')).toBe(false);
+  });
+});

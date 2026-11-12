@@ -72,7 +72,7 @@ export function sentencePieces(para) {
 }
 export const splitSentences = (para) => sentencePieces(para).map((p) => p.text);
 /** A heading: a markdown `#` line or a line that is all bold/italic (a run-in "**Bahá'í.**" counts). Pure. */
-export const isHeading = (t) => { const x = String(t || '').trim(); return /^#{1,6}\s+\S/.test(x) || /^(\*\*|__)[^*_\n]+(\*\*|__)[:.]?$/.test(x); };
+export const isHeading = (t) => { const x = String(t || '').trim(); return /^#{1,6}\s+\S/.test(x) || /^(\*\*|__)[^*_\n]+(\*\*|__)[:.]?(\s*\([^()\n]{1,60}\))?[:.]?$/.test(x); };
 const bareMarker = (t) => /^\s*(?:[-*•+]|\d+[.)])\s*$/.test(t);
 // rejoin kept sentences: a line break between them (from any dropped run) is kept, else a space
 const rejoin = (pieces) => pieces.reduce((acc, p) => (acc ? acc + (/\n/.test(p.gap ?? p.sep) ? (p.gap ?? p.sep).replace(/^[ \t]+/, '') : ' ') : '') + p.text, '').trim();
