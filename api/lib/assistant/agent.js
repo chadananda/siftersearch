@@ -4,7 +4,7 @@
 // job: the model cites only the refs its tools gave it ([[P3]] a passage, [[B1]] a book); renderRefs turns them into links and
 // drops any it was not given, and the quote gate removes a sentence quoting words no passage holds. Deps injectable (tests).
 import { toolRunner, libraryTools, TOOL_CHARS } from './researcher.js';
-import { llmTools, canonical, canonWork, run as runTool } from './tools.js';
+import { llmTools, canonical, canonWork, run as runTool, toPassage } from './tools.js';
 import { dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
 import { dropSearchOffer } from './lint.js';
 import { dropPreamble } from './work-request.js';
@@ -208,6 +208,11 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
 /** The live tools for the agent (the API process): the researcher's library tools + the strategies (agent-strategies.js). */
 export const agentTools = ({ search, fastSearch } = {}) => {
   const fast = fastSearch || agentSearch();
-  return { ...libraryTools({ search, fastSearch: fast }), ...strategyImpl({ search, fastSearch: fast }) };
+  // own source on every fused_search (11-12: the Aqdas verse came back credited to a compilation and a parallel-translation copy)
+  const ownSource = async (hits) => {
+    const os = await import('./own-source.js');
+    return (await os.preferOwnWork(hits, { search: os.literalOwnSearch, link: os.linkHits, shape: toPassage })).passages;
+  };
+  return { ...libraryTools({ search, fastSearch: fast }), ...strategyImpl({ search, fastSearch: fast }), ownSource };
 };
 export { agentCache };
