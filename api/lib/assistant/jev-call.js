@@ -44,14 +44,17 @@ export async function jevCall(call, attempt, { timeoutMs, budgetMs = timeoutMs, 
     }
   }
   const info = { call, value: value ?? null, attempts, timeouts, timeoutMs, error, ms: now() - t0 };
-  if (timeouts.length && onJev) { try { onJev(info); } catch { /* reporting never breaks the call */ } }
+  // a call that ends with NO answer (timeout, an error status, an empty answer) is reported too: the turn's backup answers it
+  // (11-12: a battery at concurrency 3 got error statuses from the strategy call, which failed open silently to plain search)
+  if ((timeouts.length || value == null) && onJev) { try { onJev(info); } catch { /* reporting never breaks the call */ } }
   return info;
 }
 
 /** A jevCall result with a timeout → the decision a turn records (point 'jev:timeout'). Pure. */
 export const timeoutDecision = (info) => ({ by: 'code', saw: info.call, options: ['retry', 'fail open'],
   chosen: info.value != null ? 'answered on retry' : 'fail open',
-  reason: `${info.call}: ${info.timeouts.length} timeout(s) at the ${info.timeoutMs} ms limit (${info.attempts} attempt(s))`, ms: info.ms });
+  reason: info.timeouts.length ? `${info.call}: ${info.timeouts.length} timeout(s) at the ${info.timeoutMs} ms limit (${info.attempts} attempt(s))`
+    : `${info.call}: no answer (${info.error || 'empty'})`, ms: info.ms });
 
 /** The turn's Jev timeouts (its jev:timeout decisions) → the meta summary, or null. Pure. */
 export const jevTimeoutsOf = (decisions = []) => {

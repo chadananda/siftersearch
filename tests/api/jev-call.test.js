@@ -35,10 +35,22 @@ describe('jevCall', () => {
     const r = await jevCall('strategy', async () => { if (++n === 1) { clock += 1003; throw timeoutErr(); } clock += 300; return { ok: 1 }; }, { timeoutMs: 1000, budgetMs: 2000, now });
     expect(r).toMatchObject({ value: { ok: 1 }, attempts: 2 });
   });
-  it('any other error ends the call without a retry or a timeout report', async () => {
+  it('any other error ends the call without a retry, but is reported so the backup answers (11-12: error statuses failed open silently)', async () => {
     const seen = []; let n = 0;
     const r = await jevCall('x', async () => { n++; throw new Error('500'); }, { timeoutMs: 10, budgetMs: 1000, onJev: (i) => seen.push(i) });
-    expect(n).toBe(1); expect(r.error).toBe('500'); expect(seen).toEqual([]);
+    expect(n).toBe(1); expect(r.error).toBe('500'); expect(seen.map((i) => [i.call, i.value, i.error])).toEqual([['x', null, '500']]);
+    expect(timeoutDecision(seen[0]).reason).toBe('x: no answer (500)');
+  });
+  it('an answered call is not reported', async () => {
+    const seen = [];
+    await jevCall('x', async () => ({ ok: 1 }), { timeoutMs: 10, onJev: (i) => seen.push(i) });
+    expect(seen).toEqual([]);
+  });
+  it('strategy: an error status → null, reported (the turn\'s backup then answers)', async () => {
+    const seen = [];
+    const f = async () => ({ ok: false, status: 429, json: async () => ({}) });
+    expect(await chooseStrategy(msgs, { apiKey: 'k', fetchImpl: f, onJev: (i) => seen.push(i) })).toBeNull();
+    expect(seen.map((i) => [i.call, i.error])).toEqual([['strategy', 'jev 429']]);
   });
   it('limits are the measured ones (strategy above its answered p95 of 814 ms, one retry in budget)', () => {
     expect(JEV_LIMITS.strategy.timeoutMs).toBeGreaterThan(814); expect(JEV_LIMITS.strategy.budgetMs).toBeGreaterThanOrEqual(2 * JEV_LIMITS.strategy.timeoutMs);

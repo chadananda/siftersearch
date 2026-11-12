@@ -143,7 +143,7 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
       } }),
       signal,
     });
-    if (!res.ok) return null;
+    if (!res.ok) throw new Error(`jev ${res.status}`);
     return (await res.json()).answers || {};
   }, { timeoutMs, budgetMs, onJev });
   const a = call.value;
