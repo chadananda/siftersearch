@@ -15,7 +15,7 @@ import { nanoid } from 'nanoid';
 import { query, queryAll, queryOne } from '../lib/db.js';
 import { requireInternal } from '../lib/auth.js';
 import { logger } from '../lib/logger.js';
-import { fillFacts } from '../lib/library/library-stats.js';
+import { fillFacts, readLibraryStats } from '../lib/library/library-stats.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const STATIC_DIR = join(__dirname, '..', 'static', 'widget');
@@ -184,6 +184,16 @@ function init(){
     return reply.header('content-type', 'text/html; charset=utf-8').send(ADMIN_HTML);
   });
 
+  // the /library landing's totals (documents, paragraphs, traditions) — the number a reader sees on the library page
+  const landingTotals = async () => {
+    const { latestSnapshot } = await import('../lib/repos/telemetry-repo.js');
+    const { shapeLanding } = await import('../lib/library/landing.js');
+    const { hiddenReligions } = await import('../lib/authority.js');
+    const snap = await latestSnapshot();
+    const snapshot = snap?.data ? { at: snap.at, ...JSON.parse(snap.data) } : null;
+    const t = shapeLanding({ snapshot, hidden: hiddenReligions() }).totals;
+    return t ? { documents: t.documents, paragraphs: t.paragraphs } : null;
+  };
   // ── Per-token config (public, origin-checked) ───────────────────────────────────────────────────────────────
   fastify.get('/api/v1/widget/config/:token', async (req, reply) => {
     const row = await queryOne(`SELECT token, name, domains, tier, config_json FROM widget_profiles WHERE token=?`, [req.params.token]);
@@ -194,11 +204,13 @@ function init(){
       logger.warn({ token: row.token, origin }, 'widget config refused: origin not in profile domains');
       return reply.code(403).send({ error: 'origin not authorized for this widget token' });
     }
+    // the greeting's numbers are the library page's own (the telemetry snapshot's visible traditions, Chad 11-12: "it says 11.1 M")
+    const facts = { ...readLibraryStats().totals, ...((await landingTotals().catch(() => null)) || {}) };
     return reply.header('cache-control', 'public, max-age=60, s-maxage=300').send({
       token: row.token, name: row.name,
-      greeting: fillFacts(cfg.greeting || 'Hello! Ask me anything about the sacred literature.'),
+      greeting: fillFacts(cfg.greeting || 'Hello! Ask me anything about the sacred literature.', facts),
       // several greetings → the widget picks one per visit (the response is edge-cached, so the choice is the reader's, not ours)
-      greetings: Array.isArray(cfg.greetings) ? cfg.greetings.filter((g) => typeof g === 'string' && g.trim()).map((g) => fillFacts(g)) : [],
+      greetings: Array.isArray(cfg.greetings) ? cfg.greetings.filter((g) => typeof g === 'string' && g.trim()).map((g) => fillFacts(g, facts)) : [],
       accent: cfg.accent || '#1a6b5e', position: cfg.position || 'bottom-right',
       chatbotLocation: cfg.chatbotLocation || null, placeholder: cfg.placeholder || 'Ask a question…',
     });

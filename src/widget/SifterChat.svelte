@@ -93,7 +93,7 @@
         try { messages = JSON.parse(localStorage.getItem(storeKey()) || '[]'); } catch { messages = []; }
         greet = () => { const hello = c.greetings?.length ? c.greetings[Math.floor(Math.random() * c.greetings.length)] : c.greeting;
           return hello ? [{ role: 'assistant', content: hello, done: true, followups: pickStarters() }] : []; };
-        if (!messages.length) messages = greet();
+        if (!messages.some((m) => m.role === 'user')) messages = greet();   // only a greeting kept → a fresh one (live facts, new starter pills)
         track('widget_load');
         maybeOfferOnetap();   // a restored transcript may already qualify — don't wait for the next answer
       })
