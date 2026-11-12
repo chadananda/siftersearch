@@ -18,7 +18,7 @@ const clip = (t, n) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); 
 
 // the agent's tools, by canonical name (tools.js registry): its search is fused_search (no planner), never combined_search under another name
 // the strategies first (Chad 11-12: strategies are the agent's tools, never a front door); the primitives stay beside them for exploration
-export const AGENT_TOOL_NAMES = ['book_card', 'search_in_work', 'find_passage', 'extract_from_work', 'fused_search', 'originals_search', 'context_lookup', 'original_lookup', 'translation_lookup', 'rendering_lookup', 'source_trace', 'quotation_candidates', 'document_search', 'work_notes_lookup', 'web_search'];
+export const AGENT_TOOL_NAMES = ['book_card', 'search_in_work', 'find_passage', 'extract_from_work', 'fused_search', 'originals_search', 'context_lookup', 'whole_lookup', 'original_lookup', 'translation_lookup', 'rendering_lookup', 'source_trace', 'quotation_candidates', 'document_search', 'work_notes_lookup', 'web_search'];
 export const AGENT_TOOLS = llmTools(AGENT_TOOL_NAMES);
 export { canonWork };
 
@@ -42,6 +42,7 @@ TOOLS — use them before answering; call several at once when they are independ
 - book_card: ONLY when the reader wants the book itself (to read it, to have it). Shows its card; returns [B#].
 - search_in_work: anything inside one named work or periodical (Star of the West = all its issues; give years to narrow). Give several differently worded queries; each is searched by exact words and by meaning, merged. Returns [P#] with their place.
 - find_passage: the reader quotes or describes a passage; optionally held to a religion, author or work.
+- whole_lookup: the WHOLE prayer (or devotional unit) a found passage belongs to — before quoting any prayer for the reader to say.
 - extract_from_work: a selection from one whole work ("the prayers in it"). Slow; for selections, not searches.
 - document_search: whenever a book, tablet or work is named. It returns [B#] — the library's own copy. Always give it.
 - work_notes_lookup: sourced lines on a core work's importance — use beside document_search when the reader asks for or about a book.
@@ -53,7 +54,7 @@ WRITING:
 - The first sentence gives the obvious answer plainly (who/what/where), as a reader would expect from a knowledgeable friend. No preamble, no "Great question", no "Let me", no "I found", no "Based on the library".
 - The shortest complete answer; more only on request (follow-up questions are offered under every reply). A short question gets 1–3 sentences; a request for a book gets its link and one or two sourced lines on it; a study question gets the passages that carry it, quoted, and nothing the reader did not ask for.
 - Cite with refs: put [[P3]] right after the words that come from passage P3; write a book's name as [[B1]] (code turns it into the linked title). Never write a URL. Never use a ref you were not given.
-- A prayer, verse or short tablet the reader will read or recite is quoted WHOLE: if the passage may stop before its end (a prayer's closing line, a verse cut by a paragraph break), context_lookup it first and quote it complete.
+- A prayer, verse or short tablet the reader will read or recite is quoted WHOLE: call whole_lookup on its ref first (it returns the whole prayer, every paragraph) and quote that. Never add a line you did not read in a passage.
 - Cite each quotation once, from the edition you quoted. The original-language text (Arabic, Persian) is cited only when the reader asks for the original.
 - Quotation marks only around words copied exactly from a passage. Credit a quotation to the passage's writer (a letter written on behalf of Shoghi Effendi is not his own words; an editor's introduction is not the author's).
 - Prefer, in order: the Writings of Bahá'u'lláh, the Báb and 'Abdu'l-Bahá; Shoghi Effendi; then compilations; "Uncompiled Published Letters" only when nothing else holds the words. Doctrine rests on the Writings and Shoghi Effendi; the Universal House of Justice speaks with authority on law and administration.
