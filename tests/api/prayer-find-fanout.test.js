@@ -52,3 +52,28 @@ describe('findPrayers across traditions: the name in the text leads', () => {
     if (c) expect(c.signals).not.toContain('named');
   });
 });
+
+// Live 11-12: the name's words were searched inside the prayer works by phrase meaning only — ¶65 never surfaced among twelve other prayers
+describe('findPrayers: a name is also searched literally inside the prayer works', () => {
+  it('a named prayer → a literal search with the works\' documentId list beside the phrase one', async () => {
+    const calls = [];
+    const d = { search: async (layer, { query, filters = {} }) => { calls.push({ layer, query, documentId: filters.documentId }); return { passages: [] }; },
+      findDocuments: async () => ({ docs: WORKS }), paragraphsInRange: async () => [] };
+    await findPrayers({ tradition: 'Christian', name: 'Remover of Difficulties' }, d);
+    const inWorks = calls.filter((c) => c.documentId != null);
+    expect(inWorks.map((c) => c.layer).sort()).toEqual(['literal_search', 'phrase_search']);
+    expect(inWorks.every((c) => c.query === 'Remover of Difficulties')).toBe(true);
+  });
+});
+
+describe('findPrayers in one tradition: a text carrying the name outranks a first hit that does not', () => {
+  it('¶65 (the name) before ¶71 (top of the phrase search, "Remover of every anguish")', async () => {
+    const p71 = { document_id: 20762, paragraph_index: 71, religion: "Baha'i", text: 'O Lord! Thou art the Remover of every anguish and the Dispeller of every affliction.' };
+    const p65 = { document_id: 20762, paragraph_index: 65, religion: "Baha'i", text: 'Is there any Remover of difficulties save God? Say: Praised be God! He is God!' };
+    const d = { search: async (layer, { filters = {} }) => ({ passages: filters.documentId == null ? [] : layer === 'phrase_search' ? [p71, p65] : [p65, p71] }),
+      findDocuments: async () => ({ docs: [{ id: 20762, title: 'Bahá’í Prayers', religion: "Baha'i" }] }), paragraphsInRange: async () => [] };
+    const r = await findPrayers({ tradition: "Baha'i", name: 'Remover of Difficulties' }, d);
+    expect(r.candidates[0].paragraph_index).toBe(65);
+    expect(r.candidates.find((c) => c.paragraph_index === 71).signals).not.toContain('first for the name');
+  });
+});

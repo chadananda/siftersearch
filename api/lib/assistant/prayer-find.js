@@ -67,7 +67,11 @@ async function oneTradition(tradition, a, d) {
   const inWorks = [...(a.workDoc ? [a.workDoc] : []), ...works.filter((w) => w.id !== a.workDoc?.id)].slice(0, 3);
   // ONE phrase search over all the prayer works (a documentId list), not one per work: 11-10 a need across every tradition fired 22
   // per-work searches beside the 22 tradition-wide ones, and the answer waited on the slowest (9 s) of them
-  if (inWorks.length) jobs.push(q('phrase_search', named || a.need, 4 * inWorks.length, { documentId: inWorks.length === 1 ? inWorks[0].id : inWorks.map((w) => w.id) }));
+  const inF = { documentId: inWorks.length === 1 ? inWorks[0]?.id : inWorks.map((w) => w.id) };
+  if (inWorks.length) jobs.push(q('phrase_search', named || a.need, 4 * inWorks.length, inF));
+  // a NAME's words inside the prayer works, literally (11-12 "Remover of Difficulties": the phrase search ranked twelve other prayers of
+  // Bahá'í Prayers above ¶65, which carries the name, and the tradition-wide literal top 6 were Bahá'í World and chronology copies)
+  if (inWorks.length && named) jobs.push(q('literal_search', named, 6, inF));
   if (inWorks.length) how.push(`inside ${inWorks.map((w) => w.title).join(', ')}`);
   const raw = (await Promise.all(jobs)).flat();
   const workIds = new Set([...works, ...(a.workDoc ? [a.workDoc] : [])].map((w) => Number(w.id)));
@@ -81,6 +85,9 @@ async function oneTradition(tradition, a, d) {
     const s = prayerSignals(p, { name: named, works: workIds, top: top.has(keyOf(p0)) ? new Set([keyOf(p)]) : top });
     out.push({ ...p, ...s, work: p.title || null, tradition: canonicalTradition(p.religion || tradition || '') || null, opening: opening(p.text) });
   }
+  // the name IN a text is the evidence: once one candidate carries it, an engine's first hit that does not is no longer "first for the name"
+  // (11-12 Remover of Difficulties: "O Lord! Thou art the Remover of every anguish", top of the phrase search, outranked ¶65 which carries the name)
+  if (out.some((c) => c.signals.includes('named'))) for (const c of out) if (c.signals.includes('first for the name')) { c.signals = c.signals.filter((x) => x !== 'first for the name'); c.prayer_score -= 3; }
   out.sort((x, y) => y.prayer_score - x.prayer_score || (y.score ?? 0) - (x.score ?? 0));
   return { candidates: out, works: inWorks, how };
 }
