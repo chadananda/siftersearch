@@ -59,6 +59,9 @@ const KINDS = { work: 'a written WORK: a book, tablet, treatise or scripture (it
 const kindAsk = (span) => `In the latest message, what is "${span}" — a written work, a person whose own teaching or writing is asked about, a subject the question is about (a person's life or story, a place, event or concept), or neither (no name or subject at all)? A capitalised first word of a sentence is a name only when it really is one; an ordinary command word or an acknowledgment ("Great.", "Thanks!") is neither.`;
 // a language names no tradition (round 5: "What does the Arabic word irfán mean?" → Islam scoped out the Bahá'í Writings that use the word)
 const LANGUAGE_IS_NOT_A_TRADITION = ' A language is not a tradition: "the Arabic word …", "in Persian", "the Hebrew term …", "the Sanskrit …" name the language of a word, which several traditions share — choose a tradition only when the message names or plainly means the tradition itself.';
+// a subject tradition REMOVES every other tradition from the turn, so a wrong guess switches the subject (a Bahá'í prayer answered
+// from Buddhist books at 0.6, 11-12) — it filters only when Jev is sure; a hesitant guess leaves the turn unfiltered
+export const SUBJECT_FILTER_MIN = 0.8;
 const SUBJECT_ASK = `Does the latest message ask about the texts, teachers or teachings of one particular religion or tradition ("Buddhist anatta", "Sufi Rumi on fana", "Augustine on grace")? Choose it. A work belongs to its AUTHOR'S tradition, never to the scripture it comments on or quotes, nor to the genre's or language's usual tradition (a Bahá'í writer's commentary on a sūra of the Qur'án is Bahá'í; a Christian's study of the Gita is Christian). In a thread, the tradition already being discussed holds unless the latest message names another. "none" when it names no tradition.${LANGUAGE_IS_NOT_A_TRADITION}`;
 const FRAME = /^(?:according to|as (?:stated|explained|written|said) (?:in|by)|per|by|from|in|on)\s+/i;
 const FUNCTION_WORDS = /^(?:who|what|whom|whose|which|when|where|why|how|was|were|is|are|am|be|did|do|does|the|a|an|of|to|in|on|and|or|about|tell|me)\W*$/i;   // question/function words carry no search content
@@ -147,7 +150,7 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
         ...(spans.length ? [{ point: 'side-books', by: 'jev', saw: spans, options: Object.keys(SIDES), probabilities: Object.fromEntries(spans.map((n, i) => [n, jevProbabilities(choice(a[`book_${i + 1}`]) || {})])), chosen: sources, reason: null, ms }] : [])] : []),
     ];
     // the tradition the question is about = a hard filter for THIS turn (never on a comparison: its sides carry the traditions), unless the reader set a scope (scope_religion) or already has one in the conversation
-    const subj = choice(a.subject_religion), subjectOn = strategy.choice !== 'comparison' && subj?.choice && subj.choice !== 'none' && SIDES[subj.choice] && (subj.confidence ?? 0) >= min && !jevPatch.patch.scope?.religions_specified && !jevPatch.turnOnly;
+    const subj = choice(a.subject_religion), subjectOn = strategy.choice !== 'comparison' && subj?.choice && subj.choice !== 'none' && SIDES[subj.choice] && (subj.confidence ?? 0) >= Math.max(min, SUBJECT_FILTER_MIN) && !jevPatch.patch.scope?.religions_specified && !jevPatch.turnOnly;
     const turnOnly = subjectOn ? { scope: { religions_specified: [subj.choice] } } : jevPatch.turnOnly;
     const units = namedUnits(a, spans, messages.filter((m) => m.role === 'user').at(-1)?.content || '', min);
     const wp = choice(a.work_place);
@@ -169,6 +172,7 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
       decisions[0] = { ...decisions[0], chosen: strategy.choice, reason: strategy.reason };
     }
     if (subjectOn) decisions.push({ point: 'subject-religion', by: 'jev', saw: state, options: Object.keys(SIDES), probabilities: jevProbabilities(subj), chosen: subj.choice, reason: 'a hard filter for this turn', ms });
+    else if (subj?.choice && subj.choice !== 'none' && SIDES[subj.choice] && strategy.choice !== 'comparison') decisions.push({ point: 'subject-religion', by: 'jev', saw: state, options: Object.keys(SIDES), probabilities: jevProbabilities(subj), chosen: null, reason: 'not sure enough to filter — every tradition stays in', ms });
     // recorded even when empty: a strategy that runs with no units is diagnosable only from Jev's kind answers (11-11 Vaḥíd)
     if (spans.length) decisions.push({ point: 'named-units', by: 'jev', saw: spans, options: Object.keys(KINDS), probabilities: Object.fromEntries(spans.map((n, i) => [n, jevProbabilities(choice(a[`kind_${i + 1}`]) || {})])), chosen: units, reason: Object.keys(units).length ? null : 'no unit at confidence', ms });
     const patch = { jev: jevPatch.patch, turnOnly, continues: jevPatch.continues, offer: jevPatch.offer };

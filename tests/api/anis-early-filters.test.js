@@ -195,4 +195,10 @@ describe('namedUnits: topic remnants after a removed span (11-09 widget turns)',
     // 11-11 email: an acknowledgment is "neither", never a subject; the person asked about is the topic
     expect(namedUnits({ kind_1: ans('neither'), kind_2: ans('subject') }, ['Great', 'Quddus'], 'Great. What can you tell me about Quddus?')).toEqual({ topic: 'Quddus', named_subjects: ['Quddus'] });
   });
+  it('a hesitant subject tradition never filters the turn (Remover of Difficulties ≠ Buddhist at 0.6)', async () => {
+    const fetchImpl = async () => ({ ok: true, json: async () => ({ answers: { strategy: ans('prayer'), subject_religion: ans('Buddhist', 0.6), scope_religion: ans('unchanged') } }) });
+    const r = await chooseStrategy([{ role: 'user', content: 'Give me the Remover of Difficulties prayer' }], { apiKey: 'k', fetchImpl, options: { prayer: 'p', unmatched: 'x' } });
+    expect(r.patch.turnOnly?.scope?.religions_specified).toBeUndefined();
+    expect(r.decisions.find((d) => d.point === 'subject-religion')).toMatchObject({ chosen: null });
+  });
 });
