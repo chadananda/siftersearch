@@ -31,7 +31,7 @@ export async function pickOccasion(messages, titles, { profile, fetchImpl, apiKe
   const call = await jevCall('occasion', async (signal) => {
     const res = await fetchImpl(ENDPOINT, { method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: modelFor('assistant-triage').model, state: stateOf(messages, { profile }),
-        questions: { occasion: { type: 'choice', instructions: 'Which of these is a whole prayer (words addressed to God, or used in devotion) that fits what the reader asks for — by need, occasion, person or name? Each is labelled by its opening words, its work and tradition. Rank them; a passage that only talks about prayer does not fit.', criteria } } }),
+        questions: { occasion: { type: 'choice', instructions: 'Which of these is a whole prayer (words addressed to God, or used in devotion) that fits what the reader asks for — by need, occasion, person or name? Each is labelled by its opening words, its author, work and tradition. A prayer known by a name is usually called by its own words, so a passage whose own words ARE the name the reader gave is that prayer, before one that only shares a word of it. Rank them; a passage that only talks about prayer does not fit.', criteria } } }),
       signal });
     return res.ok ? (await res.json()).answers?.occasion ?? null : null;
   }, { ...JEV_LIMITS.occasion, ...limits, onJev });
@@ -39,7 +39,7 @@ export async function pickOccasion(messages, titles, { profile, fetchImpl, apiKe
   return a ? { choice: a.choice ?? a.value ?? null, confidence: a.confidence ?? a.distribution?.[a.choice ?? a.value] ?? null, distribution: a.distribution ?? null, ms: Date.now() - t0 } : null;
 }
 
-const label = (c) => [[c.work || c.title, c.tradition || c.religion].filter(Boolean).join(' — '), c.heading].filter(Boolean).join(', ') || null;
+const label = (c) => [[c.author && c.author !== c.book_author ? c.author : null, c.work || c.title, c.tradition || c.religion].filter(Boolean).join(' — '), c.heading].filter(Boolean).join(', ') || null;
 const tradOf = (c) => canonicalTradition(c.tradition || c.religion || '') || '?';
 
 export async function prayerShelf(ctx) {

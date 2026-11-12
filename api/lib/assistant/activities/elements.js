@@ -508,7 +508,7 @@ E['fetch.work'] = { ...fetchWork, async run(s, p = {}) {
 E['judge.prayer'] = { kind: 'decision', cls: 'jev', edges: ['picked', 'none', 'unjudged'], scope: 'strategy', params: ['stage'], reads: ['found_passages', 'occasion', 'current_user_question'], writes: ['found_passages'],
   async run(s, p = {}) {   // ONE typed Jev choice (prayer-shelf pickOccasion) among the prayers found — never a judge per prayer; the chosen goes first. No answer → unjudged (list untouched)
     const u = U(s), found = u.found_passages.slice(0, 8).map((x, i) => ({ key: `found:${i}`, text: x.opening || String(x.text || '').replace(/\s+/g, ' ').trim().slice(0, 220),
-      heading: [[x.work || x.title, x.tradition || x.religion].filter(Boolean).join(' — '), x.heading || x.occasion].filter(Boolean).join(', ') || null }));   // labelled by work, tradition and its heading
+      heading: [[x.author && x.author !== x.book_author ? x.author : null, x.work || x.title, x.tradition || x.religion].filter(Boolean).join(' — '), x.heading || x.occasion].filter(Boolean).join(', ') || null }));   // labelled by author, work, tradition and its heading
     if (!found.length) return finish(s, p, 'none');
     try {
       const pick = await (s.judges?.prayer || (async () => { const [{ pickOccasion }, { jevFetch }] = await Promise.all([import('../prayer-shelf.js'), import('../../systemone.js')]); return pickOccasion(s.messages || [], [], { profile: s.profile ?? s.ctx?.profile ?? {}, fetchImpl: jevFetch('anis-prayer-occasion'), found }); }))({ found });
