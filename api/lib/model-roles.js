@@ -25,6 +25,8 @@ export const MODEL_ROLES = {
     why: 'Chad 11-10: Jev chose the book strategy → ONE typed choice over the library\'s title + section candidates ("none fits" an option); the card follows at once (book-pick.js)' },
   'anis-book-name': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-10', needs: ['fast', 'tiny-output'],
     why: 'only when no candidate fits: the canonical title(s) of the work a message describes ("the main book of the Hindus" → Bhagavad Gita), then search again (book-pick.js)' },
+  'anis-work-extract': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-12', needs: ['fast', 'json'],
+    why: 'Chad 11-12 ("extract just the prayers … a table of links"): one call per chunk of a work names the pieces that fit a request made FROM it (work-extract.js)' },
   'anis-understood': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-03', needs: ['fast', 'tiny-output'],
     why: 'the "what I understood" line: one noun phrase restating the resolved request from Jev\'s decision (System One has no free-text type)' },
   'anis-followups': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-12', needs: ['fast', 'json', 'tiny-output'],

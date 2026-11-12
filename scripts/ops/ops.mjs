@@ -212,9 +212,11 @@ else if (cmd === 'anis-promote' && name) {   // replay promotion job: fresh clas
 }
 else if (cmd === 'anis-try') {   // one question through one strategy version (or the live route): reply head + the node path (steps with filters, counts)
   const q = val('--question'); const pin = val('--strategy');
-  if (!q) { console.error('usage: ops.mjs anis-try --question "…" [--strategy id@v] [--json]'); process.exit(2); }
+  if (!q) { console.error('usage: ops.mjs anis-try --question "…" [--strategy id@v] [--history turns.json] [--json]'); process.exit(2); }
   const [sid, sv] = (pin || '').split('@');
-  const r = await call('POST', '/anis/try', { question: q, ...(pin ? { strategy: { id: sid, version: sv ? Number(sv) : null } } : {}) });
+  // --history file.json: the earlier turns [{role, content}], as the widget sends them (follow-ups must be tested as follow-ups)
+  const history = val('--history') ? JSON.parse((await import('node:fs')).readFileSync(val('--history'), 'utf8')) : [];
+  const r = await call('POST', '/anis/try', { question: q, history, ...(pin ? { strategy: { id: sid, version: sv ? Number(sv) : null } } : {}) });
   if (flag('--json')) await out(r);
   else await new Promise((res) => process.stdout.write(`${pin || 'current'} · ${r.ms} ms · $${r.usd} · jev ${JSON.stringify(r.jev_pick ?? null)}\n`
     + (r.steps || []).map((x) => `  ${x.graph ? `${x.graph} ` : ''}${x.node}:${x.edge}${x.count != null ? `(${x.count})` : ''}${Array.isArray(x.members) ? ` [${x.members.map((m) => `${m.element}${m.skipped ? ' skip' : ` ${JSON.stringify(m.filters || {})}→${m.count}`}`).join('; ')}]` : ''}`).join('\n')

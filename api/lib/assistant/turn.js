@@ -8,6 +8,7 @@ import { loadReaderCard } from './reader-card.js';
 import { resolveQuery } from './short-turn.js';
 import { openExchange, closeExchange, failExchange } from './exchange-log.js';
 import { findInWorkAnswer, findPassageAnswer } from './find-in-work.js';
+import { extractFromWork } from './work-extract.js';
 import { triageMessage, routeTriage, outputBreaksPersona, T } from './triage.js';
 import { cannedReply } from './canned.js';
 import { strikes as liveStrikes, tarpitResponse } from './strikes.js';
@@ -304,12 +305,12 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && outcome === 'search' && outcomeC >= T.outcome) Object.assign(route, { action: 'research', overridden: route.kind, by: 'outcome' });
   if (route.action === 'research' && outcome === 'ask_back' && outcomeC >= T.askBack) Object.assign(route, { action: 'canned', kind: 'unclear', overridden: 'research', by: 'outcome' });
   // Jev's own confident call that this fetches something exact outranks his "unclear" (a bare "Gleanings 1" reads as unclear to the message-kind question)
-  if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && ['book', 'quote', 'in_work', 'find_passage', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.8) Object.assign(route, { action: 'research', overridden: route.kind });
+  if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && ['book', 'quote', 'in_work', 'from_work', 'find_passage', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.8) Object.assign(route, { action: 'research', overridden: route.kind });
   // Jev's refers_back (strategy call, read with the history): a message pointing at the previous reply is never 'unclear' and never a literal quote lookup
   if (strat?.refersBack && route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind)) Object.assign(route, { action: 'research', overridden: route.kind, by: 'refers_back' });
   // "search it for X": refers back to the book in focus, or to the work Jev names from the history — that IS the in-work find
-  const focusFind = tri?.lookup?.choice === 'in_work' && (!!focus || !!strat?.units?.named_work);
-  const lkIntent = lookupOn && (!strat?.refersBack || focusFind) && route.action === 'research' && ['book', 'quote', 'in_work', 'find_passage', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
+  const focusFind = ['in_work', 'from_work'].includes(tri?.lookup?.choice) && (!!focus || !!strat?.units?.named_work);
+  const lkIntent = lookupOn && (!strat?.refersBack || focusFind) && route.action === 'research' && ['book', 'quote', 'in_work', 'from_work', 'find_passage', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
   // THE BOOK FAST PATH (Chad 11-10): Jev chose the book strategy (or his lookup says book) → code gathers title + section candidates for
   // the name he gave (his named_work; a person he named beside it is the byline: author or compiler) → ONE typed Jev pick → the card.
   // Nothing fits → one Haiku names the work, then candidates + Jev again; still nothing → the research below. A topic or person
@@ -323,6 +324,20 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   const bookOn = bookGate && (strategyOf(strat) === 'book' || lkIntent === 'book' || weakBook);
   if (weakBook) decisions.record('book:early', { by: 'code', saw: { strategy: 'unmatched', lookup: tri.lookup }, chosen: 'book pick before Unmatched', reason: 'the lookup call said book' });
   let held = null;   // the pick's near miss (book-pick.js onHeld), confirmed by a later Jev book call
+  // MADE FROM A WORK (Chad 11-12: "extract out just the prayers and give me a table of links to each" after the Tablets of the Divine Plan
+  // card got a phrase search for his sentence): Jev's lookup says from_work → the work in focus (or the one he named, by the book finder)
+  // → the whole work read in chunks, one cheap pick per chunk → a code-built table or the texts. Nothing fits → research as before.
+  const extractFn = d.extractFromWork ?? (deps ? null : extractFromWork);
+  if (extractFn && lkIntent === 'from_work' && engine === undefined && research === undefined && !variants && !llm) {
+    const useFocus = focus && !u.named_work;
+    const found = useFocus ? { kind: 'work', work: { doc: { id: focus.id, title: focus.title } }, via: 'focus', section: focus.section ?? null }
+      : bookFn ? await timed('book', () => bookFn({ messages, names: [u.named_work].filter(Boolean), by: u.named_person ?? null, profile, decisions }), (r) => (r ? { kind: r.kind, via: r.via } : null)).catch(() => null) : null;
+    const doc = found?.kind === 'section' ? { id: found.sec.doc_id, title: found.sec.book, author: found.sec.author ?? null } : found?.work?.doc;
+    const sec = found?.kind === 'section' ? found.sec : found?.section ? { start_index: found.section.start, end_index: found.section.end } : null;
+    decisions.record('from-work:work', { by: 'code', saw: { focus: focus?.id ?? null, named_work: u.named_work ?? null }, chosen: doc?.id ?? null, reason: useFocus ? 'no work named this turn: the work the previous turn gave' : 'the work Jev named' });
+    const got = doc?.id ? await timed('from_work', () => extractFn({ messages, doc, section: sec, decisions }), (r) => (r ? { work: r.work?.id, total: r.result?.total } : null)).catch(() => null) : null;
+    if (got?.reply) return inWorkAnswer(got, ex, { gate: 'lookup', route: 'from_work', ...(jevFallback ? { jev_fallback: jevFallback } : {}), ...(useFocus ? { via: 'focus' } : {}), decisions: decisions.list() });
+  }
   // IN-WORK FIND (Chad 11-10, 'search for "private property" in God Passes By' got "I can't run a literal search from here"):
   // Jev's lookup says in_work (the triage call — it still answers when the strategy call times out, so the request is never lost)
   // → the work by the one book finder (his named_work when the strategy answered, else the message) → in_work_search → a
@@ -377,7 +392,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     if (found?.kind === 'work') return bookAnswer(found.work, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
     if (found?.kind === 'section') return sectionCard(found, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
   }
-  let lk = lkFirst !== undefined ? lkFirst : lkIntent && lkIntent !== 'in_work' && lkIntent !== 'find_passage' ? await lookupNow() : null;
+  let lk = lkFirst !== undefined ? lkFirst : lkIntent && !['in_work', 'from_work', 'find_passage'].includes(lkIntent) ? await lookupNow() : null;
   // "the opening paragraph of chapter one": Jev read the place as the unit's opening → its first paragraph(s) quoted, never the chapter card (dawnbreakers#1, 11-12)
   const opened = openingOf(lk, u);
   // …and the whole unit is remembered as given, so "summarize that chapter" next turn reads the chapter, not the one paragraph quoted (dawnbreakers#3, 11-12)
