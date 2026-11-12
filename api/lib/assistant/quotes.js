@@ -126,6 +126,7 @@ export function leansBack(t) {
 }
 const isQuoteLine = (t) => /^\s*>/.test(t);
 const PARAPHRASE_WORDS = 20;
+const GLOSS_SCRIPT = /[\p{Script=Arabic}\p{Script=Hebrew}\p{Script=Greek}]/u, GLOSS_WORDS = 8;
 const bareQuoteMark = (t) => /^[\s>]*$/.test(t);
 // a source line under a quotation: "— [*The Gospel of Luke*](…) (KJV)", "> — Bahá'u'lláh, *Gleanings*"
 const isAttribution = (t) => /^[\s>*_]*(?:[—–―]|--)\s*\S/.test(t) && !quoteSpans(t).length && String(t).length < 400;
@@ -149,13 +150,19 @@ export function dropUnverified(text, passages, { asked = [] } = {}) {
   const bad = unverifiedQuotes(text, passages, { asked });
   if (!bad.length) return { text, removed: 0 };
   let removed = 0;
+  // a short GLOSS beside the original script ("- **لمن أراد** (*liman aráda*): \"for whoever wishes\"": the writer's own English of a word,
+  // 11-12 Arabic student — dropping it left "The English has…" orphans) loses its marks, never its sentence
+  let unquoted = 0;
+  const glossed = new Set();
   const paras = String(text).split(/\n{2,}/).map((para) => sentencePieces(para).map((p) => {
-    const hit = bad.some((q) => p.text.includes(q));
-    if (hit) removed++;
-    return { ...p, drop: hit, heading: isHeading(p.text) };
+    const mine = bad.filter((q) => p.text.includes(q));
+    if (mine.length && GLOSS_SCRIPT.test(p.text) && mine.every((q) => q.split(/\s+/).length <= GLOSS_WORDS)) { unquoted++; mine.forEach((q) => glossed.add(q)); return { ...p, text: unquote(p.text, mine), drop: false, heading: isHeading(p.text) }; }
+    if (mine.length) removed++;
+    return { ...p, drop: mine.length > 0, heading: isHeading(p.text) };
   }));
   // a quotation the split still cut in two (its words span pieces): drop every piece it touches, as before
   for (const q of bad) for (const ps of paras) {
+    if (glossed.has(q)) continue;
     if (ps.some((p) => p.drop && p.text.includes(q))) continue;
     const joined = ps.map((p) => p.text).join(' ');
     const at = joined.indexOf(q);
@@ -166,7 +173,6 @@ export function dropUnverified(text, passages, { asked = [] } = {}) {
   const flat = paras.flat();
   // a sentence leaning back on a dropped one: the dropped one stays as paraphrase (its quotation unquoted) when it OPENED the
   // reply, or when the follower quotes a passage (its own evidence, not to be lost); otherwise the follower goes with it
-  let unquoted = 0;
   const firstText = flat.findIndex((p) => !p.heading);
   for (let i = 0; i < flat.length; i++) {
     const d = flat[i];

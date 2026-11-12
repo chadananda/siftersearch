@@ -28,6 +28,17 @@ describe('unverifiedQuotes', () => {
 });
 
 describe('dropUnverified', () => {
+  it('a short gloss beside Arabic loses its marks, never its bullet (11-12 Arabic student)', () => {
+    const t = '**Sentence 1**\n- **لمن أراد أن يتذكّر** (*liman aráda*): "for whoever wishes to remember." The English has "for those who fain would heed His Call."\n- Next line stays.';
+    const r = dropUnverified(t, [{ text: 'Herein is revealed the law of all things for those who fain would heed His Call.' }]);
+    expect(r.text).toContain('(*liman aráda*): for whoever wishes to remember.');
+    expect(r.text).toContain('The English has');
+    expect(r.removed).toBe(0);
+  });
+  it('a long unverified quotation beside Arabic still goes', () => {
+    const r = dropUnverified('Intro sentence that is long enough to keep the reply alive here.\n\nHe wrote لمن "this whole line was never in any passage at all, invented." Then more.', [{ text: 'nothing' }]);
+    expect(r.text).not.toContain('invented');
+  });
   it('removes the whole sentence carrying an invented quote, keeping the grounded ones', () => {
     const text = 'Justice is central. He states that "the foundation of all human virtues is justice" (*Lights*). In the Hidden Words: ["the best beloved of all things in My sight is Justice"](https://x) — *Hidden Words*.';
     const out = dropUnverified(text, passages);
