@@ -592,7 +592,9 @@ export async function agentRespond({ messages, onEvent, d, t0, subject = null, d
   onEvent({ type: 'stage', stage: 'search' });
   // the channel's reply frame (channels.js: length/tone, by Jev's depth when he gave one) is part of the agent's instructions
   const { frameFor, greetByName } = await import('./channels.js');
-  const frame = direction?.channel ? greetByName(frameFor(direction.channel, direction.depth), direction.channel, direction.readerName) : null;
+  // a live chat's brief frame ("under about 80 words… one short quotation") is the old engine's length rule: the agent's own
+  // WRITING rules decide depth (11-12: "how do Bahá'ís pray" came back as half a prayer under it). Letters keep their frame.
+  const frame = direction?.channel && !direction.channel.live ? greetByName(frameFor(direction.channel, direction.depth), direction.channel, direction.readerName) : null;
   const A = await agentAnswer({ messages, onEvent, subject, frame,
     create: d.agentCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-agent', params)),
     tools: d.agentTools || agentTools({ search: d.search, fastSearch: d.fastSearch }),
