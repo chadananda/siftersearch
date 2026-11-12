@@ -198,4 +198,7 @@ describe('original wording asked, no original retrieved', () => {
     expect(r.format.id).not.toBe('original');
     expect(calls[0].direction.format.how).toMatch(/None of the passages gives the original text/);
   });
+  it('two titles joined by “and” are offered apart as well as whole (11-12: the Íqán and Matthew were one span, neither side got its book)', () => {
+    expect(nameSpans('Compare what the Kitáb-i-Íqán and the Gospel of Matthew say about the return of Christ')).toEqual(['Kitáb-i-Íqán and the Gospel of Matthew', 'Kitáb-i-Íqán', 'Gospel of Matthew', 'Christ']);
+  });
 });

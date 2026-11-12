@@ -152,7 +152,10 @@ export function nameSpans(text, max = 12) {
   for (const sent of t.replace(/\//g, ', ').split(/(?<=[.!?:;\n]["”’']?)\s+|\s+[—–]\s+|,\s+/)) {
     const words = sent.split(/\s+/).filter(Boolean);
     let run = [];
-    const flush = () => { while (run.length && INNER.test(run.at(-1))) run.pop(); if (run.length) add(run.join(' ')); run = []; };
+    // a run joined by "and" may be one title ("Prayers and Meditations") or two ("the Kitáb-i-Íqán and the Gospel of Matthew", 11-12: one
+    // span, so neither side of the comparison got its book) — structure can't tell: the parts are offered too, Jev reads them in context
+    const parts = (r) => r.join(' ').split(/\s+and\s+(?:the\s+)?/i).filter((x) => CAP.test(x));
+    const flush = () => { while (run.length && INNER.test(run.at(-1))) run.pop(); if (run.length) { add(run.join(' ')); const ps = parts(run); if (ps.length > 1) ps.forEach(add); } run = []; };
     words.forEach((w, i) => {
       const bare = w.replace(/^[‘’'ʻ`"“*_(]+|[’'"”*_),.;:!?]+$/g, '');
       const f = fold(bare);
