@@ -9,6 +9,12 @@
 set -e
 cd "$(dirname "$0")/.."
 command -v node >/dev/null 2>&1 || export PATH="$HOME/.local/share/fnm/aliases/default/bin:$PATH"
+# ONE site, many working trees (sessions, worktrees): a build from a tree behind origin/main silently REVERTS every frontend
+# change pushed since (11-12: /admin/implied vanished twice that way). Refuse; rebase first. SIFTER_DEPLOY_STALE_OK=1 overrides.
+if [ -z "$SIFTER_DEPLOY_STALE_OK" ] && git fetch -q origin main 2>/dev/null && ! git merge-base --is-ancestor origin/main HEAD; then
+  echo "[deploy-site] REFUSED: this tree is behind origin/main ($(git rev-list --count HEAD..origin/main) commit(s)) — deploying would undo their frontend changes. git fetch && git rebase origin/main, then deploy." >&2
+  exit 1
+fi
 DEPLOY_SECRET=$(grep -h '^DEPLOY_SECRET=' .env-secrets 2>/dev/null | head -1 | cut -d= -f2-)
 NEW_VERSION=$(node scripts/bump-version.js patch 2>&1 | tail -1)
 echo "[deploy-site] version $NEW_VERSION"
