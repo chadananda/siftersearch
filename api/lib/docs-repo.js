@@ -31,6 +31,7 @@
 import { titleTier } from './title-rank.js';
 import { query, queryAll, queryOne } from './db.js';
 import { logger } from './logger.js';
+import { isMainThread } from 'node:worker_threads';
 
 /**
  * Named visibility policies. A scope is a POLICY, not a pile of booleans, because booleans are what callers
@@ -130,8 +131,12 @@ export async function docIdsInYearRange({ yearFrom, yearTo, scope = 'live' } = {
 
 /** Ids + titles + filenames of documents filed under one library folder (file_path prefix) — a serial filed as one document per
  *  issue (Star of the West: Baha'i/News/Star of the West/v1/…) read as ONE work. Live, non-duplicate by default. */
-export async function docsInFolder(prefix, { scope = 'live' } = {}) {
+// a LIKE over every docs row (~1.5 s on tower, 11-12 slow-queries) runs in the read pool, not on the serving thread
+export async function docsInFolder(prefix, opts = {}) {
   if (!prefix) return [];
+  return isMainThread ? (await import('./search/read-pool.js')).runRead('docs:in-folder', prefix, opts) : docsInFolderRows(prefix, opts);
+}
+export async function docsInFolderRows(prefix, { scope = 'live' } = {}) {
   const where = scopeSql(scope);
   where.push("d.file_path LIKE ? ESCAPE '\\'");
   return queryAll(`SELECT d.id, d.title, d.filename FROM docs d WHERE ${where.join(' AND ')}`,

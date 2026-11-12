@@ -20,6 +20,7 @@ export const TASKS = {
   'bio:persons': async ([books]) => (await import('../repos/bio-persons-repo.js')).bioPersonRows(books),
   'paragraphs:in-range': async ([docId, from, to, opts]) => (await import('../paragraphs-repo.js')).paragraphRangeRows(docId, from, to, opts),
   'paragraphs:heading-starts': async ([docId]) => (await import('../paragraphs-repo.js')).headingStartRows(docId),
+  'docs:in-folder': async ([prefix, opts]) => (await import('../docs-repo.js')).docsInFolderRows(prefix, opts),
 };
 
 async function runTask(task, args, timing) {

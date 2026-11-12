@@ -141,5 +141,6 @@ describe('entity-name reads on the read pool', () => {
     // whole-document reads of a turn (reference lookup, prayer shelf): 4–5 s on the serving thread stalled Jev's calls (11-12)
     expect(src('paragraphs-repo.js')).toMatch(/offThread\('paragraphs:in-range'/);
     expect(src('paragraphs-repo.js')).toMatch(/offThread\('paragraphs:heading-starts'/);
+    expect(src('docs-repo.js')).toMatch(/runRead\('docs:in-folder'/);
   });
 });
