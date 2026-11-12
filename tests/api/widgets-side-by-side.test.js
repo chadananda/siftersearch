@@ -30,6 +30,13 @@ describe('buildSideBySide', () => {
     expect(d.rows.map((r) => r.translations[0].text)).toEqual(['one', 'two']);
     expect(buildSideBySide([tr(500, 'x')])).toBeNull();
   });
+  it('a lone basmala repeating the opening joins that row; its English goes first (Kawthar tafsir, 11-12)', () => {
+    const o = (id, pi, text) => ({ id, role: 'original', language: 'ar', document_id: 1, paragraph_index: pi, title: 'Tafsir', text });
+    const d = buildSideBySide([o(1, 0, 'بسم اللّه الرحمن الرحيم الحمد لله الذي جعل'), o(2, 1, 'بسم الله الرحمن الرحيم'),
+      tr(10, 'Praise be unto Him.', [1], { paragraph_index: 1 }), tr(11, 'In the Name of God, the Merciful.', [2], { paragraph_index: 0 })]);
+    expect(d.rows).toHaveLength(1);
+    expect(d.rows[0].translations[0].text).toBe('In the Name of God, the Merciful. Praise be unto Him.');
+  });
 });
 
 describe('markdown and segments', () => {

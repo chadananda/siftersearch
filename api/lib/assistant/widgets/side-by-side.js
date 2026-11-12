@@ -51,6 +51,19 @@ export function buildSideBySide(passages, { link = (p) => p.source_url ?? p.cita
     if (!hit.some(Boolean)) return origs.map((_, i) => (col.length === origs.length ? col[i] : col.length === 1 ? col[0] : null));
     return hit;
   });
+  // an original that only repeats words another row already holds (a lone basmala beside the opening that begins with it) is not its own row:
+  // its translation joins that row, in the translation's own order (Chad 11-12: the Kawthar's basmala sat beside the wrong English)
+  const fold = (t) => clean(t).normalize('NFKD').replace(/[\u064B-\u065F\u0670\u0640\u0300-\u036f]/g, '').replace(/[إأآ]/g, 'ا').replace(/\s+/g, ' ').trim();
+  for (let d = origs.length - 1; d >= 0; d--) {
+    const t = fold(origs[d].text), j = origs.findIndex((o, k) => k !== d && t.length >= 8 && fold(o.text).length > t.length && fold(o.text).includes(t));
+    if (j < 0) continue;
+    for (const col of cells) {
+      const a = col[j], b = col[d];
+      if (b && a !== b) col[j] = a ? { ...a, text: [a, b].sort((x, y) => (x.paragraph_index ?? 0) - (y.paragraph_index ?? 0)).map((x) => clean(x.text)).join(' ') } : b;
+      col.splice(d, 1);
+    }
+    origs.splice(d, 1);
+  }
   const rows = origs.map((o, i) => ({ original: { text: clean(o.text), url: link(o) ?? null, paragraph_id: o.id },
     translations: cols.map((_, c) => {
       const p = cells[c][i];
