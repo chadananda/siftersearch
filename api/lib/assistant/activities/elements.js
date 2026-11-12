@@ -210,6 +210,13 @@ const E = {
           if (got.length) { merge(u, 'found_passages', got.map((x) => ({ ...x, anchor: true }))); return finish(s, p, 'one', { count: got.length, read: { last_passages: u.last_passages } }); }
         }
         if (hit) { merge(u, 'found_passages', [{ ...hit, anchor: true }]); return finish(s, p, 'one', { count: 1, read: { referent: u.referent } }); }
+        // a message that names nothing of its own ("who translated it?") is about what the thread last showed (11-12: Jev read it as its own question,
+        // the anchor came back empty and the turn said it would "rather not guess a name")
+        if (!pos?.doc && !u.quoted_words && !u.named_work && !u.scripture_reference && u.last_passages?.length) {
+          const x = u.last_passages[0], c = await call(s, 'context_lookup', { document_id: x.document_id, paragraph_index: x.paragraph_index, before: 0, after: 0 });
+          const items = (c?.passages || []).slice(0, 1).map((y) => ({ ...y, anchor: true }));
+          if (items.length) { merge(u, 'found_passages', items); return finish(s, p, 'one', { count: 1, read: { last_passages: [x] } }); }
+        }
         if (pos?.doc) {
           const c = await call(s, 'context_lookup', { document_id: pos.doc, paragraph_index: pos.paragraph ?? 0, before: 0, after: 0 });
           const items = c?.passages || []; merge(u, 'found_passages', items); return finish(s, p, items.length ? 'one' : 'none', { count: items.length, read: { reader_position: pos } });
@@ -222,10 +229,11 @@ const E = {
   'fetch.opening': { kind: 'tool', cls: 'code', edges: ['one', 'several', 'none', 'error'], scope: 'strategy', params: ['n', 'untopiced', 'stage'], reads: ['named_work', 'topic', 'work_place'], writes: ['found_passages', ...OUT],
     async run(s, p = {}) {
       const u = U(s), w = namedWork(u);
-      if (!w?.documentId || (p.untopiced && u.work_place !== 'opening' && String(flat(u.topic) ?? '').trim())) { const e = finish(s, p, 'none'); u.missing.pop(); u.found_outcome[s.node ?? '?'] = 'skipped'; return e; }
+      if (!(w?.documentId || w?.work) || (p.untopiced && u.work_place !== 'opening' && String(flat(u.topic) ?? '').trim())) { const e = finish(s, p, 'none'); u.missing.pop(); u.found_outcome[s.node ?? '?'] = 'skipped'; return e; }
       try {
-        const items = ((await call(s, 'opening_lookup', { document_id: w.documentId, n: p.n ?? 3 }))?.passages || []).map((x, i) => ({ ...x, anchor: i === 0 }));
-        merge(u, 'found_passages', items); return finish(s, p, classify(items.length, ['one', 'several']), { count: items.length, read: { named_work: w.documentId } });
+        const which = w.documentId ? { document_id: w.documentId } : { work: w.work };   // a title is resolved by the tool, as every search's work filter is
+        const items = ((await call(s, 'opening_lookup', { ...which, n: p.n ?? 3 }))?.passages || []).map((x, i) => ({ ...x, anchor: i === 0 }));
+        merge(u, 'found_passages', items); return finish(s, p, classify(items.length, ['one', 'several']), { count: items.length, read: { named_work: w.documentId ?? w.work } });
       } catch (err) { return finish(s, p, 'error', { error: err?.message || String(err) }); }
     } },
   'fetch.align': { kind: 'tool', cls: 'code', edges: ['one', 'several', 'none', 'error'], scope: 'strategy', params: ['versions', 'passage', 'k', 'stage'], reads: ['found_passages'], writes: ['found_passages', ...OUT],

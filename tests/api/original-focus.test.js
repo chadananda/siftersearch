@@ -46,6 +46,12 @@ describe('original tree: a named work with no topic → its opening', () => {
     const path = s.trace.map((x) => x.node);
     expect(path).toEqual(expect.arrayContaining(['o1o', 'o3'])); expect(path).not.toContain('o1w');
   });
+  it('a work named by title (Jev’s words) with work_place opening → the opening by that title, even with a topic', async () => {
+    const opening_lookup = vi.fn(async () => ({ passages: [P(1), P(2)] }));
+    const s = await run({ named_work: 'Surah of Kawthar', topic: 'the first couple paragraphs', work_place: 'opening' }, { opening_lookup });
+    expect(opening_lookup).toHaveBeenCalledWith({ work: 'Surah of Kawthar', n: 3 }, expect.anything());
+    expect(s.trace.map((x) => x.node)).not.toContain('o1w');
+  });
   it('with a topic the work is searched (o1w); a topic not found there is an absence, never the opening served instead', async () => {
     const opening_lookup = vi.fn(async () => ({ passages: [P(1)] }));
     const s = await run({ named_work: 777, topic: 'the station of the martyrs' }, { opening_lookup });
@@ -63,5 +69,10 @@ describe('opening_lookup', () => {
     const r = await tools.run('opening_lookup', { document_id: 9, n: 2 }, { deps });
     expect(r.passages.map((p) => p.paragraph_index)).toEqual([1, 2]); expect(deps.getParagraphs.mock.calls[0][1]).toMatchObject({ proseOnly: true, offset: 0 });
     expect(await tools.run('opening_lookup', { document_id: 9 }, { deps: { ...deps, encumberedAmong: async () => new Set([9]) } })).toEqual({ passages: [], copyright: true });
+  });
+  it('a title is resolved the way a search’s work filter is; an unknown title is an empty, honest result', async () => {
+    const r = await tools.run('opening_lookup', { work: 'Surah of Kawthar', n: 1 }, { deps: { ...deps, findTitled: async () => ({ doc: { id: 9 } }) } });
+    expect(r.passages.map((p) => p.document_id)).toEqual([9]);
+    expect(await tools.run('opening_lookup', { work: 'No Such Book' }, { deps: { ...deps, findTitled: async () => null } })).toEqual({ passages: [], copyright: false });
   });
 });

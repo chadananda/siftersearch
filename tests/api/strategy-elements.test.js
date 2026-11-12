@@ -121,6 +121,11 @@ describe('named-thing, reference, not-built, facts', () => {
     expect((await go('fetch.anchor', mk({}, { quoted_words: 'abc' }))).edge).toBe('thin');
     expect((await go('fetch.anchor', mk())).edge).toBe('none');
     expect((await go('fetch.anchor', mk({ context_lookup: boom }, { reader_position: { doc: 5 } }))).edge).toBe('error');
+    // a message naming nothing of its own ("who translated it?") anchors on what the thread last showed; a named work or quoted words never do
+    const last = { last_passages: [{ document_id: 20171, paragraph_index: 0 }] };
+    expect((await go('fetch.anchor', mk({ context_lookup: ret([P(1)]) }, last))).edge).toBe('one');
+    expect((await go('fetch.anchor', mk({ context_lookup: ret([P(1)]) }, { ...last, named_work: 'Gleanings' }))).edge).toBe('none');
+    expect((await go('fetch.anchor', mk({ context_lookup: ret([P(1)]) }, { ...last, quoted_words: 'abc' }))).edge).toBe('thin');
     const al = await go('fetch.align', mk({ links_lookup: async () => ({ original: 'orig', translations: [] }) }, { found_passages: [P(1)] }));
     expect(al.edge).toBe('one'); expect(al.u.found_passages[0].original).toBe('orig');
     expect((await go('fetch.align', mk({ links_lookup: async () => ({}) }, { found_passages: [P(1)] }))).edge).toBe('none');

@@ -493,13 +493,17 @@ const ENTRIES = [
   // the first paragraphs of one work (a reader asks for "the first couple paragraphs"): code reads them in order, no search, no words parsed
   { name: 'opening_lookup', label: 'Opening Lookup', kind: 'tool', outputName: 'Opening', cost: C(false, 25),
     purpose: 'The first n prose paragraphs of one document, in order (none for a copyrighted book).',
-    description: 'Read the opening paragraphs of a work (its document id): the first n prose paragraphs in order, headings and notes left out.',
-    input: { type: 'object', additionalProperties: false, required: ['document_id'], properties: { document_id: { type: 'integer' }, n: { type: 'integer', minimum: 1, maximum: 6, default: 3 } } },
+    description: 'Read the opening paragraphs of a work (its document id, or its title as named): the first n prose paragraphs in order, headings and notes left out.',
+    input: { type: 'object', additionalProperties: false, required: [], properties: { document_id: { type: 'integer' }, work: str('The work\'s title as the reader named it, when its id is not known', 300),
+      n: { type: 'integer', minimum: 1, maximum: 6, default: 3 } } },
     output: { type: 'object', required: ['passages', 'copyright'], properties: { passages: { type: 'array', items: PASSAGE },
       copyright: { type: 'boolean', description: 'true = a copyrighted book: its opening is not given' } } },
     example: { input: { document_id: 12, n: 2 }, output: { passages: [{ ...P_EX, paragraph_index: 1 }, { ...P_EX, paragraph_index: 2 }], copyright: false } },
     async run(a, ctx) {
-      const docId = Number(a.document_id), n = Math.min(6, Math.max(1, Number(a.n) || 3));
+      // a title → its document the way every search's work filter resolves one (11-12: Jev named "Surah of Kawthar" and the opening was skipped)
+      const titled = a.document_id == null && a.work ? (await (await dep(ctx, 'findTitled', 'works'))([a.work]))?.doc ?? null : null;
+      if (a.document_id == null && !titled) { if (a.work) return { passages: [], copyright: false }; throw new ToolError('invalid_input', 'give document_id or work', false); }
+      const docId = Number(a.document_id ?? titled.id), n = Math.min(6, Math.max(1, Number(a.n) || 3));
       // fails CLOSED like context_lookup: consecutive paragraphs of a copyrighted (or rights-unknown) book are not a short excerpt
       const enc = await (await dep(ctx, 'encumberedAmong', 'rights'))([docId]).catch((e) => { throw new ToolError('rights_unavailable', `rights check failed (${e?.message || e}) — not reading a book whose rights are unknown`, true); });
       if (enc.has(docId)) return { passages: [], copyright: true };

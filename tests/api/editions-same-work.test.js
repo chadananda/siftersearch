@@ -57,7 +57,7 @@ describe('editionsOf: the Arabic opening → the English same work', () => {
       workFamily: async () => ({ self: { ...self, religion: "Baha'i" }, members: [{ ...other(4, "Tafsir-i-Suratu'l-Kawthar (provisional translation)"), paragraph_count: 860 }] }),
     };
     const r = await editionsOf(5, { want: 'original' }, deps);
-    expect(r.passages).toEqual([]);
+    expect(r.passages.map((p) => [p.id, p.role, p.aligned_by])).toEqual([[5, 'original', 'self']]);   // the Arabic passage is itself the original
   });
   it('a prolific author: the same work is found behind hundreds of the author’s other works (asks for every title)', async () => {
     let asked = 0;

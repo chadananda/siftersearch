@@ -140,7 +140,14 @@ export async function editionsOf(paragraphId, { want = 'original', limit = 3 } =
       || (await alignByPlace(src, m, fam.self?.paragraph_count, d).catch(() => null));
     for (const r of how?.rows || []) push(asPassage(r, m, role, how));
   }
-  const trad = fam.self?.religion ?? null, have = new Set(found.map((x) => x.language));
+  const trad = fam.self?.religion ?? null;
+  // the passage IS the original: nothing else was found and its own work is in one of the tradition's original languages (11-12: the Arabic
+  // Kawthar's opening answered "no original edition" and the side-by-side was never fetched)
+  if (want === 'original' && !found.length && (ORIGINAL_LANGS[trad] || []).includes(selfLang)) {
+    found.push({ id: src.id, document_id: src.doc_id, paragraph_index: src.paragraph_index ?? null, text: src.text, title: fam.self.title, author: fam.self.author ?? null,
+      religion: trad, language: selfLang, role: 'original', aligned_by: 'self', exact: true, basis: 'the passage itself' });
+  }
+  const have = new Set(found.map((x) => x.language));
   const missing = want === 'original' && !found.length ? (ORIGINAL_LANGS[trad] || []).filter((x) => x !== selfLang && !have.has(x)).map(langName).join(' or ') || null : null;
   return { passages: found, self: fam.self ? { id: fam.self.id, title: fam.self.title, language: selfLang, religion: trad } : null,
     family: (fam.members || []).map((m) => ({ id: m.id, title: m.title, language: langCode(m.language), basis: m.basis })), missing_language: missing };
