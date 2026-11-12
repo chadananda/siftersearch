@@ -167,7 +167,8 @@ export async function runStrategyGraph(name, choice, ctx) {
   if (!g) return undefined;   // no such graph: the caller runs the registry tool directly
   const units = g.needs ? entryUnits(g, choice, ctx) : null, trace = [];
   if (units) await quotedByJev(g, units, trace, ctx);
-  const s = await runGraph(g, { choice, ctx, trace, question: ctx?.query ?? ctx?.question ?? '', messages: ctx?.messages, state: ctx?.state ?? undefined, onEvent: ctx?.onEvent ?? (() => {}), ...(units ? { units } : {}) });
+  const s = await runGraph(g, { choice, ctx, trace, question: ctx?.query ?? ctx?.question ?? '', messages: ctx?.messages, state: ctx?.state ?? undefined, onEvent: ctx?.onEvent ?? (() => {}), executor: true, ...(units ? { units } : {}) });
+  if (s.fellThrough) return null;   // $absence with nothing found: the ordinary research path answers the turn
   return s.out === undefined && !s.done ? undefined : (s.out ?? null);   // the research agent answered (a tree's $fallback): nothing to execute, the ordinary path has the reply
 }
 

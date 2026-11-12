@@ -57,20 +57,21 @@ function numberedChapter(t) {
     const book = o[2].replace(/\s+(?:beside|with|and|in|next|alongside|together)$/i, '').trim();
     const quran = /^(?:qur[a']?an|koran)\b/i.test(book);
     const n = o[1].toLowerCase() === 'last' ? (quran ? 114 : null) : ORDINAL[o[1].toLowerCase()];
-    if (n) return t.replace(o[0], ` ${quran ? 'Quran' : book} ${quran ? '' : 'chapter '}${n} `);
+    if (n) return { text: t.replace(o[0], ` ${quran ? 'Quran' : book} ${quran ? '' : 'chapter '}${n} `), byName: false };
   }
+  // a sūra NAME is evidence, not identity (11-11 Kawthar: the Báb's Tafsír-i-Súriy-i-Kawthar became Qur'án 108): byName marks it so callers let Jev judge
   const w = SURA_WORD_RE.exec(t);
-  if (w) return t.replace(w[0], ` Quran ${SURA_ALL[w[1].toLowerCase()]} `);
+  if (w) return { text: t.replace(w[0], ` Quran ${SURA_ALL[w[1].toLowerCase()]} `), byName: true };
   const m = SURA_RE.exec(t);
-  return m && (/s[uú]ra|al[-\s]|qur|koran/i.test(t)) ? t.replace(m[0], ` Quran ${SURA_NAMES[m[1].toLowerCase()]} `) : t;
+  return m && (/s[uú]ra|al[-\s]|qur|koran/i.test(t)) ? { text: t.replace(m[0], ` Quran ${SURA_NAMES[m[1].toLowerCase()]} `), byName: true } : { text: t, byName: false };
 }
 
 /** "John 3:16", "1 Cor. 13:4-7", "Qur’án 2:255", "Sura 24", "Bhagavad Gita 2:47", "Gita chapter 2", "the opening chapter of the Qur'an",
  *  "al-Fatiha", "the first chapter of Genesis" → a reference, or null. Pure. */
 export function parseScriptureRef(text) {
-  const t = numberedChapter(String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[“”"‘’']/g, '').trim());   // Qur’án → Quran, Gītā → Gita
+  const { text: t, byName } = numberedChapter(String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[“”"‘’']/g, '').trim());   // Qur’án → Quran, Gītā → Gita
   const q = /\b(?:qur['’]?[aā]n|quran|koran|s[uūú]rah?|surih)\s*(?:chapter\s*)?(\d{1,3})(?:\s*[:.]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?)?/i.exec(t);
-  if (q) return { kind: 'quran', sura: +q[1], verse: q[2] ? +q[2] : null, verseEnd: q[3] ? +q[3] : null, label: `Qur’án ${q[1]}${q[2] ? `:${q[2]}${q[3] ? `–${q[3]}` : ''}` : ''}` };
+  if (q) return { kind: 'quran', ...(byName ? { byName } : {}), sura: +q[1], verse: q[2] ? +q[2] : null, verseEnd: q[3] ? +q[3] : null, label: `Qur’án ${q[1]}${q[2] ? `:${q[2]}${q[3] ? `–${q[3]}` : ''}` : ''}` };
   const g = /\b(?:bhagavad[\s-]*g[iī]t[aā]|g[iī]t[aā])\s*(?:chapter|ch\.?)?\s*(\d{1,2})(?:\s*[:.]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?)?/i.exec(t);
   if (g) return { kind: 'gita', chapter: +g[1], verse: g[2] ? +g[2] : null, verseEnd: g[3] ? +g[3] : null, label: `Bhagavad Gita ${g[1]}${g[2] ? `:${g[2]}${g[3] ? `–${g[3]}` : ''}` : ''}` };
   const b = /\b((?:[123]\s*)?[A-Za-z]{2,}(?:\s+of\s+[A-Za-z]+)?)\.?\s+(?:chapter\s+)?(\d{1,3})(?:\s*[:.]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?)?\b/i.exec(t);

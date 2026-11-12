@@ -17,6 +17,7 @@ import { runHttpTool } from './http-tool.js';
 export { FILTERS, PASSAGE, WORK, ERROR, SCHEMAS, engineFilters, translationLabel, letterVariants, toPassage, dedupePassages };
 
 // another tradition than the Bahá'í: original_lookup / translation_lookup go to its work family (editions.js)
+const CLOSE_MIN = 0.7;   // document_search: the floor for close (spelling-candidate) titles
 const otherTradition = (t) => !!t && canonicalTradition(t) !== "Baha'i";
 /** words → the library's passage holding them (phrase vectors, in the tradition when named) → its editions. Never a translation. */
 async function viaEditions(words, tradition, want, ctx) {
@@ -391,19 +392,21 @@ const ENTRIES = [
     example: { input: { name: 'Quddús' }, output: { found: true, person: { id: 1247552, name: 'Quddús', portrait: 'https://…/1247552.jpg' }, others: [] } },
     run: async (a, ctx) => (await dep(ctx, 'personReport', 'preport'))(/^\d+$/.test(String(a.name).trim()) ? { id: a.name } : { name: a.name }) },
   { name: 'document_search', label: 'Document Search', kind: 'tool', outputName: 'Work[]', cost: C(false, 15),
-    purpose: 'A work in the library by its title, any spelling: the best match first, then close others.',
-    description: "A WORK in the library by its title (any spelling: \"Dawnbreakers\", \"Book of Certitude\", \"Iqan\"): the library's copy with its link. When the reader asks for a book — to read it, find it, get a copy, a link — give THIS link; never send them to another site or catalog.",
+    purpose: 'A work in the library by its title, any spelling: the best match first, then close others. When no title matches well, the CLOSE titles (match: "close") are spelling candidates — judge them by author and context.',
+    description: "A WORK in the library by its title (any spelling: \"Dawnbreakers\", \"Book of Certitude\", \"Iqan\"): the library's copy with its link. When nothing matches well, the few closest titles come back marked match \"close\": a name is evidence, not identity — they are spelling candidates for you to judge by author, language and what was asked, never a confirmed hit. When the reader asks for a book — to read it, find it, get a copy, a link — give THIS link; never send them to another site or catalog.",
     input: { type: 'object', additionalProperties: false, required: ['title'], properties: { title: str('The title as given', 300),
       min: { type: 'number', minimum: 0, maximum: 1, default: 0.86, description: 'Minimum title similarity' } } },
     output: { type: 'object', required: ['works'], properties: { works: { type: 'array', items: WORK } } }, llmOmit: ['min'],
     example: { input: { title: 'Iqan' }, output: { works: [{ id: 1, title: 'The Kitáb-i-Íqán', author: "Bahá'u'lláh", url: 'https://siftersearch.com/library/kitab-i-iqan' }] } },
     async run(a, ctx) {
       const w = await (await dep(ctx, 'findTitled', 'works'))([a.title], ...(a.min != null ? [{ min: a.min }] : []));
-      if (!w?.doc) return { works: [] };
-      const workUrl = await dep(ctx, 'workUrl', 'srcl'), all = [w.doc, ...(w.others || [])];
+      // nothing reached `min`: the closest few titles (floor CLOSE_MIN) are SPELLING CANDIDATES, marked close, for the caller to judge by author and context
+      const close = !w?.doc && (a.min ?? 0.86) > CLOSE_MIN ? (await (await dep(ctx, 'rankTitled', 'works'))([a.title], { min: CLOSE_MIN, prefix: false }).catch(() => null))?.sorted?.slice(0, 3) : null;
+      if (!w?.doc && !close?.length) return { works: [] };
+      const workUrl = await dep(ctx, 'workUrl', 'srcl'), all = w?.doc ? [w.doc, ...(w.others || [])] : close;
       // the online publisher wins here as for a passage (the doc row lacks `metadata`, where the publisher's address lives)
       const links = ctx?.deps?.workUrl ? null : await (await import('../hit-links.js')).workLinks(all).catch(() => null);
-      return { works: all.map((x) => ({ ...x, url: links?.get(x.id) ?? workUrl(x) })) };
+      return { works: all.map((x) => ({ ...x, match: w?.doc ? 'title' : 'close', url: links?.get(x.id) ?? workUrl(x) })) };
     } },
   { name: 'original_lookup', label: 'Original Lookup', kind: 'tool', outputName: 'Passage[]', cost: C(true, 300),
     purpose: 'The Arabic/Persian original of an English passage, then the authorised translations linked to it.',

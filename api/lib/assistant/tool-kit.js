@@ -41,6 +41,7 @@ export const PASSAGE = { $id: 'AnisPassage', type: 'object', additionalPropertie
   locator: { ...nul('string'), description: 'Where in the work to cite it: traditional number (Gleanings #117.2, Hidden Words Arabic #5, Íqán #12) or the section heading' } } };
 export const WORK = { $id: 'AnisWork', type: 'object', additionalProperties: true, required: ['id', 'title'], properties: {
   id: { type: 'integer' }, title: { type: 'string' }, author: nul('string'), religion: nul('string'), collection: nul('string'),
+  match: { enum: ['title', 'close'], description: 'document_search: title = a confident title match; close = a spelling candidate to judge by author and context' },
   url: nul('string'), encumbered: { ...nul('integer'), description: '1 = copyrighted: opening pages only' } } };
 export const ERROR = { $id: 'AnisToolError', type: 'object', required: ['error'], properties: { error: { type: 'object', required: ['code', 'message', 'retryable'],
   properties: { code: { type: 'string', description: 'invalid_input | empty_input | unknown_tool | timeout | unavailable | rights_unavailable | tool_failed' }, message: { type: 'string' },

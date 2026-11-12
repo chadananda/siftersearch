@@ -53,6 +53,10 @@ describe('understanding tree', () => {
     const s = await run('understanding', 'q', { jev: verdict('answers') });
     expect(path(s)).toEqual(['anchor', 'gather', 'widen', 'rank', '$absence']); expect(s.how).toContain('does not hold this');
   });
+  it('live (executor): nothing found → the research path answers (fellThrough), never the nearest-passages absence (Chad 11-11 "he says he does not have it")', async () => {
+    const s = await run('understanding', 'q', { jev: verdict('answers'), extra: { executor: true } });
+    expect(path(s).at(-1)).toBe('$absence'); expect(s.fellThrough).toBe(true); expect(s.out).toBeUndefined();
+  });
   it('error: every tier down → $fallback → (agent fails) $unavailable, never "not in the library"', async () => {
     const s = await run('understanding', 'q', { tools: { fused_search: boom, hype_search: boom, originals_search: boom }, agentRun: async () => null });
     expect(path(s)).toEqual(['anchor', 'gather', '$fallback', '$unavailable']); expect(s.how).toContain("couldn't search"); expect(s.how).not.toContain('does not hold');

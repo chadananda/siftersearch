@@ -444,6 +444,37 @@ E['judge.passages'] = { kind: 'decision', cls: 'jev', edges: ['answers', 'mentio
     return edge;
   } };
 
+// a sūra NAME in the message is a candidate, not an identity (11-11 Kawthar: "tafsir-i-surata'l-Kawthar" became Qur'án 108, not the Báb's Tafsír). When the
+// reference came from a name, the library's works for the whole message are put to Jev beside it (ONE typed choice, book-pick.js); a work he is SURE of becomes
+// named_work (→ its opening, fetch.opening); none / hesitant / no answer → the sura as before. A numbered reference ("Sura 108") never asks.
+const fetchReference = E['fetch.reference'];
+E['fetch.reference'] = { ...fetchReference, reads: [...fetchReference.reads, 'named_work'], writes: [...fetchReference.writes, 'named_work'],
+  async run(s, p = {}) {
+    const u = U(s), ref = u.scripture_reference || parseScriptureRef(text(s, u, p.query));
+    if (!ref?.byName || Number.isFinite(Number(u.named_work))) return fetchReference.run(s, p);
+    const log = s.direction?.decisions ?? s.ctx?.decisions;
+    try {
+      const [{ bookCandidates }, { groupCopies, pickBook }, { MIN_CONFIDENCE }] = await Promise.all([import('../book-finder.js'), import('../book-pick.js'), import('../../scope-extract.js')]);
+      const named = typeof u.named_work === 'string' && u.named_work.trim() ? [u.named_work.trim()] : [];
+      const found = await (s.ctx?.deps?.bookCandidates || bookCandidates)(u.current_user_question, { also: named });
+      const cands = groupCopies(found?.cands || []);
+      if (cands.length) {
+        const pick = await (s.judges?.book || pickBook)(s.messages || [], cands, { profile: s.profile ?? s.ctx?.profile ?? {} }).catch(() => null);
+        const hit = pick?.choice && !['none', 'new'].includes(pick.choice) && (pick.confidence ?? 0) >= MIN_CONFIDENCE ? cands.find((c) => c.key === pick.choice) : null;
+        log?.record?.('reference:name-or-work', { by: 'jev', saw: { sura_name: ref.label, candidates: cands.map((c) => `${c.key} ${c.label}`) }, options: [...cands.map((c) => c.key), 'none'],
+          chosen: hit ? hit.key : 'none', reason: hit ? 'Jev picked a library work over the sura name' : !pick ? 'no answer: the sura stands' : 'none / hesitant: the sura stands' });
+        const id = hit ? (hit.kind === 'section' ? hit.sec.doc_id : hit.doc.id) : null;
+        if (id != null) { u.named_work = id; const e = finish(s, p, 'none', { read: { named_work: id } }); u.missing.pop(); u.found_outcome[s.node ?? p.id ?? '?'] = 'skipped'; return e; }   // → fetch.opening
+      }
+    } catch { /* the name stands as the sura, as before */ }
+    return fetchReference.run(s, p);
+  } };
+const fetchWork = E['fetch.work'];   // close titles are spelling candidates: never 'one' alone
+E['fetch.work'] = { ...fetchWork, async run(s, p = {}) {
+  const e = await fetchWork.run(s, p), u = U(s), got = u.found_records || [];
+  if (e === 'one' && got.length && got.every((x) => x.match === 'close')) { u.found_outcome[s.node ?? p.id ?? '?'] = 'several'; return 'several'; }
+  return e;
+} };
 E['judge.prayer'] = { kind: 'decision', cls: 'jev', edges: ['picked', 'none', 'unjudged'], scope: 'strategy', params: ['stage'], reads: ['found_passages', 'occasion', 'current_user_question'], writes: ['found_passages'],
   async run(s, p = {}) {   // ONE typed Jev choice (prayer-shelf pickOccasion) among the prayers found — never a judge per prayer; the chosen goes first. No answer → unjudged (list untouched)
     const u = U(s), found = u.found_passages.slice(0, 8).map((x, i) => ({ key: `found:${i}`, text: x.opening || String(x.text || '').replace(/\s+/g, ' ').trim().slice(0, 220),
@@ -699,6 +730,13 @@ E['end.absence'] = { kind: 'tool', cls: 'code', edges: ['done'], scope: 'strateg
   async run(s) {   // the not-found sub-tree (E2): the ONLY place the scope widens (once, stated); the nearest real passage, labelled; then the ABSENCE shape
     if (s.stopAtShape) return 'done';   // a sub-run that stops at evidence leaves the not-found end to its caller
     const u = U(s), was = u.religions_specified;
+    // a plan that found NOTHING is not an absence yet: the turn's research path (every tool, the whole conversation) answers first, and states the
+    // absence itself if it too finds nothing (11-12 Chad: "no matter what I ask, he says he does not have it… then raises irrelevant stuff")
+    if (s.executor && !u.found_passages.length) {
+      s.fellThrough = true; s.note = { read: { missing: u.missing.slice(-3) }, params: {}, count: 0, scope_excluded: 0, fell_through: 'research' };
+      s.ctx?.decisions?.record?.('absence:research', { by: 'code', saw: { path: u.path.slice(-4), missing: u.missing.slice(-3) }, chosen: 'research path', reason: 'the plan found nothing; research answers before any absence' });
+      return 'done';
+    }
     if (was !== 'all' || FLOOR[u.authority_floor]) { u.widened = { from: was, floor: u.authority_floor, why: 'nothing in scope' }; u.religions_specified = 'all'; u.authority_floor = 'any'; }
     if (!u.found_passages.length) {
       try { const r = await call(s, 'fused_search', { query: text(s, u, '{{topic}}'), limit: 3 }); merge(u, 'found_passages', (r?.passages || []).slice(0, 3)); } catch { /* the reply still states the absence */ }
@@ -768,7 +806,7 @@ export const ELEMENT_META = {
   'hand.job': m('Queues a long task as a job with a frozen copy of the scope and offers the result by email.', 'kind', 'a queued job', ['deep_report']),
   'deliver.email': m('Sends the found material as a letter.', 'found units, address', 'a sent letter', []),
   'fallback.agent': m('The research agent, last resort; every use is logged as a defect of the tree.', 'question', 'a finished reply', []),
-  'end.absence': m('The shared not-found end: widens the scope once (and says so), gives the nearest real passage, states the absence.', 'missing, found units', 'the absence reply', ['fused_search']),
+  'end.absence': m('The shared not-found end. A plan that found nothing hands the turn to the research path (every tool, the whole conversation) first; with passages that did not fit it widens the scope once (and says so), gives the nearest real passage, states the absence.', 'missing, found units', 'the absence reply', ['fused_search']),
   'end.fallback': m('The shared fallback end: the research agent after a tier errored.', 'question', 'a finished reply', []),
   'end.unavailable': m('The shared unavailable end: says the library could not be searched just now, never “not in the library”.', 'none', 'the unavailable reply', []),
 };
