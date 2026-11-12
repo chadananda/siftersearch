@@ -496,7 +496,8 @@ const ENTRIES = [
     description: 'Read the opening paragraphs of a work (its document id, or its title as named): the first n prose paragraphs in order, headings and notes left out.',
     input: { type: 'object', additionalProperties: false, required: [], properties: { document_id: { type: 'integer' }, work: str('The work\'s title as the reader named it, when its id is not known', 300),
       n: { type: 'integer', minimum: 1, maximum: 6, default: 3 },
-      linked: { type: 'boolean', default: false, description: 'Of the copies under that title, read the first whose opening is linked to its original or translations' } } },
+      linked: { type: 'boolean', default: false, description: 'Of the copies under that title, read the first whose opening is linked to its original or translations' },
+      said: str('The reader\'s own words, when they qualify the title (a part or language: "the Arabic Hidden Words")', 600) } },
     output: { type: 'object', required: ['passages', 'copyright'], properties: { passages: { type: 'array', items: PASSAGE },
       copyright: { type: 'boolean', description: 'true = a copyrighted book: its opening is not given' } } },
     example: { input: { document_id: 12, n: 2 }, output: { passages: [{ ...P_EX, paragraph_index: 1 }, { ...P_EX, paragraph_index: 2 }], copyright: false } },
@@ -506,7 +507,7 @@ const ENTRIES = [
       // linked: a reading of original beside translation wants the copy whose paragraphs are aligned (11-12: "Tablet of Aḥmad" opened a
       // bahai-library page with no links while the Arabic, linked to the Prayers' English, sat under the same title)
       const n = Math.min(6, Math.max(1, Number(a.n) || 3));
-      const titled = a.document_id != null || !a.work ? null : a.linked ? await linkedCopy(a.work, n, ctx)
+      const titled = a.document_id != null || !a.work ? null : a.linked ? await linkedCopy(a.work, n, ctx, a.said)
         : (await (await dep(ctx, 'findTitled', 'works'))([a.work], { byline: true }))?.doc ?? null;
       if (a.document_id == null && !titled) { if (a.work) return { passages: [], copyright: false }; throw new ToolError('invalid_input', 'give document_id or work', false); }
       const docId = Number(a.document_id ?? titled.id);
@@ -632,16 +633,22 @@ const ENTRIES = [
 ];
 
 // ── PROCESS tools: not the contract — Jev's own, or a model/provider call. Never on /api/v1/tools; respond@3 and the researcher still call them by name ──
-// the first of a title's copies (best ranked first, top 5) whose opening paragraphs carry an original or translation link; else the best copy
-async function linkedCopy(work, n, ctx) {
+// a title's copies (best ranked first, top 5): one whose parenthetical qualifier names something the reader never said ("The Hidden Words
+// (Persian)" for "the first three Arabic Hidden Words", "Tablet of Aḥmad (Persian)" for the Arabic one — 11-12) comes after the rest;
+// then the first whose opening is linked to its original or translations; else the best ranked
+const words = (t) => String(t || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+export const unsaidQualifier = (title, said) => { const have = new Set(words(said));
+  return [...String(title || '').matchAll(/\(([^)]*)\)/g)].some((m) => words(m[1]).some((w) => w.length > 2 && !have.has(w))); };
+async function linkedCopy(work, n, ctx, said = '') {
   const { sorted } = await (await dep(ctx, 'rankTitled', 'works'))([work], { byline: true });
   const read = await dep(ctx, 'getParagraphs', 'docs'), links = await dep(ctx, 'resolveLinks', 'plinks');
-  for (const d of sorted.slice(0, 5)) {
+  const top = [];
+  for (const [i, d] of sorted.slice(0, 5).entries()) {
     const ids = (await read(d.id, { proseOnly: true, limit: n + 6, offset: 0 }).catch(() => [])).map((r) => r.id);
     const l = ids.length ? await links(ids, { quotedBy: false }).catch(() => new Map()) : new Map();
-    if ([...l.values()].some((x) => x?.original || x?.translations?.length)) return d;
+    top.push({ d, i, off: unsaidQualifier(d.title, `${work} ${said} ${d.author ?? ''}`) ? 1 : 0, linked: [...l.values()].some((x) => x?.original || x?.translations?.length) ? 0 : 1 });
   }
-  return sorted[0] ?? null;
+  return top.sort((a, b) => a.off - b.off || a.linked - b.linked || a.i - b.i)[0]?.d ?? null;
 }
 
 const PROCESS_ENTRIES = [

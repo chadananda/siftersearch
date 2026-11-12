@@ -231,7 +231,7 @@ const E = {
       const u = U(s), w = namedWork(u);
       if (!(w?.documentId || w?.work) || (p.untopiced && u.work_place !== 'opening' && String(flat(u.topic) ?? '').trim())) { const e = finish(s, p, 'none'); u.missing.pop(); u.found_outcome[s.node ?? '?'] = 'skipped'; return e; }
       try {
-        const which = w.documentId ? { document_id: w.documentId } : { work: w.work, ...(p.linked ? { linked: true } : {}) };   // a title is resolved by the tool, as every search's work filter is; linked = its aligned copy
+        const which = w.documentId ? { document_id: w.documentId } : { work: w.work, ...(p.linked ? { linked: true, said: String(u.current_user_question ?? '').slice(0, 600) } : {}) };   // a title is resolved by the tool, as every search's work filter is; linked = its aligned copy
         const items = ((await call(s, 'opening_lookup', { ...which, n: p.n ?? 3 }))?.passages || []).map((x, i) => ({ ...x, anchor: i === 0 }));
         merge(u, 'found_passages', items); return finish(s, p, classify(items.length, ['one', 'several']), { count: items.length, read: { named_work: w.documentId ?? w.work } });
       } catch (err) { return finish(s, p, 'error', { error: err?.message || String(err) }); }

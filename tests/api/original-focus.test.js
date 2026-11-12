@@ -49,7 +49,7 @@ describe('original tree: a named work with no topic → its opening', () => {
   it('a work named by title (Jev’s words) with work_place opening → the opening by that title, even with a topic', async () => {
     const opening_lookup = vi.fn(async () => ({ passages: [P(1), P(2)] }));
     const s = await run({ named_work: 'Surah of Kawthar', topic: 'the first couple paragraphs', work_place: 'opening' }, { opening_lookup });
-    expect(opening_lookup).toHaveBeenCalledWith({ work: 'Surah of Kawthar', n: 3, linked: true }, expect.anything());
+    expect(opening_lookup).toHaveBeenCalledWith({ work: 'Surah of Kawthar', n: 3, linked: true, said: expect.any(String) }, expect.anything());
     expect(s.trace.map((x) => x.node)).not.toContain('o1w');
   });
   it('with a topic the work is searched (o1w); a topic not found there is an absence, never the opening served instead', async () => {
@@ -88,5 +88,18 @@ describe('opening_lookup', () => {
     expect(r.passages.map((p) => p.document_id)).toEqual([924540]);
     const none = await tools.run('opening_lookup', { work: 'Tablet of Aḥmad', n: 1, linked: true }, { deps: { ...deps, getParagraphs, rankTitled, resolveLinks: async () => new Map(), getLinkMeta: async () => new Map() } });
     expect(none.passages.map((p) => p.document_id)).toEqual([1616]);
+  });
+  it('linked: a copy whose parenthetical names what the reader never said comes after the rest (11-12 "Tablet of Aḥmad (Persian)", "The Hidden Words (Persian)")', async () => {
+    const rankTitled = async () => ({ sorted: [{ id: 1616, title: 'Tablet of Ahmad (Lawh-i-Ahmad)' }, { id: 925939, title: 'Tablet of Aḥmad (Persian)' }, { id: 924540, title: 'Tablet of Aḥmad' }] });
+    const getParagraphs = vi.fn(async (d) => [{ id: d * 10, paragraph_index: 0, text: `t${d}` }]);
+    const resolveLinks = async (ids) => new Map(ids.map((i) => [i, i === 16160 ? {} : { translations: [{ id: 1 }] }]));
+    const r = await tools.run('opening_lookup', { work: 'Tablet of Ahmad', n: 1, linked: true }, { deps: { ...deps, getParagraphs, rankTitled, resolveLinks, getLinkMeta: async () => new Map() } });
+    expect(r.passages.map((p) => p.document_id)).toEqual([924540]);
+    const hw = async () => ({ sorted: [{ id: 2, title: 'The Hidden Words (Persian)' }, { id: 3, title: 'The Hidden Words of Bahá’u’lláh', author: 'Bahá’u’lláh' }] });
+    const linkedPersian = async (ids) => new Map(ids.map((i) => [i, i === 20 ? { translations: [{ id: 1 }] } : {}]));
+    const a = await tools.run('opening_lookup', { work: 'Hidden Words', n: 1, linked: true, said: 'the first three Arabic Hidden Words' }, { deps: { ...deps, getParagraphs, rankTitled: hw, resolveLinks: linkedPersian, getLinkMeta: async () => new Map() } });
+    expect(a.passages.map((p) => p.document_id)).toEqual([3]);
+    const p = await tools.run('opening_lookup', { work: 'Hidden Words', n: 1, linked: true, said: 'the Persian Hidden Words' }, { deps: { ...deps, getParagraphs, rankTitled: hw, resolveLinks: linkedPersian, getLinkMeta: async () => new Map() } });
+    expect(p.passages.map((x) => x.document_id)).toEqual([2]);
   });
 });
