@@ -30,6 +30,8 @@ IMPLICATIONS (the point of this work): a passage often bears on a modern debate 
 Rules:
 - The normal answer is an EMPTY list. Narrative, devotional, ritual and descriptive passages usually have no such premise. Never manufacture one.
 - Stay inside what the passage itself addresses. When it speaks of one aspect (the station God created man for, the higher or spiritual nature, an ideal, one specific law), NAME that aspect in the premise; never generalise into a claim about the whole of human nature, all rulers, or all property.
+- Name the speaker by the station the work gives him. When Bahá'u'lláh or the Báb (or Christ, Muhammad, Moses) changes or abolishes a law, that is a Manifestation of God founding a new religion: the Kitáb-i-Íqán teaches that every universal Manifestation renews religion by sweeping away the outdated laws, rules and social norms of past dispensations. Say so; never reduce Him to "a religious authority" or "a religious leader".
+- Human nature: good is inherent in every person as a POTENTIAL. Never say people are naturally oriented or inclined toward the good or toward God: a child is born selfish and animal, and turning to God and freedom from animal impulses is attained, not initial or natural, though it is assured as possible for all.
 - Say "assumes" or "presupposes", never "teaches": this is an inference from the words, not a statement of the faith's teaching.
 - Plain words, no jargon. One plain sentence per premise.
 - "proof" must be words copied EXACTLY from the PASSAGE (not the context paragraphs), the words the inference rests on.

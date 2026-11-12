@@ -115,6 +115,8 @@ describe('parsePremises + policy', () => {
     expect(SYSTEM).toMatch(/unborn/);
     expect(SYSTEM).toMatch(/lesser right/);
     expect(SYSTEM).toMatch(/"implies"/);
+    expect(SYSTEM).toMatch(/Manifestation of God founding a new religion/);   // Chad 11-12: never "a religious authority"
+    expect(SYSTEM).toMatch(/POTENTIAL/); expect(SYSTEM).toMatch(/never say people are naturally oriented/i);   // Chad 11-12
   });
   it("proof check tolerates straight quotes against the text's curly ones, still rejects absent words", () => {
     const text = "Bahá\u2019u\u2019lláh said \u201Cjustice\u201D \u2014 the best beloved";
