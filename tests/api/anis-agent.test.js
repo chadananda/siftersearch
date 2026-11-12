@@ -51,6 +51,9 @@ describe('renderRefs', () => {
   it('a long title drops its trailing parenthetical rather than being cut inside it', () => {
     const found = new Map([['P1', { document_id: 9, source_url: 'u1', title: "The Baha'i World: An International Record, Volume XVI (Baha'i Era 130–133, 1973–1976)" }]]);
     expect(renderRefs('x [[P1]]', { found, works: new Map() })).toBe("x ([The Baha'i World: An International Record, Volume XVI](u1))");
+    const works = new Map([['B1', { title: 'Selections from the Writings of the Báb', url: 'ub' }]]);
+    expect(renderRefs('start with *Selections from the Writings of the Báb* [[B1]], then', { found, works })).toBe('start with [*Selections from the Writings of the Báb*](ub), then');
+    expect(renderRefs('see Selections from the Writings of the Báb ([[B1]]).', { found, works })).toBe('see [*Selections from the Writings of the Báb*](ub).');
   });
   it('the same citation twice across a full stop is given once', () => {
     const found = new Map([['P1', { document_id: 9, source_url: 'u1', title: 'Writings' }]]);

@@ -75,6 +75,9 @@ export function renderRefs(text, { found, works }) {
   let t = String(text || '');
   // "[[P1]] [[P2]]" / "[[P1]], [[P2]]" → "[[P1, P2]]": one citation, never "( (a), (b))" (11-12 prayer across two paragraphs)
   for (let prev = null; prev !== t;) { prev = t; t = t.replace(new RegExp(`${G}\\s*[,;]?\\s*${G}`, 'g'), '[[$1, $2]]'); }
+  // "*Selections…* [[B1]]": the title written out AND its ref → the ref alone (one linked title, never twice; 11-12 Arabic student)
+  const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  for (const [r, w] of works || []) if (w?.title) t = t.replace(new RegExp(`(\\*{1,2}|_)?${esc(w.title)}\\1?\\s*\\(?\\s*\\[\\[?${r}\\]\\]?\\s*\\)?(?!\\()`, 'g'), `[[${r}]]`);
   return t
     .replace(/\(\s*(\[\[?[PW]\d+(?:\s*[,;]\s*[PW]\d+)*\]\]?)\s*\)/g, '$1')   // "([[P1]])" → one pair of parens
     .replace(/\*{0,2}\[\[?(B\d+)\]\]?\*{0,2}(?!\()/g, (m, r) => { const w = works.get(r); return w ? (w.url ? `[*${w.title}*](${w.url})` : `*${w.title}*`) : ''; })
