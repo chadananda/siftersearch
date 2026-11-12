@@ -79,6 +79,15 @@ describe('strategyImpl', () => {
     await strategyImpl({ deps: { quoteSearch: quote } }).findPassage({ query: 'q', religions: ['Islam'], author: 'Muhammad', work: 'Quran' });
     expect(quote.mock.calls[0][0]).toMatchObject({ query: 'q', religions: ['Islam'], authors: ['Muhammad'], works: ['Quran'] });
   });
+  it('find_passage puts the words\' own source ahead of books that quote them (Esslemont quoting the Short Obligatory Prayer)', async () => {
+    const t = 'I bear witness, O my God, that Thou hast created me to know Thee and to worship Thee.';
+    const P = (id, title, author, book_author, authority) => ({ id, document_id: id, paragraph_index: 1, text: t, title, author, book_author, authority, religion: "Baha'i" });
+    const quote = async () => ({ mode_used: 'literal', total: 3, passages: [P(1, 'Reality, Soul, and the Worlds of God', '7321', '7321', 'scholarship'),
+      P(2, 'Bahá’u’lláh and the New Era', 'Bahá’u’lláh', 'John E. Esslemont', 'scholarship'), P(3, 'Prayers and Meditations', 'Bahá’u’lláh', 'Bahá’u’lláh', 'scripture')] });
+    const r = await strategyImpl({ deps: { quoteSearch: quote } }).findPassage({ query: 'I bear witness, O my God, that Thou hast created me to know Thee and to worship Thee' });
+    expect(r.passages[0].title).toBe('Prayers and Meditations');
+    expect(r.passages).toHaveLength(3);
+  });
   it('extract_from_work resolves the title then asks the extractor with the selection as the request', async () => {
     const ex = vi.fn(async () => ({ result: { total: 0, passages: [] } }));
     await strategyImpl({ deps: { findTitled: async () => ({ doc: { id: 5, title: 'Tablets' }, others: [] }), extractFromWork: ex } }).extractFromWork({ work: 'Tablets', select: 'the prayers' });

@@ -11,6 +11,18 @@ export const asPassage = (p) => ({ ...p, source_url: p.source_url || p.url || p.
 /** Star of the West volumes began in March of 1909 + volume: a year → its volume (1910 = vol 1). Pure. */
 export const sowVolumeOf = (year) => Number(year) - 1909;
 
+const TIER = { scripture: 0, interpretation: 1 };
+const slug = (t) => { t = String(t || '').trim(); return !!t && !/\s/.test(t) && /[-_]/.test(t); };
+const fold = (n) => String(n || '').normalize('NFD').replace(/[\u0300-\u036f’'`]/g, '').toLowerCase().trim();
+/** Passages holding the same words → the words' own source first (Chad's standing rule): authority tier (quote_search's
+ *  scripture / interpretation / rest), then the writer's own book over a book quoting him, then a published title over a
+ *  slug-titled copy, then OceanLibrary's copy; search order breaks ties. Pure. */
+export function sourceFirst(ps) {
+  const rank = (p) => [TIER[p.authority] ?? 2, p.book_author && fold(p.book_author) !== fold(p.author) ? 1 : 0, slug(p.title || p.work) ? 1 : 0,
+    /oceanlibrary\.com/.test(String(p.source_url || p.url || '')) ? 0 : 1];
+  return ps.map((p, i) => ({ p, i, r: rank(p) })).sort((a, b) => { for (let k = 0; k < 4; k++) if (a.r[k] !== b.r[k]) return a.r[k] - b.r[k]; return a.i - b.i; }).map((x) => x.p);
+}
+
 export function strategyImpl({ search, fastSearch, deps = {} } = {}) {
   const ctx = { search, fastSearch };
   const quote = deps.quoteSearch || (async (a) => (await import('./tools.js')).run('quote_search', a, ctx));
@@ -62,8 +74,11 @@ export function strategyImpl({ search, fastSearch, deps = {} } = {}) {
         per_query: qs.map((q) => ({ query: q, exact: per.find((x) => x.q === q && x.mode === 'literal')?.r?.total ?? 0, meaning: per.find((x) => x.q === q && x.mode === 'meaning')?.r?.passages?.length ?? 0 })) };
     },
     /** quote_search: the passage that holds given words, filtered by religion / author / work. → quote_search's result */
+    // exact words → the SOURCE first (sourceFirst). 11-12 replay: search order put scholarship first and Prayers and
+    // Meditations 27th, so the agent cited Esslemont for the Short Obligatory Prayer. 30 hits, ranked.
     async findPassage({ query, religions = [], author = null, work = null }) {
-      return quote({ query, religions: religions || [], authors: author ? [author] : [], works: work ? [work] : [], limit: 8 });
+      const r = await quote({ query, religions: religions || [], authors: author ? [author] : [], works: work ? [work] : [], limit: 30 });
+      return r?.mode_used === 'literal' && r.passages?.length ? { ...r, passages: sourceFirst(r.passages) } : r;
     },
     /** A selection made from one whole work (Haiku picks per chunk). → work-extract's { result, work } | null */
     async extractFromWork({ work, select }) {
