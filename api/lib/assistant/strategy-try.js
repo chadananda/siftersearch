@@ -29,7 +29,7 @@ export function optionsWith(row, base = strategyOptions()) {
  * @param {string} [a.caller]    who pays (an improve-* caller)
  * @param {object} [a.deps]      { base: turn deps (default turn.js defaultDeps), choose: chooseStrategy, turn: anisTurn }
  */
-export async function tryStrategy({ question, history = [], pin = null, caller = REPLAY_CALLER, deps = {} }) {
+export async function tryStrategy({ question, history = [], pin = null, caller = REPLAY_CALLER, engine = undefined, deps = {} }) {
   if (!question) throw new Error('question is required');
   if (!String(caller).startsWith('improve-')) throw new Error(`a dry run bills an improve-* caller, not ${caller}`);
   const choose = deps.choose || chooseStrategy, turn = deps.turn || anisTurn;
@@ -49,7 +49,7 @@ export async function tryStrategy({ question, history = [], pin = null, caller =
   const meter = [];
   const t0 = Date.now();
   const r = await withAIContext({ billTo: caller, meter, strategyPin: pin, replay: true, trace: { route: `replay:${pin ? `${pin.row.id}@${pin.row.version}` : 'current'}` } },
-    () => turn({ messages: [...history, { role: 'user', content: question }], channel: 'widget-chat', deps: turnDeps }));
+    () => turn({ messages: [...history, { role: 'user', content: question }], channel: 'widget-chat', deps: turnDeps, ...(engine ? { engine } : {}) }));
   const usd = meter.reduce((n, c) => n + (c.usd || 0), 0);
   return { reply: r?.reply ?? '', status: r?.status ?? null, path: r?.path ?? null, steps: r?.path?.steps ?? r?.steps ?? [], ms: Date.now() - t0,
     usd: Math.round(usd * 1e6) / 1e6, jev_pick: jevPick, conversationId: r?.conversationId ?? null };

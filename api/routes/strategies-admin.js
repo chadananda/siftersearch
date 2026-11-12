@@ -77,7 +77,7 @@ export default async function strategiesAdminRoutes(fastify, { deps = {} } = {})
       return { jev_pick: r?.strategy?.choice ?? null, confidence: r?.strategy?.confidence ?? null };
     }
     const { tryStrategy } = deps.tryStrategy ? { tryStrategy: deps.tryStrategy } : await import('../lib/assistant/strategy-try.js');
-    return tryStrategy({ question: b.question, history: Array.isArray(b.history) ? b.history : [], pin, caller });
+    return tryStrategy({ question: b.question, history: Array.isArray(b.history) ? b.history : [], pin, caller, ...(['agent', 'pipeline'].includes(b.engine) ? { engine: b.engine } : {}) });
   });
 
   fastify.post('/anis/promote', { preHandler: requireInternal }, async (request, reply) => {
