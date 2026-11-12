@@ -40,6 +40,7 @@
     if (e.target.closest('input,textarea,select')) { if (e.key === 'Escape') e.target.blur(); return; }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const it = shown[cur]; const k = e.key;
+    if (/^[1-5]$/.test(k) && it && !e.target.closest?.('article')) { document.querySelector(`[data-id="${it.id}"] .scorer button[data-n="${k}"]`)?.click(); return; }
     if (k === '/') { e.preventDefault(); searchEl?.focus(); }
     else if (k === 'j') { cur = Math.min(shown.length - 1, cur + 1); cards[shown[cur]?.id]?.scrollIntoView?.({ block: 'center', behavior: 'smooth' }); }
     else if (k === 'k') { cur = Math.max(0, cur - 1); }

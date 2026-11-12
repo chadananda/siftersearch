@@ -3,6 +3,8 @@
   import { untrack } from 'svelte';
   import { api } from './api.js';
   import ItemCard from './ItemCard.svelte';
+  import ScoreBar from './ScoreBar.svelte';
+  import { keyScore } from './util.js';
   let { p, setp, onchat = () => {}, bump = () => {} } = $props();
   let d = $state(null), stated = $state([]), thesis = $state(''), error = $state(''), msg = $state(''), proposals = $state([]), usdSpent = $state(null), busy = $state(''), adding = $state(false), nu = $state({ question: '', premise: '', implies: '', proof: '', concept: '' }), force = $state(false), pid = $state(p.para || '');
   async function load() {
@@ -38,8 +40,9 @@
     <section class="ed">
       <h2>Stated questions</h2>
       {#each stated as s, i (i)}
-        <div class="st">
-          <input placeholder="question" bind:value={s.q} /><textarea rows="2" placeholder="answer" bind:value={s.a}></textarea>
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions -->
+        <div class="st" tabindex="0" onkeydown={keyScore}>
+          <input placeholder="question" bind:value={s.q} />{#if s.q.trim()}<div><ScoreBar paraId={+p.para} question={s.q} kind="stated" score={s.myScore ?? null} /></div>{/if}<textarea rows="2" placeholder="answer" bind:value={s.a}></textarea>
           <div class="row"><label><input type="checkbox" bind:checked={s.deep} /> deep</label><label><input type="checkbox" bind:checked={s.seeker} /> seeker</label>
             <button onclick={() => move(i, -1)} aria-label="Move up">↑</button><button onclick={() => move(i, 1)} aria-label="Move down">↓</button><button class="del" onclick={() => (stated = stated.filter((_, j) => j !== i))}>delete</button></div>
         </div>

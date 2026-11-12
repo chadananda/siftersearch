@@ -63,7 +63,38 @@ const edits = [];
 const log = (action, before, after, claim_id) => edits.unshift({ id: edits.length + 1, claim_id, action, before, after, note: '', editor: 'fixture', at: new Date().toISOString() });
 const words = (s) => s.toLowerCase().split(/\W+/).filter((w) => w.length > 4);
 // Returns the JSON the real endpoint would. m = method, path without /api/admin, p = query params, b = body
+const scores = new Map(), fold = (q) => String(q ?? '').toLowerCase().replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim(), skey = (pa, q) => pa + '|' + fold(q);
+const scoreRows = () => [...scores.values()].sort((a, c) => c.updatedAt.localeCompare(a.updatedAt)).map((s) => ({ ...s, doc: { title: 'Fixture book', author: 'Fixture author' }, link: '#' }));
+// myScore on every question-bearing object (items carry paraId + question; editor stated rows take the paragraph from the path)
+const annotate = (o, para) => {
+  if (Array.isArray(o)) o.forEach((x) => annotate(x, para));
+  else if (o && typeof o === 'object') {
+    if (typeof o.question === 'string' && o.paraId != null) o.myScore = scores.get(skey(o.paraId, o.question))?.score ?? null;
+    else if (typeof o.q === 'string' && o.paraId != null) o.myScore = scores.get(skey(o.paraId, o.q))?.score ?? null;
+    else if (typeof o.q === 'string' && para != null && 'a' in o) o.myScore = scores.get(skey(para, o.q))?.score ?? null;
+    for (const v of Object.values(o)) if (v && typeof v === 'object') annotate(v, para);
+  }
+  return o;
+};
 export function fixtureApi(m, path, p = {}, b = {}) {
+  let r;
+  if (path === '/implied/score') {
+    if (m === 'PUT') { const e = { id: scores.size + 1, paraId: b.paraId, question: b.question, kind: b.kind || 'stated', impliedId: b.impliedId ?? null, score: b.score, tags: b.tags || [], note: b.note || null, rater: 'fixture', updatedAt: new Date().toISOString() }; scores.set(skey(b.paraId, b.question), e); return { score: e }; }
+    return { removed: scores.delete(skey(p.paraId, p.question)) ? 1 : 0 };
+  }
+  if (path === '/implied/scores/stats') {
+    const all = [...scores.values()], tags = {}; all.forEach((s) => s.tags.forEach((t) => (tags[t] = (tags[t] || 0) + 1)));
+    return { total: all.length, byScore: Object.fromEntries([1, 2, 3, 4, 5].map((n) => [n, all.filter((s) => s.score === n).length])), byKind: {}, topTags: Object.entries(tags).map(([tag, n]) => ({ tag, n })).sort((x, y) => y.n - x.n), worst: scoreRows().filter((s) => s.score <= 2).slice(0, 10) };
+  }
+  if (path === '/implied/scores') return { scores: scoreRows().filter((s) => !p.max || s.score <= +p.max), next: null };
+  if (path === '/implied/search' || path === '/implied' || path === '/implied/graph' || path.startsWith('/hype/paragraph/') || /^\/implied\/[^/]+$/.test(path)) {
+    const out = base(m, path, p, b);
+    if (path === '/implied/search' && p.stated) out.hits.push({ score: 0.51, kind: 'stated', stated: { q: 'What concept does this paragraph explain about taxation?', paraId: 1001, docId: 1, doc: { title: 'Fixture book', author: 'Fixture author' }, link: '#' } });
+    return annotate(out, (path.match(/^\/hype\/paragraph\/(\d+)$/) || [])[1]);
+  }
+  return base(m, path, p, b);
+}
+function base(m, path, p = {}, b = {}) {
   let r;
   if (path === '/implied/overview') return overview();
   if (path === '/implied/graph') return graph(p);

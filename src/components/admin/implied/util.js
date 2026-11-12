@@ -28,3 +28,8 @@ export function countUp(node, opts) {
   return { update: run, destroy: () => cancelAnimationFrame(raf) };
 }
 export const asOfText = (iso) => iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+// Keys 1-5 on a focused row score its question: click the matching button of the .scorer inside the row (onkeydown={keyScore}).
+export function keyScore(e) {
+  if (!/^[1-5]$/.test(e.key) || e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input,textarea,select')) return;
+  const b = e.currentTarget.querySelector(`.scorer button[data-n="${e.key}"]`); if (b) { e.preventDefault(); b.click(); }
+}

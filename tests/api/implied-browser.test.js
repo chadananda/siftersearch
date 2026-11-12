@@ -27,6 +27,7 @@ beforeEach(() => {
     CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, external_para_id TEXT, paragraph_index INTEGER, text TEXT, original_text TEXT, hyp_questions TEXT, hyp_thesis TEXT, hyp_model TEXT, enhanced_synced INTEGER, updated_at TEXT, deleted_at TEXT);
     CREATE TABLE premise_claims (id INTEGER PRIMARY KEY AUTOINCREMENT, doc_id INTEGER NOT NULL, para_id INTEGER NOT NULL, external_para_id TEXT, premise TEXT NOT NULL, implies TEXT, questions_json TEXT NOT NULL DEFAULT '[]', proof TEXT, concept TEXT, basis TEXT, verdict TEXT, run_file TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       question TEXT, status TEXT DEFAULT 'unreviewed', source TEXT, model TEXT, k INTEGER, updated_at TEXT, editor TEXT, note TEXT);
+    CREATE TABLE question_scores (id INTEGER PRIMARY KEY AUTOINCREMENT, para_id INTEGER NOT NULL, question TEXT NOT NULL, q_fold TEXT NOT NULL, kind TEXT NOT NULL DEFAULT 'stated', implied_id INTEGER, score INTEGER NOT NULL, tags TEXT, note TEXT, rater TEXT NOT NULL DEFAULT '', created_at TEXT, updated_at TEXT, UNIQUE(para_id, q_fold, rater));
     CREATE TABLE implied_edits (id INTEGER PRIMARY KEY AUTOINCREMENT, claim_id INTEGER, para_id INTEGER, action TEXT NOT NULL, before_json TEXT, after_json TEXT, note TEXT, editor TEXT, at TEXT);`);
   raw.prepare(`INSERT INTO docs VALUES (7, 'Some Questioned Answers', 'Abdu''l-Baha', 'Baha''i', 'Core', 'saq')`).run();
   raw.prepare(`INSERT INTO content (id, doc_id, paragraph_index, text, hyp_questions) VALUES (1, 7, 3, ?, ?)`).run(TEXT, JSON.stringify(['What is the soul?']));

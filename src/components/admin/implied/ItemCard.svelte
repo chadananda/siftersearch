@@ -1,6 +1,7 @@
 <script>
   // One implied first-principle: QUESTION headline, premise ("answered by implication"), implies ("challenges"), passage with proof highlighted. Inline edit + action row.
-  import { highlight, colorOf, statusTone, tradName } from './util.js';
+  import { highlight, colorOf, statusTone, tradName, keyScore } from './util.js';
+  import ScoreBar from './ScoreBar.svelte';
   let { item, score = null, big = false, readonly = false, focused = false, selected = false, onact = () => {}, onsave = async () => {}, showSnippet = true } = $props();
   let editing = $state(false), draft = $state({}), err = $state(''), saving = $state(false);
   export function edit() { startEdit(); }
@@ -9,7 +10,8 @@
   const acts = [['approve', 'Approve', 'a'], ['edit', 'Edit', 'e'], ['reject', 'Reject', 'r'], ['similar', 'Similar', 's'], ['graph', 'Graph', 'g'], ['para', 'HyPE editor', ''], ['chat', 'Ask in chat', '']];
 </script>
 
-<article class="card" class:big class:focused class:selected style={`--tc:${colorOf(item.doc?.religion)}`} data-id={item.id}>
+<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+<article tabindex="0" onkeydown={keyScore} class="card" class:big class:focused class:selected style={`--tc:${colorOf(item.doc?.religion)}`} data-id={item.id}>
   <header class="top">
     {#if !readonly}<input type="checkbox" checked={selected} onchange={() => onact('select', item)} aria-label="Select" />{/if}
     {#if item.concept}<span class="chip">{item.concept}</span>{/if}
@@ -29,6 +31,7 @@
     </div>
   {:else}
     <h3 class="q">{item.question}</h3>
+    {#if item.paraId}<div class="rate"><ScoreBar paraId={item.paraId} question={item.question} kind="implied" impliedId={item.id} score={item.myScore ?? null} /></div>{/if}
     {#if item.premise}<p class="line"><span class="k">answered by implication</span>{item.premise}</p>{/if}
     {#if item.implies}<p class="line"><span class="k">challenges</span>{item.implies}</p>{/if}
     {#if showSnippet && item.paragraph?.text}<blockquote class="quote">{@html highlight(item.paragraph.text, item.proof)}</blockquote>{/if}
@@ -56,6 +59,7 @@
   .q { font-size: 1.25rem; line-height: 1.3; font-weight: 600; color: var(--text-primary); margin: .5rem 0 .4rem; font-family: Georgia, 'Times New Roman', serif; }
   .big .q { font-size: clamp(1.8rem, 3.6vw, 3.2rem); line-height: 1.15; margin: 1rem 0; }
   .big .line, .big .quote { font-size: 1.15rem; }
+  .rate { margin: -.15rem 0 .35rem; }
   .line { color: var(--text-secondary); font-size: .9rem; margin: .15rem 0; }
   .k { display: inline-block; margin-right: .5rem; font-size: .65rem; text-transform: uppercase; letter-spacing: .08em; color: var(--tc); }
   .quote { margin: .75rem 0 .5rem; padding-left: .9rem; border-left: 2px solid var(--border-strong); color: var(--text-tertiary); font-size: .9rem; font-style: italic; line-height: 1.55; }

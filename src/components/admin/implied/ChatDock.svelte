@@ -4,7 +4,7 @@
   let { seed = null, onclose = () => {} } = $props();
   let msgs = $state([]), input = $state(''), busy = $state(false), cid = null, error = $state(''), box = $state(null), lastSeed = null;
   const ctx = (items) => items.map((i) => `Question: ${i.question}\nPremise: ${i.premise}\nImplies: ${i.implies}\nPassage (${i.doc?.title}, ${i.doc?.author}): ${i.paragraph?.text ?? i.proof}`).join('\n\n');
-  $effect(() => { if (seed && seed !== lastSeed) { lastSeed = seed; msgs = []; cid = null; send(`Here is an implied first principle I am reviewing:\n\n${ctx(seed.items)}\n\nIs this premise really implied by the passage? What does it challenge in modern thinking, and are there other passages that bear on it?`); } });
+  $effect(() => { if (seed && seed !== lastSeed) { lastSeed = seed; msgs = []; cid = null; if (seed.question) send(seed.question); else send(`Here is an implied first principle I am reviewing:\n\n${ctx(seed.items)}\n\nIs this premise really implied by the passage? What does it challenge in modern thinking, and are there other passages that bear on it?`); } });
   async function send(text) {
     if (!text.trim() || busy) return; error = ''; busy = true; input = '';
     msgs = [...msgs, { role: 'user', content: text }, { role: 'assistant', content: '' }];
@@ -21,7 +21,7 @@
   <header><b>Ask Anís</b><button onclick={onclose} aria-label="Close chat">×</button></header>
   <div class="msgs" bind:this={box}>
     {#if !msgs.length}<p class="text-muted text-sm">Use “Ask in chat” on any card or node to seed a question about it, or type below.</p>{/if}
-    {#each msgs as m, i (i)}<div class={`m ${m.role}`}>{m.role === 'user' && i === 0 && seed ? 'About the selected premise…' : m.content}{#if busy && i === msgs.length - 1 && !m.content}<span class="dots">…</span>{/if}</div>{/each}
+    {#each msgs as m, i (i)}<div class={`m ${m.role}`}>{m.role === 'user' && i === 0 && seed && !seed.question ? 'About the selected premise…' : m.content}{#if busy && i === msgs.length - 1 && !m.content}<span class="dots">…</span>{/if}</div>{/each}
     {#if error}<p class="text-error text-sm">{error}</p>{/if}
   </div>
   <form onsubmit={(e) => { e.preventDefault(); send(input); }}><input placeholder="Ask about this…" bind:value={input} disabled={busy} /><button disabled={busy}>Send</button></form>

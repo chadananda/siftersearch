@@ -264,6 +264,16 @@ export async function hypRaw(ids) {
 export const hypeCountsWindow = (fromId, toId) => queryAll(`SELECT doc_id, COUNT(*) paragraphs, SUM(CASE WHEN json_valid(hyp_questions) THEN json_array_length(hyp_questions) ELSE 0 END) questions
   FROM content WHERE id > ? AND id <= ? AND deleted_at IS NULL AND hyp_questions IS NOT NULL AND LENGTH(hyp_questions) > 2 GROUP BY doc_id`, [fromId, toId], 'implied:hype-counts');
 
+/** Stored hyp_questions in one content-id window → [{ id, doc_id, hyp_questions }] (the question-fault REPORT walks windows). */
+export const hypWindow = (fromId, toId) => queryAll(`SELECT id, doc_id, hyp_questions FROM content WHERE id > ? AND id <= ? AND deleted_at IS NULL AND hyp_questions IS NOT NULL AND LENGTH(hyp_questions) > 2`, [fromId, toId], 'implied:hyp-window');
+
+/** doc id → title for these docs. */
+export async function titleOfDocs(ids) {
+  const m = new Map();
+  for (let i = 0; i < ids.length; i += 500) for (const r of await queryAll(`SELECT id, title FROM docs WHERE id IN (${ph(ids.slice(i, i + 500))})`, ids.slice(i, i + 500), 'implied:titles')) m.set(r.id, r.title);
+  return m;
+}
+
 /** doc id → religion for these docs. */
 export async function religionOfDocs(ids) {
   const m = new Map();

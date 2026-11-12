@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import * as repo from '../repos/implied-repo.js';
+import * as scores from '../repos/question-score-repo.js';
 import { readerUrl } from '../source-links.js';
 
 const SIMILAR_MIN = 0.8;
@@ -17,6 +18,12 @@ export const shapeItem = (r, paragraph = null) => r && ({
   link: readerUrl({ doc_id: r.docId, slug: r.doc?.slug, religion: r.doc?.religion, collection: r.doc?.collection }, paragraph?.index ?? r.paragraphIndex ?? null),
 });
 
+/** One batch lookup of this rater's scores → fn(paraId, question) → 1-5 | null. */
+async function scorer(pairs, rater) {
+  const m = await scores.scoresFor(pairs, rater || '');
+  return (paraId, question) => m.get(scores.keyOf(paraId, question))?.score ?? null;
+}
+
 /** Queue the vectors to follow an edit (dedupe is in enqueue). → 'queued' | 'none' | 'off' */
 export async function queueReindex(docIds, deps = {}) {
   const ids = [...new Set((docIds || []).filter(Boolean))];
@@ -26,17 +33,18 @@ export async function queueReindex(docIds, deps = {}) {
 }
 
 /** One item with its paragraph (+ prev/next) and the edit history. */
-export async function itemDetail(id) {
+export async function itemDetail(id, rater) {
   const [row] = await repo.itemsByIds([id]);
   if (!row) return null;
-  const pv = await repo.paragraphView(row.paraId);
-  return { ...shapeItem(row, pv && { text: pv.text, index: pv.index, prev: pv.prev, next: pv.next }), edits: await repo.editsOf(id) };
+  const pv = await repo.paragraphView(row.paraId), mine = await scorer([{ paraId: row.paraId, question: row.question }], rater);
+  return { ...shapeItem(row, pv && { text: pv.text, index: pv.index, prev: pv.prev, next: pv.next }), myScore: mine(row.paraId, row.question), edits: await repo.editsOf(id) };
 }
 
 /** List page → { items, next }. */
 export async function listItems(q) {
   const { rows, next } = await repo.listImplied(q);
-  return { items: rows.map((r) => shapeItem(r)), next };
+  const mine = await scorer(rows.map((r) => ({ paraId: r.paraId, question: r.question })), q.rater);
+  return { items: rows.map((r) => ({ ...shapeItem(r), myScore: mine(r.paraId, r.question) })), next };
 }
 
 /** Qdrant hits [{ paragraph_id, doc_id, score, k, implied }] → search hits (implied items from premise_claims; stated from hyp_questions). */
@@ -59,11 +67,13 @@ async function hydrateHits(hits, { status, religion } = {}) {
 }
 
 /** Semantic search of the `hype` collection (implied points only unless stated). → { hits } */
-export async function searchHits({ q, limit = 30, status, religion, stated = false }, deps = {}) {
+export async function searchHits({ q, limit = 30, status, religion, stated = false, rater }, deps = {}) {
   const search = deps.search || (await import('../search/qdrant-layers.js')).searchHypeQdrant;
   const lim = Math.min(Math.max(Number(limit) || 30, 1), 100);
   const { hits } = await search(String(q), { limit: lim, filters: { ...(stated ? {} : { implied: true }), ...(religion ? { religion } : {}) } });
-  return { hits: await hydrateHits(hits, { status, religion }) };
+  const out = await hydrateHits(hits, { status, religion });
+  const pairs = out.map((h) => (h.kind === 'stated' ? { paraId: h.stated.paraId, question: h.stated.q } : { paraId: h.item.paraId, question: h.item.question })), mine = await scorer(pairs, rater);
+  return { hits: out.map((h, i) => ({ ...h, myScore: mine(pairs[i].paraId, pairs[i].question) })) };
 }
 
 /** Neighbours of an item's own question (its vector = its text embedded the same way). → { hits: [{ score, item }] } */
@@ -106,12 +116,12 @@ export async function graph({ concept, religion, root, limit = 150 } = {}, deps 
 }
 
 /** A paragraph for the HyPE editor: text, doc, stated, implied items, thesis. */
-export async function paragraphEditor(paraId) {
+export async function paragraphEditor(paraId, rater) {
   const pv = await repo.paragraphView(paraId);
   if (!pv) return null;
-  const { splitHyp } = repo, h = splitHyp(pv.hypQuestions);
-  const stated = h.stated.map((x) => (typeof x === 'string' ? { q: x, a: '', deep: false, seeker: false } : { q: x.q ?? x.question ?? '', a: x.a ?? '', deep: !!x.deep, seeker: !!x.seeker }));
-  const shape = (r) => shapeItem({ ...r, doc: pv.doc, paragraphIndex: pv.index });
+  const { splitHyp } = repo, h = splitHyp(pv.hypQuestions), mine = await scorer([{ paraId: pv.id, question: '' }], rater);
+  const stated = h.stated.map((x) => (typeof x === 'string' ? { q: x, a: '', deep: false, seeker: false } : { q: x.q ?? x.question ?? '', a: x.a ?? '', deep: !!x.deep, seeker: !!x.seeker })).map((x) => ({ ...x, myScore: mine(pv.id, x.q) }));
+  const shape = (r) => ({ ...shapeItem({ ...r, doc: pv.doc, paragraphIndex: pv.index }), myScore: mine(pv.id, r.question) });
   return { paragraph: { id: pv.id, text: pv.text, index: pv.index, original: pv.original, prev: pv.prev, next: pv.next }, doc: pv.doc, stated, implied: pv.rows.map(shape), thesis: pv.thesis, hypeVersion: pv.hypeVersion };
 }
 
@@ -178,3 +188,11 @@ export async function importRun({ file } = {}, { dir = path.join(process.cwd(), 
   }
   return { imported, skipped, file: name, docIds: [...docIds] };
 }
+
+const withLink = (r) => ({ ...r, link: readerUrl({ doc_id: r.docId, slug: r.doc?.slug, religion: r.doc?.religion, collection: r.doc?.collection }, r.paragraphIndex ?? null) });
+/** The Scored view: scores (newest first, optional max) with doc + reader link. → { scores, next } */
+export async function scoredList({ max, kind, limit, cursor } = {}) {
+  const { rows, next } = await scores.listScores({ max, kind, limit, cursor });
+  return { scores: rows.map(withLink), next };
+}
+export async function scoreStats() { const s = await scores.scoreStats(); return { ...s, worst: s.worst.map(withLink) }; }

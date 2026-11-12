@@ -1,11 +1,11 @@
 <script>
-  // First-principles graph: concept hubs -> questions -> passages -> authors (force-graph canvas). Click a question = side panel; "expand similar" re-roots with similar links.
+  // First-principles graph (compact = the readonly Hero preview: no controls/side panel, no zoom/pan, click opens the explorer): concept hubs -> questions -> passages -> authors (force-graph canvas). Click a question = side panel; "expand similar" re-roots with similar links.
   import { onMount, untrack } from 'svelte';
   import { api } from './api.js';
   import ItemCard from './ItemCard.svelte';
   import { colorOf } from './util.js';
-  let { p, setp, onnav = () => {}, onchat = () => {}, concepts = [], religions = [] } = $props();
-  let el = $state(null), graph, data = $state(null), error = $state(''), loading = $state(false), item = $state(null), find = $state(''), size = $state({ w: 800, h: 600 }), hover = $state(null);
+  let { p, setp, onnav = () => {}, onchat = () => {}, concepts = [], religions = [], compact = false } = $props();
+  let el = $state(null), graph, data = $state(null), error = $state(''), loading = $state(false), item = $state(null), find = $state(''), size = $state({ w: 800, h: compact ? 340 : 600 }), hover = $state(null);
   const TC = { concept: '#a78bfa', author: '#e2e8f0', passage: '#64748b' };
   const colorNode = (n) => (n.type === 'question' ? colorOf(n.religion) : n.type === 'passage' ? '#64748b' : TC[n.type]);
   const R = (n) => (n.type === 'concept' ? 9 + Math.sqrt(n.weight || 1) * 2 : n.type === 'question' ? 5 + Math.sqrt(n.weight || 1) : n.type === 'author' ? 6 : 2.5);
@@ -31,10 +31,12 @@
         .onNodeHover((n) => { hover = n; el.style.cursor = n ? 'pointer' : 'default'; })
         .onNodeClick((n) => pick(n)).cooldownTicks(120).onEngineStop(() => graph.zoomToFit(400, 40));
       graph.d3Force('charge')?.strength(-60);
+      if (compact) graph.enableZoomInteraction(false).enablePanInteraction(false);
     }
     graph.width(size.w).height(size.h).graphData({ nodes: data.nodes.map((n) => ({ ...n })), links: data.links.map((l) => ({ ...l })) });
   }
   async function pick(n) {
+    if (compact) { if (n.type === 'concept') onnav('graph', { concept: n.label }); else if (n.type === 'question') onnav('graph', { sel: n.id }); else if (n.type === 'author') onnav('explore', { text: n.label }); return; }
     if (n.type === 'concept') { setp({ concept: n.label, root: '' }); return; }
     if (n.type === 'question') { setp({ sel: n.id }); try { item = await api.get(n.id); } catch (e) { error = e.message; } }
     else if (n.type === 'author') setp({ text: n.label, tab: 'explore' });
@@ -43,12 +45,12 @@
     const n = graph?.graphData().nodes.find((x) => x.label.toLowerCase().includes(find.toLowerCase())); if (!n || !find) return;
     graph.centerAt(n.x, n.y, 600); graph.zoom(3, 600); pick(n);
   }
-  onMount(() => { const ro = new ResizeObserver(([e]) => { size = { w: e.contentRect.width, h: Math.max(480, window.innerHeight - 260) }; graph?.width(size.w).height(size.h); }); ro.observe(el.parentElement); return () => { ro.disconnect(); graph?._destructor?.(); }; });
+  onMount(() => { const ro = new ResizeObserver(([e]) => { size = { w: e.contentRect.width, h: compact ? 340 : Math.max(480, window.innerHeight - 260) }; graph?.width(size.w).height(size.h); }); ro.observe(el.parentElement); return () => { ro.disconnect(); graph?._destructor?.(); }; });
   $effect(() => { JSON.stringify([p.concept, p.religion, p.root]); untrack(() => load()); });
   $effect(() => { const id = p.sel; if (id && data?.nodes.some((n) => n.id === id && n.type === 'question') && item?.id !== id) untrack(() => api.get(id).then((i) => (item = i)).catch(() => {})); });
 </script>
 
-<div class="bar">
+{#if !compact}<div class="bar">
   <select value={p.concept || ''} onchange={(e) => setp({ concept: e.target.value, root: '' })}><option value="">all concepts</option>{#each concepts as c (c)}<option>{c}</option>{/each}</select>
   <select value={p.religion || ''} onchange={(e) => setp({ religion: e.target.value })}><option value="">all traditions</option>{#each religions as r (r)}<option>{r}</option>{/each}</select>
   <input placeholder="find a node…" bind:value={find} onkeydown={(e) => e.key === 'Enter' && focusNode()} />
@@ -56,19 +58,20 @@
   <div class="legend">
     <span><i style="background:#a78bfa"></i>concept</span><span><i style="background:#38bdf8"></i>question (tradition colour)</span><span><i style="background:#64748b"></i>passage</span><span><i style="background:#e2e8f0"></i>author</span><span><i class="ln"></i>similar</span>
   </div>
-</div>
+</div>{/if}
 {#if error}<p class="text-error">{error} (showing last graph)</p>{/if}
-<div class="wrap">
+<div class="wrap" class:compact>
   <div class="canvas" style={`height:${size.h}px`}>
     <div bind:this={el} class="fg"></div>
     {#if loading && !data}<p class="ov">Building graph…</p>{:else if data && !data.nodes.length}<p class="ov">No premises for these filters yet.</p>{/if}
+    {#if compact && data?.nodes.length}<div class="foot"><span>{data.nodes.filter((n) => n.type === 'question').length} questions · {data.nodes.length} nodes · {data.links.length} links</span><button onclick={() => onnav('graph', {})}>Open the graph explorer →</button></div>{/if}
   </div>
-  <aside class="side">
+  {#if !compact}<aside class="side">
     {#if item}
       <ItemCard {item} readonly />
       <div class="btns"><button onclick={() => setp({ root: item.id })}>Expand similar</button><button onclick={() => onnav('explore', { sel: item.id })}>Open in explorer</button><button onclick={() => onnav('para', { para: item.paraId })}>HyPE editor</button><button onclick={() => onchat([item])}>Ask in chat</button></div>
     {:else}<p class="text-muted">Click a question node to see it here. Click a concept hub to filter to it; click an author to find their premises.</p>{/if}
-  </aside>
+  </aside>{/if}
 </div>
 
 <style>
@@ -76,6 +79,7 @@
   .lk { color: var(--accent); } .legend { margin-left: auto; display: flex; gap: 1rem; font-size: .75rem; color: var(--text-tertiary); } .legend i { display: inline-block; width: .6rem; height: .6rem; border-radius: 50%; margin-right: .3rem; } .legend i.ln { width: 1rem; height: 2px; border-radius: 0; background: #a78bfa; vertical-align: middle; }
   .wrap { display: grid; grid-template-columns: 1fr 380px; gap: 1rem; } @media (max-width: 1100px) { .wrap { grid-template-columns: 1fr; } }
   .canvas { position: relative; min-width: 0; border-radius: 1rem; overflow: hidden; border: 1px solid var(--border-default); background: radial-gradient(circle at 50% 40%, var(--surface-2), var(--surface-solid)); } .fg { width: 100%; height: 100%; }
+  .wrap.compact { grid-template-columns: 1fr; } .foot { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .4rem .8rem; font-size: .75rem; color: var(--text-muted); background: color-mix(in srgb, var(--surface-solid) 80%, transparent); } .foot button { color: var(--accent); font-weight: 600; }
   .ov { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-muted); pointer-events: none; }
   .side { display: grid; gap: .75rem; align-content: start; } .btns { display: flex; flex-wrap: wrap; gap: .4rem; } .btns button { border: 1px solid var(--border-default); background: var(--surface-2); color: var(--text-primary); border-radius: .5rem; padding: .3rem .7rem; font-size: .8rem; } .btns button:hover { border-color: var(--accent); }
 </style>

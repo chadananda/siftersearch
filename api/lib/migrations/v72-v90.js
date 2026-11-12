@@ -2184,6 +2184,14 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_implied_edits_at ON implied_edits(at)');
     logger.info('Migration 202 complete: premise_claims browse columns + implied_edits');
   },
+  203: async () => {
+    // QUESTION SCORES (Chad 11-12): a 1-5 rating per question (stated or implied) from the Implication browser; stated questions have no row, so keyed by (para_id, folded text, rater).
+    await query(`CREATE TABLE IF NOT EXISTS question_scores (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, para_id INTEGER NOT NULL, question TEXT NOT NULL, q_fold TEXT NOT NULL, kind TEXT NOT NULL DEFAULT 'stated', implied_id INTEGER,
+      score INTEGER NOT NULL, tags TEXT, note TEXT, rater TEXT NOT NULL DEFAULT '', created_at TEXT, updated_at TEXT, UNIQUE(para_id, q_fold, rater))`);
+    await query('CREATE INDEX IF NOT EXISTS idx_question_scores_score ON question_scores(score, updated_at)');
+    logger.info('Migration 203 complete: question_scores');
+  },
 };
 
 export const graphMigrations = {

@@ -26,4 +26,8 @@ export const api = {
   savePara: (id, b) => call('PUT', `/hype/paragraph/${id}`, null, b),
   propose: (id) => call('POST', `/hype/paragraph/${id}/propose`),
   edits: (limit = 50) => call('GET', '/implied/edits', { limit }),
+  setScore: (b) => call('PUT', '/implied/score', null, b),
+  clearScore: (paraId, question) => call('DELETE', '/implied/score', { paraId, question }),
+  scores: (p) => call('GET', '/implied/scores', p),
+  scoreStats: () => call('GET', '/implied/scores/stats'),
 };

@@ -42,6 +42,7 @@ import { mediaGalleryJob, mediaPortraitInventoryJob } from './media-gallery-jobs
 import { vocabBuildJob } from './vocab-job.js';
 import { pipelineSnapshotJob } from './pipeline-snapshot-job.js';
 import { impliedOverviewJob } from './implied-overview-job.js';
+import { hypeQuestionFaultsJob } from './hype-question-faults-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByDocAuthors, liveParagraphsOfDoc } from '../repos/integrity-repo.js';
 import { docLanguageCounts } from '../repos/language-repo.js';
 import { coveredByDocAuthor, monthSpend, skippedByDocAuthor, unitsForParagraphs } from '../repos/phrase-store-repo.js';
@@ -248,6 +249,7 @@ REPORTS['spend-by-model'] = async ({ days = 30 } = {}) => { const d = Math.min(M
   return { days: d, total_usd: +rows.reduce((n, r) => n + (r.usd || 0), 0).toFixed(2), rows }; };
 
 REPORTS['implied-overview'] = impliedOverviewJob;
+REPORTS['hype-question-faults'] = hypeQuestionFaultsJob;   // legacy stated questions run through today's questionFault — counts + samples, removes nothing
 // operator path for POST /api/admin/implied/import (that route needs an admin session): { file? } premise-reconcile-*/premise-pilot-* in data/run
 REPORTS['implied-import'] = async (params = {}) => { const S = await import('../implied/service.js'); const r = await S.importRun({ file: params.file }); if (r.docIds?.length) r.reindex = await S.queueReindex(r.docIds); return r; };   // the Implication browser's numbers + HyPE spend story (api/routes/implied-admin.js reads the latest)
 
@@ -489,7 +491,7 @@ export const LANES = { hype: ['hype-program', 'hype-bank-seed'],   // days of ba
   books: ['book-hunt'],   // an hour of polite catalogue lookups must not hold up intake or the quick lane
   authorship: ['paragraph-authors'],
   linking: ['source-links-build'],   // hours of hunting must not hold up the quick lane or intake   // hours of classification must not hold up intake or the quick lane   // hours of polite searching and downloading must not hold up intake or OCR
-  quick: ['drive-wear', 'pipeline-snapshot', 'doc-overlap', 'spend', 'spend-by-model', 'implied-overview', 'implied-import', 'languages', 'ctai-audit', 'work-families', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'write-stats', 'triggers', 'table-schema', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
+  quick: ['drive-wear', 'pipeline-snapshot', 'doc-overlap', 'spend', 'spend-by-model', 'implied-overview', 'hype-question-faults', 'implied-import', 'languages', 'ctai-audit', 'work-families', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'write-stats', 'triggers', 'table-schema', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
 export const HEAVY = new Set(LANES.heavy);
 // the media pipeline runs in its OWN service (siftersearch-media, OPS_ONLY): hours of transcription never share a drain with these lanes
 export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade', 'media-short', 'media-shorts-moments', 'media-portraits-extend', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-relink', 'media-safe-listening', 'media-speaker-merge', 'media-talk-identities', 'media-remaster', 'media-remaster-revert', 'media-cloud-remaster', 'media-cloud-order', 'media-quiet-repair', 'media-light-backfill', 'media-preview', 'media-remaster-quality', 'media-remaster-review-pack', 'media-remaster-decide', 'media-remaster-rejudge', 'media-trim-audit'];
