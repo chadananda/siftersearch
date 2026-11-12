@@ -226,12 +226,12 @@ const E = {
     } },
   // a work asked for with nothing more specific = its opening (structural: the unit named_work, by id — a name is evidence, not identity).
   // untopiced: runs only when no topic was asked (a named work WITH a topic is searched inside first)
-  'fetch.opening': { kind: 'tool', cls: 'code', edges: ['one', 'several', 'none', 'error'], scope: 'strategy', params: ['n', 'untopiced', 'stage'], reads: ['named_work', 'topic', 'work_place'], writes: ['found_passages', ...OUT],
+  'fetch.opening': { kind: 'tool', cls: 'code', edges: ['one', 'several', 'none', 'error'], scope: 'strategy', params: ['n', 'untopiced', 'linked', 'stage'], reads: ['named_work', 'topic', 'work_place'], writes: ['found_passages', ...OUT],
     async run(s, p = {}) {
       const u = U(s), w = namedWork(u);
       if (!(w?.documentId || w?.work) || (p.untopiced && u.work_place !== 'opening' && String(flat(u.topic) ?? '').trim())) { const e = finish(s, p, 'none'); u.missing.pop(); u.found_outcome[s.node ?? '?'] = 'skipped'; return e; }
       try {
-        const which = w.documentId ? { document_id: w.documentId } : { work: w.work };   // a title is resolved by the tool, as every search's work filter is
+        const which = w.documentId ? { document_id: w.documentId } : { work: w.work, ...(p.linked ? { linked: true } : {}) };   // a title is resolved by the tool, as every search's work filter is; linked = its aligned copy
         const items = ((await call(s, 'opening_lookup', { ...which, n: p.n ?? 3 }))?.passages || []).map((x, i) => ({ ...x, anchor: i === 0 }));
         merge(u, 'found_passages', items); return finish(s, p, classify(items.length, ['one', 'several']), { count: items.length, read: { named_work: w.documentId ?? w.work } });
       } catch (err) { return finish(s, p, 'error', { error: err?.message || String(err) }); }

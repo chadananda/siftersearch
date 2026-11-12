@@ -284,7 +284,7 @@ const original = tree('original', 'o1', [
   // table, are the anchors (round 5: o1w searched "the opening chapter" inside one Qur'an edition and anchored on a translator's footnote)
   ['o1r', 'fetch.reference', {}, 'tool', ['scripture_reference'], ['found_passages'], { one: 'o3', several: 'o3', none: 'o1o', error: 'o1o' }],
   // a work named (or in focus) with NO topic: the passage asked for is its opening (11-12 "first couple paragraphs" after a title card)
-  ['o1o', 'fetch.opening', { untopiced: true, n: 3 }, 'tool', ['named_work', 'topic'], ['found_passages'], { one: 'o3', several: 'o3', none: 'o1w', error: 'o1w' }],
+  ['o1o', 'fetch.opening', { untopiced: true, n: 3, linked: true }, 'tool', ['named_work', 'topic'], ['found_passages'], { one: 'o3', several: 'o3', none: 'o1w', error: 'o1w' }],
   // no anchor, no quoted words, but a named work ("the Arabic of the opening chapter of the Qur'an"): the passage asked for, searched INSIDE that work,
   // is the anchor whose original edition o3 fetches (round 4: o1 none went straight to absence while the library holds the Arabic Qur'an)
   ['o1w', 'search.shelf', { in_named: true, query: '{{topic}}', k: 3 }, 'tool', ['named_work', 'topic'], ['found_passages'], { one: 'o3', several: 'o3', thin: 'o3', none: '$absence', error: '$fallback' }],

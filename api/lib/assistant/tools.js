@@ -495,15 +495,21 @@ const ENTRIES = [
     purpose: 'The first n prose paragraphs of one document, in order (none for a copyrighted book).',
     description: 'Read the opening paragraphs of a work (its document id, or its title as named): the first n prose paragraphs in order, headings and notes left out.',
     input: { type: 'object', additionalProperties: false, required: [], properties: { document_id: { type: 'integer' }, work: str('The work\'s title as the reader named it, when its id is not known', 300),
-      n: { type: 'integer', minimum: 1, maximum: 6, default: 3 } } },
+      n: { type: 'integer', minimum: 1, maximum: 6, default: 3 },
+      linked: { type: 'boolean', default: false, description: 'Of the copies under that title, read the first whose opening is linked to its original or translations' } } },
     output: { type: 'object', required: ['passages', 'copyright'], properties: { passages: { type: 'array', items: PASSAGE },
       copyright: { type: 'boolean', description: 'true = a copyrighted book: its opening is not given' } } },
     example: { input: { document_id: 12, n: 2 }, output: { passages: [{ ...P_EX, paragraph_index: 1 }, { ...P_EX, paragraph_index: 2 }], copyright: false } },
     async run(a, ctx) {
       // a title → its document the way every search's work filter resolves one (11-12: Jev named "Surah of Kawthar" and the opening was skipped)
-      const titled = a.document_id == null && a.work ? (await (await dep(ctx, 'findTitled', 'works'))([a.work]))?.doc ?? null : null;
+      // byline: "Hidden Words" = The Hidden Words of Bahá’u’lláh, so the canonical edition competes (11-12: a bahai-library index page opened instead)
+      // linked: a reading of original beside translation wants the copy whose paragraphs are aligned (11-12: "Tablet of Aḥmad" opened a
+      // bahai-library page with no links while the Arabic, linked to the Prayers' English, sat under the same title)
+      const n = Math.min(6, Math.max(1, Number(a.n) || 3));
+      const titled = a.document_id != null || !a.work ? null : a.linked ? await linkedCopy(a.work, n, ctx)
+        : (await (await dep(ctx, 'findTitled', 'works'))([a.work], { byline: true }))?.doc ?? null;
       if (a.document_id == null && !titled) { if (a.work) return { passages: [], copyright: false }; throw new ToolError('invalid_input', 'give document_id or work', false); }
-      const docId = Number(a.document_id ?? titled.id), n = Math.min(6, Math.max(1, Number(a.n) || 3));
+      const docId = Number(a.document_id ?? titled.id);
       // fails CLOSED like context_lookup: consecutive paragraphs of a copyrighted (or rights-unknown) book are not a short excerpt
       const enc = await (await dep(ctx, 'encumberedAmong', 'rights'))([docId]).catch((e) => { throw new ToolError('rights_unavailable', `rights check failed (${e?.message || e}) — not reading a book whose rights are unknown`, true); });
       if (enc.has(docId)) return { passages: [], copyright: true };
@@ -626,6 +632,18 @@ const ENTRIES = [
 ];
 
 // ── PROCESS tools: not the contract — Jev's own, or a model/provider call. Never on /api/v1/tools; respond@3 and the researcher still call them by name ──
+// the first of a title's copies (best ranked first, top 5) whose opening paragraphs carry an original or translation link; else the best copy
+async function linkedCopy(work, n, ctx) {
+  const { sorted } = await (await dep(ctx, 'rankTitled', 'works'))([work], { byline: true });
+  const read = await dep(ctx, 'getParagraphs', 'docs'), links = await dep(ctx, 'resolveLinks', 'plinks');
+  for (const d of sorted.slice(0, 5)) {
+    const ids = (await read(d.id, { proseOnly: true, limit: n + 6, offset: 0 }).catch(() => [])).map((r) => r.id);
+    const l = ids.length ? await links(ids, { quotedBy: false }).catch(() => new Map()) : new Map();
+    if ([...l.values()].some((x) => x?.original || x?.translations?.length)) return d;
+  }
+  return sorted[0] ?? null;
+}
+
 const PROCESS_ENTRIES = [
   { name: 'web_search', label: 'Web Search', kind: 'tool', process: true, outputName: 'WebAnswer', cost: { llm: true, embed: false, p50_ms: 4000 },
     purpose: 'The open web, for what a library of texts cannot hold; never scripture. (Perplexity answers with a model, so this is a process step, not a contract tool.)',

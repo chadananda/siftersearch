@@ -42,7 +42,7 @@ const REFERS = { own: 'the message states its own subject, whole',
   previous: 'it asks about the previous reply itself or the passages it gave ("that quote", "the actual words", "the second one", "is that authentic?", "how does that compare with …")' };
 // WHERE in a work the reader wants to read (11-12 Kawthar: "the first couple paragraphs" after a title card searched the question's words inside
 // the tafsir and showed paragraphs 169/68/754; "and the next paragraph?" went to research). Jev's typed answer; code reads the place.
-const WORK_PLACE = { opening: 'the beginning of a work (its first paragraph or paragraphs)', next: 'the paragraph(s) that come right after the passage the previous reply showed',
+const WORK_PLACE = { opening: 'the beginning of a work: its first paragraph or paragraphs, or its first numbered items ("the first three" Hidden Words, verses or prayers of a work)', next: 'the paragraph(s) that come right after the passage the previous reply showed',
   subject: 'a particular subject, verse or passage inside the work', none: 'no place in a work is asked for' };
 const SIDE_KEYS = ['side_a', 'side_b', 'side_c'];
 const ORD = ['FIRST', 'SECOND', 'THIRD'];
@@ -185,7 +185,7 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
       decisions[0] = { ...decisions[0], chosen: strategy.choice, reason: strategy.reason };
     }
     if (subjectOn) decisions.push({ point: 'subject-religion', by: 'jev', saw: state, options: Object.keys(SIDES), probabilities: jevProbabilities(subj), chosen: subj.choice, reason: 'a hard filter for this turn', ms });
-    else if (subj?.choice && subj.choice !== 'none' && SIDES[subj.choice] && strategy.choice !== 'comparison') decisions.push({ point: 'subject-religion', by: 'jev', saw: state, options: Object.keys(SIDES), probabilities: jevProbabilities(subj), chosen: null, reason: 'not sure enough to filter — every tradition stays in', ms });
+    else if (subj?.choice && subj.choice !== 'none' && SIDES[subj.choice] && strategy.choice !== 'comparison') decisions.push({ point: 'subject-religion', by: 'jev', saw: state, options: Object.keys(SIDES), probabilities: jevProbabilities(subj), chosen: null, reason: turnOnly ? 'already scoped this turn by the state patch' : 'not sure enough to filter — every tradition stays in', ms });
     // recorded even when empty: a strategy that runs with no units is diagnosable only from Jev's kind answers (11-11 Vaḥíd)
     if (spans.length) decisions.push({ point: 'named-units', by: 'jev', saw: spans, options: Object.keys(KINDS), probabilities: Object.fromEntries(spans.map((n, i) => [n, jevProbabilities(choice(a[`kind_${i + 1}`]) || {})])), chosen: units, reason: Object.keys(units).length ? null : 'no unit at confidence', ms });
     const patch = { jev: jevPatch.patch, turnOnly, continues: jevPatch.continues, offer: jevPatch.offer };

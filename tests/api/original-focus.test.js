@@ -49,7 +49,7 @@ describe('original tree: a named work with no topic → its opening', () => {
   it('a work named by title (Jev’s words) with work_place opening → the opening by that title, even with a topic', async () => {
     const opening_lookup = vi.fn(async () => ({ passages: [P(1), P(2)] }));
     const s = await run({ named_work: 'Surah of Kawthar', topic: 'the first couple paragraphs', work_place: 'opening' }, { opening_lookup });
-    expect(opening_lookup).toHaveBeenCalledWith({ work: 'Surah of Kawthar', n: 3 }, expect.anything());
+    expect(opening_lookup).toHaveBeenCalledWith({ work: 'Surah of Kawthar', n: 3, linked: true }, expect.anything());
     expect(s.trace.map((x) => x.node)).not.toContain('o1w');
   });
   it('with a topic the work is searched (o1w); a topic not found there is an absence, never the opening served instead', async () => {
@@ -74,5 +74,19 @@ describe('opening_lookup', () => {
     const r = await tools.run('opening_lookup', { work: 'Surah of Kawthar', n: 1 }, { deps: { ...deps, findTitled: async () => ({ doc: { id: 9 } }) } });
     expect(r.passages.map((p) => p.document_id)).toEqual([9]);
     expect(await tools.run('opening_lookup', { work: 'No Such Book' }, { deps: { ...deps, findTitled: async () => null } })).toEqual({ passages: [], copyright: false });
+  });
+  it('the canonical "… of <author>" edition competes with a bare-titled copy (11-12: "Hidden Words" opened a bahai-library index page)', async () => {
+    const findTitled = vi.fn(async () => ({ doc: { id: 9 } }));
+    await tools.run('opening_lookup', { work: 'Hidden Words', n: 1 }, { deps: { ...deps, findTitled } });
+    expect(findTitled).toHaveBeenCalledWith(['Hidden Words'], expect.objectContaining({ byline: true }));
+  });
+  it('linked: of a title’s copies, the first whose opening is aligned to an original or translation (11-12 Tablet of Aḥmad)', async () => {
+    const rankTitled = async () => ({ sorted: [{ id: 1616 }, { id: 924540 }] });
+    const getParagraphs = vi.fn(async (d) => [{ id: d * 10, paragraph_index: 0, text: `t${d}` }]);
+    const resolveLinks = async (ids) => new Map(ids.map((i) => [i, i === 9245400 ? { translations: [{ id: 1 }] } : {}]));
+    const r = await tools.run('opening_lookup', { work: 'Tablet of Aḥmad', n: 1, linked: true }, { deps: { ...deps, getParagraphs, rankTitled, resolveLinks, getLinkMeta: async () => new Map() } });
+    expect(r.passages.map((p) => p.document_id)).toEqual([924540]);
+    const none = await tools.run('opening_lookup', { work: 'Tablet of Aḥmad', n: 1, linked: true }, { deps: { ...deps, getParagraphs, rankTitled, resolveLinks: async () => new Map(), getLinkMeta: async () => new Map() } });
+    expect(none.passages.map((p) => p.document_id)).toEqual([1616]);
   });
 });
