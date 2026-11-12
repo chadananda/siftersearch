@@ -304,7 +304,7 @@ export function findHiddenWord(paras, { part, n }) {
 }
 
 const HIDDEN_WORDS_DOC = 20809;   // the OceanLibrary canonical (concepts/ctai.js CTAI_DOC_BY_WORK['the-hidden-words'])
-const ORIGINAL_HOW = 'The seeker asks for the ORIGINAL-language wording. Answer from the original text given below: quote the exact original words that answer the question (in their own script), give a transliteration and the English rendering beside each, and name where it is — the work it actually appears in; if the seeker named a different work, say gently where the passage is found. Do not interpret, explain the meaning, or add background unless asked — no closing remarks about authority, scholarship or doctrine. If the original given does not contain what was asked, say so in one sentence.';
+const ORIGINAL_HOW = 'The seeker asks for the ORIGINAL-language wording. Answer from the original text given below: quote the exact original words that answer the question in their own script, exactly as given — never romanized or replaced by a transliteration (add a transliteration only when the seeker asks for one) — with the English rendering beside each, and name where it is — the work it actually appears in; if the seeker named a different work, say gently where the passage is found. Do not interpret, explain the meaning, or add background unless asked — no closing remarks about authority, scholarship or doctrine. If the original given does not contain what was asked, say so in one sentence.';
 
 /** The passage(s) a seeker quoted, to look up: text in quotation marks, else each paragraph long enough to be a
  *  quotation (a question's own words, an attribution line or a P.S. are not). Markdown emphasis and ellipses out. Pure.
