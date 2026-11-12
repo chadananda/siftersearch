@@ -2,7 +2,7 @@
   // "Where the HyPE money goes": headline, flow, spend chart, cost tiles, coverage rings, discoveries carousel, ask-the-library box. Presentation mode auto-advances discoveries.
   import { onMount } from 'svelte';
   import { api } from './api.js';
-  import { countUp, usd, num, compact, colorOf, asOfText } from './util.js';
+  import { countUp, usd, num, compact, colorOf, asOfText, tradName } from './util.js';
   import Sankey from './Sankey.svelte';
   import SpendChart from './SpendChart.svelte';
   import ItemCard from './ItemCard.svelte';
@@ -10,6 +10,7 @@
   const s = $derived(ov?.spend);
   const questions = $derived(s?.byReligion?.reduce((a, r) => a + (r.questions || 0), 0) || 0);
   const trads = $derived(s?.byReligion?.length || 0);
+  const passages = $derived(s?.byReligion?.reduce((a, r) => a + (r.paragraphs || 0), 0) || 0);   // HyPE'd passages (ov.totals.paragraphs counts only the implied list)
   const feat = $derived(ov?.featured || []);
   let idx = $state(0), q = $state(''), hits = $state(null), busy = $state(false), timer;
   $effect(() => { if (!present || feat.length < 2) return; const t = setInterval(() => (idx = (idx + 1) % feat.length), 9000); return () => clearInterval(t); });
@@ -33,7 +34,7 @@
         <span class="n" use:countUp={{ value: s.totalUsd, format: (v) => usd(v, 0) }}>{usd(s.totalUsd, 0)}</span> spent
         <span class="arrow">→</span>
         <span class="n" use:countUp={{ value: questions }}>{num(questions)}</span> questions taught to the library across
-        <span class="n" use:countUp={{ value: ov.totals.paragraphs }}>{num(ov.totals.paragraphs)}</span> passages in
+        <span class="n" use:countUp={{ value: passages }}>{num(passages)}</span> passages in
         <span class="n">{trads}</span> {trads === 1 ? 'tradition' : 'traditions'}
       </h1>
       <p class="sub">Of which <b>{num(ov.totals.items)}</b> are implied first principles — questions the text answers without ever stating them. Spend is from the LLM ledger; splits by tradition and by kind are <b>est.</b> · as of {asOfText(ov.asOf)}</p>
@@ -55,7 +56,7 @@
           {@const p = c.total ? c.hyped / c.total : 0}
           <div class="ring">
             <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r={R} fill="none" stroke="var(--surface-3)" stroke-width="8" /><circle cx="50" cy="50" r={R} fill="none" stroke={colorOf(c.religion)} stroke-width="8" stroke-linecap="round" stroke-dasharray={CIRC} stroke-dashoffset={CIRC * (1 - p)} transform="rotate(-90 50 50)" class="arc" /></svg>
-            <b>{Math.round(p * 100)}%</b><span>{c.religion}</span><small>{compact(c.hyped)} / {compact(c.total)} ¶</small>
+            <b>{Math.round(p * 100)}%</b><span>{tradName(c.religion)}</span><small>{compact(c.hyped)} / {compact(c.total)} ¶</small>
           </div>
         {/each}
       </div>

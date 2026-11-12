@@ -1,6 +1,8 @@
 // Shared helpers for the Implication browser: formatting, tradition colours, proof highlight, count-up action.
 const PAL = ['#38bdf8', '#a78bfa', '#2dd4bf', '#fbbf24', '#f472b6', '#fb923c', '#4ade80', '#f87171', '#94a3b8'];
 const known = { "Baha'i": 0, Christian: 1, Islam: 2, Buddhist: 3, Judaism: 4, Hindu: 5, Sikh: 6, Jain: 7 };
+const NAMES = { "Baha'i": 'Bahá\u2019í', Bahai: 'Bahá\u2019í', Islam: 'Islam' };
+export const tradName = (r) => NAMES[r] || r || '';
 export const colorOf = (r) => PAL[known[r] ?? (([...(r || '?')].reduce((a, c) => a + c.charCodeAt(0), 0)) % PAL.length)];
 export const usd = (n, d) => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: d ?? (n < 1 ? 4 : n < 100 ? 2 : 0), maximumFractionDigits: d ?? (n < 1 ? 4 : n < 100 ? 2 : 0) });
 export const num = (n) => n == null ? '—' : Math.round(n).toLocaleString('en-US');

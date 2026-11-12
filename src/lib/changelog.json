@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-12T16:44:00.276Z",
+  "generated": "2026-11-12T16:47:22.570Z",
   "entries": [
+    {
+      "hash": "d77f43242",
+      "date": "2026-11-12",
+      "type": "Other",
+      "description": "/api/admin/implied* and /api/admin/hype/paragraph/* go to the ops service that registers them",
+      "scope": null
+    },
     {
       "hash": "678ff8b7b",
       "date": "2026-11-11",
@@ -682,6 +689,15 @@
     }
   ],
   "grouped": {
+    "2026-11-12": [
+      {
+        "hash": "d77f43242",
+        "date": "2026-11-12",
+        "type": "Other",
+        "description": "/api/admin/implied* and /api/admin/hype/paragraph/* go to the ops service that registers them",
+        "scope": null
+      }
+    ],
     "2026-11-11": [
       {
         "hash": "678ff8b7b",

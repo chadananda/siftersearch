@@ -1,11 +1,14 @@
 <script>
   // Hand-built money flow (no d3-sankey installed): HyPE $ -> tradition -> stated questions / implied first principles. Implied split is ESTIMATED (ledger has $ per run only).
-  import { colorOf, usd } from './util.js';
+  import { colorOf, usd, tradName } from './util.js';
   let { spend } = $props();
   const W = 960, H = 400, NW = 18, GAP = 10, X0 = 150, X1 = 480, X2 = 760;
   const lay = $derived.by(() => {
-    const rows = (spend?.byReligion || []).filter((r) => r.usd > 0).sort((a, b) => b.usd - a.usd);
-    const T = rows.reduce((a, r) => a + r.usd, 0) || 1, f = spend?.totalUsd ? Math.min(1, (spend.impliedShareUsd || 0) / spend.totalUsd) : 0;
+    const all = (spend?.byReligion || []).filter((r) => r.usd > 0).sort((a, b) => b.usd - a.usd), T = all.reduce((a, r) => a + r.usd, 0) || 1;
+    // traditions under 3% of spend fold into one node so their labels never collide; the fold lists them on hover
+    const big = all.filter((r) => r.usd >= 0.03 * T), small = all.filter((r) => r.usd < 0.03 * T);
+    const rows = small.length > 1 ? [...big, { religion: `${small.length} other traditions`, usd: small.reduce((a, r) => a + r.usd, 0), estimated: small.some((r) => r.estimated), members: small }] : all;
+    const f = spend?.totalUsd ? Math.min(1, (spend.impliedShareUsd || 0) / spend.totalUsd) : 0;
     const k = (H - GAP * (rows.length - 1)) / T;
     let y = 0, lo = 0, ro = 0;
     const mids = rows.map((r) => { const h = r.usd * k, m = { ...r, y, h, l0: lo, r0: ro }; y += h + GAP; lo += h; return m; });
@@ -27,7 +30,7 @@
     {#each lay.mids as m (m.religion)}
       <path d={path(X0, m.l0 + m.h / 2, X1 - NW, m.y + m.h / 2)} stroke={colorOf(m.religion)} stroke-width={Math.max(1, m.h)} fill="none" opacity={hover && hover !== m.religion ? 0.1 : 0.4} class="rib" />
       <rect x={X1 - NW} y={m.y} width={NW} height={Math.max(2, m.h)} rx="3" fill={colorOf(m.religion)} onmouseenter={() => (hover = m.religion)} onmouseleave={() => (hover = null)} />
-      <text x={X1 - NW - 8} y={m.y + m.h / 2 - 2} text-anchor="end" class="lbl">{m.religion}</text>
+      <text x={X1 - NW - 8} y={m.y + m.h / 2 - 2} text-anchor="end" class="lbl">{tradName(m.religion)}{#if m.members}<title>{m.members.map((x) => `${tradName(x.religion)} ${usd(x.usd, 2)}`).join('\n')}</title>{/if}</text>
       <text x={X1 - NW - 8} y={m.y + m.h / 2 + 14} text-anchor="end" class="val">{usd(m.usd, 0)}{m.estimated ? ' est.' : ''}</text>
     {/each}
     {#each lay.links as l (l.m.religion + l.kind)}

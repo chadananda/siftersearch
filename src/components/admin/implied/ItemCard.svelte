@@ -1,6 +1,6 @@
 <script>
   // One implied first-principle: QUESTION headline, premise ("answered by implication"), implies ("challenges"), passage with proof highlighted. Inline edit + action row.
-  import { highlight, colorOf, statusTone } from './util.js';
+  import { highlight, colorOf, statusTone, tradName } from './util.js';
   let { item, score = null, big = false, readonly = false, focused = false, selected = false, onact = () => {}, onsave = async () => {}, showSnippet = true } = $props();
   let editing = $state(false), draft = $state({}), err = $state(''), saving = $state(false);
   export function edit() { startEdit(); }
@@ -13,7 +13,7 @@
   <header class="top">
     {#if !readonly}<input type="checkbox" checked={selected} onchange={() => onact('select', item)} aria-label="Select" />{/if}
     {#if item.concept}<span class="chip">{item.concept}</span>{/if}
-    <span class="chip trad">{item.doc?.religion}</span>
+    <span class="chip trad">{tradName(item.doc?.religion)}</span>
     {#if !readonly}<span class={`status ${statusTone[item.status]}`}>{item.status}</span>{/if}
     {#if score != null}<span class="score">{score.toFixed(2)}</span>{/if}
   </header>
