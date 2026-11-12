@@ -16,7 +16,7 @@ export { quoteSpans };
  *  a passage's book title (`asked` = the reader's question / turns). 11-04 prod (w3:ref-gita, w8:goth-08): the writer's
  *  first sentence quoted the reader, the gate dropped it, and the reply opened "What they do hold\u2026" with nothing for "they". */
 export function unverifiedQuotes(text, passages, { asked = [] } = {}) {
-  const hays = [...(passages || []).map((p) => p.text || ''), ...(passages || []).map((p) => p.source_title || p.title || '')].filter(Boolean);
+  const hays = [...(passages || []).map((p) => p.text || ''), ...joinedRuns(passages), ...(passages || []).map((p) => p.source_title || p.title || '')].filter(Boolean);
   const reader = [asked].flat().filter(Boolean);
   // a quotation LINKED as a source's words must be in a passage, even when the reader typed it (a misquote asked about)
   const linked = (q) => new RegExp(`\\[[*_]*["\u201c]\\s*${escapeRe(q)}\\s*["\u201d][*_]*\\]\\(`).test(text);
@@ -24,6 +24,26 @@ export function unverifiedQuotes(text, passages, { asked = [] } = {}) {
     const pieces = String(q).split(/\.\.\.|\u2026/).filter((p) => p.trim().split(/\s+/).length >= 3);
     return pieces.length > 0 && !hays.some((h) => containsQuote(h, q)) && !(reader.some((h) => containsQuote(h, q)) && !linked(q));
   });
+}
+// 11-12: a prayer quoted whole spans consecutive paragraphs (Short Obligatory Prayer = two) — verify against the joined run too.
+function joinedRuns(passages) {
+  const byDoc = new Map();
+  for (const p of passages || []) {
+    if (p?.document_id == null || !Number.isFinite(Number(p.paragraph_index))) continue;
+    if (!byDoc.has(p.document_id)) byDoc.set(p.document_id, new Map());
+    byDoc.get(p.document_id).set(Number(p.paragraph_index), p.text || '');
+  }
+  const out = [];
+  for (const paras of byDoc.values()) {
+    const idx = [...paras.keys()].sort((a, b) => a - b);
+    let run = [];
+    for (const i of idx) {
+      if (run.length && i !== run[run.length - 1] + 1) { if (run.length > 1) out.push(run.map((j) => paras.get(j)).join(' ')); run = []; }
+      run.push(i);
+    }
+    if (run.length > 1) out.push(run.map((j) => paras.get(j)).join(' '));
+  }
+  return out;
 }
 const escapeRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 

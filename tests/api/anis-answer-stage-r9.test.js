@@ -64,6 +64,14 @@ describe('misattribution and stitched quotations (C)', () => {
     expect(unverifiedQuotes('He wrote “The earth is but one country … let your vision be world-embracing rather than confined”', ps)).toHaveLength(1);
     expect(unverifiedQuotes('He wrote “The earth is but one country … mankind its citizens”', ps)).toHaveLength(0);
   });
+  it('a prayer quoted whole across two consecutive paragraphs of one document is verified; non-adjacent ones are not joined', () => {
+    const a = { document_id: 7, paragraph_index: 27, text: 'I bear witness, O my God, that Thou hast created me to know Thee and to worship Thee.' };
+    const b = { document_id: 7, paragraph_index: 28, text: 'There is none other God but Thee, the Help in Peril, the Self-Subsisting.' };
+    const q = 'He revealed: “I bear witness, O my God, that Thou hast created me to know Thee and to worship Thee. There is none other God but Thee, the Help in Peril, the Self-Subsisting.”';
+    expect(unverifiedQuotes(q, [a, b])).toHaveLength(0);
+    expect(unverifiedQuotes(q, [a, { ...b, paragraph_index: 30 }])).toHaveLength(1);
+    expect(unverifiedQuotes(q, [a, { ...b, document_id: 8 }])).toHaveLength(1);
+  });
 });
 
 describe('numbers from memory and passages cut short (D, G)', () => {
