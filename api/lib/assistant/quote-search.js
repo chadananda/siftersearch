@@ -5,12 +5,9 @@ import { toPassage } from './tool-kit.js';
 import { sowCoverUrl } from '../sow-links.js';
 import { canonicalTradition } from './tradition-name.js';
 import { isMainThread } from 'node:worker_threads';
+import { foldText, holdsWords, literalScanRows } from '../search/literal-scan.js';
 
-/** Fold for matching: accents off, curly/odd apostrophes → ', lower case, every other non-letter → one space. Pure. */
-export const foldText = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘`ʻʼ]/g, "'").toLowerCase()
-  .replace(/[^\p{L}\p{N}']+/gu, ' ').replace(/(^|\s)'+|'+(?=\s|$)/g, '$1').replace(/\s+/g, ' ').trim();
-/** Does the text hold the words, as words, in that order? Pure. */
-export const holdsWords = (text, words) => { const w = foldText(words); return !!w && ` ${foldText(text)} `.includes(` ${w} `); };
+export { foldText, holdsWords } from '../search/literal-scan.js';
 const isHeading = (r) => /^heading/.test(r?.blocktype || '');
 
 const esc = (c) => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -70,15 +67,6 @@ function excerptCut(text, words) {
   const parts = [];
   idx.forEach((i, k) => { if (k > 0 && i !== idx[k - 1] + 1) parts.push('…'); parts.push(sents[i]); });
   return `${idx[0] > 0 ? '… ' : ''}${boldWords(parts.join(' '), words)}${idx.at(-1) < sents.length - 1 ? ' …' : ''}`;
-}
-
-// Every paragraph of the named works, folded and matched (11-12: Star of the West = ~400 issue documents) — seconds of CPU and hundreds of
-// reads, so from the serving thread it runs in the read pool (api/lib/search/read-pool.js 'quote:literal-scan'). → matching rows + __doc.
-export async function literalScanRows(ids, range, phrase) {
-  const { paragraphTexts } = await import('../paragraphs-repo.js');
-  const hits = [];
-  for (const id of ids) for (const r of (await paragraphTexts(id, range)) || []) if (!isHeading(r) && holdsWords(r.text, phrase)) hits.push({ ...r, __doc: id });
-  return hits;
 }
 
 const repo = async (ctx, name, mod) => ctx?.deps?.[name] || (await import(mod))[name];

@@ -72,7 +72,7 @@ const retrieval = ({ edges, tool, input, take, into = 'found_passages', rank = f
     let raw, pick = null;
     try {
       inp = await input(s, p, u, t?.length === 1 ? t[0] : undefined);
-      if (!p.doctrinal) { out = await call(s, tool, inp); raw = take(out, p, u) || []; }
+      if (!p.doctrinal) { out = await call(s, typeof tool === 'function' ? tool(inp) : tool, inp); raw = take(out, p, u) || []; }
       else {
         const fused = tool === 'fused_search', n1 = { ...inp, filters: { ...inp.filters, authority: DOC_AUTH }, ...(fused ? { tiers: ['authority'], min_results: DOC_MIN } : {}) };
         raw = take(await call(s, tool, n1), p, u) || [];
@@ -137,8 +137,14 @@ const E = {
   'fetch.reference': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'reference', rank: true, reads: ['scripture_reference'], thin: () => false,
     gate: (s, u, p) => !!(u.scripture_reference || parseScriptureRef(text(s, u, p.query))),
     input: (s, p, u) => ({ question: text(s, u, p.query), decisions: s.direction?.decisions ?? s.ctx?.decisions, deps: s.ctx?.deps }), take: passages }),
-  'fetch.phrase': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'quotation_candidates', rank: true, params: ['mode', 'words'], reads: ['quoted_words', 'quoted_clean'],
-    input: (s, p, u, trad) => ({ quotation: text(s, u, p.words, '{{quoted_clean}}', '{{quoted_words}}'), ...(trad ? { tradition: trad } : {}) }), take: passages,   // tradition: that tradition's own core (none = every tradition)
+  // under four words ("five diamonds") the source hunt refuses (too few words to judge a source by); those words are FOUND literally
+  // instead (quote_search) — the refusal routed the bare phrase to $fallback → "couldn't search just now" (11-12)
+  'fetch.phrase': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: (inp) => (inp.query ? 'quote_search' : 'quotation_candidates'), rank: true, params: ['mode', 'words'], reads: ['quoted_words', 'quoted_clean'],
+    input: (s, p, u, trad) => {
+      const q = text(s, u, p.words, '{{quoted_clean}}', '{{quoted_words}}');
+      if (String(q).replace(/[“”"‘’«»]/g, ' ').trim().split(/\s+/).filter(Boolean).length < 4) return { query: q, ...(trad ? { religions: [trad] } : {}) };
+      return { quotation: q, ...(trad ? { tradition: trad } : {}) };   // tradition: that tradition's own core (none = every tradition)
+    }, take: passages,
     thin: (items, p) => p.mode === 'close' && !items.some((x) => x.role === 'source') }),
   'fetch.person': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'biography_search', rank: true, params: ['name'], reads: ['named_person'], into: 'found_records',
     input: (s, p, u) => ({ query: text(s, u, p.name, '{{named_person}}') }), take: (o) => o?.people, thin: () => false }),
@@ -699,7 +705,7 @@ const m = (description, input, output, tools = []) => ({ description, input, out
 export const ELEMENT_META = {
   'fetch.work': m('Finds a work by its title in any spelling; named works are ranked by the scope, never filtered.', 'named_work or title', 'found_records (works)', ['document_search']),
   'fetch.reference': m('Reads a numbered reference (Bible, Qur’án, Gita) and returns that passage.', 'the question or scripture_reference', 'found_passages', ['reference']),
-  'fetch.phrase': m('Candidates for where quoted words come from (quotation_candidates): the source in core literature, the original tablet, works quoting it, each with a score (share of the quote’s words held). Deterministic, no model; judge.holds decides which candidate is right.', 'quoted_words', 'found_passages (score, role)', ['quotation_candidates']),
+  'fetch.phrase': m('Candidates for where quoted words come from (quotation_candidates): the source in core literature, the original tablet, works quoting it, each with a score (share of the quote’s words held). Under four words, the passages holding those words literally (quote_search). Deterministic, no model; judge.holds decides which candidate is right.', 'quoted_words', 'found_passages (score, role)', ['quotation_candidates', 'quote_search']),
   'fetch.person': m('Finds the person record the question names (several bearers of a name come back as several).', 'named_person', 'found_records (people)', ['biography_search']),
   'fetch.original': m('Finds the Arabic or Persian original of an English passage.', 'quoted_words or found_passages', 'found_passages', ['original_lookup']),
   'fetch.translation': m('Finds the existing English translations of an original-language text.', 'quoted_words or found_passages', 'found_passages', ['translation_lookup']),

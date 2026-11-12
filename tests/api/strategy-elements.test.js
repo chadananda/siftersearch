@@ -53,12 +53,13 @@ describe('search.* / fetch.* retrieval paths', () => {
     ['fetch.original', 'original_lookup'], ['fetch.translation', 'translation_lookup'], ['fetch.phrase', 'quotation_candidates']];
   for (const [name, tool] of cases) {
     it(`${name}: several / none / error, scope_excluded, note`, async () => {
-      const many = await go(name, mk({ [tool]: ret([P(1), P(2, { religion: 'Islam' }), P(3)]) }, { religions_specified: ["Baha'i"] }));
+      const q = name === 'fetch.phrase' ? { quoted_words: 'ye are the fruits of one tree' } : {};   // the source hunt wants four words or more
+      const many = await go(name, mk({ [tool]: ret([P(1), P(2, { religion: 'Islam' }), P(3)]) }, { religions_specified: ["Baha'i"], ...q }));
       const strict = !['fetch.original', 'fetch.translation', 'fetch.phrase'].includes(name);
       expect(many.edge).toBe(strict || name === 'fetch.phrase' ? 'several' : 'one'); expect(many.u.found_passages.length).toBe(strict ? 2 : 3); expect(many.u.scope_excluded).toBe(strict ? 1 : 0);
       expect(many.note).toMatchObject({ count: strict ? 2 : 3, scope_excluded: strict ? 1 : 0 }); expect(many.note.read.religions_specified).toBeTruthy();
-      const none = await go(name, mk({ [tool]: ret([]) })); expect(none.edge).toBe('none'); expect(none.u.missing.length).toBe(1);
-      const err = await go(name, mk({ [tool]: boom })); expect(err.edge).toBe('error'); expect(err.u.found_outcome.n).toBe('error');
+      const none = await go(name, mk({ [tool]: ret([]) }, { ...q })); expect(none.edge).toBe('none'); expect(none.u.missing.length).toBe(1);
+      const err = await go(name, mk({ [tool]: boom }, { ...q })); expect(err.edge).toBe('error'); expect(err.u.found_outcome.n).toBe('error');
     });
   }
   it('search.shelf: one, thin, authority_floor filter', async () => {
@@ -71,7 +72,13 @@ describe('search.* / fetch.* retrieval paths', () => {
     expect((await go('search.originals', mk({ originals_search: ret([P(1), P(2)]) }, { search_originals: false }))).edge).toBe('none');
   });
   it('fetch.phrase close mode without a source is thin', async () => {
-    expect((await go('fetch.phrase', mk({ quotation_candidates: ret([P(1, { role: 'quote' }), P(2, { role: 'quote' })]) }), { mode: 'close' })).edge).toBe('thin');
+    expect((await go('fetch.phrase', mk({ quotation_candidates: ret([P(1, { role: 'quote' }), P(2, { role: 'quote' })]) }, { quoted_words: 'ye are the fruits of one tree' }), { mode: 'close' })).edge).toBe('thin');
+  });
+  it('fetch.phrase: under four words the words are found literally (quote_search), never a refusal routed to $fallback', async () => {
+    let got = null;
+    const r = await go('fetch.phrase', mk({ quote_search: async (i) => { got = i; return { passages: [P(7)] }; }, quotation_candidates: boom }, { quoted_words: '“five diamonds”' }), { mode: 'close' });
+    expect(got).toEqual({ query: '“five diamonds”' });
+    expect(r.edge).toBe('thin'); expect(r.u.found_passages.map((x) => x.id)).toEqual([7]);
   });
   it('search.web fills web_found only', async () => {
     const r = await go('search.web', mk({ web_search: async () => ({ text: 'summary', citations: ['https://example.org/a'] }) }));

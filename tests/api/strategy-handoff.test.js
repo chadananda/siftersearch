@@ -11,6 +11,7 @@ vi.mock('../../api/lib/assistant/tools.js', async (orig) => {
   return { ...m, run: async (name, input) => {
     calls.push({ name, input });
     if (name === 'quotation_candidates') return { passages: /hatred/i.test(input.quotation) ? [DHP] : [SE] };
+    if (name === 'quote_search') return { total: 1, mode_used: 'literal', passages: /hatred/i.test(input.query) ? [DHP] : [SE] };
     if (name === 'source_trace' || name === 'edition_lookup') return { passages: [] };
     if (name === 'web_search') return null;
     return { passages: [] };
@@ -95,8 +96,8 @@ describe('quote_trace@2: the tree runs as an executor with the turn units; its p
   });
   it('a Buddhist side: the side\'s tradition is the filter, not the site default', async () => {
     const r = await quoteTurn('find "hatred ceases" in the Dhammapada', { sides: ['Buddhist'], sources: { Buddhist: 'hatred ceases' } });
-    const qc = calls.filter((c) => c.name === 'quotation_candidates');
-    expect(qc[0].input).toMatchObject({ quotation: 'hatred ceases', tradition: 'Buddhist' });
+    const qc = calls.filter((c) => c.name === 'quote_search');   // two words: found literally, in the side's tradition
+    expect(qc[0].input).toMatchObject({ query: 'hatred ceases', religions: ['Buddhist'] });
     expect(calls.some((c) => /Baha/.test(JSON.stringify(c.input?.filters?.tradition ?? c.input?.tradition ?? '')))).toBe(false);
     expect((r.evidence || []).map((e) => e.title)).toContain('Dhammapada (tr. F. Max Mueller)');
   });
