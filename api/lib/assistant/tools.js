@@ -639,16 +639,21 @@ const ENTRIES = [
 const words = (t) => String(t || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
 export const unsaidQualifier = (title, said) => { const have = new Set(words(said));
   return [...String(title || '').matchAll(/\(([^)]*)\)/g)].some((m) => words(m[1]).some((w) => w.length > 2 && !have.has(w))); };
+// a title qualifier the reader DID say ("the Arabic Hidden Words" → "The Hidden Words (Arabic)") marks the copy they asked for
+export const saidQualifier = (title, said) => { const have = new Set(words(said));
+  return [...String(title || '').matchAll(/\(([^)]*)\)/g)].some((m) => { const w = words(m[1]).filter((x) => x.length > 2); return w.length > 0 && w.every((x) => have.has(x)); }); };
 async function linkedCopy(work, n, ctx, said = '') {
   const { sorted } = await (await dep(ctx, 'rankTitled', 'works'))([work], { byline: true });
   const read = await dep(ctx, 'getParagraphs', 'docs'), links = await dep(ctx, 'resolveLinks', 'plinks');
   const top = [];
-  for (const [i, d] of sorted.slice(0, 5).entries()) {
+  for (const [i, d] of sorted.slice(0, 8).entries()) {
     const ids = (await read(d.id, { proseOnly: true, limit: n + 6, offset: 0 }).catch(() => [])).map((r) => r.id);
     const l = ids.length ? await links(ids, { quotedBy: false }).catch(() => new Map()) : new Map();
-    top.push({ d, i, off: unsaidQualifier(d.title, `${work} ${said} ${d.author ?? ''}`) ? 1 : 0, linked: [...l.values()].some((x) => x?.original || x?.translations?.length) ? 0 : 1 });
+    top.push({ d, i, off: unsaidQualifier(d.title, `${work} ${said} ${d.author ?? ''}`) ? 1 : 0, on: saidQualifier(d.title, said) ? 0 : 1,
+      linked: [...l.values()].some((x) => x?.original || x?.translations?.length) ? 0 : 1 });
   }
-  return top.sort((a, b) => a.off - b.off || a.linked - b.linked || a.i - b.i)[0]?.d ?? null;
+  // 11-12 "the first three Arabic Hidden Words": a bahai-library copy (its opening = "Click here…" lines) beat "The Hidden Words (Arabic)"
+  return top.sort((a, b) => a.off - b.off || a.on - b.on || a.linked - b.linked || a.i - b.i)[0]?.d ?? null;
 }
 
 const PROCESS_ENTRIES = [

@@ -89,6 +89,12 @@ describe('opening_lookup', () => {
     const none = await tools.run('opening_lookup', { work: 'Tablet of Aḥmad', n: 1, linked: true }, { deps: { ...deps, getParagraphs, rankTitled, resolveLinks: async () => new Map(), getLinkMeta: async () => new Map() } });
     expect(none.passages.map((p) => p.document_id)).toEqual([1616]);
   });
+  it('linked: a copy whose parenthetical the reader DID say comes first (11-12 "first three Arabic Hidden Words" opened a bahai-library "Click here…" page)', async () => {
+    const rankTitled = async () => ({ sorted: [{ id: 28628, title: 'Hidden Words' }, { id: 927205, title: 'The Hidden Words' }, { id: 20750, title: 'The Hidden Words (Arabic)' }] });
+    const getParagraphs = vi.fn(async (d) => [{ id: d * 10, paragraph_index: 0, text: `t${d}` }]);
+    const r = await tools.run('opening_lookup', { work: 'Hidden Words', n: 1, linked: true, said: 'Show me the first three Arabic Hidden Words in Arabic' }, { deps: { ...deps, getParagraphs, rankTitled, resolveLinks: async () => new Map(), getLinkMeta: async () => new Map() } });
+    expect(r.passages.map((p) => p.document_id)).toEqual([20750]);
+  });
   it('linked: a copy whose parenthetical names what the reader never said comes after the rest (11-12 "Tablet of Aḥmad (Persian)", "The Hidden Words (Persian)")', async () => {
     const rankTitled = async () => ({ sorted: [{ id: 1616, title: 'Tablet of Ahmad (Lawh-i-Ahmad)' }, { id: 925939, title: 'Tablet of Aḥmad (Persian)' }, { id: 924540, title: 'Tablet of Aḥmad' }] });
     const getParagraphs = vi.fn(async (d) => [{ id: d * 10, paragraph_index: 0, text: `t${d}` }]);
