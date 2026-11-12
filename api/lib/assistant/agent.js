@@ -18,7 +18,7 @@ const clip = (t, n) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); 
 
 // the agent's tools, by canonical name (tools.js registry): its search is fused_search (no planner), never combined_search under another name
 // the strategies first (Chad 11-12: strategies are the agent's tools, never a front door); the primitives stay beside them for exploration
-export const AGENT_TOOL_NAMES = ['book_card', 'search_in_work', 'find_passage', 'extract_from_work', 'fused_search', 'originals_search', 'context_lookup', 'whole_lookup', 'original_lookup', 'translation_lookup', 'rendering_lookup', 'source_trace', 'quotation_candidates', 'document_search', 'work_notes_lookup', 'web_search'];
+export const AGENT_TOOL_NAMES = ['research_lookup', 'book_card', 'search_in_work', 'find_passage', 'extract_from_work', 'fused_search', 'originals_search', 'context_lookup', 'whole_lookup', 'original_lookup', 'translation_lookup', 'rendering_lookup', 'source_trace', 'quotation_candidates', 'document_search', 'work_notes_lookup', 'web_search'];
 export const AGENT_TOOLS = llmTools(AGENT_TOOL_NAMES);
 export { canonWork };
 
@@ -39,6 +39,7 @@ WEB. web_search only when the reader asks for the web or the library is exhauste
 CONVERSATION. Answer exactly what was asked and keep the subject of the thread. When the reader argues a point, engage it with sources: agree where the texts agree, push back where they do not. No empty acknowledgements.
 
 TOOLS — use them before answering; call several at once when they are independent:
+- research_lookup: FIRST, on every new question, with the question restated so it stands alone (a follow-up resolved from the conversation). It returns research already done for that question; start from it and search further only for what it does not cover.
 - book_card: ONLY when the reader wants the book itself (to read it, to have it). Shows its card; returns [B#].
 - search_in_work: anything inside one named work or periodical (Star of the West = all its issues; give years to narrow). Give several differently worded queries; each is searched by exact words and by meaning, merged. Returns [P#] with their place.
 - find_passage: the reader quotes or describes a passage; optionally held to a religion, author or work.
@@ -82,7 +83,7 @@ export function renderRefs(text, { found, works }) {
     .replace(/[ \t]+([.,;:!?])/g, '$1');
 }
 
-const STATUS = { book_card: (a) => `Finding ${clip(a.title, 60)}`, search_in_work: (a) => `Searching ${clip(a.work, 40)}`, find_passage: (a) => `Finding the passage: ${clip(a.query, 50)}`,
+const STATUS = { research_lookup: () => 'Checking earlier research', book_card: (a) => `Finding ${clip(a.title, 60)}`, search_in_work: (a) => `Searching ${clip(a.work, 40)}`, find_passage: (a) => `Finding the passage: ${clip(a.query, 50)}`,
   extract_from_work: (a) => `Reading ${clip(a.work, 40)} for ${clip(a.select, 40)}`, fused_search: (a) => `Searching the library: ${clip(a.query, 60)}`, combined_search: (a) => `Searching the library: ${clip(a.query, 60)}`, document_search: (a) => `Finding ${clip(a.title, 60)}`,
   work_notes_lookup: (a) => `What the sources say about ${clip(a.title, 50)}`, context_lookup: () => 'Reading around a passage', whole_lookup: () => 'Reading the whole prayer', quotation_candidates: () => 'Tracing a quotation',
   original_lookup: () => 'Finding the original', translation_lookup: () => 'Finding a translation', rendering_lookup: (a) => `Word study: ${clip(a.word, 40)}`,
@@ -130,6 +131,14 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     const r = await impl.extractFromWork(a);
     if (!r?.result?.passages?.length) return `could not select "${a.select}" from "${a.work}" (not found, too large to read whole, or nothing fits) — use search_in_work`;
     return `${r.result.total} picked from ${r.work?.title ?? a.work}, in reading order:\n\n${show(give(r.result.passages))}`;
+  };
+  // research cache (research-cache.js, Chad 11-12): passages earlier answers to this question used; never a finished reply. Not tool-cached (sets grow).
+  let researchQ = null;
+  if (raw?.researchLookup) run.research_lookup = async ({ question }) => {
+    researchQ = String(question || '').trim() || researchQ;
+    const r = await raw.researchLookup(researchQ).catch(() => null);
+    if (!r?.passages?.length) return 'no research held for this question yet — research it with the tools';
+    return `research held (${r.status}, similarity ${r.similarity.toFixed(2)}): start from these; search further only for what they do not cover\n\n${show(give(r.passages))}`;
   };
   run.work_notes_lookup = async ({ title }) => {
     const { work, notes } = await runTool('work_notes_lookup', { title }, { notes: impl.notes });
@@ -193,6 +202,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     ...retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url, religion: q.religion, document_id: q.doc_id, paragraph_index: q.paragraph_index ?? null, text: String(q.text).slice(0, 300) }))]
     .filter((c) => c.url && reply.includes(c.url));
   const cited = retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url));
+  if (researchQ && raw?.researchCapture && cited.length) raw.researchCapture(researchQ, cited.filter((q) => /^\d+$/.test(String(q.id)))).catch(() => {});   // fire and forget
   // cards from the refs the reply cites (quote-cards.js refCards): one strategy passage → its passage card; a book_card book → its card unless a card already shows that work
   let cards = { passage: null, books: [] };
   if (reply) cards = await import('./quote-cards.js').then((m) => m.refCards({ reply, passages: cited.filter((q) => fromStrategy.has(q.ref)),
@@ -213,6 +223,12 @@ export const agentTools = ({ search, fastSearch } = {}) => {
     const os = await import('./own-source.js');
     return (await os.preferOwnWork(hits, { search: os.literalOwnSearch, link: os.linkHits, shape: toPassage })).passages;
   };
-  return { ...libraryTools({ search, fastSearch: fast }), ...strategyImpl({ search, fastSearch: fast }), ownSource };
+  const researchLookup = async (q) => {
+    const rc = await import('./research-cache.js');
+    const hit = await rc.lookupResearch(q);
+    return hit ? { status: hit.set.status, similarity: hit.similarity, passages: await rc.hydrate(hit.set) } : null;
+  };
+  const researchCapture = async (q, ps) => (await import('./research-cache.js')).captureResearch(q, ps);
+  return { ...libraryTools({ search, fastSearch: fast }), ...strategyImpl({ search, fastSearch: fast }), ownSource, researchLookup, researchCapture };
 };
 export { agentCache };

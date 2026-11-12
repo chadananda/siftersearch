@@ -673,6 +673,12 @@ const PROCESS_ENTRIES = [
     } },
   // The agent's STRATEGY tools (agent-strategies.js; Chad 11-12): the agent supplies the creative part (titles, wordings), the strategy does the
   // efficient execution. Process steps (not contract tools); the agent's runner (agent.js) turns their data into [B#]/[P#] refs.
+  { name: 'research_lookup', label: 'Research Lookup', kind: 'tool', process: true, outputName: 'Passage[]', cost: C(false, 200),
+    purpose: 'Research already done for a question (research-cache.js): the passages earlier answers used, re-read from the library.',
+    description: 'Research already held for this question: call FIRST with the question restated to stand alone. Returns [P#] passages earlier answers to it used (curated sets first), or that none is held.',
+    input: { type: 'object', additionalProperties: false, required: ['question'], properties: { question: str('The reader\'s question, restated to stand alone', 500) } },
+    output: { type: 'object', properties: { status: { type: 'string' }, similarity: { type: 'number' }, passages: { type: 'array', items: PASSAGE } } },
+    async run(a, ctx = {}) { return ctx.researchLookup ? ctx.researchLookup(a.question) : null; } },
   { name: 'book_card', label: 'Book Card', kind: 'tool', process: true, outputName: 'Book', cost: C(false, 300),
     purpose: 'The library\'s own copy of a book the reader wants, with its card.',
     description: 'THE BOOK ITSELF: use only when the reader wants the book (to read it, to have it). Resolves a title (any spelling) among the library\'s works and sections and shows the reader its card. Returns a [B#].',

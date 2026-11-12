@@ -148,6 +148,28 @@ describe('the agent over the strategy tools', () => {
   });
 });
 
+describe('research cache as the agent\'s first tool', () => {
+  const base = { messages: [{ role: 'user', content: 'How do Bahá\'ís pray?' }], cardDocs: docs };
+  it('a held set comes back as [P#] the reply cites (never through the tool cache); the cited passages are captured under the standalone question', async () => {
+    const researchLookup = vi.fn(async () => ({ status: 'curated', similarity: 0.95, passages: [P1] })), researchCapture = vi.fn(async () => null);
+    const mk = () => script([call('a', 'research_lookup', { question: 'How do Bahá\'ís pray?' })], 'They pray daily [[P1]].');
+    const cache = toolCache();
+    await agentAnswer({ ...base, create: mk(), tools: { search: async () => [], researchLookup, researchCapture }, cache });
+    const r = await agentAnswer({ ...base, create: mk(), tools: { search: async () => [], researchLookup, researchCapture }, cache });
+    expect(researchLookup).toHaveBeenCalledTimes(2);
+    expect(r.agent.steps[0]).toMatchObject({ tool: 'research_lookup', count: 1 });
+    expect(r.reply).toContain(P1.url);
+    expect(researchCapture).toHaveBeenLastCalledWith('How do Bahá\'ís pray?', [expect.objectContaining({ id: P1.id })]);
+    expect(AGENT_TOOL_NAMES[0]).toBe('research_lookup');
+  });
+  it('nothing held → the agent is told to research; nothing cited → nothing captured', async () => {
+    const researchCapture = vi.fn(async () => null);
+    const r = await agentAnswer({ ...base, create: script([call('a', 'research_lookup', { question: 'q' })], 'No refs.'), tools: { search: async () => [], researchLookup: async () => null, researchCapture } });
+    expect(r.agent.steps[0].count).toBe(0);
+    expect(researchCapture).not.toHaveBeenCalled();
+  });
+});
+
 describe('earned not-found', () => {
   const msgs = [{ role: 'user', content: 'Anything on the Maxwell birth?' }], tools = { search: async () => [] };
   it('a lacking verdict on fewer than 3 searches gets one more round naming the rule; the marker never reaches the reader', async () => {
