@@ -96,6 +96,12 @@ describe('the words and the work are resolved by code; the intent is Jev\'s', ()
     expect(search).toHaveBeenCalledWith({ query: 'private property', works: [21310] });
     expect(got.reply).toContain(URL868);
   });
+  it('a quoted span Jev mislabels as a named work is still the words to find (only the resolved work\'s titles are titles)', async () => {
+    const search = vi.fn(async (a) => quoteSearch(a, { deps: deps() }));
+    const bookFastPath = vi.fn(async () => ({ kind: 'work', work: { doc: GPB, others: [] }, via: 'named' }));
+    await findInWorkAnswer({ messages: [{ role: 'user', content: 'find "private property" in God Passes By' }], names: ['private property'], deps: { bookFastPath }, search });
+    expect(search).toHaveBeenCalledWith({ query: 'private property', works: [21310] });
+  });
   it('one literal hit → one passage card (cover absolute, phrase, place, link); several hits or meaning → none', async () => {
     const search = async (a) => quoteSearch(a, { deps: deps({ getDoc: async () => ({ ...GPB, cover_url: '/covers/gpb.jpg' }) }) });
     const bookFastPath = async () => ({ kind: 'work', work: { doc: GPB, others: [] }, via: 'named' });

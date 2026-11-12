@@ -172,7 +172,9 @@ export async function findInWorkAnswer({ messages, names = [], by = null, topic 
     }
   }
   const other = await import('./work-request.js').then((m) => m.namesOf(doc.title)).catch(() => []);   // "KIQ", "World Order letters"
-  const words = wordsToFind({ quoted, topic, titles: [doc.title, sec?.title, ...names, ...other] });
+  // titles = the RESOLVED work's own names only: Jev's named units are unverified (11-12: '"five diamonds" in star of the west' — he
+  // named the quote as a work, and its span was dropped as a title → "no words to find", the SoW card instead of the search)
+  const words = wordsToFind({ quoted, topic, titles: [doc.title, sec?.title, ...other] });
   decisions?.record?.('in-work:resolve', { by: 'code', saw: { quoted, topic, work: doc.id, section: sec?.title ?? null }, chosen: words || 'none', reason: words ? null : 'no words to find: the work itself (its card)' });
   if (!words) return { book: found, work: doc };   // the work itself was asked for → the turn gives its card
   const run = search || (async (a) => (await import('./tools.js')).run('quote_search', a, { deps: deps.toolDeps || {} }));
