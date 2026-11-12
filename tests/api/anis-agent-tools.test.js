@@ -162,6 +162,13 @@ describe('research cache as the agent\'s first tool', () => {
     expect(researchCapture).toHaveBeenLastCalledWith('How do Bahá\'ís pray?', [expect.objectContaining({ id: P1.id })]);
     expect(AGENT_TOOL_NAMES[0]).toBe('research_lookup');
   });
+  it('a related question\'s research is offered named by its question; the same question is not', async () => {
+    const tools = (similarity) => ({ search: async () => [], researchLookup: async () => ({ status: 'candidate', question: 'How do Bahá\'ís pray?', similarity, passages: [P1] }) });
+    const outOf = async (sim) => { const create = vi.fn(script([call('a', 'research_lookup', { question: 'Which prayer in the morning?' })], 'ok [[P1]]'));
+      await agentAnswer({ ...base, create, tools: tools(sim) }); return JSON.stringify(create.mock.calls.at(-1)[0].messages); };
+    expect(await outOf(0.82)).toContain('RELATED question');
+    expect(await outOf(0.91)).not.toContain('RELATED');
+  });
   it('nothing held → the agent is told to research; nothing cited → nothing captured', async () => {
     const researchCapture = vi.fn(async () => null);
     const r = await agentAnswer({ ...base, create: script([call('a', 'research_lookup', { question: 'q' })], 'No refs.'), tools: { search: async () => [], researchLookup: async () => null, researchCapture } });

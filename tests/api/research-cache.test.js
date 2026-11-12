@@ -25,7 +25,7 @@ describe('lookupResearch', () => {
     const repo = memRepo([set(1, 'what is justice', [1, 0])]);
     expect((await lookupResearch('define fairness', { embed: async () => [1, 0.01], repo }))?.set.id).toBe(1);
     expect(await lookupResearch('define fairness', { embed: async () => [0, 1], repo })).toBeNull();
-    expect(RESEARCH_THRESHOLD).toBeGreaterThanOrEqual(0.9);
+    expect(RESEARCH_THRESHOLD).toBeGreaterThanOrEqual(0.8);   // measured: other topics < 0.5, related 0.73–0.81
   });
   it('prefers curated at equal similarity', async () => {
     const repo = memRepo([set(1, 'a', [1, 0]), set(2, 'b', [1, 0], 'curated')]);

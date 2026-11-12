@@ -12,6 +12,7 @@ import { agentSearch } from './agent-search.js';
 import { roleReplyCap } from './reply-cap.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { agentCache, callScope, cachedImpl } from './tool-cache.js';
+import { SAME_QUESTION } from './research-cache.js';
 import { asPassage, strategyImpl } from './agent-strategies.js';
 
 const clip = (t, n) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? `${s.slice(0, n)}…` : s; };
@@ -138,7 +139,8 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     researchQ = String(question || '').trim() || researchQ;
     const r = await raw.researchLookup(researchQ).catch((err) => { console.warn(`[anis] research lookup failed: ${err.message}`); return null; });
     if (!r?.passages?.length) return 'no research held for this question yet — research it with the tools';
-    return `research held (${r.status}, similarity ${r.similarity.toFixed(2)}): start from these; search further only for what they do not cover\n\n${show(give(r.passages))}`;
+    const same = r.similarity >= SAME_QUESTION;
+    return `${same ? 'research held for this question' : `research held for a RELATED question ("${r.question}")`} (${r.status}): start from these; search further for what they do not cover${same ? '' : ' — this question may need more'}\n\n${show(give(r.passages))}`;
   };
   run.work_notes_lookup = async ({ title }) => {
     const { work, notes } = await runTool('work_notes_lookup', { title }, { notes: impl.notes });
@@ -228,7 +230,7 @@ export const agentTools = ({ search, fastSearch } = {}) => {
   const researchLookup = async (q) => {
     const rc = await import('./research-cache.js');
     const hit = await rc.lookupResearch(q);
-    return hit ? { status: hit.set.status, similarity: hit.similarity, passages: await rc.hydrate(hit.set) } : null;
+    return hit ? { status: hit.set.status, question: hit.set.question, similarity: hit.similarity, passages: await rc.hydrate(hit.set) } : null;
   };
   const researchCapture = async (q, ps) => (await import('./research-cache.js')).captureResearch(q, ps);
   return { ...libraryTools({ search, fastSearch: fast }), ...strategyImpl({ search, fastSearch: fast }), ownSource, researchLookup, researchCapture };

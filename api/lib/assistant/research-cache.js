@@ -2,7 +2,9 @@
 // candidate at equal similarity. All deps injectable. Deps: answer-cache (normalize/hash), research-sets-repo, paragraphs-repo, ai (embed)
 import { normalizeQuestion, questionHash } from '../answer-cache.js';
 
-export const RESEARCH_THRESHOLD = 0.92;
+// Measured 11-12 (config embeddings): the same question reworded 0.91; a narrower/broader question on the topic 0.73–0.81; another topic < 0.5.
+export const SAME_QUESTION = 0.88;
+export const RESEARCH_THRESHOLD = 0.80;   // a related question's research is still a start (it is passages, not a reply)
 const defaultRepo = async () => import('../repos/research-sets-repo.js');
 // Question embedding: createEmbedding (api/lib/ai.js, config.ai.embeddings.model) — the same call answer-cache's prep path uses.
 const defaultEmbed = async (q) => (await (await import('../ai.js')).createEmbedding(q)).embedding;
