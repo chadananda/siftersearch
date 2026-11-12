@@ -713,6 +713,8 @@ E.shape = { kind: 'writer', cls: 'code', edges: ['done'], scope: 'strategy', par
     const wd = p.widget === 'side_by_side' ? buildSideBySide(u.found_passages, { link: exactLink, layout: p.layout }) : null;
     writer(s, p.widget && !wd && p.fallback_template ? p.fallback_template : id, {}, { shared: p.shared, direct: p.direct, theme_by: p.theme_by, format: p.format, plan: p.plan });
     if (wd?.rows.length) s.out.format.widget = wd;
+    // the work links to its primary source page (Ocean of Lights …); Phelps' inventory only when no such page exists (Chad 11-12)
+    if (wd?.rows.length && wd.work.url) for (const x of [...(s.out.passages || []), ...(s.out.records || [])]) for (const k of ['source_url', 'url', 'citation_url', 'reader_url']) if (/portlandiator\.github\.io/.test(x?.[k] || '')) x[k] = wd.work.url;
     for (const o of [p.offers].flat().filter(Boolean)) u.offers.push({ what: sub(u, o), turn: s.turn ?? null, strategy: s.choice?.strategy ?? null });
     s.note = { read: { template: id, mode: modeOf(u) }, params: p, count: n, scope_excluded: 0, ...(p.direct ? { direct: true } : {}) };
     return 'done';

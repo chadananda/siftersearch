@@ -15,10 +15,10 @@ export function widgetSegments(md, widgets) {
     while (j < lines.length && !lines[j].trim()) j++;
     const t0 = j;
     while (j < lines.length && lines[j].trim().startsWith('|')) j++;
-    if (j === t0) continue;
+    if (j === t0 && t0 < lines.length) continue;   // a marker at the end of the text so far (still streaming) is already the widget
     let k = j;
     while (k < lines.length && !lines[k].trim()) k++;
-    if (k < lines.length && lines[k].trim() === APPROX_NOTE) j = k + 1;
+    if (k < lines.length && lines[k].trim() && APPROX_NOTE.startsWith(lines[k].trim())) j = k + 1;   // the note, whole or still arriving
     if (i > from) out.push({ kind: 'text', md: lines.slice(from, i).join('\n') });
     out.push({ kind: 'widget', widget: by.get(id), md: lines.slice(i, j).join('\n') });
     from = j; i = j - 1;

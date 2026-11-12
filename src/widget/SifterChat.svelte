@@ -253,8 +253,12 @@
     }
   }
 
-  function citationHref(c) {
-    return c.document_id ? `https://siftersearch.com/document/${c.document_id}` : null;
+  // a source's own online page (Ocean of Lights, OceanLibrary …) first; our reader only when it has none (Chad 11-12); a source the reply already links is not repeated
+  const linkBase = (u) => String(u || '').split('#')[0].split('?')[0].replace(/\/$/, '');
+  function citationHref(c, content = '') {
+    const own = /^https?:\/\//.test(c?.url || '') ? c.url : null;
+    const u = own || (c?.document_id ? `https://siftersearch.com/document/${c.document_id}` : null);
+    return u && !String(content).includes(linkBase(u)) ? u : null;
   }
   // Minimal, safe rich text: escape ALL html, then rebuild [text](https://…) links,
   // **bold**, *italics*, "> " blockquotes, "- " bullets and pipe tables (the crafter formats for
@@ -524,7 +528,7 @@
                           : phase === 'deepening-more' ? 'Still searching — combing the historical records…'
                           : 'Searching the ocean of texts…'}</span>
                       {:else}
-                        {#if m.widgets?.length && !m.pending}
+                        {#if m.widgets?.length}
                           <!-- a display widget (side_by_side): the reply's marker + table swapped for the component; the text around it as usual -->
                           {#each widgetSegments(m.content, m.widgets) as ws}{#if ws.kind === 'widget'}<SideBySide widget={ws.widget} />{:else}{@html renderRich(ws.md)}{/if}{/each}
                         {:else if m.quoteCards?.length && !m.pending}
@@ -553,9 +557,9 @@
                   {#each m.books || [] as b (b.id)}{@render bookCard(b)}{/each}
                   {#if m.citations?.length}
                     <div class="cites">
-                      {#each m.citations.slice(0, 4) as c, ci}
-                        {#if citationHref(c)}
-                          <a href={citationHref(c)} target="_blank" rel="noopener" style="animation-delay:{ci * 80}ms">{c.title || 'source'}</a>
+                      {#each [...new Map(m.citations.filter((c) => citationHref(c, m.content)).map((c) => [linkBase(citationHref(c, m.content)), c])).values()].slice(0, 4) as c, ci}
+                        {#if citationHref(c, m.content)}
+                          <a href={citationHref(c, m.content)} target="_blank" rel="noopener" style="animation-delay:{ci * 80}ms">{c.title || 'source'}</a>
                         {/if}
                       {/each}
                     </div>

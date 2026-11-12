@@ -36,10 +36,26 @@ describe('markdown and segments', () => {
   const d = buildSideBySide([orig(0), orig(1), tr(500, 'A | b', [100]), tr(501, 'B', [101], { exact: false })]);
   it('table: header, separator, one line per row, pipes escaped, note when approximate', () => {
     const lines = toMarkdown(d).split('\n');
-    expect(lines[0]).toBe('| Arabic (original) | Rodwell |');
+    expect(lines[0]).toBe('| *Qur’án 108* — Arabic · original | *Kawthar* — English · tr. Rodwell |');
     expect(lines[1]).toBe('| --- | --- |');
     expect(lines[2]).toContain(AR[0]); expect(lines[2]).toContain('A \\| b');
     expect(lines.at(-1)).toBe(APPROX_NOTE);
+    expect(lines.join('\n')).toContain('| [o](https://o/ar#p0) | [o](https://o/en#p500) |');   // sources: one bottom row, cells never links
+    expect(lines[2]).not.toContain('](');
+  });
+  it('a byline beside a long original is no column; Phelps only when no column has a real source', () => {
+    const long = { ...orig(0), text: 'ب'.repeat(260), source_url: 'https://oceanoflights.org/bab-inba-053/#:~:text=x' };
+    const d2 = buildSideBySide([long, tr(500, 'by the Bab', [100], { document_id: 3 }), tr(501, 'Then from the letter Vav is the absolute Guardianship …', [100], { source_url: 'https://portlandiator.github.io/PI_browser/?id=BB00007' })]);
+    expect(d2.translations).toHaveLength(1);
+    expect(d2.original.source).toMatchObject({ name: 'Ocean of Lights' });
+    expect(d2.translations[0].source).toBeNull();
+    expect(d2.work.url).toBe('https://oceanoflights.org/bab-inba-053/');
+    const only = buildSideBySide([{ ...orig(0), source_url: null }, tr(501, 'x y z w', [100], { source_url: 'https://portlandiator.github.io/PI_browser/?id=BB1' })]);
+    expect(only.translations[0].source).toMatchObject({ name: 'Phelps Inventory' });
+  });
+  it('titles: main, subtitle and provisional split off', async () => {
+    const { titleParts } = await import('../../api/lib/assistant/widgets/side-by-side.js');
+    expect(titleParts("Tafsir-i-Suratu'l-Kawthar (Commentary on the Surah of Kawthar) (provisional translation)")).toEqual({ main: "Tafsir-i-Suratu'l-Kawthar", sub: 'Commentary on the Surah of Kawthar', provisional: true });
   });
   it('marker + table swap to a widget segment, text around kept', () => {
     const md = `Framing line.\n\n${widgetBlock(d)}\n\nAfter.`;
@@ -48,6 +64,11 @@ describe('markdown and segments', () => {
     expect(s.map((x) => x.kind)).toEqual(['text', 'widget', 'text']);
     expect(s[1].widget.id).toBe(d.id); expect(s[2].md).toContain('After.');
     expect(widgetSegments(md, [])).toEqual([{ kind: 'text', md }]);
+    // streaming: a marker with its table not yet (or half) arrived is already the widget — no raw table ever shows
+    const head = `Framing line.\n\n${widgetMarker(d.id)}\n`;
+    expect(widgetSegments(head, [d]).map((x) => x.kind)).toEqual(['text', 'widget']);
+    const half = `${head}\n${widgetBlock(d).split('\n').slice(2).join('\n').slice(0, -20)}`;
+    expect(widgetSegments(half, [d]).map((x) => x.kind)).toEqual(['text', 'widget']);
   });
 });
 
@@ -85,8 +106,8 @@ describe('HTML per mode', () => {
     const mail = renderWidget(d, 'email');
     expect(mail).toContain('style="'); expect(mail).not.toContain('<style>'); expect(mail).toContain('Aligned approximately');
     const multi = buildSideBySide([{ ...orig(0), text: 'أولى. ثانية.' }, tr(500, 'One. Two.', [100])]);
-    expect((toHtml(multi, { mode: 'chat', layout: 'study' }).match(/<tr>/g) || []).length).toBe(3);
-    expect((toHtml(multi, { mode: 'chat', layout: 'tight' }).match(/<tr>/g) || []).length).toBe(2);
+    expect((toHtml(multi, { mode: 'chat', layout: 'study' }).match(/<tr>/g) || []).length).toBe(4);   // + the sources row
+    expect((toHtml(multi, { mode: 'chat', layout: 'tight' }).match(/<tr>/g) || []).length).toBe(3);
     expect(renderWidget(d, 'nope')).toBe('');
   });
 });

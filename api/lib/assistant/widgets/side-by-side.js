@@ -12,6 +12,21 @@ const meets = (a, b) => [...a].some((x) => b.has(x));
 // the script decides when the label is wrong (11-12: the Kawthar's Arabic is catalogued 'en', so no passage came back as role 'original')
 const scriptLang = (p) => { const t = clean(p.text), l = code(p.language); if (/[\u0600-\u06ff]/.test(t)) return l === 'fa' || l === 'ur' ? l : 'ar'; if (/[\u0590-\u05ff]/.test(t)) return 'he'; return l; };
 const isOriginal = (p) => p.role === 'original' || (!p.role && RTL.has(scriptLang(p)));
+// a column whose whole text is a few words beside a long original is a byline or a heading ("by the Bab", 11-12), never a translation
+const chars = (ps) => ps.reduce((n, p) => n + clean(p.text).length, 0);
+// each column's source, named by its site, shown once under the column — never the cell text as a link (Chad 11-12). Our own reader is the last-chance
+// fallback (not promoted); Phelps' inventory only when no column has a real source page
+const SITES = [[/oceanoflights\.org/, 'Ocean of Lights'], [/oceanlibrary\.com/, 'Ocean Library'], [/bahai\.org/, 'Bahá’í Reference Library'], [/bahai-library\.com/, 'Bahá’í Library Online'],
+  [/portlandiator\.github\.io/, 'Phelps Inventory'], [/siftersearch\.com/, 'Library']];
+const FALLBACK = /siftersearch\.com|portlandiator\.github\.io/;
+const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return null; } };
+const sourceOf = (url) => (url ? { name: SITES.find(([re]) => re.test(url))?.[1] ?? host(url) ?? 'Source', url } : null);
+/** "Main (Sub) (provisional translation)" → { main, sub, provisional } */
+export function titleParts(t) {
+  const s = String(t || '').replace(/\s+/g, ' ').trim(), provisional = /\(\s*provisional(?: translation)?\s*\)/i.test(s);
+  const rest = s.replace(/\s*\(\s*provisional(?: translation)?\s*\)\s*/i, ' ').trim(), m = rest.match(/^(.+?)\s*\((.+)\)$/);
+  return { main: m ? m[1] : rest || null, sub: m ? m[2] : null, provisional };
+}
 
 /** Aligned passages [{id, text, role, language, document_id, paragraph_index, aligned_to[], aligned_by, exact, title, translator, source_url}] → widget data, or null
  *  (no original). opts: link(p) → url, layout 'tight'|'study', workUrl. One row per original paragraph; a translation passage covering several originals is ONE
@@ -25,9 +40,10 @@ export function buildSideBySide(passages, { link = (p) => p.source_url ?? p.cita
   const origs = list.filter((p) => isOriginal(p) && p.document_id === first.document_id && !seen.has(p.id) && seen.add(p.id))
     .map((p, i) => ({ p, i })).sort((a, b) => (a.p.paragraph_index ?? 1e9) - (b.p.paragraph_index ?? 1e9) || a.i - b.i).map((x) => x.p);
   // translations: the editions found (role translation) and the anchor passage itself (no role) — one column per document
-  const trs = list.filter((p) => p.role === 'translation' || (!p.role && anchorIds.has(p.id) && scriptLang(p) !== lang));
+  const trs = list.filter((p) => (p.role === 'translation' || (!p.role && anchorIds.has(p.id) && scriptLang(p) !== lang)));
   const docs = [...new Map(trs.map((p) => [p.document_id ?? p.title, p])).keys()].slice(0, 3);
-  const cols = docs.map((d) => trs.filter((p) => (p.document_id ?? p.title) === d).sort((a, b) => (a.paragraph_index ?? 0) - (b.paragraph_index ?? 0)));
+  const cols = docs.map((d) => trs.filter((p) => (p.document_id ?? p.title) === d).sort((a, b) => (a.paragraph_index ?? 0) - (b.paragraph_index ?? 0)))
+    .filter((col) => !(chars(col) < 40 && chars(origs) > 200));
   const oKeys = origs.map(keys);
   const cells = cols.map((col) => {
     const hit = oKeys.map((k) => col.find((p) => meets(keys(p), k)) ?? null);
@@ -44,10 +60,14 @@ export function buildSideBySide(passages, { link = (p) => p.source_url ?? p.cita
       return { text: clean(p.text), url: link(p) ?? null, span, paragraph_id: p.id };
     }) }));
   const all = [...origs, ...cols.flat()];
+  const srcs = [origs, ...cols].map((col) => sourceOf(col.map((p) => link(p)).find(Boolean) ?? null));
+  const real = srcs.some((x) => x && !FALLBACK.test(x.url));
+  const [oSrc, ...tSrc] = srcs.map((x) => (x && real && /portlandiator/.test(x.url) ? null : x));
   return { kind: 'side_by_side', id: `sbs-${hash(origs.map((o) => o.id).join(','))}`, layout,
-    work: { title: first.title ?? null, url: workUrl ?? null, language: lang, document_id: first.document_id ?? null },
-    original: { lang, dir: RTL.has(lang) ? 'rtl' : 'ltr', label: NAMES[lang] ?? lang },
-    translations: cols.map((col) => ({ translator: col[0].translator ?? null, title: col[0].title ?? null, language: code(col[0].language), label: col[0].translator || col[0].title || 'Translation' })),
+    work: { title: first.title ?? null, url: workUrl ?? (oSrc && !FALLBACK.test(oSrc.url) ? oSrc.url.replace(/#.*$/, '') : null), language: lang, document_id: first.document_id ?? null },
+    original: { lang, dir: RTL.has(lang) ? 'rtl' : 'ltr', label: NAMES[lang] ?? lang, title: titleParts(first.title), source: oSrc },
+    translations: cols.map((col, i) => ({ translator: col[0].translator ?? null, title: col[0].title ?? null, language: code(col[0].language), label: col[0].translator || col[0].title || 'Translation',
+      language_label: NAMES[code(col[0].language)] ?? code(col[0].language) ?? null, title_parts: titleParts(col[0].title), source: tSrc[i] ?? null })),
     rows, approximate: all.some((p) => p.exact === false) };
 }
 
@@ -82,25 +102,36 @@ export function studyRows(data) {
 
 // ── markdown (the fallback everywhere; study falls back to tight) ───────────────────────────────────────────────────────
 const md = (s) => String(s).replace(/\|/g, '\\|').replace(/\[/g, '\\[').replace(/\]/g, '\\]');
-const mdCell = (c) => (!c?.text ? '' : c.url ? `[${md(c.text)}](${c.url})` : md(c.text));
+const mdCell = (c) => (!c?.text ? '' : md(c.text));
+/** column heading pieces: kicker ("Arabic · original", "English · provisional translation") + the work title */
+export function heads(data) {
+  const o = data.original;
+  return [{ kicker: `${o.label} · original`, title: o.title ?? titleParts(data.work?.title), source: o.source ?? null, dir: o.dir },
+    ...data.translations.map((t) => { const tp = t.title_parts ?? titleParts(t.title);
+      return { kicker: [t.language_label, t.translator ? `tr. ${t.translator}` : tp.provisional ? 'provisional translation' : 'translation'].filter(Boolean).join(' · '), title: tp, source: t.source ?? null, dir: 'ltr' }; })];
+}
+const mdHead = (h) => [h.title?.main ? `*${md(h.title.main)}*` : '', md(h.kicker)].filter(Boolean).join(' — ');
 export function toMarkdown(data) {
-  const head = [`${data.original.label} (original)`, ...data.translations.map((t) => md(t.label))];
+  const hs = heads(data), head = hs.map(mdHead);
   const body = data.rows.map((r) => [mdCell(r.original), ...r.translations.map(mdCell)]);
-  return [`| ${head.join(' | ')} |`, `| ${head.map(() => '---').join(' | ')} |`, ...body.map((r) => `| ${r.join(' | ')} |`), ...(data.approximate ? ['', APPROX_NOTE] : [])].join('\n');
+  const src = hs.some((h) => h.source) ? [`| ${hs.map((h) => (h.source ? `[${md(h.source.name)}](${h.source.url})` : '')).join(' | ')} |`] : [];
+  return [`| ${head.join(' | ')} |`, `| ${head.map(() => '---').join(' | ')} |`, ...body.map((r) => `| ${r.join(' | ')} |`), ...src, ...(data.approximate ? ['', APPROX_NOTE] : [])].join('\n');
 }
 
 // ── HTML: chat | embed (class names, stacked under 640 px) · email | print (inline styles, mail-safe) ────────────────────────
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const FONT = "'Amiri','Noto Naskh Arabic','Scheherazade New','Traditional Arabic','Geeza Pro',serif";
-const css = `.sbs{width:100%;border-collapse:collapse;font-size:.95em}.sbs th{text-align:start;font-weight:600;padding:.4em .6em;border-bottom:2px solid currentColor}.sbs td{vertical-align:top;padding:.5em .6em}.sbs.tight td{border-bottom:1px solid rgba(128,128,128,.35)}.sbs td[dir=rtl]{font-family:${FONT};font-size:1.25em;line-height:1.9}.sbs a{color:inherit;text-decoration:underline dotted}@media (max-width:640px){.sbs,.sbs thead,.sbs tbody,.sbs tr,.sbs td{display:block;width:auto}.sbs thead{display:none}.sbs tr{padding:.4em 0}}`;
+const css = `.sbs{width:100%;border-collapse:collapse;font-size:.95em}.sbs th{text-align:start;font-weight:400;padding:.2em .9em .7em;vertical-align:bottom;border-bottom:1px solid rgba(128,128,128,.4)}.sbs .k{display:block;font-size:.72em;letter-spacing:.08em;text-transform:uppercase;opacity:.65}.sbs .t{display:block;font-style:italic;font-size:1.08em;font-weight:600}.sbs .s{display:block;font-size:.85em;opacity:.75}.sbs td{vertical-align:top;padding:.7em .9em;line-height:1.6}.sbs td+td,.sbs th+th{border-left:1px solid rgba(128,128,128,.25)}.sbs.tight tbody td{border-bottom:1px solid rgba(128,128,128,.15)}.sbs td[dir=rtl]{font-family:${FONT};font-size:1.25em;line-height:1.9;text-align:right}.sbs th[dir=rtl]{text-align:right}.sbs tfoot td{font-size:.8em;padding-top:.5em;border:0}.sbs tfoot a{color:inherit;opacity:.7}@media (max-width:640px){.sbs,.sbs thead,.sbs tbody,.sbs tfoot,.sbs tr,.sbs td{display:block;width:auto}.sbs thead{display:none}.sbs td+td{border-left:0}}`;
 export function toHtml(data, { mode = 'chat', layout = data.layout ?? 'tight' } = {}) {
   const inline = mode === 'email' || mode === 'print', study = layout === 'study';
-  const rows = study ? studyRows(data) : data.rows, o = data.original;
-  const td = (c, extra = '', dir = '') => (c === null ? '' : `<td${dir}${c?.span > 1 ? ` rowspan="${c.span}"` : ''}${inline ? ` style="vertical-align:top;padding:6px 8px;${study ? '' : 'border-bottom:1px solid #d6dde0;'}${extra}"` : ''}>${!c?.text ? '' : c.url ? `<a href="${esc(c.url)}">${esc(c.text)}</a>` : esc(c.text)}</td>`);
+  const rows = study ? studyRows(data) : data.rows, o = data.original, hs = heads(data);
+  const st = (x) => (inline ? ` style="${x}"` : '');
+  const td = (c, extra = '', dir = '') => (c === null ? '' : `<td${dir}${c?.span > 1 ? ` rowspan="${c.span}"` : ''}${st(`vertical-align:top;padding:8px 10px;line-height:1.6;${study ? '' : 'border-bottom:1px solid #e3e8ea;'}${extra}`)}>${esc(c?.text || '')}</td>`);
   const rtl = ` dir="${o.dir}" lang="${esc(o.lang)}"`, oStyle = o.dir === 'rtl' ? `font-family:${FONT};font-size:19px;line-height:1.9;text-align:right;` : '';
-  const th = (t, a = '') => `<th${inline ? ` style="text-align:left;padding:6px 8px;border-bottom:2px solid #1f6f8b;${a}"` : ''}>${t}</th>`;
-  const head = `<thead><tr>${th(esc(`${o.label} (original)`), o.dir === 'rtl' ? 'text-align:right;' : '')}${data.translations.map((t) => th(esc(t.label))).join('')}</tr></thead>`;
+  const th = (h) => `<th${h.dir === 'rtl' ? ' dir="rtl"' : ''}${st(`text-align:${h.dir === 'rtl' ? 'right' : 'left'};font-weight:400;padding:4px 10px 10px;vertical-align:bottom;border-bottom:1px solid #b9c4c8;`)}><span class="k"${st('display:block;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a8890')}>${esc(h.kicker)}</span>${h.title?.main ? `<span class="t"${st('display:block;font-style:italic;font-weight:600;font-size:15px')}>${esc(h.title.main)}</span>` : ''}${h.title?.sub ? `<span class="s"${st('display:block;font-size:12px;color:#5b6a70')}>${esc(h.title.sub)}</span>` : ''}</th>`;
+  const head = `<thead><tr>${hs.map(th).join('')}</tr></thead>`;
   const body = rows.map((r) => `<tr>${td(r.original, oStyle, rtl)}${r.translations.map((c) => td(c)).join('')}</tr>`).join('');
-  const note = data.approximate ? `<p class="sbs-note"${inline ? ' style="font-size:13px;font-style:italic;color:#7a8890"' : ''}>${esc(APPROX_NOTE.replace(/\*/g, ''))}</p>` : '';
-  return `${inline ? '' : `<style>${css}</style>`}<table class="sbs ${study ? 'study' : 'tight'}"${inline ? ' cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin:12px 0"' : ''}>${head}<tbody>${body}</tbody></table>${note}`;
+  const foot = hs.some((h) => h.source) ? `<tfoot><tr>${hs.map((h) => `<td${h.dir === 'rtl' ? ' dir="rtl"' : ''}${st(`font-size:12px;padding:6px 10px;text-align:${h.dir === 'rtl' ? 'right' : 'left'}`)}>${h.source ? `<a href="${esc(h.source.url)}"${st('color:#5b6a70')}>${esc(h.source.name)} ↗</a>` : ''}</td>`).join('')}</tr></tfoot>` : '';
+  const note = data.approximate ? `<p class="sbs-note"${st('font-size:13px;font-style:italic;color:#7a8890')}>${esc(APPROX_NOTE.replace(/\*/g, ''))}</p>` : '';
+  return `${inline ? '' : `<style>${css}</style>`}<table class="sbs ${study ? 'study' : 'tight'}"${inline ? ' cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin:12px 0"' : ''}>${head}<tbody>${body}</tbody>${foot}</table>${note}`;
 }

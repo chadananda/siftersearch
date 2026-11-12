@@ -1,7 +1,7 @@
 // Print renderer for the side_by_side widget (pdf/render.js calls it). The original is shaped right-to-left in Amiri (font 'a0': fontkit joins the letters; words are
 // wrapped here with NBSP so pdfkit cannot drop the word gaps); translations flow through render.js' inline(). A QR to the work floats on the right edge.
 // tight = one ruled row per verse (spans merged); study = sentence rows, no rules.
-import { studyRows } from '../widgets/side-by-side.js';
+import { studyRows, heads } from '../widgets/side-by-side.js';
 
 const PAD = 4, SIZE = 9.5, AR = 15, NB = ' ';
 // greedy wrap of Arabic-script text into lines (each NBSP-joined) that fit `width`
@@ -33,7 +33,7 @@ export function drawSideBySide(doc, data, ctx, { layout = data.layout ?? 'tight'
   // header
   const head = () => {
     const hh = 18, y = doc.y; doc.rect(x, y, width, hh).fill(color.sea);
-    const lab = [`${data.original.label} (original)`, ...data.translations.map((t) => t.label)];
+    const lab = heads(data).map((h) => [h.title?.main, h.kicker].filter(Boolean).join(' — '));
     lab.forEach((t, c) => ctx.inline(doc, [{ text: t.length > 60 ? `${t.slice(0, 57)}…` : t, style: 'b', color: '#ffffff' }], { x: colX(c - 1) + PAD, y: y + 5, width: (c ? tw : ow) - 2 * PAD, size: 8.5, align: c === 0 && rtl ? 'right' : 'left' }));
     doc.y = y + hh;
   };

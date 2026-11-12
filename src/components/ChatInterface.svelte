@@ -2068,7 +2068,7 @@
                   {#if msg.isStreaming && !msg.content}
                     <span class="research-typing"><span></span><span></span><span></span></span>
                   {:else}
-                    {#if msg.widgets?.length && !msg.isStreaming}
+                    {#if msg.widgets?.length}<!-- the widget renders the moment it arrives, streaming or not (Chad 11-12) -->
                       <div class="research-msg-text prose">{#each widgetSegments(msg.content, msg.widgets) as ws}{#if ws.kind === 'widget'}<SideBySide widget={ws.widget} />{:else}{#each (msg.quoteCards?.length ? quoteSegments(ws.md, msg.quoteCards) : [{ kind: 'text', md: ws.md }]) as seg}{#if seg.kind === 'quote'}<QuoteCard card={seg.card} html={formatResearchText(seg.body)} />{:else}{@html formatResearchText(seg.md)}{/if}{/each}{/if}{/each}</div>
                     {:else if msg.quoteCards?.length && !msg.isStreaming}
                       <!-- quoted passages as cards (the reply's own blockquotes, swapped in once it is complete) -->

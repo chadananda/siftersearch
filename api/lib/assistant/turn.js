@@ -528,8 +528,9 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const wblock = r.widget && !replaced && typeof reply === 'string' && reply.trim() ? widgetBlock(r.widget) : '';
     if (wblock) {
       reply = `${reply}\n\n${wblock}`;
-      if (channel.renderer !== 'email-html') onEvent({ type: 'text', content: `\n\n${wblock}` });
+      // the widget FIRST, so a live client swaps the table for the component before any of its markdown shows (Chad 11-12: never stream it unformatted)
       if (channel.live) onEvent({ type: 'widget', widget: r.widget });
+      if (channel.renderer !== 'email-html') onEvent({ type: 'text', content: `\n\n${wblock}` });
     }
     // pdf_new: the researched reply, delivered as the branded PDF (a letter gets the link in its HTML; a chat gets link or mail)
     let documentInfo;
