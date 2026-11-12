@@ -133,6 +133,14 @@ describe('prayer tree (11-09 redesign: the passage is the prayer, any tradition)
     const inc = await run('prayer', 'q', { tools, extra: { units: { incipit: 'Our Father which art in heaven' } } });
     expect(path(inc)[1]).toBe('p1'); expect(seen.incipit).toBe('Our Father which art in heaven'); expect(seen.tradition).toBeUndefined();
   });
+  it('named: the ONE prayer whose own words hold the name leads, without Jev; several holding it → Jev chooses (11-12 Remover of Difficulties)', async () => {
+    const ps = [C(1, { text: 'O Lord! Thou art the Remover of every anguish.' }), C(2, { text: 'Is there any Remover of difficulties save God? Say: Praised be God!' })];
+    const s = await run('prayer', 'q', { tools: { prayer_lookup: lookup(ps) }, extra: { units: { named_work: 'Remover of Difficulties' }, judges: { prayer: async () => { throw new Error('no Jev when one prayer holds the name'); } } } });
+    expect(s.out.passages[0].id).toBe(2);
+    let asked = false; const two = [C(1, { text: 'a remover of difficulties' }), C(2, { text: 'the Remover of difficulties' })];
+    await run('prayer', 'q', { tools: { prayer_lookup: lookup(two) }, extra: { units: { named_work: 'Remover of Difficulties' }, judges: { prayer: async () => { asked = true; return { choice: 'found:1', confidence: 0.9 }; } } } });
+    expect(asked).toBe(true);
+  });
   it('named, nothing found → the need path (no extra model call); need, no tradition → several traditions → prayer.many, each in full', async () => {
     const tools = { prayer_lookup: async (i) => (i.name ? { passages: [], searched: [] } : { passages: [C(1), P(2, { religion: 'Islam', tradition: 'Islam' })], searched: [] }) };
     const s = await run('prayer', q, { tools, extra: { units: { named_work: 'Prayer of St Francis' }, ...judge({ choice: 'found:0', confidence: 0.9, distribution: { 'found:0': 0.5, 'found:1': 0.4, none: 0.1 } }) } });

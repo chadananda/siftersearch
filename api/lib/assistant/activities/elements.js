@@ -505,11 +505,16 @@ E['fetch.work'] = { ...fetchWork, async run(s, p = {}) {
   if (e === 'one' && got.length && got.every((x) => x.match === 'close')) { u.found_outcome[s.node ?? p.id ?? '?'] = 'several'; return 'several'; }
   return e;
 } };
-E['judge.prayer'] = { kind: 'decision', cls: 'jev', edges: ['picked', 'none', 'unjudged'], scope: 'strategy', params: ['stage'], reads: ['found_passages', 'occasion', 'current_user_question'], writes: ['found_passages'],
+E['judge.prayer'] = { kind: 'decision', cls: 'jev', edges: ['picked', 'none', 'unjudged'], scope: 'strategy', params: ['stage'], reads: ['found_passages', 'occasion', 'current_user_question', 'named_work'], writes: ['found_passages'],
   async run(s, p = {}) {   // ONE typed Jev choice (prayer-shelf pickOccasion) among the prayers found — never a judge per prayer; the chosen goes first. No answer → unjudged (list untouched)
     const u = U(s), found = u.found_passages.slice(0, 8).map((x, i) => ({ key: `found:${i}`, text: x.opening || String(x.text || '').replace(/\s+/g, ' ').trim().slice(0, 220),
       heading: [[x.author && x.author !== x.book_author ? x.author : null, x.work || x.title, x.tradition || x.religion].filter(Boolean).join(' — '), x.heading || x.occasion].filter(Boolean).join(', ') || null }));   // labelled by author, work, tradition and its heading
     if (!found.length) return finish(s, p, 'none');
+    // the reader's name in ONE prayer's own words is that prayer — Jev split 2:1 for "Remover of every anguish" over the Báb's "Is there any Remover of
+    // difficulties" (11-12); none or several holding it → Jev chooses
+    const fold = (t) => ` ${String(t || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()} `;
+    const nm = typeof u.named_work === 'string' ? fold(u.named_work) : '', holds = nm.trim().includes(' ') ? found.map((_, j) => j).filter((j) => fold(u.found_passages[j].text).includes(nm)) : [];
+    if (holds.length === 1) { s.note = { read: { found: found.length }, params: p, count: 1, scope_excluded: 0, choice: found[holds[0]].key, by: 'name in its words' }; u.found_passages = [u.found_passages[holds[0]]]; return 'picked'; }
     try {
       const pick = await (s.judges?.prayer || (async () => { const [{ pickOccasion }, { jevFetch }] = await Promise.all([import('../prayer-shelf.js'), import('../../systemone.js')]); return pickOccasion(s.messages || [], [], { profile: s.profile ?? s.ctx?.profile ?? {}, fetchImpl: jevFetch('anis-prayer-occasion'), found }); }))({ found });
       s.note = { read: { found: found.length }, params: p, count: found.length, scope_excluded: 0, choice: pick?.choice ?? null, confidence: pick?.confidence ?? null };
