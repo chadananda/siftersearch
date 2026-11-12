@@ -74,8 +74,20 @@ export function authorMatch(a, b) {
 
 /** rows [{ id, title, author, paragraph_count, … }] → an index. Pure. */
 export function buildIndex(rows) {
+  const steps = indexSteps(rows); let s;
+  do s = steps.next(); while (!s.done);
+  return s.value;
+}
+/** The same build, yielding the event loop every 5,000 rows (185k rows ≈ 2–3 s of CPU on tower froze anis after each reload, 11-12). */
+export async function buildIndexYielding(rows) {
+  const steps = indexSteps(rows);
+  for (let s = steps.next(); ; s = steps.next()) { if (s.done) return s.value; await new Promise((ok) => setImmediate(ok)); }
+}
+function* indexSteps(rows) {
   const docs = [], byGram = new Map();
+  let n = 0;
   for (const r of rows) {
+    if (++n % 5000 === 0) yield;
     // its main title, and its subtitle when that is a title in its own right ("The Kitáb-i-Íqán: The Book of Certitude")
     // …and an English gloss in parentheses ("Tafsir-i-Suratu'l-Kawthar (Commentary on the Surah of Kawthar)")
     const sub = String(r.title || '').split(/\s*:\s*/)[1];
@@ -131,7 +143,7 @@ let inflight = null;
 async function loadIndex({ list, file }) {
   try {
     const st = await stat(file);
-    if (Date.now() - st.mtimeMs < MAX_AGE) { const rows = JSON.parse(await readFile(file, 'utf8')); memo = { at: st.mtimeMs, index: buildIndex(rows) }; return memo.index; }
+    if (Date.now() - st.mtimeMs < MAX_AGE) { const rows = JSON.parse(await readFile(file, 'utf8')); memo = { at: st.mtimeMs, index: await buildIndexYielding(rows) }; return memo.index; }
   } catch { /* none yet */ }
   const listDocs = list || (await import('../docs-repo.js')).listDocs;
   const rows = [];
@@ -144,6 +156,6 @@ async function loadIndex({ list, file }) {
   }
   await mkdir(join(file, '..'), { recursive: true }).catch(() => {});
   await writeFile(`${file}.tmp`, JSON.stringify(rows)).then(() => rename(`${file}.tmp`, file)).catch(() => {});
-  memo = { at: Date.now(), index: buildIndex(rows) };
+  memo = { at: Date.now(), index: await buildIndexYielding(rows) };
   return memo.index;
 }

@@ -40,13 +40,25 @@ function lev1(a, b) {   // at most one edit apart (insert, delete, substitute)
  * docs [{ id, title, author, collection, religion, paragraph_count }], sections [{ section_id, doc_id, title, book, author,
  * start_index, end_index, paragraphs, first_para_id }], aliases [{ title, names[] }] → an index. Pure.
  */
-export function buildBookIndex({ docs = [], sections = [], aliases = [] } = {}) {
+export function buildBookIndex(input) {
+  const steps = bookIndexSteps(input); let s;
+  do s = steps.next(); while (!s.done);
+  return s.value;
+}
+/** The same build, yielding the event loop every 5,000 entries (≈5 s of CPU on tower froze anis after each reload, 11-12). */
+export async function buildBookIndexYielding(input) {
+  const steps = bookIndexSteps(input);
+  for (let s = steps.next(); ; s = steps.next()) { if (s.done) return s.value; await new Promise((ok) => setImmediate(ok)); }
+}
+function* bookIndexSteps({ docs = [], sections = [], aliases = [] } = {}) {
   const entries = [], post = new Map(), byKey = new Map();
+  let n = 0;
   const add = (e, fields) => {
     const i = entries.push(e) - 1;
     for (const [f, toks] of Object.entries(fields)) for (const t of new Set(toks)) { let p = post.get(t); if (!p) post.set(t, p = []); p.push([i, f]); }
   };
   for (const d of docs) {
+    if (++n % 5000 === 0) yield;
     const tt = titleTokens(d.title);
     if (!tt.length) continue;
     const e = { kind: 'work', doc: d, title: d.title, tt, phrase: tt.join(' ') };
@@ -54,16 +66,19 @@ export function buildBookIndex({ docs = [], sections = [], aliases = [] } = {}) 
     const k = e.phrase; (byKey.get(k) || byKey.set(k, []).get(k)).push(entries.length - 1);
   }
   for (const s of sections) {
+    if (++n % 5000 === 0) yield;
     const tt = titleTokens(s.title);
     if (!tt.length) continue;
     add({ kind: 'section', sec: s, title: s.title, tt, phrase: tt.join(' ') }, { t: tt, b: titleTokens(s.book), a: tokens(s.author) });
   }
+  // the entries whose title holds a phrase's first word (its candidates; a scan of every entry per listed name was ~1 s)
+  const titled = (phrase) => [...new Set((post.get(phrase.split(' ')[0]) || []).filter(([, f]) => f === 't').map(([i]) => i))];
   // another name a work is known by ("Iqan", "Book of Certitude") is a title of every work whose title holds the listed one
   for (const w of aliases) {
     const want = titleTokens(w.title).join(' ');
     if (!w.title || !want) continue;
     const toks = [...new Set((w.names || []).flatMap(titleTokens))];
-    for (let i = 0; i < entries.length; i++) {
+    for (const i of titled(want)) {
       const e = entries[i];
       if (e.kind !== 'work' || !` ${e.phrase} `.includes(` ${want} `)) continue;
       e.alias = (w.names || []).map((n) => titleTokens(n).join(' ')).filter(Boolean);
@@ -75,7 +90,7 @@ export function buildBookIndex({ docs = [], sections = [], aliases = [] } = {}) 
     const want = titleTokens(w.section).join(' '), inBook = titleTokens(w.in).join(' ');
     if (!w.section || !want) continue;
     const toks = [...new Set((w.names || []).flatMap(titleTokens))];
-    for (let i = 0; i < entries.length; i++) {
+    for (const i of titled(want)) {
       const e = entries[i];
       if (e.kind !== 'section' || !` ${e.phrase} `.includes(` ${want} `)) continue;
       if (inBook && !` ${titleTokens(e.sec.book).join(' ')} `.includes(` ${inBook} `)) continue;
@@ -155,7 +170,7 @@ async function build() {
   let aliases = [];
   try { aliases = JSON.parse(readFileSync(ALIASES, 'utf8')).works || []; } catch { /* no list */ }
   const docs = ti.docs.map(({ key, keys, ...d }) => d);   // eslint-disable-line no-unused-vars
-  memo = { at: Date.now(), index: buildBookIndex({ docs, sections, aliases }) };
+  memo = { at: Date.now(), index: await buildBookIndexYielding({ docs, sections, aliases }) };
   return memo.index;
 }
 /** The finder's index: memory → (stale: served at once, ONE background rebuild) → built now (single-flight). */
