@@ -80,11 +80,24 @@ function formsOf(names, canonicalCount) {
 
 /** Pure: build the index. persons {id,cn,imp,aliases}, groups {id,name,aliases}, members {group,id},
  *  claims {id,eid,rel,tid,st,prf,doc,pid,tv}, places [name]. */
-export function createEncounterIndex({ persons, groups, members, claims, places = [], authoritative = [] }) {
+// The build is a generator that yields every STEP items: the sync wrapper drains it (tests), the server build awaits a
+// setImmediate at each yield — run in one piece it froze the API 1.4 s at every 20-minute warm-keeper refresh (11-12).
+const STEP = 400;
+export function createEncounterIndex(input) {
+  const it = encounterIndexSteps(input);
+  for (let r = it.next(); ; r = it.next()) if (r.done) return r.value;
+}
+async function createEncounterIndexYielding(input) {
+  const it = encounterIndexSteps(input);
+  for (let r = it.next(); ; r = it.next()) { if (r.done) return r.value; await new Promise((ok) => setImmediate(ok)); }
+}
+function* encounterIndexSteps({ persons, groups, members, claims, places = [], authoritative = [] }) {
+  let n = 0;
   const authDocs = new Set(authoritative);
   const placeKeys = new Set(places.map((n) => fold(String(n).replace(/\([^)]*\)/g, ' ')).trim()).filter(Boolean));
   const people = new Map(), owners = new Map(), byWord = new Map();
   for (const p of persons) {
+    if (++n % STEP === 0) yield;
     // A name that is exactly a place ("Shíráz") would make every "in Shiraz" a person.
     const forms = formsOf([p.cn, ...parseArr(p.aliases)], 1).filter((f) => !placeKeys.has(f.phrase) && !placeKeys.has(f.bare));
     people.set(p.id, { id: p.id, name: p.cn, imp: p.imp || 0, forms });
@@ -108,6 +121,7 @@ export function createEncounterIndex({ persons, groups, members, claims, places 
     if (f) canonicalOwner.set(f.phrase, canonicalOwner.has(f.phrase) ? null : p.id);
   }
   for (const p of people.values()) {
+    if (++n % STEP === 0) yield;
     for (const f of p.forms) {
       f.sole = owners.get(f.phrase).size === 1;   // no one else — no person, no place — carries this name at all
       f.unique = f.sole || (f.canonical && canonicalOwner.get(f.phrase) === p.id);
@@ -122,6 +136,7 @@ export function createEncounterIndex({ persons, groups, members, claims, places 
     phrases: formsOf([g.name, ...parseArr(g.aliases)], 1).map((f) => f.phrase).filter((ph) => ph.includes(' ')) }));
   const all = [], bySubject = new Map();
   for (const c of claims) {
+    if (++n % (STEP * 10) === 0) yield;
     // A target typed to its own SUBJECT is a mis-bind (the object "the Báb" bound to the man who met Him): drop the
     // type, keep the claim — its statement can still name the real object.
     // hay/topic may arrive pre-folded (the paged loader folds each page between yields — 10-12, a 2 s synchronous build)
@@ -380,7 +395,7 @@ async function build() {
     FROM graph_relations gr WHERE gr.target_entity_id IN (${gids.map(() => '?').join(',')})`, gids, 'encounters:members') : [];
   const live = new Set(persons.map((p) => p.id));
   const t = Date.now();
-  try { return createEncounterIndex({ persons, groups, members, claims: [...claims, ...sceneRows].filter((c) => live.has(c.eid)), places: places.map((r) => r.n), authoritative }); }
+  try { return await createEncounterIndexYielding({ persons, groups, members, claims: [...claims, ...sceneRows].filter((c) => live.has(c.eid)), places: places.map((r) => r.n), authoritative }); }
   finally { logger.info({ ms: Date.now() - t }, 'encounter index: in-memory build'); }
 }
 
