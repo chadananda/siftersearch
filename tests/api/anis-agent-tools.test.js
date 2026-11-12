@@ -169,6 +169,16 @@ describe('research cache as the agent\'s first tool', () => {
     expect(await outOf(0.82)).toContain('RELATED question');
     expect(await outOf(0.91)).not.toContain('RELATED');
   });
+  it('searches asked beside a lookup that holds research are not run (and do not count as searches); beside a miss they run', async () => {
+    const search = vi.fn(async () => []);
+    const both = () => script([call('a', 'research_lookup', { question: 'q' }), call('b', 'fused_search', { query: 'prayer' })], 'ok [[P1]]');
+    const hit = await agentAnswer({ ...base, create: both(), tools: { search, researchLookup: async () => ({ status: 'candidate', question: 'q', similarity: 0.95, passages: [P1] }) } });
+    expect(search).not.toHaveBeenCalled();
+    expect(hit.agent.steps[1]).toMatchObject({ tool: 'fused_search', deferred: true });
+    expect(hit.agent.searches).toBe(0);
+    await agentAnswer({ ...base, create: both(), tools: { search, researchLookup: async () => null } });
+    expect(search).toHaveBeenCalled();
+  });
   it('nothing held → the agent is told to research; nothing cited → nothing captured', async () => {
     const researchCapture = vi.fn(async () => null);
     const r = await agentAnswer({ ...base, create: script([call('a', 'research_lookup', { question: 'q' })], 'No refs.'), tools: { search: async () => [], researchLookup: async () => null, researchCapture } });

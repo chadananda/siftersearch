@@ -31,7 +31,7 @@ export const AGENT_SYSTEM = `You are Anís, a study companion in a library of th
 
 ANSWER LIKE A SCHOLAR WHO KNOWS THE FIELD AND CHECKS EVERYTHING. Use what you know to decide what the answer is and where the texts say it — then find those texts with the tools and quote them. Every statement about a text, person, event, date, number or teaching carries the ref of a passage that supports it; a claim you cannot find support for is left out or plainly marked as unconfirmed in the library. Never present memory as a source.
 
-RESEARCH BEFORE WRITING. Your first round should launch several searches at once from different angles (the obvious primary source, Shoghi Effendi's account, the key term, the person's name with the event). Read the results; if the best source is still missing, search again with the words that source would use, or context_lookup the strongest passage. Stop when you hold the passages a well-read Bahá'í scholar would cite — not before.
+RESEARCH BEFORE WRITING. After research_lookup, your first search round should launch several searches at once from different angles (the obvious primary source, Shoghi Effendi's account, the key term, the person's name with the event). Read the results; if the best source is still missing, search again with the words that source would use, or context_lookup the strongest passage. Stop when you hold the passages a well-read Bahá'í scholar would cite — not before.
 
 PERSISTENCE. Before you say the library lacks something, run at least 3 differently worded searches in the right scope, in the words the SOURCE would use (a 1910 birth notice says "a daughter was born", not "birth"). Never ask the reader to narrow the question or name an issue before you have tried; a hint the reader gives ("it's in the 1910 issue") is a scope to search, not a reason to ask back. Only after that, say plainly that the library does not hold it and start that reply with ${NOT_FOUND} (code removes it).
 
@@ -40,7 +40,7 @@ WEB. web_search only when the reader asks for the web or the library is exhauste
 CONVERSATION. Answer exactly what was asked and keep the subject of the thread. When the reader argues a point, engage it with sources: agree where the texts agree, push back where they do not. No empty acknowledgements.
 
 TOOLS — use them before answering; call several at once when they are independent:
-- research_lookup: FIRST, on every new question, with the question restated so it stands alone (a follow-up resolved from the conversation). It returns research already done for that question; start from it and search further only for what it does not cover.
+- research_lookup: FIRST and ALONE (your first round is this one call, before any search), on every new question, restated so it stands alone (a follow-up resolved from the conversation). It returns research already done for that question. When it holds what the answer needs, answer from it (whole_lookup a prayer you will quote) with no more searching; search only for what it does not cover. The "several searches at once" rule starts after it.
 - book_card: ONLY when the reader wants the book itself (to read it, to have it). Shows its card; returns [B#].
 - search_in_work: anything inside one named work or periodical (Star of the West = all its issues; give years to narrow). Give several differently worded queries; each is searched by exact words and by meaning, merged. Returns [P#] with their place.
 - find_passage: the reader quotes or describes a passage; optionally held to a religion, author or work.
@@ -97,7 +97,7 @@ const STATUS = { research_lookup: () => 'Checking earlier research', book_card: 
 // library searches a tool call made (the earned-not-found rule counts them): search_in_work counts each wording
 const SEARCHES = { fused_search: () => 1, originals_search: () => 1, find_passage: () => 1, document_search: () => 1, quotation_candidates: () => 1, book_card: () => 1,
   search_in_work: (a) => Math.max(1, (a?.queries || []).length) };
-const librarySearches = (steps) => steps.reduce((n, s) => n + (SEARCHES[canonical(s.tool)]?.(s.args) || 0), 0);
+const librarySearches = (steps) => steps.reduce((n, s) => n + (s.deferred ? 0 : SEARCHES[canonical(s.tool)]?.(s.args) || 0), 0);
 
 export async function agentAnswer({ messages, create, tools: raw, onEvent = () => {}, maxRounds = 8, maxCalls = 24, subject = null, cache = null, cardDocs = undefined, frame = null }) {
   const impl = cache ? cachedImpl(raw, cache) : raw;   // data-level cache: refs are per turn, so what is stored is the passages, never the rendered text
@@ -174,14 +174,22 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     if (!anchored && hasSearch(tcs)) { anchored = true; ({ tcs, rebuilt } = anchorToolCalls(tcs, subj)); }
     msgs.push({ role: 'assistant', content: m.content || '', tool_calls: tcs });
     firstToolMs ??= Date.now() - t0;
+    // research_lookup goes first: calls asked beside it wait for it, and when it holds research they are not run (the agent re-asks for what it lacks)
+    const li = tcs.length > 1 ? tcs.findIndex((tc) => canonical(tc.function?.name) === 'research_lookup') : -1;
+    let heldNow; const held = li < 0 ? null : new Promise((r) => { heldNow = r; });
     // independent calls run together; results go back in the order asked
     const outs = await Promise.all(tcs.map(async (tc, i) => {
       let args = {};
       try { args = JSON.parse(tc.function?.arguments || '{}'); } catch { /* bad args → empty */ }
       const name = tc.function?.name, fn = run[canonical(name)];
+      if (held && i !== li && await held) {
+        steps.push({ tool: name, args, found: 0, count: 0, ms: 0, cache: 'none', deferred: true });
+        return { tc, out: 'not run: research for this question is held (see research_lookup). Answer from it; call this again only for what it does not cover.' };
+      }
       onEvent({ type: 'status', text: STATUS[canonical(name)]?.(args) || name });
       const s0 = Date.now();
       const { out, cache: hit } = fn ? await callScope(() => fn(args).catch((err) => `tool failed: ${String(err.message).slice(0, 160)}`)) : { out: 'unknown tool', cache: 'none' };
+      if (i === li) heldNow(String(out).startsWith('research held'));
       const n = (String(out).match(/^\[[PWB]\d+\]/gm) || []).length;
       steps.push({ tool: name, args, found: n, count: n, ms: Date.now() - s0, cache: hit, ...(rebuilt?.index === i ? { rebuilt_from: rebuilt.from } : {}) });
       return { tc, out };
