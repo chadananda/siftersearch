@@ -1,0 +1,10 @@
+---
+// Implication browser (Chad 11-12): implied first principles — money story for sponsors, semantic explore + review, graph, HyPE editor, log. ?fixture=1 = demo data, ?present=1 = projector mode.
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
+import ImpliedApp from '../../components/admin/implied/ImpliedApp.svelte';
+---
+
+<AdminLayout title="Implication browser" wide>
+  <ImpliedApp client:only="svelte"><IslandSkeleton slot="fallback" /></ImpliedApp>
+</AdminLayout>
