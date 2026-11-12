@@ -240,7 +240,10 @@ export const agentTools = ({ search, fastSearch } = {}) => {
   const researchLookup = async (q) => {
     const rc = await import('./research-cache.js');
     const hit = await rc.lookupResearch(q);
-    return hit ? { status: hit.set.status, question: hit.set.question, similarity: hit.similarity, passages: await rc.hydrate(hit.set) } : null;
+    if (!hit) return null;
+    // held passages get the same own-source pass as a search (11-12 decentralization: a held Uncompiled letter beat the compilation)
+    const held = await rc.hydrate(hit.set);
+    return { status: hit.set.status, question: hit.set.question, similarity: hit.similarity, passages: (await ownSource(held).catch(() => null)) || held };
   };
   const researchCapture = async (q, ps) => (await import('./research-cache.js')).captureResearch(q, ps);
   return { ...libraryTools({ search, fastSearch: fast }), ...strategyImpl({ search, fastSearch: fast }), ownSource, researchLookup, researchCapture };
