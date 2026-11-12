@@ -58,6 +58,8 @@ export async function resolveUnmatched({ direction, messages, question, onEvent 
   const rec = (point, o) => log?.record?.(point, { by: 'code', saw: question, ...o });
   const turnId = direction.turnId ? String(direction.turnId) : `unmatched:${randomUUID()}`;
   const jev = direction.strategy.strategy;
+  // a quick lookup the light writer judged a miss (turn.js missToUnmatched) → its note goes with the question, so the recheck and planner work on the real ask
+  if (jev?.missed) question = `${question}\n(A quick search missed the point: ${jev.missed})`;
   let db, cat;
   const adopt = async (choice, via, extra = {}) => {
     const before = direction.strategy, pin = direction.strategyPin;

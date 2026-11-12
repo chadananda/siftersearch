@@ -8,6 +8,7 @@ import { loadReaderCard } from './reader-card.js';
 import { resolveQuery } from './short-turn.js';
 import { openExchange, closeExchange, failExchange } from './exchange-log.js';
 import { findInWorkAnswer, findPassageAnswer } from './find-in-work.js';
+import { finishLookup } from './lookup-finish.js';
 import { extractFromWork } from './work-extract.js';
 import { triageMessage, routeTriage, outputBreaksPersona, T } from './triage.js';
 import { cannedReply } from './canned.js';
@@ -219,7 +220,19 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     return { reply, status: 'answered', citations, retrieved: [], plan, conversationId: ex?.conversationId ?? null, timings: { total_ms: Date.now() - t0 } };
   };
   // the in-work find's list (find-in-work.js inWorkReply: built by code, no writer), links upgraded to OceanLibrary ranges like any reply
+  // …and the light writer reads it against the question first (lookup-finish.js): it rewrites the reply for what was asked, or says the
+  // data misses the question → null, and the caller hands the turn to Unmatched (Chad 11-12: the Maxwell birth got a search for his sentence)
+  const finishFn = d.finishLookup ?? (deps ? null : finishLookup);
   const inWorkAnswer = async (got, ex, extra = {}) => {
+    if (finishFn) {
+      const r0 = got.result, where = got.work?.title ?? r0.work?.title ?? 'the library';
+      const did = `a ${r0.mode || 'word'} search for "${r0.query}" in ${where}${got.section ? ` (${got.section.title})` : ''}: ${r0.total ?? r0.passages?.length ?? 0} found`;
+      const fin = await timed('lookup-finish', () => finishFn({ messages, draft: got.reply, did }), (x) => ({ ok: x?.ok, kept: x?.kept ?? null })).catch(() => null);
+      decisions.record('lookup:finish', { by: 'llm', saw: did, chosen: fin?.ok === false ? 'miss' : 'answer', reason: fin?.why ?? fin?.kept ?? null });
+      if (fin?.ok === false) { missed = fin.why; return null; }
+      if (fin?.reply) got = { ...got, reply: fin.reply };
+      if (extra.decisions) extra = { ...extra, decisions: decisions.list() };
+    }
     const r = got.result, plan = { shape: got.work ? 'work' : 'passage', ...(got.work ? { work: got.work.id } : {}), ...(got.section ? { section: got.section.title } : {}), find: r.query, mode: r.mode };
     const citations = r.passages.map((p) => ({ id: p.id, title: p.title, author: p.author, document_id: p.document_id, paragraph_index: p.paragraph_index, place: p.place ?? null, url: p.url ?? null, text: p.text }));
     onEvent({ type: 'sources', sources: citations, plan, ms: Date.now() - t0 });
@@ -290,6 +303,13 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   const scope = { religion: scopeR.religion, units: scopeR.units, source: scopeR.units.scope_source, sources: scopeR.sources };   // sources: unit → layer (entryUnits: a default floor is no filter)
   let codePatch = null;
   const decisions = decisionLog(strat?.decisions || []);   // every strategy decision of the turn (inputs, options, probabilities, branch) → path.decisions
+  // a lookup answer the light writer judged a miss → Unmatched, the strategy builder, with the miss as its brief (the work stays named)
+  let missed = null;
+  const missToUnmatched = (via, work) => {
+    const was = strat?.strategy?.choice ?? null;
+    strat = { ...(strat || {}), strategy: { ...(strat?.strategy || {}), choice: 'unmatched', was, via, missed }, units: { ...(strat?.units || {}), named_work: work ?? strat?.units?.named_work ?? null } };
+    decisions.record(`${via}:unmatched`, { by: 'llm', saw: { via }, chosen: 'unmatched', reason: missed });
+  };
   for (const info of jevTimeouts) decisions.record('jev:timeout', timeoutDecision(info));
   // Jev's triage answer on every turn's record (11-11: a follow-up skipped the in-book path and the trace could not say what lookup he gave)
   if (tri) decisions.record('triage', { by: tri.by || (backup?.tri === tri ? 'llm' : 'jev'), chosen: { kind: tri.kind?.choice ?? null, lookup: tri.lookup?.choice ?? null, outcome: tri.outcome?.choice ?? null },
@@ -336,7 +356,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const sec = found?.kind === 'section' ? found.sec : found?.section ? { start_index: found.section.start, end_index: found.section.end } : null;
     decisions.record('from-work:work', { by: 'code', saw: { focus: focus?.id ?? null, named_work: u.named_work ?? null }, chosen: doc?.id ?? null, reason: useFocus ? 'no work named this turn: the work the previous turn gave' : 'the work Jev named' });
     const got = doc?.id ? await timed('from_work', () => extractFn({ messages, doc, section: sec, decisions }), (r) => (r ? { work: r.work?.id, total: r.result?.total } : null)).catch(() => null) : null;
-    if (got?.reply) return inWorkAnswer(got, ex, { gate: 'lookup', route: 'from_work', ...(jevFallback ? { jev_fallback: jevFallback } : {}), ...(useFocus ? { via: 'focus' } : {}), decisions: decisions.list() });
+    if (got?.reply) { const a = await inWorkAnswer(got, ex, { gate: 'lookup', route: 'from_work', ...(jevFallback ? { jev_fallback: jevFallback } : {}), ...(useFocus ? { via: 'focus' } : {}), decisions: decisions.list() }); if (a) return a; missToUnmatched('from_work', doc?.title); }
     // the selection could not be made → UNMATCHED, the strategy builder, does exactly what was asked (Chad 11-12: "Under no circumstances
     // do we fail to do exactly what the user asked for") — never Jev's library-wide pick, never plain research; the work stays named
     const was = strat?.strategy?.choice ?? null;
@@ -355,7 +375,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const finder = useFocus ? async () => ({ kind: 'work', work: { doc: { id: focus.id, title: focus.title } }, via: 'focus' }) : bookFn;
     const got = await timed('in_work', () => inWorkFn({ messages, names: [u.named_work].filter(Boolean), by: u.named_person ?? null, topic: u.topic ?? null, profile, decisions,
       deps: { ...(finder ? { bookFastPath: finder } : {}) }, ...(useFocus ? { focus } : {}) }), (r) => (r ? { work: r.work?.id, mode: r.result?.mode, total: r.result?.total } : null)).catch(() => null);
-    if (got?.reply) return inWorkAnswer(got, ex, { gate: 'lookup', strategy_timed_out: !strat || strat.by === 'haiku', ...(jevFallback ? { jev_fallback: jevFallback } : {}), ...(useFocus ? { via: 'focus' } : {}), decisions: decisions.list() });
+    if (got?.reply) { const a = await inWorkAnswer(got, ex, { gate: 'lookup', strategy_timed_out: !strat || strat.by === 'haiku', ...(jevFallback ? { jev_fallback: jevFallback } : {}), ...(useFocus ? { via: 'focus' } : {}), decisions: decisions.list() }); if (a) return a; missToUnmatched('in_work', got.work?.title); }
     // the words named only the work ("world order letters?") → the book card, never a search of the work for its own title
     if (!useFocus && got?.book?.kind === 'work') return bookAnswer(got.book.work, ex, { gate: 'lookup', via: got.book.via, decisions: decisions.list() });
     if (got?.book?.kind === 'section') return sectionCard(got.book, ex, { gate: 'lookup', via: got.book.via, decisions: decisions.list() });
@@ -372,14 +392,14 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const explicit = ['turn', 'conversation'].includes(scopeR.units.scope_source) ? scopeR.units.religions_specified : null;
     const got = await timed('find_passage', () => passageFn({ messages, religions: Array.isArray(explicit) ? explicit : [], authors: [u.named_person].filter(Boolean), works: [u.named_work].filter(Boolean),
       topic: u.topic ?? null, language: scopeR.units.reply_language || 'en', decisions }), (r) => (r ? { mode: r.result?.mode, total: r.result?.total } : null)).catch(() => null);
-    if (got?.reply) return inWorkAnswer(got, ex, { gate: 'lookup', ...(jevFallback ? { jev_fallback: jevFallback } : {}), decisions: decisions.list() });
+    if (got?.reply) { const a = await inWorkAnswer(got, ex, { gate: 'lookup', ...(jevFallback ? { jev_fallback: jevFallback } : {}), decisions: decisions.list() }); if (a) return a; missToUnmatched('find_passage', null); }
   }
   // PROBE (Chad 11-10, "Deepening Compilation" built a compilation): Jev chose to MAKE something (a compilation) or to talk, but
   // his phrase may BE a library title — the same one pick, with "make it new" as an option; code only checks the title is near-exact
   // strategyOf() is null for Unmatched (and a timed-out strategy call), so those turns take the unmatched option by name (11-11:
   // '"Dispensation of Baha'u'llah"' — Unmatched, lookup quote — never reached the probe and got a quote search of its own title)
   const probeKey = strategyOf(strat) ?? (unmatchedName(strat?.strategy?.choice) || (!strat && lkIntent === 'quote') ? 'unmatched' : null);
-  const probe = bookGate && !bookOn ? PROBE_ALT[probeKey] : null;
+  const probe = bookGate && !bookOn && !missed ? PROBE_ALT[probeKey] : null;
   const lookupNow = () => timed('lookup', () => d.lookup(messages, { intent: lkIntent, focus, work: u.named_work ?? null, profile, decisions, onJev: (info) => decisions.record('jev:timeout', timeoutDecision(info)) }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null);
   // Jev read a numbered reference: it resolves BEFORE the book card, which answers only when no numbered unit is found (11-11
   // "Dawn-Breakers - Chapter 25": named-work-only made it the book strategy and it carded a one-chapter scrape instead)
@@ -392,10 +412,10 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     if (!probe && inWorkFn && (found?.kind === 'work' || found?.kind === 'section')) {
       const got = await timed('in_work', () => inWorkFn({ messages, names: [], by: null, topic: null, profile, decisions, deps: { bookFastPath: async () => found } }),
         (r) => (r ? { work: r.work?.id, mode: r.result?.mode, total: r.result?.total } : null)).catch(() => null);
-      if (got?.reply) return inWorkAnswer(got, ex, { gate: 'strategy', via: 'book', ...(jevFallback ? { jev_fallback: jevFallback } : {}), decisions: decisions.list() });
+      if (got?.reply) { const a = await inWorkAnswer(got, ex, { gate: 'strategy', via: 'book', ...(jevFallback ? { jev_fallback: jevFallback } : {}), decisions: decisions.list() }); if (a) return a; missToUnmatched('in_work', got.work?.title); }
     }
-    if (found?.kind === 'work') return bookAnswer(found.work, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
-    if (found?.kind === 'section') return sectionCard(found, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
+    if (!missed && found?.kind === 'work') return bookAnswer(found.work, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
+    if (!missed && found?.kind === 'section') return sectionCard(found, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
   }
   let lk = lkFirst !== undefined ? lkFirst : lkIntent && !['in_work', 'from_work', 'find_passage'].includes(lkIntent) ? await lookupNow() : null;
   // "the opening paragraph of chapter one": Jev read the place as the unit's opening → its first paragraph(s) quoted, never the chapter card (dawnbreakers#1, 11-12)

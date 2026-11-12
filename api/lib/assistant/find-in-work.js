@@ -1,7 +1,7 @@
 // In-book / quote shaping (Chad 11-10): turns a quote_search result into the reply by CODE (no LLM): 1 hit = the passage quoted + linked
 // citation (+ a card), n = count line + passages, meaning = labelled. Deps: quote-search.js (the search + text helpers, re-exported here).
 import { SITE } from '../source-links.js';
-import { sowCoverUrl, isSowWork, sowIssueIds } from '../sow-links.js';
+import { sowCoverUrl, sowIssueIds, sowWholeAsked } from '../sow-links.js';
 import { foldText, holdsWords, boldWords, excerptOf, balanceQuotes } from './quote-search.js';
 export { foldText, holdsWords, boldWords, excerptOf, balanceQuotes };
 
@@ -37,7 +37,7 @@ export function inWorkReply(r, { section = null } = {}) {
   // a hit in another document of the work (Star of the West: one document per issue) cites ITS issue, not the work's first one (11-12:
   // "v1, i1" labelled a v1 no. 17 link)
   const item = (p) => {
-    const own = !section && p.work && r.work.id != null && Number(p.document_id ?? p.doc_id) !== Number(r.work.id) ? p.work : name;
+    const own = !section && p.work && (r.work.series || (r.work.id != null && Number(p.document_id ?? p.doc_id) !== Number(r.work.id))) ? p.work : name;
     const cite = p.place ? `*${own}*, ${p.place}` : `*${own}*`;
     const by = p.credit ?? named(p.author) ?? named(r.work.author);
     return `> “${p.excerpt}”\n>\n> — ${by ? `${by}, ` : ''}${p.url ? `[${cite}](${p.url})` : cite}`;
@@ -94,7 +94,7 @@ export async function withVoices(r, deps = {}) {
 export function passageCards(r, { cover = null } = {}) {
   if (r?.mode !== 'literal' || r.total !== 1 || r.passages?.length !== 1) return [];
   const p = r.passages[0], c = sowCoverUrl({ title: p.work ?? p.title }) ?? cover ?? r.work?.cover_url ?? null;   // the hit's own issue scan before the magazine's cover
-  return [{ work_id: r.work?.id ?? p.document_id ?? null, title: r.work?.title ?? p.work ?? p.title ?? null, author: p.credit ?? named(p.author) ?? named(r.work?.author), cover_url: c ? (/^https?:/.test(c) ? c : `${SITE}${c}`) : null,
+  return [{ work_id: r.work?.id ?? p.document_id ?? null, title: (r.work?.series ? p.work : null) ?? r.work?.title ?? p.work ?? p.title ?? null, author: p.credit ?? named(p.author) ?? named(r.work?.author), cover_url: c ? (/^https?:/.test(c) ? c : `${SITE}${c}`) : null,
     url: p.url ?? null, place: p.place ?? null, excerpt: p.excerpt, phrase: r.query }];
 }
 
@@ -183,10 +183,10 @@ export async function findInWorkAnswer({ messages, names = [], by = null, topic 
   if (!words) return { book: found, work: doc };   // the work itself was asked for → the turn gives its card
   const run = search || (async (a) => (await import('./tools.js')).run('quote_search', a, { deps: deps.toolDeps || {} }));
   // Star of the West is filed one document per issue: the magazine named → every issue searched (Chad 11-11)
-  const sow = !sec && isSowWork(doc) ? await (deps.sowIssueIds || sowIssueIds)().catch(() => []) : [];
+  const sow = !sec && sowWholeAsked(doc, names.filter(Boolean).join(' ') || text) ? await (deps.sowIssueIds || sowIssueIds)().catch(() => []) : [];
   const res = await run({ query: words, works: sow.length ? sow : [Number(doc.id)], ...(sec ? { from: sec.start_index, to: sec.end_index ?? sec.start_index } : {}) });
   if (!res) return null;
-  const r = await withVoices(asWorkResult(res, words, doc), deps);
+  const r = await withVoices(asWorkResult(res, words, doc, sow.length ? 'Star of the West' : null), deps);   // the magazine named, never its first issue
   return { result: r, reply: inWorkReply(r, { section: sec?.title ?? null }), cards: passageCards(r, { cover: doc.cover_url ?? null }), work: doc, section: sec };
 }
 
@@ -206,9 +206,12 @@ export async function subjectWords({ messages, title, complete = null }) {
 }
 
 /** quote_search's result → the shape inWorkReply / passageCards read: { work, query, mode, total, passages }. Pure. */
-export const asWorkResult = (res, query, doc = null) => {
+export const asWorkResult = (res, query, doc = null, series = null) => {
   const w = res.works?.[0] || {};
-  return { work: { id: w.id ?? doc?.id ?? null, title: w.title ?? doc?.title ?? null, author: w.author ?? doc?.author ?? null, cover_url: w.cover_url ?? null }, query, mode: res.mode_used, total: res.total, passages: res.passages };
+  // a series searched whole (every Star of the West issue): the work is the series by name; each hit cites its own issue
+  const work = series ? { id: null, title: series, author: null, cover_url: null, series: true }
+    : { id: w.id ?? doc?.id ?? null, title: w.title ?? doc?.title ?? null, author: w.author ?? doc?.author ?? null, cover_url: w.cover_url ?? null };
+  return { work, query, mode: res.mode_used, total: res.total, passages: res.passages };
 };
 
 /** The library-wide reply (no work named): each passage quoted with ITS work in the citation; the filters named in the count / absence line. Pure. */

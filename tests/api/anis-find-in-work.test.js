@@ -151,6 +151,21 @@ describe('the turn: Jev\'s lookup in_work routes to the find, even when the stra
     expect(h.calls.find[0].names).toEqual(['God Passes By']);
     expect(r.reply).toContain(URL868);
   });
+  it('the light writer judges the list a miss → no list, the turn goes to Unmatched with the miss note', async () => {
+    const h = turn();
+    let seen = null;
+    h.d.finishLookup = async () => ({ ok: false, why: 'look for the birth announcement, not the sentence' });
+    h.d.respond = async (a) => { h.calls.respond++; seen = a.direction.strategy; return { reply: 'researched', citations: [], retrieved: [], plan: { shape: 'topic' }, timings: {} }; };
+    const r = await h.run();
+    expect(r.reply).toBe('researched');
+    expect(seen.strategy).toMatchObject({ choice: 'unmatched', via: 'in_work', missed: 'look for the birth announcement, not the sentence' });
+    expect(h.events.some((e) => e.type === 'passage')).toBe(false);
+  });
+  it('the light writer rewrites the list → its reply is what the reader gets', async () => {
+    const h = turn();
+    h.d.finishLookup = async ({ draft }) => ({ ok: true, reply: `Yes. ${draft}` });
+    expect((await h.run()).reply).toMatch(/^Yes\. > /);
+  });
   it('another lookup kind → the find never runs', async () => {
     const h = turn({ lookup: { choice: 'none', confidence: 0.9 } });
     expect((await h.run()).reply).toBe('researched');

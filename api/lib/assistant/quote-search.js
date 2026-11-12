@@ -2,7 +2,7 @@
 // Literal first (accent/case/curly-quote folded), meaning fallback in 'auto'. Pure search: no wording, no shaping (quote-results shapes it).
 // Deps (ctx.deps, else the repos): paragraphTexts, paragraphsByIds, withLinks, getDoc, findTitled; `fused` = the fused_search runner.
 import { toPassage } from './tool-kit.js';
-import { sowCoverUrl } from '../sow-links.js';
+import { sowCoverUrl, sowWholeAsked } from '../sow-links.js';
 import { canonicalTradition } from './tradition-name.js';
 import { isMainThread } from 'node:worker_threads';
 import { foldText, holdsWords, literalScanRows } from '../search/literal-scan.js';
@@ -105,7 +105,13 @@ export async function quoteSearch({ query: phrase, mode = 'auto', religions = []
   const ids = [];
   for (const w of asList(works)) {
     if (/^\d+$/.test(String(w))) ids.push(Number(w));
-    else { const f = await (await repo(ctx, 'findTitled', './works.js'))([String(w)]).catch(() => null); if (f?.doc?.id) ids.push(Number(f.doc.id)); }
+    else {
+      // the title finder lives in work-request.js (it imported a missing './works.js' → every title failed, 11-12)
+      const f = await (await repo(ctx, 'findTitled', './work-request.js'))([String(w)]).catch(() => null);
+      // a periodical named as a whole is every issue (Star of the West: one document per issue), never the one issue the finder picked
+      if (f?.doc && sowWholeAsked(f.doc, String(w))) ids.push(...await (await repo(ctx, 'sowIssueIds', '../sow-links.js'))().catch(() => []));
+      else if (f?.doc?.id) ids.push(Number(f.doc.id));
+    }
   }
   const named = asList(works).length > 0;
   const docs = new Map();

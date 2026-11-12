@@ -19,6 +19,15 @@ export const SOW_FOLDER = "Baha'i/News/Star of the West/";
 /** A title naming the magazine (or a compilation of it), not one issue: "Star of the West", "Star of the West - Volumes X-XI …". */
 export const isSowWork = (doc) => /^(the )?star of the west\b/i.test(String(doc?.title || '')) && !sowIssue(doc);
 
+/** The reader named the magazine as a whole, not one issue: a magazine-level doc, or an issue the book finder picked from a name
+ *  ("Star of the West") that carries no volume / issue number (11-12 live: "…maxwell birth … in Star of the West?" resolved to
+ *  v1 i1 and searched that one issue). `said` = the name(s) given, else the message. Pure. */
+export function sowWholeAsked(doc, said = '') {
+  if (isSowWork(doc)) return true;
+  const s = String(said || '');
+  return !!sowIssue(doc) && /\bstar of the west\b/i.test(s) && !/\b(?:v|vol|volume|i|no|nos|issue|number)\.?\s*\d/i.test(s);
+}
+
 /** The magazine's issue document ids in reading order (volume, issue); one folder read, kept an hour. Deps: docs-repo (lazy). */
 let issues = null;
 export async function sowIssueIds({ list = null, now = Date.now() } = {}) {

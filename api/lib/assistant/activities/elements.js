@@ -146,10 +146,12 @@ const E = {
     input: (s, p, u) => ({ question: text(s, u, p.query), decisions: s.direction?.decisions ?? s.ctx?.decisions, deps: s.ctx?.deps }), take: passages }),
   // under four words ("five diamonds") the source hunt refuses (too few words to judge a source by); those words are FOUND literally
   // instead (quote_search) — the refusal routed the bare phrase to $fallback → "couldn't search just now" (11-12)
-  'fetch.phrase': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: (inp) => (inp.query ? 'quote_search' : 'quotation_candidates'), rank: true, params: ['mode', 'words'], reads: ['quoted_words', 'quoted_clean'],
+  'fetch.phrase': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: (inp) => (inp.query ? 'quote_search' : 'quotation_candidates'), rank: true, params: ['mode', 'words'], reads: ['quoted_words', 'quoted_clean', 'named_work'],
     input: (s, p, u, trad) => {
       const q = text(s, u, p.words, '{{quoted_clean}}', '{{quoted_words}}');
-      if (String(q).replace(/[“”"‘’«»]/g, ' ').trim().split(/\s+/).filter(Boolean).length < 4) return { query: q, ...(trad ? { religions: [trad] } : {}) };
+      // the work Jev named holds the search ("five diamonds" in Star of the West, 11-12: searched library-wide, where BM25 never
+      // reached the issue, and the Phelps copy answered); quote_search resolves the title, a periodical to every issue
+      if (String(q).replace(/[“”"‘’«»]/g, ' ').trim().split(/\s+/).filter(Boolean).length < 4) return { query: q, ...(trad ? { religions: [trad] } : {}), ...(u?.named_work ? { works: [u.named_work] } : {}) };
       return { quotation: q, ...(trad ? { tradition: trad } : {}) };   // tradition: that tradition's own core (none = every tradition)
     }, take: passages,
     thin: (items, p) => p.mode === 'close' && !items.some((x) => x.role === 'source') }),

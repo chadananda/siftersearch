@@ -4,6 +4,7 @@
 // Deps (injectable): work-request findWork, assistant/agent-search, paragraphs-repo paragraphsByPn, hit-links withLinks;
 // quote order = source-hunt rankOrigins (the words' author's own work first).
 import { detectQuotation, stripMarkup } from '../quote-detect.js';
+import { quotedSpans } from './request-features.js';
 import { foldVerbatim } from '../search/verbatim.js';
 import { findTitled, titleCandidates, coreWork } from './work-request.js';
 import { sectionRange, verseWork, versePlace, workParts, partRange } from './numbering.js';
@@ -76,7 +77,9 @@ export function holds(text, phrase) {
   const f = foldVerbatim(text), want = foldVerbatim(phrase);
   if (!want) return { exact: false, near: false };
   const exact = f.includes(want), w = ws(phrase);
-  return { exact, near: exact || w.filter((x) => ` ${f} `.includes(` ${x} `)).length >= Math.ceil(w.length * 0.7) };
+  // a near match needs a phrase long enough to be one: under 4 words, 70% is one or two common words (11-12: "five diamonds"
+  // → the Talmud's "five silver shekels" held "five")
+  return { exact, near: exact || (w.length >= 4 && w.filter((x) => ` ${f} `.includes(` ${x} `)).length >= Math.ceil(w.length * 0.7)) };
 }
 
 const passageOf = (doc, row, url) => ({ id: row.id, text: row.text, title: doc.title, author: doc.author, document_id: doc.id,
@@ -258,7 +261,10 @@ export async function resolveLookup(messages, deps = {}) {
   // quote: Jev saw wording to find. Two things can answer it: a work whose TITLE is the wording ("Epistle to the Son of the Wolf")
   // and passages that HOLD the wording ("the earth is but one country" — also a book title; launch gate 11-03 opened the book).
   // Code only gathers the candidates; when both exist Jev chooses with both in view.
-  const phrase = detectQuotation(text)?.phrase || quoteStrip(text);
+  // Jev already called it a quote, so the reader's quoted words are the wording at any length (11-12: "five diamonds" is under
+  // detectQuotation's 4-word floor → the whole asking sentence became the phrase). The longest quoted span; none → the message.
+  const spans = quotedSpans(text).filter((x) => x.split(/\s+/).length >= 2).sort((a, b) => b.length - a.length);
+  const phrase = detectQuotation(text)?.phrase || spans[0] || quoteStrip(text);
   const search = phrase ? deps.search || (await import('./agent-search.js')).agentSearch() : null;
   const [b, hits] = await Promise.all([
     quoteStrip(text).split(/\s+/).length <= 10 ? bookOf({ min: 0.97, prefix: false }) : null,

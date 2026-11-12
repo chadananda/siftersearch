@@ -76,6 +76,17 @@ describe('resolveLookup (mocked deps)', () => {
     expect(r.kind).toBe('quote');
     expect(r.passages[0].text).toContain(P);
   });
+  it('a short quoted phrase ("five diamonds", under the 4-word floor) is the phrase, held exactly — never the asking sentence near-matched (11-12)', async () => {
+    const asked = [];
+    const talmud = { ...CORE, text: 'he gave five silver shekels for the redemption of the firstborn' };
+    const r = await resolveLookup(user('can you find the phrase "five diamonds"?'), { intent: 'quote', findTitled: async () => null, search: async (q) => { asked.push(q); return [talmud]; } });
+    expect(asked[0]).toBe('five diamonds');
+    expect(r).toBeNull();   // nothing holds the words: no quote answer (the Talmud's "five" is not a match)
+  });
+  it('holds: a near match needs four words or more', () => {
+    expect(holds('five silver shekels', 'five diamonds')).toEqual({ exact: false, near: false });
+    expect(holds('Five diamonds are worth more', 'five diamonds')).toMatchObject({ exact: true, near: true });
+  });
   it('a reference on a work with no pn maps onto its chapter heading', async () => {
     const r = await resolveLookup(user('Some Answered Questions 33'), { intent: 'reference', findTitled: async () => GL, paragraphsByPn: async () => [],
       paragraphsInRange: async () => [],

@@ -80,6 +80,11 @@ describe('search.* / fetch.* retrieval paths', () => {
     expect(got).toEqual({ query: '“five diamonds”' });
     expect(r.edge).toBe('thin'); expect(r.u.found_passages.map((x) => x.id)).toEqual([7]);
   });
+  it('fetch.phrase: the work Jev named holds the short-phrase search ("five diamonds" in Star of the West, 11-12)', async () => {
+    let got = null;
+    await go('fetch.phrase', mk({ quote_search: async (i) => { got = i; return { passages: [P(7)] }; }, quotation_candidates: boom }, { quoted_words: 'five diamonds', named_work: 'Star of the West' }), { mode: 'close' });
+    expect(got).toEqual({ query: 'five diamonds', works: ['Star of the West'] });
+  });
   it('search.web fills web_found only', async () => {
     const r = await go('search.web', mk({ web_search: async () => ({ text: 'summary', citations: ['https://example.org/a'] }) }));
     expect(r.edge).toBe('one'); expect(r.u.web_found.length).toBe(1); expect(r.u.found_passages.length).toBe(0);
