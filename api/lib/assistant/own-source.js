@@ -87,7 +87,11 @@ const published = (q, j, provisional) => (ownHolder(q, j.writer, j.span, provisi
 // a SCRAPE-HOST edition (r17 11-11: Nabíl's opening of The Dawn-Breakers cited as "The Seven Proofs #610" from the Nicolas/Terry
 // edition on bahai-library.com, which carries his narrative): the same words in a published book (not another scrape, not a study)
 export const SCRAPE_HOST = /^https?:\/\/(?:www\.)?(?:bahai-library\.com|oceanoflights\.org)\//i;
-const hostCopy = (q, j, provisional) => betterCopy(q, j, provisional) && !SCRAPE_HOST.test(String(q.source_url || q.url || '')) && q.authority !== 'scholarship';
+// a PERIODICAL volume (The Bahá'í World reprints documents; 11-12 decentralization: the House's Constitution cited as "The Baha'i
+// World … Volume XVI (Baha'i Era 130–…") gives way the same way: the standalone document holding the same words
+export const PERIODICAL = /^The Bah[aá][’']?[ií] World\b/i;
+const hostCopy = (q, j, provisional) => betterCopy(q, j, provisional) && !SCRAPE_HOST.test(String(q.source_url || q.url || '')) && q.authority !== 'scholarship'
+  && !PERIODICAL.test(q.title || '');
 const fits = (q, j, provisional) => (j.kind === 'copy' ? betterCopy(q, j, provisional) : j.kind === 'host' ? hostCopy(q, j, provisional) : j.kind === 'self' ? selfOrigin(q, j, provisional)
   : j.kind === 'published' ? published(q, j, provisional) : ownHolder(q, j.writer, j.span, provisional));
 
@@ -122,7 +126,7 @@ async function ownPass(passages, { search = null, link = null, budgetMs = OWN_SO
   // 'copy' (a passage of a poor copy: a slug-titled scrape), 'host' (a scrape-host edition: the words in a published book), 'published' (a last-resort source: the writer's published work instead)
   const kindOf = (p) => (keep?.(p) ? null : quotedElsewhere(p, DOCTRINAL) ? 'elsewhere' : slugTitle(p.title) ? 'copy'
     : LAST_RESORT.test(p.title || '') && canon(p.author) ? 'published'
-    : DOCTRINAL.has(canon(p.author)) && canon(p.author) === canon(p.book_author || p.author) && quotedOnly(p.text).length ? 'self' : SCRAPE_HOST.test(String(p.source_url || '')) ? 'host' : null);
+    : DOCTRINAL.has(canon(p.author)) && canon(p.author) === canon(p.book_author || p.author) && quotedOnly(p.text).length ? 'self' : SCRAPE_HOST.test(String(p.source_url || '')) || PERIODICAL.test(p.title || '') ? 'host' : null);
   const jobs = passages.map((p, i) => ({ p, i, kind: only && !only.has(keyOf(p)) ? null : kindOf(p) })).filter((j) => j.kind && (!onlyKinds || onlyKinds.has(j.kind)))
     .map((j) => ({ ...j, writer: j.kind === 'copy' || j.kind === 'host' ? null : canon(j.p.author), span: j.kind === 'self' ? quotedOnly(j.p.text)[0] : j.kind === 'copy' || j.kind === 'host' || j.kind === 'published' ? (words(j.p.text).length >= MIN_WORDS ? clip(j.p.text) : null) : quotedSpan(j.p.text) })).filter((j) => j.span);
   if (!jobs.length) return done();
@@ -137,7 +141,7 @@ async function ownPass(passages, { search = null, link = null, budgetMs = OWN_SO
     const lookup = async (j) => {
       // a last-resort letter: a compilation often carries an excerpt from mid-paragraph (Lights of Guidance's "…the Guardian has
       // re-emphasized the necessity of avoiding over centralization"), so 12-word windows from its middle are tried beside the opening (a letter is often one long sentence)
-      if (j.kind === 'published') {
+      if (j.kind === 'published' || j.kind === 'host') {
         const w = words(j.p.text), at = (f) => w.slice(Math.floor(w.length * f), Math.floor(w.length * f) + 12).join(' ');
         // (12–15 words, not the 40-word clip: a compilation splits a letter into shorter paragraphs)
         const spans = w.length >= 36 ? [w.slice(0, 15).join(' '), at(1 / 3), at(2 / 3)] : [j.span];

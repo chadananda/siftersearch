@@ -89,6 +89,20 @@ describe('own source: the last-resort source gives way (battery round 4 timeline
   });
 });
 
+describe('own source: a Bahá\'í World volume gives way to the standalone document (11-12 decentralization: the Constitution)', () => {
+  const T = '1. (a) Any member of a local Bahá’í community may appeal from a decision of his Local Spiritual Assembly to the National Spiritual Assembly which shall determine whether it shall take jurisdiction of the matter or refer it back to the Local Spiritual Assembly for reconsideration.';
+  const bw = toPassage({ id: 4682, document_id: 967537, paragraph_index: 4682, title: "The Baha'i World: An International Record, Volume XVI (Baha'i Era 130–133, 1973–1976)", author: 'Universal House of Justice', religion: B,
+    source_url: 'https://siftersearch.com/library/bahai/compilations/x#p4682', text: T });
+  const con = { id: 51, document_id: 14741, paragraph_index: 51, title: 'Constitution of the Universal House of Justice', author: 'Universal House of Justice', religion: B,
+    source_url: 'https://oceanlibrary.com/constitution/?paraId=para_51', text: T.replace('1. (a)', '1. a)') };
+  it('the volume → the Constitution, searched with no author filter; the volume dropped', async () => {
+    const asked = [];
+    const r = await preferOwnWork([bw], { search: async (span, f) => { asked.push(f); return [bw, { ...bw, id: 9, document_id: 967538, title: "The Bahá'í World, Volume XVII" }, con]; }, shape: toPassage });
+    expect(r.passages.map((p) => p.id)).toEqual([51]);
+    expect(asked[0].author).toBeFalsy();
+  });
+});
+
 describe('own source: a scrape-host edition gives way to the published book holding the same words (r17 Shaykh Aḥmad)', () => {
   const N = 'there appeared above the horizon of the East that luminous Star of Divine guidance, Shaykh Aḥmad-i-Aḥsá’í, who set out to prepare the way.';
   const proofs = toPassage({ id: 610, document_id: 4100, paragraph_index: 610, title: "The Seven Proofs (Dalá'il-i-Sab'ih)", author: 'The Báb', book_author: 'The Báb', religion: B,

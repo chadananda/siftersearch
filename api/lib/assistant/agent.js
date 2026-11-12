@@ -67,6 +67,8 @@ WRITING:
 - Never send the reader to another website or catalogue for something the library holds.
 - Never end with an offer to search, look up, check or find more: run that lookup now, in this turn; if the library does not hold it, say so plainly in one sentence. No summary, no remarks about your sources or tools.`;
 
+// a long title loses its trailing parenthetical before any clip ("…Volume XVI (Baha'i Era 130–133, 1973–1976)" was cut to "(Baha'i Era 130–…")
+const shortTitle = (t) => (t.length > 70 ? t.replace(/\s*\([^()]*\)\s*$/, '') : t);
 /** [[P3]] / [[P3, P5]] / [[B1]] (single brackets too) → links from what the tools returned; any other ref is dropped. Pure. */
 export function renderRefs(text, { found, works }) {
   const G = /\[\[?([PW]\d+(?:\s*[,;]\s*[PW]\d+)*)\]\]?(?!\()/.source;
@@ -79,7 +81,7 @@ export function renderRefs(text, { found, works }) {
     .replace(/\s*\[\[?((?:[PW]\d+)(?:\s*[,;]\s*[PW]\d+)*)\]\]?(?!\()/g, (m, list) => {
       const seen = new Set();
       const links = list.split(/\s*[,;]\s*/).map((r) => found.get(r)).filter((p) => { const k = p?.document_id ?? p?.source_url; return p?.source_url && !seen.has(k) && seen.add(k); })
-        .map((p) => `[${p.web ? 'web: ' : ''}${clip(p.title || 'source', 70)}](${p.source_url})`);
+        .map((p) => `[${p.web ? 'web: ' : ''}${clip(shortTitle(p.title || 'source'), 70)}](${p.source_url})`);
       return links.length ? ` (${links.join('; ')})` : '';
     })
     .replace(/[ \t]+([.,;:!?])/g, '$1')
