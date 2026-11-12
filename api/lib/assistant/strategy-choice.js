@@ -38,7 +38,8 @@ const SIDES = { ...Object.fromEntries(Object.entries(TRADITIONS).filter(([k]) =>
 // 11-10: "How did he die?" after "Who was Mullá Ḥusayn?" asks something NEW about the same subject; anchoring it on the last reply's passages put the
 // biography's sources ahead of Nabíl's account of his death. Only a message about the reply itself (its quote, its passages) is anchored on them.
 const REFERS = { own: 'the message states its own subject, whole',
-  subject: 'it asks something new about the person, event, book or topic the previous turn was about ("how did he die?", "when was it written?", "what happened next?")',
+  // 11-12 Ṭáhirih → "what did Shoghi Effendi write about her?": the new author's name hid the pronoun (0.48), the turn searched "write about her"
+  subject: 'it asks something new about the person, event, book or topic the previous turn was about — a pronoun ("he", "her", "it", "there") points at it, even when the message names someone else too ("how did he die?", "when was it written?", "what happened next?", "what did <an author> write about her?")',
   previous: 'it asks about the previous reply itself or the passages it gave ("that quote", "the actual words", "the second one", "is that authentic?", "how does that compare with …")',
   // 11-12 compilation on justice → "add two from Abdu'l-Bahá": read as its own subject, the topic became "add two" and it searched arithmetic
   extend: 'it asks to add to, narrow or reshape the previous reply, keeping its subject ("add two from …", "more like these", "only the ones by …", "put it in a table", "shorter")' };
