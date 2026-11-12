@@ -1,6 +1,34 @@
 {
-  "generated": "2026-11-11T20:57:21.036Z",
+  "generated": "2026-11-12T16:01:30.671Z",
   "entries": [
+    {
+      "hash": "678ff8b7b",
+      "date": "2026-11-11",
+      "type": "Other",
+      "description": "Expected words match with transliteration marks folded (dawnbreakers#2 'S̱hayḵh Aḥmad' was right)",
+      "scope": null
+    },
+    {
+      "hash": "bc85c20b4",
+      "date": "2026-11-11",
+      "type": "Other",
+      "description": "Side-by-side document (sentence rows, CTAI typography, edge PDF, Anís tool)",
+      "scope": null
+    },
+    {
+      "hash": "54cb25034",
+      "date": "2026-11-11",
+      "type": "Other",
+      "description": "A quote under four words is found literally, not refused into 'couldn't search'",
+      "scope": null
+    },
+    {
+      "hash": "dc64e9fbb",
+      "date": "2026-11-11",
+      "type": "Other",
+      "description": "The named-works literal scan runs in the read pool",
+      "scope": null
+    },
     {
       "hash": "315c67a89",
       "date": "2026-11-11",
@@ -651,360 +679,38 @@
       "type": "Other",
       "description": "Whole bootstrap exports the image's LD_LIBRARY_PATH (ssh sessions lack it → sherpa CUDA couldn't load libcublasLt.so.12, every 'unsure' talk failed at diarize after its GPU remaster); diarize falls back to CPU if the CUDA provider can't load",
       "scope": null
-    },
-    {
-      "hash": "06e6fcbfe",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "Edge job queue — CF Worker hands out jobs, one image everywhere, results via R2 (Chad 10-30)",
-      "scope": null
-    },
-    {
-      "hash": "d2fb67370",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "Collect results in the background, a finished talk frees its slot (10-30: pods ran at 1/3-1/4)",
-      "scope": null
-    },
-    {
-      "hash": "cea1fd166",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "The stage ledger (Chad 10-30: \"a lightweight sqlite table managing the stages of each staged or published audio file\") — media_stages (migr 190), one row per (talk, stage), mirrored from meta.json at every save + whole/cloud results; media-ledger-reconcile report walks every folder and reports drift. Internal API /api/admin/ops/media/{progress,items,items/:ref,items/:id/redo} + ops.mjs media …; Dewey tools media_progress, media_status",
-      "scope": null
-    },
-    {
-      "hash": "2b35266c8",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "Send audio, never video (Chad 10-30: \"pushing video around to process audio is simply absurd\") — a video original's audio track is stream-copied (ffmpeg -vn -c:a copy, bit for bit, tower 'light') before it goes to R2 or a pod; whole recordings keep their file (input_sha). The stager now stages only what pods may take (it had staged held-back whole mp4s: pulls 0, direct 8)",
-      "scope": null
-    },
-    {
-      "hash": "1a966ad1a",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "The lane's 60 s heartbeat saves its state too (10-30: a pass collecting results ran 9+ min unsaved — staging progress and new jobs invisible)",
-      "scope": null
-    },
-    {
-      "hash": "795c56ff7",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "A drain waits at most 30 s for home jobs (10-30: an ssh boss start that ignored the stop held the lane 7+ min — no state written, 3 pods starved); staged R2 objects re-staged after 36 h, before the 2-day bucket rule deletes them",
-      "scope": null
-    },
-    {
-      "hash": "1cd9b4c17",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "Stage ahead in R2 (Chad 10-30) — the lane uploads queued originals to R2 continuously, ~100 audio-hours ahead, pods up or not; a pod pulls its input from a signed URL in seconds (direct upload stays the fallback). Uploads still in flight count as work, so the lane no longer closes a pod or ends while one is being assigned. Summary shows staged talks/h/GB, pulls vs direct",
-      "scope": null
-    },
-    {
-      "hash": "a99424193",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "Uploads run in the background — the pass no longer waits on them (10-30: 12 at once over tower's ~18 Mbit/s real uplink made one pass 10 min, so no results came back and no pod was fed). 2 per pod, 4 in all; a .part still being sent is not requeued as a leftover",
-      "scope": null
-    },
-    {
-      "hash": "482d22f7b",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "Stage ahead so pods never starve (Chad 10-30) — each pod is kept at its worker's slots + 4 waiting, up to 4 uploads sent at once per pass and 3 results fetched; one-at-a-time held a 12-slot 4090 to ~4 jobs (13-15 min cycle for ~6 min of work) while tower's link sat at 15 of 1000 Mbit/s. saveState tmp names are unique so concurrent stagings don't clobber",
-      "scope": null
-    },
-    {
-      "hash": "6146ea01e",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "The capacity report's maxPods now sets the pod count both ways — it could only lower the lane's launch request, so a lane started at 2 ignored the operator's 3",
-      "scope": null
-    },
-    {
-      "hash": "769c439a9",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "The reaper's 'finished a talk recently' check matched done by pod id, but done records the pod by name — it spared nothing; match either",
-      "scope": null
-    },
-    {
-      "hash": "639395dc7",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "The reaper no longer takes a working pod as 'GPU quiet (stuck)' — pod 350 read 0 % GPU for an hour while finishing 8 talks in 30 min (sampling misses the short GPU bursts) and was reaped; a pod that finished a talk within the quiet window is spared",
-      "scope": null
-    },
-    {
-      "hash": "1b9a84317",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "Clearing a decision clears its note and decider too",
-      "scope": null
-    },
-    {
-      "hash": "cbc2cc598",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "New pods no longer end themselves before their first talk — the image's worker self-ended after 120 s idle / 3 min without a tower heartbeat, and tower's first look at a warming pod comes a lane tick (~3.5 min) later (351-353 all closed 'unreachable'); the worker now runs without RUNPOD_POD_ID and a keeper script holds the safety nets (tower silent 30 min, 24 h life); speech-coverage check (worker-only, refuses on tower) gates publishing; ops-reports names test lists media-cloud-capacity + media-quiet-repair",
-      "scope": null
-    },
-    {
-      "hash": "3fa8804bd",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "Rent 32 vCPUs first and scale max_jobs with vCPU (the worker runs min(max_jobs, vCPU/2); #349's 18 vCPUs left 7 jobs in CPU post and the GPU at 0 %); the reaper spares a productive pod past 8 h (hard cap 24 h; pod-side cap 24 h for the next image); a pod the reaper took is closed as 'reaped: <why>', not 'unreachable'; /media machine cards compact so six fit one row",
-      "scope": null
-    },
-    {
-      "hash": "94e5398a8",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "An item whose mode is 'withdraw' is never work — intake withdraws on mode too, each tick drops any already queued (193 withdraw orders taken in by the pre-withdraw lane sat in the queue as items); media-quiet-repair takes back the published talks a withdrawn redo left 'waiting' (no valid worker result) and returns them to done",
-      "scope": null
-    },
-    {
-      "hash": "2db6324f1",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "Withdraw orders (media-cloud-order mode 'withdraw'); a talk running on a home host counts as running — for pulling back the 218 restore redos in favour of a silence-only repair of the kept masters",
-      "scope": null
-    },
-    {
-      "hash": "c3ae4846e",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "A home host that stops answering keeps its task (2 min rest, re-attach by job id); only the 3rd strike requeues — boss ran 663/667 while the lane called it unreachable and sent 663 to a pod too",
-      "scope": null
-    },
-    {
-      "hash": "f0b845bad",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "'host unreachable' keeps the error text that tripped it (boss was benched with no reason recorded)",
-      "scope": null
-    },
-    {
-      "hash": "981295aa3",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Words timed past the end of the copy no longer make negative stretches",
-      "scope": null
-    },
-    {
-      "hash": "34037cc75",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Silence the word-free stretches — UniPASE turns background-only audio into loud noise (believers-memories: 0-10 s at -10 dB)",
-      "scope": null
-    },
-    {
-      "hash": "a7ea9577e",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Click the version tag to copy it (shows 'copied ✓'); no longer navigates home",
-      "scope": null
-    },
-    {
-      "hash": "bec699787",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Pod count + spend cap set through ops (media-cloud-capacity → data/run/cloud-capacity.json; capUsd there wins over MEDIA_CLOUD_CAP_USD), bounded and tested",
-      "scope": null
-    },
-    {
-      "hash": "36e74b898",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Cloud orders can go FIRST — talks taken off the air (reverted for splicing) lead the lane queue whatever their mode; queue order is one tested function (laneOrder)",
-      "scope": null
-    },
-    {
-      "hash": "db16c0665",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "A talk without a passed remaster has no published state — its page JSON and files 404 to the public (internal key still reads them; pod ensure sends it)",
-      "scope": null
-    },
-    {
-      "hash": "b7597be49",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Web audio streams from R2 while it uploads — pieces (512 KB first, then 4 MB), a read waits only for its piece; a GET miss starts the copy; the page warms both copies",
-      "scope": null
-    },
-    {
-      "hash": "b0e1bd4e1",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Worker verdict and public readout drop 'partial' — any sentence from the original is 'spliced', never counted as restored",
-      "scope": null
-    },
-    {
-      "hash": "6c649653f",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "NEVER A SPLICE — a remaster with any sentence from the original is never published ('spliced' verdict; 'partial' removed)",
-      "scope": null
-    },
-    {
-      "hash": "ce0bb3130",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Media-cloud-order post lists talks with no restored copy on tower (no_copy) — those need a full redo to be re-assessed",
-      "scope": null
-    },
-    {
-      "hash": "e4cf4a10b",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Quality report counts publishable remasters with/without a passed listening assessment (+ unassessed list)",
-      "scope": null
-    },
-    {
-      "hash": "3ecffb174",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Verify parses -inf/'through' levels and names the failing measure; ops.mjs run <id>",
-      "scope": null
-    },
-    {
-      "hash": "1808c2fd2",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Media-remaster-review-pack honours ids and skips a talk whose clip fails instead of failing the job",
-      "scope": null
-    },
-    {
-      "hash": "ea98f8e26",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Failures — failed ops jobs queryable (GET /ops/failures, ops.mjs failures) so FAILED mails need not be pasted",
-      "scope": null
-    },
-    {
-      "hash": "fc6df8970",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Verify stage — a remaster must be measurably different from the original, or it is held for review and is never complete/on air",
-      "scope": null
-    },
-    {
-      "hash": "a2a5aebdc",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Box sets order unnumbered recordings into the unclaimed part slots; bare trailing slug number is a part",
-      "scope": null
-    },
-    {
-      "hash": "f4c307bdb",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Remastered/hr counts COMPLETIONS (completed_at, migration 188), not first publications",
-      "scope": null
-    },
-    {
-      "hash": "6f479a4a1",
-      "date": "2026-10-29",
-      "type": "Test",
-      "description": "Dewey-upload resume — pause only after the good parts land (race)",
-      "scope": null
-    },
-    {
-      "hash": "bf0c63c7c",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Index stages + audio quality (migration 187): stages_missing, next_stage, verdict, NISQA in/out, bandwidth in/out; backfill + per-stage maintenance",
-      "scope": null
-    },
-    {
-      "hash": "16f475610",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Media-stages report/job — per-talk missing stages, queue exactly those (or forced redo) through the engine",
-      "scope": null
-    },
-    {
-      "hash": "4f529cffd",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "On air = COMPLETE (all stages done + passed remaster assessment); flag recomputed after every stage",
-      "scope": null
-    },
-    {
-      "hash": "799d677ea",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "On air = real remaster only (heavy/cleaned), not the bulk light tier; re-verify rows flagged under the looser rule",
-      "scope": null
-    },
-    {
-      "hash": "49e0d71f3",
-      "date": "2026-10-29",
-      "type": "Other",
-      "description": "Restored-only on-air, machine-agnostic host registry, page-open edge warm",
-      "scope": null
-    },
-    {
-      "hash": "6cafd040d",
-      "date": "2026-10-28",
-      "type": "New",
-      "description": "Browser triage tool for big copied drives (catalog, suggestions, decisions, Dewey import)",
-      "scope": "archive-sifter"
-    },
-    {
-      "hash": "702faa13c",
-      "date": "2026-10-28",
-      "type": "Docs",
-      "description": "Archives sift plan and handoff (design only, no code)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "b4f493040",
-      "date": "2026-10-28",
-      "type": "Docs",
-      "description": "Boss whole status, hipFFT open bug",
-      "scope": "media"
-    },
-    {
-      "hash": "938440b35",
-      "date": "2026-10-28",
-      "type": "New",
-      "description": "Capability-ranked slots (EWMA per host), boss whole admission from measured peak, aorus container start needs host RAM",
-      "scope": "media"
-    },
-    {
-      "hash": "20f756a5c",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "HyPE core batch status 10-28",
-      "scope": null
-    },
-    {
-      "hash": "ad1998ffa",
-      "date": "2026-10-28",
-      "type": "Docs",
-      "description": "Worker image / AMD GPU status and handoff",
-      "scope": "media"
-    },
-    {
-      "hash": "608b82a93",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "F16 reconcile as a streaming merge-diff (JS Set caps at 16.7M entries)",
-      "scope": null
-    },
-    {
-      "hash": "b9353bfae",
-      "date": "2026-10-28",
-      "type": "Other",
-      "description": "No book is imported without Chad approval - books and documents stop at offered everywhere (fetch, upload, ZIP, pulse, folder sweep); trust and rights default apply to media only",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-11-11": [
+      {
+        "hash": "678ff8b7b",
+        "date": "2026-11-11",
+        "type": "Other",
+        "description": "Expected words match with transliteration marks folded (dawnbreakers#2 'S̱hayḵh Aḥmad' was right)",
+        "scope": null
+      },
+      {
+        "hash": "bc85c20b4",
+        "date": "2026-11-11",
+        "type": "Other",
+        "description": "Side-by-side document (sentence rows, CTAI typography, edge PDF, Anís tool)",
+        "scope": null
+      },
+      {
+        "hash": "54cb25034",
+        "date": "2026-11-11",
+        "type": "Other",
+        "description": "A quote under four words is found literally, not refused into 'couldn't search'",
+        "scope": null
+      },
+      {
+        "hash": "dc64e9fbb",
+        "date": "2026-11-11",
+        "type": "Other",
+        "description": "The named-works literal scan runs in the read pool",
+        "scope": null
+      },
       {
         "hash": "315c67a89",
         "date": "2026-11-11",
@@ -1676,360 +1382,6 @@
         "date": "2026-10-30",
         "type": "Other",
         "description": "Whole bootstrap exports the image's LD_LIBRARY_PATH (ssh sessions lack it → sherpa CUDA couldn't load libcublasLt.so.12, every 'unsure' talk failed at diarize after its GPU remaster); diarize falls back to CPU if the CUDA provider can't load",
-        "scope": null
-      },
-      {
-        "hash": "06e6fcbfe",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "Edge job queue — CF Worker hands out jobs, one image everywhere, results via R2 (Chad 10-30)",
-        "scope": null
-      },
-      {
-        "hash": "d2fb67370",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "Collect results in the background, a finished talk frees its slot (10-30: pods ran at 1/3-1/4)",
-        "scope": null
-      },
-      {
-        "hash": "cea1fd166",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "The stage ledger (Chad 10-30: \"a lightweight sqlite table managing the stages of each staged or published audio file\") — media_stages (migr 190), one row per (talk, stage), mirrored from meta.json at every save + whole/cloud results; media-ledger-reconcile report walks every folder and reports drift. Internal API /api/admin/ops/media/{progress,items,items/:ref,items/:id/redo} + ops.mjs media …; Dewey tools media_progress, media_status",
-        "scope": null
-      },
-      {
-        "hash": "2b35266c8",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "Send audio, never video (Chad 10-30: \"pushing video around to process audio is simply absurd\") — a video original's audio track is stream-copied (ffmpeg -vn -c:a copy, bit for bit, tower 'light') before it goes to R2 or a pod; whole recordings keep their file (input_sha). The stager now stages only what pods may take (it had staged held-back whole mp4s: pulls 0, direct 8)",
-        "scope": null
-      },
-      {
-        "hash": "1a966ad1a",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "The lane's 60 s heartbeat saves its state too (10-30: a pass collecting results ran 9+ min unsaved — staging progress and new jobs invisible)",
-        "scope": null
-      },
-      {
-        "hash": "795c56ff7",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "A drain waits at most 30 s for home jobs (10-30: an ssh boss start that ignored the stop held the lane 7+ min — no state written, 3 pods starved); staged R2 objects re-staged after 36 h, before the 2-day bucket rule deletes them",
-        "scope": null
-      },
-      {
-        "hash": "1cd9b4c17",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "Stage ahead in R2 (Chad 10-30) — the lane uploads queued originals to R2 continuously, ~100 audio-hours ahead, pods up or not; a pod pulls its input from a signed URL in seconds (direct upload stays the fallback). Uploads still in flight count as work, so the lane no longer closes a pod or ends while one is being assigned. Summary shows staged talks/h/GB, pulls vs direct",
-        "scope": null
-      },
-      {
-        "hash": "a99424193",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "Uploads run in the background — the pass no longer waits on them (10-30: 12 at once over tower's ~18 Mbit/s real uplink made one pass 10 min, so no results came back and no pod was fed). 2 per pod, 4 in all; a .part still being sent is not requeued as a leftover",
-        "scope": null
-      },
-      {
-        "hash": "482d22f7b",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "Stage ahead so pods never starve (Chad 10-30) — each pod is kept at its worker's slots + 4 waiting, up to 4 uploads sent at once per pass and 3 results fetched; one-at-a-time held a 12-slot 4090 to ~4 jobs (13-15 min cycle for ~6 min of work) while tower's link sat at 15 of 1000 Mbit/s. saveState tmp names are unique so concurrent stagings don't clobber",
-        "scope": null
-      },
-      {
-        "hash": "6146ea01e",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "The capacity report's maxPods now sets the pod count both ways — it could only lower the lane's launch request, so a lane started at 2 ignored the operator's 3",
-        "scope": null
-      },
-      {
-        "hash": "769c439a9",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "The reaper's 'finished a talk recently' check matched done by pod id, but done records the pod by name — it spared nothing; match either",
-        "scope": null
-      },
-      {
-        "hash": "639395dc7",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "The reaper no longer takes a working pod as 'GPU quiet (stuck)' — pod 350 read 0 % GPU for an hour while finishing 8 talks in 30 min (sampling misses the short GPU bursts) and was reaped; a pod that finished a talk within the quiet window is spared",
-        "scope": null
-      },
-      {
-        "hash": "1b9a84317",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "Clearing a decision clears its note and decider too",
-        "scope": null
-      },
-      {
-        "hash": "cbc2cc598",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "New pods no longer end themselves before their first talk — the image's worker self-ended after 120 s idle / 3 min without a tower heartbeat, and tower's first look at a warming pod comes a lane tick (~3.5 min) later (351-353 all closed 'unreachable'); the worker now runs without RUNPOD_POD_ID and a keeper script holds the safety nets (tower silent 30 min, 24 h life); speech-coverage check (worker-only, refuses on tower) gates publishing; ops-reports names test lists media-cloud-capacity + media-quiet-repair",
-        "scope": null
-      },
-      {
-        "hash": "3fa8804bd",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "Rent 32 vCPUs first and scale max_jobs with vCPU (the worker runs min(max_jobs, vCPU/2); #349's 18 vCPUs left 7 jobs in CPU post and the GPU at 0 %); the reaper spares a productive pod past 8 h (hard cap 24 h; pod-side cap 24 h for the next image); a pod the reaper took is closed as 'reaped: <why>', not 'unreachable'; /media machine cards compact so six fit one row",
-        "scope": null
-      },
-      {
-        "hash": "94e5398a8",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "An item whose mode is 'withdraw' is never work — intake withdraws on mode too, each tick drops any already queued (193 withdraw orders taken in by the pre-withdraw lane sat in the queue as items); media-quiet-repair takes back the published talks a withdrawn redo left 'waiting' (no valid worker result) and returns them to done",
-        "scope": null
-      },
-      {
-        "hash": "2db6324f1",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "Withdraw orders (media-cloud-order mode 'withdraw'); a talk running on a home host counts as running — for pulling back the 218 restore redos in favour of a silence-only repair of the kept masters",
-        "scope": null
-      }
-    ],
-    "2026-10-29": [
-      {
-        "hash": "c3ae4846e",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "A home host that stops answering keeps its task (2 min rest, re-attach by job id); only the 3rd strike requeues — boss ran 663/667 while the lane called it unreachable and sent 663 to a pod too",
-        "scope": null
-      },
-      {
-        "hash": "f0b845bad",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "'host unreachable' keeps the error text that tripped it (boss was benched with no reason recorded)",
-        "scope": null
-      },
-      {
-        "hash": "981295aa3",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Words timed past the end of the copy no longer make negative stretches",
-        "scope": null
-      },
-      {
-        "hash": "34037cc75",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Silence the word-free stretches — UniPASE turns background-only audio into loud noise (believers-memories: 0-10 s at -10 dB)",
-        "scope": null
-      },
-      {
-        "hash": "a7ea9577e",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Click the version tag to copy it (shows 'copied ✓'); no longer navigates home",
-        "scope": null
-      },
-      {
-        "hash": "bec699787",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Pod count + spend cap set through ops (media-cloud-capacity → data/run/cloud-capacity.json; capUsd there wins over MEDIA_CLOUD_CAP_USD), bounded and tested",
-        "scope": null
-      },
-      {
-        "hash": "36e74b898",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Cloud orders can go FIRST — talks taken off the air (reverted for splicing) lead the lane queue whatever their mode; queue order is one tested function (laneOrder)",
-        "scope": null
-      },
-      {
-        "hash": "db16c0665",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "A talk without a passed remaster has no published state — its page JSON and files 404 to the public (internal key still reads them; pod ensure sends it)",
-        "scope": null
-      },
-      {
-        "hash": "b7597be49",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Web audio streams from R2 while it uploads — pieces (512 KB first, then 4 MB), a read waits only for its piece; a GET miss starts the copy; the page warms both copies",
-        "scope": null
-      },
-      {
-        "hash": "b0e1bd4e1",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Worker verdict and public readout drop 'partial' — any sentence from the original is 'spliced', never counted as restored",
-        "scope": null
-      },
-      {
-        "hash": "6c649653f",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "NEVER A SPLICE — a remaster with any sentence from the original is never published ('spliced' verdict; 'partial' removed)",
-        "scope": null
-      },
-      {
-        "hash": "ce0bb3130",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Media-cloud-order post lists talks with no restored copy on tower (no_copy) — those need a full redo to be re-assessed",
-        "scope": null
-      },
-      {
-        "hash": "e4cf4a10b",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Quality report counts publishable remasters with/without a passed listening assessment (+ unassessed list)",
-        "scope": null
-      },
-      {
-        "hash": "3ecffb174",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Verify parses -inf/'through' levels and names the failing measure; ops.mjs run <id>",
-        "scope": null
-      },
-      {
-        "hash": "1808c2fd2",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Media-remaster-review-pack honours ids and skips a talk whose clip fails instead of failing the job",
-        "scope": null
-      },
-      {
-        "hash": "ea98f8e26",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Failures — failed ops jobs queryable (GET /ops/failures, ops.mjs failures) so FAILED mails need not be pasted",
-        "scope": null
-      },
-      {
-        "hash": "fc6df8970",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Verify stage — a remaster must be measurably different from the original, or it is held for review and is never complete/on air",
-        "scope": null
-      },
-      {
-        "hash": "a2a5aebdc",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Box sets order unnumbered recordings into the unclaimed part slots; bare trailing slug number is a part",
-        "scope": null
-      },
-      {
-        "hash": "f4c307bdb",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Remastered/hr counts COMPLETIONS (completed_at, migration 188), not first publications",
-        "scope": null
-      },
-      {
-        "hash": "6f479a4a1",
-        "date": "2026-10-29",
-        "type": "Test",
-        "description": "Dewey-upload resume — pause only after the good parts land (race)",
-        "scope": null
-      },
-      {
-        "hash": "bf0c63c7c",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Index stages + audio quality (migration 187): stages_missing, next_stage, verdict, NISQA in/out, bandwidth in/out; backfill + per-stage maintenance",
-        "scope": null
-      },
-      {
-        "hash": "16f475610",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Media-stages report/job — per-talk missing stages, queue exactly those (or forced redo) through the engine",
-        "scope": null
-      },
-      {
-        "hash": "4f529cffd",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "On air = COMPLETE (all stages done + passed remaster assessment); flag recomputed after every stage",
-        "scope": null
-      },
-      {
-        "hash": "799d677ea",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "On air = real remaster only (heavy/cleaned), not the bulk light tier; re-verify rows flagged under the looser rule",
-        "scope": null
-      },
-      {
-        "hash": "49e0d71f3",
-        "date": "2026-10-29",
-        "type": "Other",
-        "description": "Restored-only on-air, machine-agnostic host registry, page-open edge warm",
-        "scope": null
-      }
-    ],
-    "2026-10-28": [
-      {
-        "hash": "6cafd040d",
-        "date": "2026-10-28",
-        "type": "New",
-        "description": "Browser triage tool for big copied drives (catalog, suggestions, decisions, Dewey import)",
-        "scope": "archive-sifter"
-      },
-      {
-        "hash": "702faa13c",
-        "date": "2026-10-28",
-        "type": "Docs",
-        "description": "Archives sift plan and handoff (design only, no code)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "b4f493040",
-        "date": "2026-10-28",
-        "type": "Docs",
-        "description": "Boss whole status, hipFFT open bug",
-        "scope": "media"
-      },
-      {
-        "hash": "938440b35",
-        "date": "2026-10-28",
-        "type": "New",
-        "description": "Capability-ranked slots (EWMA per host), boss whole admission from measured peak, aorus container start needs host RAM",
-        "scope": "media"
-      },
-      {
-        "hash": "20f756a5c",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "HyPE core batch status 10-28",
-        "scope": null
-      },
-      {
-        "hash": "ad1998ffa",
-        "date": "2026-10-28",
-        "type": "Docs",
-        "description": "Worker image / AMD GPU status and handoff",
-        "scope": "media"
-      },
-      {
-        "hash": "608b82a93",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "F16 reconcile as a streaming merge-diff (JS Set caps at 16.7M entries)",
-        "scope": null
-      },
-      {
-        "hash": "b9353bfae",
-        "date": "2026-10-28",
-        "type": "Other",
-        "description": "No book is imported without Chad approval - books and documents stop at offered everywhere (fetch, upload, ZIP, pulse, folder sweep); trust and rights default apply to media only",
         "scope": null
       }
     ]
