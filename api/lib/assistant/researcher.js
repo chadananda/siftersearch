@@ -212,7 +212,11 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
       if (!p?.document_id) return 'unknown ref';
       if (!impl.whole) return 'no whole-prayer reading here';
       const r = await impl.whole(p).catch(() => null);
-      return r?.passages?.length ? show(r.passages.map((x) => add(x))) : 'no whole prayer found around this passage — context_lookup it';
+      if (!r?.passages?.length) return 'no whole prayer found around this passage — context_lookup it';
+      // ONE ref for the whole prayer (its paragraphs joined, the first one's link): quoted once, cited once — as separate refs the
+      // agent split it into two quotations and doubted they belonged together (11-12)
+      const [a] = r.passages, whole = { ...a, id: `${a.id}-whole`, text: r.passages.map((x) => x.text).join('\n\n') };
+      return `the whole prayer (${r.passages.length} paragraph${r.passages.length === 1 ? '' : 's'}, one prayer) — quote it as one:\n\n${show([add(whole)])}`;
     },
     document_search: async ({ title }) => {
       const w = await (impl.work || (async (t) => (await import('./work-request.js')).findTitled([t])))(title).catch(() => null);

@@ -131,6 +131,7 @@ describe('source questions', async () => {
     const out = await run.whole_lookup({ ref: 'P1' });
     expect(whole).toHaveBeenCalledWith(expect.objectContaining({ document_id: 3 }));
     expect(out).toContain('the Help in Peril');
+    expect(out.match(/\[P\d+\]/g)).toHaveLength(1);   // one prayer, one ref
     expect(await run.whole_lookup({ ref: 'P99' })).toBe('unknown ref');
   });
   it('no result: the runner returns guidance, and a source the tools never gave is dropped', async () => {
