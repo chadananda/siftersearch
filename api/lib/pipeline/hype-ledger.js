@@ -11,7 +11,9 @@ export const DUP_JACCARD = 0.8;
 const RATE_KEYS = ['faultRate', 'emptyRate', 'exhaustedRate', 'truncationRate', 'failedRate', 'dupRate', 'langMismatchRate'];   // higher is worse
 export const GRADE_KEYS = ['searchablePct', 'answeredPct', 'distinctPct'];                                                               // higher is better
 
-const qsOf = (row) => { try { const q = typeof row.hyp_questions === 'string' ? JSON.parse(row.hyp_questions) : row.hyp_questions; return (Array.isArray(q) ? q : q?.questions) || []; } catch { return []; } };
+// the STATED questions of a stored hyp_questions array — implied items ({ implied: true, … }) are not graded or counted as questions
+export const statedHypQuestions = (arr) => (Array.isArray(arr) ? arr : []).filter((x) => !(x && typeof x === 'object' && x.implied)).map((x) => (x && typeof x === 'object' ? String(x.q ?? '') : String(x))).filter(Boolean);
+const qsOf = (row) => { try { const q = typeof row.hyp_questions === 'string' ? JSON.parse(row.hyp_questions) : row.hyp_questions; return statedHypQuestions(Array.isArray(q) ? q : q?.questions); } catch { return []; } };
 const words = (s) => new Set(String(s).toLowerCase().match(/[\p{L}\p{N}']+/gu) || []);
 const jaccard = (a, b) => { let n = 0; for (const w of a) if (b.has(w)) n++; return n / (a.size + b.size - n || 1); };
 // language bucket of a text: a dominant non-Latin script wins, else the Latin-script function-word probe

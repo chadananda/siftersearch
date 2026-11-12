@@ -140,6 +140,18 @@ export async function originalsByIds(ids) {
   return out;
 }
 
+/** Search hits [{ paragraph_id, k }] whose best HyPE point was an IMPLIED question → Map(paragraph_id → { question, premise, implies, proof }).
+ *  The item is the k-th implied item (k = IMPLIED_K0 + position, search/hype.js) of the paragraph's own hyp_questions. Bounded by id. */
+export async function impliedHypeFor(hits) {
+  const ids = [...new Set(hits.map((h) => Number(h.paragraph_id)).filter(Boolean))];
+  if (!ids.length) return new Map();
+  const { impliedItemAt } = await import('./search/hype.js');
+  const rows = await queryAll(`SELECT id, hyp_questions FROM content WHERE id IN (${ids.map(() => '?').join(',')}) AND deleted_at IS NULL`, ids, 'paragraphs:implied-hype');
+  const raw = new Map(rows.map((r) => [r.id, r.hyp_questions])), out = new Map();
+  for (const h of hits) { const pid = Number(h.paragraph_id), it = out.has(pid) ? null : impliedItemAt(raw.get(pid), Number(h.k)); if (it) out.set(pid, it); }
+  return out;
+}
+
 /** Live paragraphs of a document (all block types — headings included, as the search index holds them). */
 export async function countParagraphs(docId) {
   const r = await queryAll('SELECT COUNT(*) n FROM content WHERE doc_id = ? AND deleted_at IS NULL', [Number(docId)], 'paragraphs:count');

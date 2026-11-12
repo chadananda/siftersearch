@@ -356,7 +356,7 @@ describe('the answer gate covers the SLICED path too', () => {
     const { readFile } = await import('node:fs/promises');
     const src = await readFile(new URL('../../api/lib/rag/enrich/retrieval.js', import.meta.url), 'utf8');
     const branch = src.slice(src.indexOf('One bounded call per sentence-group'), src.indexOf('stats.sliced'));
-    expect(branch).toMatch(/parsed = \{ items, thesis \}/);
+    expect(branch).toMatch(/parsed = \{ items, implied, thesis \}/);
     expect(branch).not.toMatch(/parsed = \{ questions:/);
   });
 });

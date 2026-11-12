@@ -11,7 +11,7 @@ import { config } from './config.js';
 import { logger } from './logger.js';
 import { createEmbeddings } from './ai.js';
 import { queryEmbedding } from './query-embedding.js';
-import { geminiQueryVector, searchPhrases, searchKeywordQdrant, searchHypeQdrant, searchConceptsQdrant, searchPremisesQdrant, resolveQdrantFilters, withQdrantCallLog } from './search/qdrant-layers.js';
+import { geminiQueryVector, searchPhrases, searchKeywordQdrant, searchHypeQdrant, searchConceptsQdrant, resolveQdrantFilters, withQdrantCallLog } from './search/qdrant-layers.js';
 import { getAuthority } from './authority.js';
 import { queryOne, queryAll, query } from './db.js';
 import { getImportProgress, getIngestionProgress, getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
@@ -1210,8 +1210,7 @@ const DEFAULT_WEIGHTS = {
   qkeyword: 1.0, // Qdrant BM25 with our folding (opt-in: options.qdrantKeyword) — not yet tuned
   qhype: 1.5,   // Qdrant HyPE (options.qdrantHype, always with meili:false) — the same weight as Meili's HyPE layer
   concept: 1.5, // concept lexicon proof (options.conceptLayer) — the cited interpretation of a symbol the question names
-  qconcept: 1.0, // Qdrant concept claims (options.conceptLayer) — a doctrinal claim the question is about; not yet tuned
-  premise: 0.7  // Qdrant IMPLIED questions (options.premiseLayer or conceptLayer; premise-pilot) — what a passage bears on without saying it: below stated layers; not yet tuned
+  qconcept: 1.0 // Qdrant concept claims (options.conceptLayer) — a doctrinal claim the question is about; not yet tuned
 };
 
 /**
@@ -1362,7 +1361,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
     ]);
     return { hits: [...(dp.hits || []), ...(dh.hits || [])] };
   })().catch((err) => { logger.warn({ err: err.message }, 'multiIndexSearch: authoritative pass failed'); return { hits: [] }; });
-  let [mainResult, hypeResult, entityResult, keywordResult, phraseResult, qkeywordResult, qhypeResult, conceptResult, qconceptResult, premiseResult] = await Promise.all([
+  let [mainResult, hypeResult, entityResult, keywordResult, phraseResult, qkeywordResult, qhypeResult, conceptResult, qconceptResult] = await Promise.all([
     meiliOff ? Promise.resolve({ hits: [] }) : timed('main', hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: mainSemanticRatio })).catch(err => {
       logger.warn({ err: err.message }, 'multiIndexSearch: main hybrid failed');
       return { hits: [] };
@@ -1426,14 +1425,6 @@ async function multiIndexSearchRun(query, options, qcalls) {
       ? timed('qconcept', searchConceptsQdrant(query, { limit: overFetch, filters: qfilters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: qdrant concept layer failed');
           return { hits: [], failed: true };
-        })
-      : Promise.resolve({ hits: [] }),
-    // IMPLIED questions (premise-pilot, Chad 11-12): "do the unborn have rights?" reaches a passage that answers it only by implication
-    // (Aqdas ¶21). Flagged implied: true on the hit; the writer is told to word it as what the passage implies, never as explicit teaching.
-    ((options.premiseLayer || options.conceptLayer) && !semanticOff && (!scope_config || scope_config.primary))
-      ? timed('qpremise', searchPremisesQdrant(query, { limit: overFetch, filters: qfilters })).catch(err => {
-          logger.warn({ err: err.message }, 'multiIndexSearch: qdrant premise layer failed');
-          return { hits: [] };
         })
       : Promise.resolve({ hits: [] }),
   ]);
@@ -1554,7 +1545,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
   const talksAsked = !!(options.talks || filters.collection || filters.author || aboutTalks(query));
   // doctrine (default) or law / administration — the House is primary only on the latter (Chad 10-23); 'talks' weighs talks neutrally
   const authorityDomain = options.domain || (talksAsked && aboutTalks(query) ? 'talks' : queryDomain(query));
-  for (const [layer, result] of [['phrase', phraseResult], ['qkeyword', qkeywordResult], ['qhype', qhypeResult], ['qconcept', qconceptResult], ['premise', premiseResult], ['canon', canonResult], ['doctrinal', doctrinalResult]]) {
+  for (const [layer, result] of [['phrase', phraseResult], ['qkeyword', qkeywordResult], ['qhype', qhypeResult], ['qconcept', qconceptResult], ['canon', canonResult], ['doctrinal', doctrinalResult]]) {
     (result.hits || []).forEach((hit, rank) => {
       // authority FROM THE OUTSET: each layer's contribution is weighed by the passage's writer (Qdrant payload)
       const af = keyFactor(bahaiScope ? hit.author_fold : null, hit.scope, hit.collection, authorityDomain);
@@ -1568,7 +1559,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
         : (weights[layer] ?? 1.0) / (RRF_K + rank));
       cur[`${layer}Rank`] = rank;
       if (hit.span && !cur.phraseSpan) cur.phraseSpan = hit.span;
-      if (layer === 'premise' && !cur.premiseHit) cur.premiseHit = { paragraph_id: pid, k: hit.k };
+      if (layer === 'qhype' && hit.implied && !cur.impliedHit) cur.impliedHit = { paragraph_id: pid, k: hit.k };   // the best HyPE point was an IMPLIED question
       if (!cur.paragraph) cur.paragraph = { id: pid, doc_id: hit.doc_id, _stub: true };
       aggregate.set(pid, cur);
     });
@@ -1709,11 +1700,12 @@ async function multiIndexSearchRun(query, options, qcalls) {
   tallySourceStats(finalEntries);   // win-share telemetry — see SOURCE_STATS above
   // no engine highlighted a hydrated hit (SQLite) → the query terms are marked, as Meili's _formatted did — top-k only
   const { highlightDoc } = await import('./search/hydrate-thread.js');
-  // implied questions that matched: the question + the premise/implies behind it, attached to the paragraph hit (premise-repo; best effort)
+  // implied questions that matched (HyPE items { q, implied, premise, implies, proof }, Chad 11-12): the question + the premise/implies behind it,
+  // attached to the paragraph hit — read from the paragraph's own hyp_questions (paragraphs-repo; best effort)
   const implied = await (async () => {
-    const want = finalEntries.map((e) => e.premiseHit).filter(Boolean);
+    const want = finalEntries.map((e) => e.impliedHit).filter(Boolean);
     if (!want.length) return new Map();
-    try { return await (await import('./repos/premise-repo.js')).impliedFor(want); } catch (err) { logger.warn({ err: err.message }, 'multiIndexSearch: implied lookup failed'); return new Map(); }
+    try { return await (await import('./paragraphs-repo.js')).impliedHypeFor(want); } catch (err) { logger.warn({ err: err.message }, 'multiIndexSearch: implied lookup failed'); return new Map(); }
   })();
   const hits = finalEntries.map(e => {
     const h = {
@@ -1723,7 +1715,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
       _layerRanks: { main: e.mainRank, hype: e.hypeRank, entity: e.entityRank, keyword: e.keywordRank ?? null,
         phrase: e.phraseRank ?? null, qkeyword: e.qkeywordRank ?? null, qhype: e.qhypeRank ?? null, canon: e.canonRank ?? null, concept: e.conceptRank ?? null },
       ...(e.concept ? { concept: e.concept } : {}),
-      ...(implied.get(Number(e.premiseHit?.paragraph_id)) ? { implied: true, implied_by: implied.get(Number(e.premiseHit.paragraph_id)) } : {}),
+      ...(implied.get(Number(e.impliedHit?.paragraph_id)) ? { implied: true, implied_by: implied.get(Number(e.impliedHit.paragraph_id)) } : {}),
       ...(e.phraseSpan ? { phrase_span: e.phraseSpan } : {}),
     };
     if (!h.source_url && h.doc_id) h.source_url = `https://siftersearch.com/document/${h.doc_id}`;
@@ -1748,7 +1740,6 @@ async function multiIndexSearchRun(query, options, qcalls) {
     qhype: (qhypeResult.hits || []).length,
     concept: (conceptResult.hits || []).length,
     qconcept: (qconceptResult.hits || []).length,
-    qpremise: (premiseResult.hits || []).length,
   };
   // durations in the log line (Chad 11-09): total vs Qdrant's own time (qdrant_server) vs the round trip (qdrant) — a slow
   // answer is attributed to a stage, never confused with a slow network

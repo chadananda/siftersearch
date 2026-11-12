@@ -22,21 +22,40 @@ import { queryEmbedding } from '../query-embedding.js';
 import { effectiveAuthor } from '../authorship/effective.js';
 import { meiliExclusion } from './excluded-docs.js';
 
-/**
- * Convert stored hyp_questions text → array of trimmed question strings.
- * Handles two storage formats: newline-separated (canonical) and JSON
- * arrays (legacy rows from before the format migrated).
- */
-export function parseStoredHypQuestions(raw) {
+// IMPLIED questions (Chad 11-12): beside the stated questions a paragraph's hyp_questions may hold items
+// { q, implied: true, premise, implies, proof } — answered by plain reasoning from the passage, not by its words. Their index points use
+// k = IMPLIED_K0 + position (stated k < IMPLIED_K0, thesis 999), so a search hit's k maps back to the item with no extra column.
+export const IMPLIED_K0 = 900;
+export const isImpliedK = (k) => Number.isInteger(k) && k >= IMPLIED_K0 && k < 999;
+const itemOf = (x) => (x && typeof x === 'object' ? { ...x, q: String(x.q ?? x.question ?? '').trim() } : { q: String(x ?? '').trim() });
+
+/** Stored hyp_questions → full items [{ q, implied?, premise?, implies?, proof?, … }] (strings become { q }). Stated order kept. */
+export function parseStoredHypItems(raw) {
   if (!raw || typeof raw !== 'string') return [];
   if (raw.startsWith('[')) {
     try {
       const arr = JSON.parse(raw);
-      // v14+ stores items as objects { q, a, deep?, seeker? } — String() of one is "[object Object]" (10-19)
-      if (Array.isArray(arr)) return arr.map((q) => (q && typeof q === 'object' ? String(q.q ?? q.question ?? '') : String(q)).trim()).filter(Boolean);
+      // v14+ may hold objects ({ q, a, deep?, seeker? } or implied items) — String() of one is "[object Object]" (10-19)
+      if (Array.isArray(arr)) return arr.map(itemOf).filter((i) => i.q);
     } catch { /* fall through to newline split */ }
   }
-  return raw.split('\n').map(s => s.trim()).filter(Boolean);
+  return raw.split('\n').map((s) => s.trim()).filter(Boolean).map((q) => ({ q }));
+}
+
+/** Stored hyp_questions → every question string, stated then implied as stored. Handles newline text, JSON strings and objects. */
+export const parseStoredHypQuestions = (raw) => parseStoredHypItems(raw).map((i) => i.q);
+
+/** A paragraph's HyPE index units [{ k, text }]: stated questions k = 0.., IMPLIED ones k = IMPLIED_K0 + position, thesis k = 999. Pure (the phrase indexer's unit builder). */
+export function hypeUnitSpecs(rawQuestions, thesis = '') {
+  const items = parseStoredHypItems(rawQuestions), t = String(thesis || '').trim();
+  return [...items.filter((i) => !i.implied).slice(0, IMPLIED_K0).map((i, k) => ({ k, text: i.q })), ...items.filter((i) => i.implied).slice(0, 998 - IMPLIED_K0).map((i, j) => ({ k: IMPLIED_K0 + j, text: i.q })), ...(t ? [{ k: 999, text: t }] : [])];
+}
+
+/** Hit k → the implied item it stands for ({ question, premise, implies, proof }) or null. */
+export function impliedItemAt(raw, k) {
+  if (!isImpliedK(k)) return null;
+  const it = parseStoredHypItems(raw).filter((i) => i.implied)[k - IMPLIED_K0];
+  return it ? { question: it.q, premise: it.premise || null, implies: it.implies || null, proof: it.proof || null } : null;
 }
 
 /**

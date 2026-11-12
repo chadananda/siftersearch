@@ -5,7 +5,7 @@ import { queryAll, transaction } from '../db.js';
 
 export const CEILING = 40;
 const ph = (a) => a.map(() => '?').join(',');
-const key = (q) => String(q).toLowerCase().replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
+const key = (q) => String(q?.q ?? q).toLowerCase().replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
 const parse = (s) => { try { const v = JSON.parse(s || '[]'); return Array.isArray(v) ? v : v?.questions || []; } catch { return String(s || '').split('\n').filter(Boolean); } };
 
 /** Pairs already judged at this version → Set('bankId|paraId') (seeded or rejected: neither is paid for twice). */

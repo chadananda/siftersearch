@@ -7,7 +7,7 @@ export function agentSearch(d = {}) {
     const t0 = Date.now();
     const multi = d.multiIndexSearch || (await import('../search.js')).multiIndexSearch;
     const link = d.withLinks || (await import('../hit-links.js')).withLinks;
-    const r = await multi(String(query), { limit, premiseLayer: true, filters: { ...(tradition ? { religion: tradition } : {}), ...extra } });
+    const r = await multi(String(query), { limit, filters: { ...(tradition ? { religion: tradition } : {}), ...extra } });
     const hits = (r?.hits || []).filter((h) => String(h.text || '').length <= 8000).slice(0, limit);
     const linked = await link(hits.map((h) => ({ ...h, doc_id: h.doc_id ?? h.document_id }))).catch(() => hits);
     const out = linked.map((h) => ({ ...h, document_id: h.doc_id ?? h.document_id, source_url: h.url || h.source_url || null }));   // full text: the quote guard verifies against it; show() clips what the model sees

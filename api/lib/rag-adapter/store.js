@@ -210,7 +210,7 @@ export function makeStore() {
       const rows = await db.queryAll(
         `SELECT id, hyp_questions AS hyp, hyp_thesis AS thesis, hyp_model AS model FROM content
           WHERE id IN (${paragraphIds.map(() => '?').join(',')}) AND deleted_at IS NULL`, paragraphIds);
-      const key = (q) => String(q).toLowerCase().replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
+      const key = (q) => String(q?.q ?? q).toLowerCase().replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
       let changed = 0;
       for (const r of rows) {
         let have = [];

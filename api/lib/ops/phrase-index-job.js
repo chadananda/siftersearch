@@ -1,16 +1,16 @@
 // Ops job: run the phrase indexer (scripts/phrase-index/indexer.mjs) as a child of the ops worker. The worker runs ONE job
 // at a time, so two indexers can never share the vector store again (10-11: a second indexer + a coverage scan locked
 // /tank/…/vectors.db and killed the first one mid-run). params: { docs?: ids[], scope?, tier? (core|gray|supplemental: doctrinal tier, both scopes, per paragraph), maxUsd, budgetKey, field?, store?, collection? }
-// — maxUsd required; field 'hype' | 'concepts' | 'premises' indexes those units into their own store + collection (see the indexer header).
+// — maxUsd required; field 'hype' | 'concepts' indexes those units into their own store + collection (see the indexer header).
 import { spawn } from 'child_process';
 import { mkdirSync, writeFileSync, rmSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
 
-const FIELD_TARGET = { hype: ['/tank/sifter/hype-vectors/vectors.db', 'hype'], concepts: ['/tank/sifter/concept-vectors/vectors.db', 'concepts'], premises: ['/tank/sifter/premise-vectors/vectors.db', 'premises'] };
+const FIELD_TARGET = { hype: ['/tank/sifter/hype-vectors/vectors.db', 'hype'], concepts: ['/tank/sifter/concept-vectors/vectors.db', 'concepts'] };
 // scanOnly: the indexer's own dry run (--scan-only) — what would be embedded and its est_usd; spends nothing, so no maxUsd
 export function indexerArgs({ docs = null, docsFile = null, scope = null, maxUsd, budgetKey = 'ops-phrase-index', field = null, limit = 0, scanOnly = false, tier = null } = {}) {
   if (!scanOnly && !(maxUsd > 0)) throw new Error('phrase-index: maxUsd is required (spend cap)');
-  if (field && !FIELD_TARGET[field]) throw new Error(`phrase-index: unknown field '${field}' (hype | concepts | premises)`);
+  if (field && !FIELD_TARGET[field]) throw new Error(`phrase-index: unknown field '${field}' (hype | concepts)`);
   if (tier && !['core', 'gray', 'supplemental', 'all'].includes(tier)) throw new Error(`phrase-index: unknown tier '${tier}' (core | gray | supplemental | all)`);
   const [store, collection] = FIELD_TARGET[field] || [];
   return ['scripts/phrase-index/indexer.mjs', ...(docsFile ? ['--docs-file', docsFile] : docs?.length ? ['--docs', docs.join(',')] : scope ? ['--scope', scope] : []),

@@ -172,18 +172,19 @@ export async function run(ctx, docId, opts = {}) {
         // ITEMS, not bare questions: the answer-span gate below runs on items, so a sliced paragraph handed
         // over without them would bypass the invariant entirely — silently, and only for LONG paragraphs,
         // which are exactly the ones most likely to carry a question the passage does not answer.
-        const items = []; let thesis = '';
+        const items = [], implied = []; let thesis = '';
         for (let si = 0; si < slices.length; si++) {
           const r = await ctx.model.runLadder({ route, system, user: buildUser(p, pFacts, { focus: slices[si], part: si + 1, parts: slices.length }, conceptClaims?.[p.pid]), parse: si === 0 ? parseHype : parseHypeSlice, maxTokens, temperature: 0.3, denseHint: DENSE_HINT });
           if (r.escalated) escalated = true;
           if (!r.parsed) continue;                       // a lost slice costs coverage, not the paragraph
           if (si === 0) thesis = r.parsed.thesis;
+          implied.push(...(r.parsed.implied || []));
           for (const it of r.parsed.items || []) {
             const k = String(it.q).toLowerCase().replace(/[^a-z0-9 ]/g, '');
             if (!items.some((e) => e.k === k)) items.push({ ...it, k });   // keep the tier (seeker/deep) for the gates + dedupe
           }
         }
-        if (items.length && thesis) parsed = { items, thesis };
+        if (items.length && thesis) parsed = { items, implied, thesis };
         stats.sliced = (stats.sliced || 0) + 1;
       }
       if (!(await commitHype(ctx, p, meta, parsed, opts, stats))) { await markHypeExhausted(ctx, p, opts, stats); report(); return; }
@@ -295,7 +296,19 @@ async function commitHype(ctx, p, meta, parsed, opts, stats) {
       if (present === null) stats.unverified = (stats.unverified || 0) + 1;
       kept.push(it);
     }
-    parsed = kept.length ? { questions: dedupeTiers(kept).slice(0, QUESTION_CEILING), thesis: parsed.thesis, items: kept } : null;
+    // IMPLIED questions follow by plain reasoning, not from the passage's own words, so the free check is the PROOF: its words must be in the
+    // passage (or its original / partner). Not present — or too short to check — drops the item. Never crowds out a stated question.
+    const implied = [];
+    for (const it of parsed.implied || []) {
+      if (implied.length >= MAX_IMPLIED) break;
+      const fault = questionFault(it.q, meta.title, { seeker: true });
+      if (fault) { stats.impliedFault = (stats.impliedFault || 0) + 1; continue; }
+      if (spanPresent(it.proof, [p.text, p.original, p.partner?.text]) !== true) { stats.impliedUnproven = (stats.impliedUnproven || 0) + 1; continue; }
+      if (implied.some((e) => fold(e.q) === fold(it.q))) continue;
+      implied.push({ q: it.q, implied: true, premise: it.premise, implies: it.implies, proof: it.proof });
+    }
+    parsed = kept.length ? { questions: [...dedupeTiers(kept).slice(0, QUESTION_CEILING), ...implied], thesis: parsed.thesis, items: kept, implied } : null;
+    if (implied.length) stats.implied = (stats.implied || 0) + implied.length;
   }
   if (!parsed) return false;
   if (opts.dryRun) (stats.samples ||= []).push({ pidx: p.pidx, text: p.text.slice(0, 400), thesis: parsed.thesis, items: parsed.items });
@@ -326,16 +339,17 @@ async function commitHype(ctx, p, meta, parsed, opts, stats) {
 
 /** The slices of one paragraph's replies → one parsed result (slice 1 carries the thesis; duplicates by question are dropped). */
 function combineSlices(parts) {
-  const items = []; let thesis = '';
+  const items = [], implied = []; let thesis = '';
   parts.forEach((r, si) => {
     if (!r) return;                                   // a lost slice costs coverage, not the paragraph
     if (si === 0) thesis = r.thesis;
+    implied.push(...(r.implied || []));
     for (const it of r.items || []) {
       const k = String(it.q).toLowerCase().replace(/[^a-z0-9 ]/g, '');
       if (!items.some((e) => e.k === k)) items.push({ ...it, k });
     }
   });
-  return items.length && thesis ? { items, thesis } : null;
+  return items.length && thesis ? { items, implied, thesis } : null;
 }
 
 /**
@@ -432,6 +446,17 @@ export function spanIsPresent(span, texts) {
   return false;
 }
 
+// Proof check for IMPLIED questions (moved here from premise-pilot, which re-exports it). Quotes/dashes normalised on both sides (a model
+// returns straight quotes for the texts' curly ones), footnote markers ([^41]) and page markers ([pg 26]) stripped, all quote marks → one.
+// A proof may join separate phrases ("A... B", or two non-adjacent sentences): every piece must be present; pieces too short to check are skipped.
+const qnorm = (t) => String(t || '').replace(/\[\^[^\]]*\]|\[pg\s*[\w.-]+\]/gi, '').replace(/[\u2018\u2019\u02BC\u2032\u00B4`\u201C\u201D\u00AB\u00BB"]/g, "'").replace(/[\u2013\u2014]/g, '-');
+export function spanPresent(span, texts) {
+  const t = texts.map(qnorm), whole = spanIsPresent(qnorm(span), t);
+  if (whole !== false) return whole;
+  const pieces = qnorm(span).split(/\.{3}|\u2026|(?<=[.!?;])\s+/).map((x) => x.trim()).filter((x) => x.length >= 12);
+  return pieces.length > 1 && pieces.every((x) => spanIsPresent(x, t) === true) ? true : false;
+}
+
 /** dedupeByAnswer per vocabulary: seeker questions among themselves, the rest among themselves; seeker first. */
 export const dedupeTiers = (items) => [...dedupeByAnswer(items.filter((i) => i.seeker)), ...dedupeByAnswer(items.filter((i) => !i.seeker))];
 
@@ -448,6 +473,11 @@ export function dedupeByAnswer(items) {
   return out;
 }
 
+// IMPLIED questions (Chad 11-12): { q, premise, implies, proof } from the reply's "implied" field; an item with no question or no proof is no item.
+export const MAX_IMPLIED = 2;
+export const parseImplied = (list) => (Array.isArray(list) ? list : []).map((x) => ({ q: String(x?.q ?? '').trim(), premise: String(x?.premise ?? '').trim(), implies: String(x?.implies ?? '').trim(), proof: String(x?.proof ?? '').trim() }))
+  .filter((x) => x.q && x.proof).slice(0, MAX_IMPLIED);
+
 export function parseHype(raw) {
   const m = String(raw).match(/\{[\s\S]*\}/);
   if (!m) return null;
@@ -463,7 +493,7 @@ export function parseHype(raw) {
     const items = [...(j.seeker || []).map((x) => norm(x, 'seeker')), ...(j.questions || []).map((x) => norm(x, null)), ...(j.deep || []).map((x) => norm(x, 'deep'))]
       .filter((x) => x.q.trim());
     if (!items.length) return null;
-    return { items, questions: dedupeTiers(items).slice(0, 40), thesis: String(j.thesis || '').trim() };   // 40 = runaway rail, never a target
+    return { items, implied: parseImplied(j.implied), questions: dedupeTiers(items).slice(0, 40), thesis: String(j.thesis || '').trim() };   // 40 = runaway rail, never a target
   } catch { return null; }
 }
 
@@ -560,6 +590,14 @@ From the paragraph (use the disambiguation CONTEXT only to resolve who/what/wher
     • THE CHALLENGING IMPLICATION — what follows that a reader may not want to hear: what it demands of them, what it rules out, whom it indicts. ("Why are learned clergy often the first to reject a new Messenger?")
     • THE TENSION IT RESOLVES — two truths that seem to collide and how the passage reconciles them. ("How can every Prophet be the same and yet one be greater?")
   Phrase them as a person wrestling with the question would type them — direct, pointed, usually "why" or "how can" — never academic ("What is the epistemological significance of…"). THE ONE RULE STILL GOVERNS: a deep question is written only where this passage's own words answer it, and its "a" span must carry that answer. A narrative or transitional paragraph may have none; do not manufacture depth. A doctrinal passage usually has several, and they are the questions most worth finding.
+- "implied": 0-2 IMPLIED questions (Chad 11-12) — the FIRST-PRINCIPLE questions this passage answers BY IMPLICATION, not in its own words. They are separate from every field above and the rule "this passage must answer it in its own words" does not apply to them; a different one does: THE IMPLICATION MUST FOLLOW BY PLAIN REASONING from the passage, and "proof" must be words copied EXACTLY from the PARAGRAPH (verbatim; it is checked in code and an item whose proof is not in the paragraph is thrown away). The normal answer is an EMPTY list: narrative, devotional, ritual and descriptive passages have none, and most paragraphs get none. Never manufacture one.
+    • "q": SHORT (under ~10 words), plain, neutral, never loaded, never tied to this passage's wording. The most valuable CHALLENGE A MODERN ASSUMPTION AT ITS ROOT: ask about the purpose, source or ground of the thing, where the passage's answer differs from what modern people take for granted. Examples: charity whose purpose is to cultivate generosity in the giver challenges the assumption that charity exists only to help the poor → "What is the purpose of charity?"; religion as the source of order challenges the assumption that political structures create order → "What is the source of social order?"; a law giving children still unborn a share of inheritance → "Do the unborn have rights?", "Do rights come from the state?"; "Can a sacred law be annulled?".
+    • IMPLICATIONS (a fortiori): a passage often bears on a modern debate it never names. Draw it only when it follows by plain reasoning: if a lesser right is granted, the greater is implied (an inheritance for the unborn implies their right to life); if a ruler can be rebuked for taking something, it was never his to give.
+    • "premise": ONE plain sentence in the passage's OWN TERMS — if it says love of God, detachment from all save Him, turning unto God, say exactly that; never abstract it into a vaguer category ("moral conduct", "spiritual qualities", "values", "virtue"). Stay inside what the passage addresses: when it speaks of one aspect (the station God created man for, the higher or spiritual nature, one specific law), NAME that aspect; never generalise to all of human nature, all rulers, all property. Say "assumes" or "presupposes", never "teaches": this is an inference from the words, not a statement of the faith's teaching.
+    • STATION: name the speaker by the station the work gives him. When Bahá'u'lláh or the Báb (or Christ, Muhammad, Moses) changes or abolishes a law, that is a Manifestation of God founding a new religion (the Kitáb-i-Íqán: every universal Manifestation renews religion by sweeping away the outdated laws, rules and social norms of past dispensations) — never reduce Him to "a religious authority" or "a religious leader".
+    • NATURE: good is inherent in every person as a POTENTIAL. Never say people are naturally oriented or inclined toward the good or toward God: a child is born selfish and animal; turning to God and freedom from animal impulses is attained, not initial or natural, though it is assured as possible for all.
+    • "implies": ONE sentence naming the modern debate or assumption and the position the passage supports or challenges ("rights come from God and precede the state, against the view that governments grant them").
+    • "proof": the verbatim words the inference rests on.
 - "thesis": ONE sentence (20-45 words) stating what this paragraph teaches as a proposition, stated directly.
 
 If a HEADING is given, it names the question or subject this passage is part of answering. Use it to know WHICH discussion the passage belongs to and to phrase questions a reader of that subject would ask — but write questions about what THIS paragraph says, not about the heading's subject in general, and never quote the heading as if the passage answered all of it.
@@ -569,7 +607,7 @@ If ESTABLISHED FACTS are provided with the paragraph, they are cited claims extr
 
 If AUTHORITATIVE INTERPRETATIONS are provided, they are the doctrinal claims this passage establishes, each with its ORIGINAL-LANGUAGE TERM in brackets. These are what a serious reader comes for, so make each one findable. Where a concept carries an original term, write at least one question a reader would ask USING THAT TERM, in transliteration (never Arabic or Persian script) — "What does ʿirfán mean?", "What is the difference between ʿadl and inṣáf?" — because a reader who knows the term searches with it, and the English gloss will not retrieve them. Ask about the concept; never echo the interpretation's wording back as a question.
 
-Return exactly: {"seeker":[{"q":"…?","a":"verbatim answering words"}],"questions":[{"q":"…?","a":"verbatim words from the passage that answer it"}],"deep":[{"q":"…?","a":"verbatim answering words"}],"thesis":"…"} (as many as the paragraph answers; "seeker" and "deep" may be empty for a narrative or transitional passage, never padded; "questions" are the distinct things taught, not a quota)
+Return exactly: {"seeker":[{"q":"…?","a":"verbatim answering words"}],"questions":[{"q":"…?","a":"verbatim words from the passage that answer it"}],"deep":[{"q":"…?","a":"verbatim answering words"}],"implied":[{"q":"…?","premise":"…","implies":"…","proof":"verbatim words"}],"thesis":"…"} (as many as the paragraph answers; "seeker", "deep" and "implied" may be empty for a narrative or transitional passage, never padded — "implied" is empty for most paragraphs and never more than 2; "questions" are the distinct things taught, not a quota)
 
 BOOK:
 ${bookMeta}${cast ? `\n\nBOOK CAST (who's-who — resolve a name to the right figure; do not ask about people not in the paragraph):\n${cast}` : ''}`;
@@ -596,7 +634,7 @@ export function sliceParagraph(text, { chars = SLICE_CHARS, target = SLICE_TARGE
 // Slice parts 2+ carry no thesis — questions only.
 export function parseHypeSlice(raw) {
   const p = parseHype(raw);
-  return p ? { items: p.items, questions: p.questions, thesis: '' } : null;
+  return p ? { items: p.items, implied: p.implied, questions: p.questions, thesis: '' } : null;
 }
 
 // The concept layer (conceptual-track §7). HyPE is the RETRIEVAL level of the same idea the lexicon holds,

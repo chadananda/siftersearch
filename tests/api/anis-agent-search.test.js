@@ -10,7 +10,7 @@ describe('agentSearch', () => {
   it('passes the query as given, limit 8, no filter without tradition', async () => {
     const multi = vi.fn(async () => ({ hits: [hit()] }));
     const out = await agentSearch({ multiIndexSearch: multi, withLinks: links })('detachment', undefined);
-    expect(multi).toHaveBeenCalledWith('detachment', { limit: 8, premiseLayer: true, filters: {} });
+    expect(multi).toHaveBeenCalledWith('detachment', { limit: 8, filters: {} });
     expect(out[0]).toMatchObject({ document_id: 3, paragraph_index: 4, source_url: 'https://oceanlibrary.com/d/3#p4', title: 'The Hidden Words' });
     expect(typeof out.ms).toBe('number');
   });

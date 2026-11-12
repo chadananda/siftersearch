@@ -380,15 +380,15 @@ export async function searchPhraseSpans(query, paragraphId, { limit = 8, timeout
 }
 
 /** → { hits: [{ paragraph_id, doc_id, score, thesis }] } — HyPE questions (+ thesis) embedded with the SAME Gemini model as
- *  the phrase layer, so one query vector serves both (memoized). The SQLite hyp_questions are the store; `hype` is their index.
+ *  the phrase layer, so one query vector serves both (memoized). A hit on an IMPLIED question (payload implied, k 900+) carries implied: true + k; search.js maps it to the stored item. The SQLite hyp_questions are the store; `hype` is their index.
  *  Plain top-(limit×2) grouped here, like phrases (11-03, 56 trace queries on tower: hype 3.7 vs 7.8 ms server, recall@10
  *  vs float 0.968 vs 0.963; concepts 4.4 vs 7.0 ms, recall vs exact 0.993 vs 0.991; ×2 always held ≥30 paragraphs). */
 export async function searchHypeQdrant(query, { limit = 30, filters, timeoutMs, params = SEARCH_PARAMS.hype } = {}) {
   const vector = await geminiQueryVector(query);
-  const body = { query: vector, using: 'literal', with_payload: ['paragraph_id', 'doc_id', 'k', ...RANK_PAYLOAD], params: searchParams(params), filter: toQdrantFilter(filters) };
+  const body = { query: vector, using: 'literal', with_payload: ['paragraph_id', 'doc_id', 'k', 'implied', ...RANK_PAYLOAD], params: searchParams(params), filter: toQdrantFilter(filters) };
   const best = await bestPerParagraphQuery((n) => queryLayered('/collections/hype/points/query', { ...body, limit: n }, timeoutMs),
     () => queryLayered('/collections/hype/points/query/groups', { ...body, group_by: 'paragraph_id', group_size: 1, limit }, timeoutMs, { groups: true, limit }), limit);
-  return { hits: best.map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, thesis: p.payload.k === 999, ...rankFields(p.payload) })) };
+  return { hits: best.map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, thesis: p.payload.k === 999, k: p.payload.k ?? 0, ...(p.payload.implied ? { implied: true } : {}), ...rankFields(p.payload) })) };
 }
 
 /** → { hits: [{ paragraph_id, doc_id, score }] } — CONCEPT CLAIMS ("the clouds — symbolizes the human limitations…"), one
@@ -399,20 +399,6 @@ export async function searchConceptsQdrant(query, { limit = 30, filters, timeout
   const best = await bestPerParagraphQuery((n) => qdrant('/collections/concepts/points/query', { ...body, limit: n }, timeoutMs),
     () => qdrant('/collections/concepts/points/query/groups', { ...body, group_by: 'paragraph_id', group_size: 1, limit }, timeoutMs), limit);
   return { hits: best.map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, ...rankFields(p.payload) })) };
-}
-
-/** → { hits: [{ paragraph_id, doc_id, score, k, implied: true }] } — IMPLIED QUESTIONS (premise-pilot: "Do the unborn have rights?" answered
- *  by implication, not by the passage's own words), one point per question, best per paragraph; same Gemini vector as phrases/HyPE.
- *  Built by the phrase indexer --field premises; `k` = the question's position (premise-repo impliedFor maps it back). Kept apart from
- *  HyPE on purpose. A collection not built yet is an empty layer, not an error. */
-export async function searchPremisesQdrant(query, { limit = 30, filters, timeoutMs, params = SEARCH_PARAMS.concept } = {}) {
-  const vector = await geminiQueryVector(query);
-  const body = { query: vector, using: 'literal', with_payload: ['paragraph_id', 'doc_id', 'k', ...RANK_PAYLOAD], params: searchParams(params), filter: toQdrantFilter(filters) };
-  try {
-    const best = await bestPerParagraphQuery((n) => qdrant('/collections/premises/points/query', { ...body, limit: n }, timeoutMs),
-      () => qdrant('/collections/premises/points/query/groups', { ...body, group_by: 'paragraph_id', group_size: 1, limit }, timeoutMs), limit);
-    return { hits: best.map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, k: p.payload.k ?? 0, implied: true, ...rankFields(p.payload) })) };
-  } catch (err) { if (/ 404 /.test(err.message)) return { hits: [] }; throw err; }
 }
 
 /** → { hits: [{ paragraph_id, doc_id, score }] } — BM25 over whole paragraphs with our folding. */

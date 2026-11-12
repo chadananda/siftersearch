@@ -5,7 +5,7 @@
 import { withAIContext } from '../ai-context.js';
 import { HYPE_VERSION } from '../rag/enrich/retrieval.js';
 import { TIER_ORDER, PASSES, FAITHS, selectTier, countTiers } from './hype-tiers.js';
-import { createStore, measureDoc, sumAcc, rates, gradeSummary, compare, DEFAULT_MIN_SAMPLE, GRADE_KEYS } from './hype-ledger.js';
+import { createStore, statedHypQuestions, measureDoc, sumAcc, rates, gradeSummary, compare, DEFAULT_MIN_SAMPLE, GRADE_KEYS } from './hype-ledger.js';
 import { RUBRIC, JUDGE_MODEL, judgeUser } from './hype-rubric.js';
 import { parseJudge } from './hype-judge.js';
 import { isCreditRefusal } from '../spend-caps.js';
@@ -136,7 +136,7 @@ export async function hypeProgramJob(params = {}, deps = {}) {
     const gradeReqs = async (ids) => {
       const reqs = [];
       for (const row of ids.length ? await d.rows(ids) : []) {
-        let qs = []; try { const q = JSON.parse(row.hyp_questions); qs = Array.isArray(q) ? q : q?.questions || []; } catch { /* none */ }
+        let qs = []; try { const q = JSON.parse(row.hyp_questions); qs = statedHypQuestions(Array.isArray(q) ? q : q?.questions); } catch { /* none */ }
         if (qs.length) reqs.push({ custom_id: `d${row.doc_id}_p${row.id}`, system: RUBRIC, user: judgeUser(row.text, row.original_text, qs), maxTokens: 4000 });
       }
       return reqs;
