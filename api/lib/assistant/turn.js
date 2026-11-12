@@ -71,7 +71,12 @@ export async function defaultDeps() {   // exported for the strategy dry run (st
   const { anisRespond } = await import('./respond.js');
   return { respond: anisRespond, triage: triageMessage, outputCheck: outputBreaksPersona, open: openExchange, close: closeExchange,
     fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup, limits: liveLimits, spendCap: assertSpendCap, card: loadReaderCard, resolve: resolveQuery, reports: makeReports(), documents: makeDocuments(), cache: cacheDeps(),
-    state: await import('../repos/conversation-state-repo.js').then((m) => ({ load: m.getConversationState, append: m.appendStatePatch })) };
+    state: await import('../repos/conversation-state-repo.js').then((m) => ({ load: m.getConversationState, append: m.appendStatePatch })),
+    // the live turn's own paths, named (11-12: a deps object turned every `deps ? null : …` path off, so the dry run never took the
+    // in-work find, the passage find, the book card or the light writer's check — it tested a different route from the site)
+    titleOnly, finishLookup, jevBackup, bookPick: bookFastPath, extractFromWork, findInWork: findInWorkAnswer, findPassage: findPassageAnswer, restate,
+    upgradeLinks: async (x) => (await import('../ocean-links.js')).upgradeOceanLinks(x),
+    followups: async (...a) => (await import('./followups.js')).followups(...a), quoteCards: async (...a) => (await import('./quote-cards.js')).quoteCards(...a) };
 }
 
 /**
