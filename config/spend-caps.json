@@ -108,6 +108,15 @@
         "from": "2026-11-12",
         "usd": 20,
         "why": "Chad 11-12: test battery turns (Anís server pipeline on test traffic) — 'raise improve cap to $20 and rerun'"
+      },
+      {
+        "from": "2026-11-12",
+        "usd": 30,
+        "why": "Chad 11-12: 'raise the test cap to $30 for today' (agent-engine baseline + scenarios)"
+      },
+      {
+        "from": "2026-11-13",
+        "usd": 20
       }
     ],
     "sbs": [
@@ -152,6 +161,17 @@
       },
       {
         "from": "2026-11-10",
+        "usd": 20,
+        "background_usd": 15
+      },
+      {
+        "from": "2026-11-12",
+        "usd": 45,
+        "background_usd": 40,
+        "why": "Chad 11-12: test cap $30 today — the background share must hold it (tests are background)"
+      },
+      {
+        "from": "2026-11-13",
         "usd": 20,
         "background_usd": 15
       }
