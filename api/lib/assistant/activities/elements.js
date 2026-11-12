@@ -98,8 +98,9 @@ const retrieval = ({ edges, tool, input, take, into = 'found_passages', rank = f
 // the passage whose editions fetch.edition looks up: the one that holds the quotation, else the traced source, else the first with a paragraph id
 // …plus the rest of the same reference (a whole chapter read by fetch.reference: same work, same reference label), so every verse is aligned
 const REF_ANCHORS_MAX = 60;   // scripture-ref WHOLE_MAX: the rows of one chapter
-const editionAnchors = (u) => { const a = editionAnchor(u); if (!a?.theme) return [];
-  return u.found_passages.filter((x) => x !== a && Number.isFinite(Number(x.id)) && x.theme === a.theme && String(x.document_id) === String(a.document_id)).slice(0, REF_ANCHORS_MAX - 1).map((x) => Number(x.id)); };
+// a work's opening carries no theme (11-12 ahmad-sbs: only verse 1 of three got its Arabic): same theme, or both without one
+const editionAnchors = (u) => { const a = editionAnchor(u); if (!a) return [];
+  return u.found_passages.filter((x) => x !== a && Number.isFinite(Number(x.id)) && (x.theme ?? null) === (a.theme ?? null) && String(x.document_id) === String(a.document_id)).slice(0, REF_ANCHORS_MAX - 1).map((x) => Number(x.id)); };
 const editionAnchor = (u) => { const ok = u.found_passages.filter((x) => Number.isFinite(Number(x.id))); return ok.find((x) => x.verdict === 'holds') ?? ok.find((x) => x.role === 'source' || x.traced) ?? ok[0] ?? null; };
 // in_named: search INSIDE the work the question names (named_work title, else the first named source id); gated off when none is named
 const namedWork = (u) => (typeof u.named_work === 'string' && u.named_work.trim() ? { work: u.named_work.trim() }

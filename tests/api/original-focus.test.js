@@ -63,6 +63,7 @@ describe('original tree: a named work with no topic → its opening', () => {
     const edition_lookup = vi.fn(async () => ({ passages: [{ id: 900, document_id: 888, paragraph_index: 1, text: 'نص', language: 'ar' }], family: [1], self: null, missing_language: null }));
     const s = await run({ named_work: 777 }, { opening_lookup, edition_lookup });
     expect(s.out.passages.filter((x) => [101, 900].includes(x.id)).map((x) => [x.id, x.named_read])).toEqual([[101, true], [900, true]]);
+    expect(edition_lookup.mock.calls[0][0]).toMatchObject({ paragraph_id: 101, paragraph_ids: [102] });   // every opening paragraph gets its original, not verse 1 alone
     const { preferOwnWork } = await import('../../api/lib/assistant/own-source.js');
     const hosted = { ...P(1), language: 'en', author: "Bahá'u'lláh", book_author: "Bahá'u'lláh", title: 'Tablet of Ahmad (Arabic)', source_url: 'https://bahai-library.com/x', text: 'He is the King, the All-Knowing, the Wise! Lo, the Nightingale of Paradise singeth', named_read: true };
     const bio = { id: 5, document_id: 8282, title: 'The Prince of Peace', author: 'David Hofman', book_author: 'David Hofman', text: hosted.text };
