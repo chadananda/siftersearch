@@ -204,7 +204,7 @@ describe('original@2', () => {
     const ed = vi.fn(async (i) => ({ passages: i.want === 'original' ? [{ id: 9001, text: 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ', language: 'ar', role: 'original', religion: 'Islam' }] : [] }));
     const s = await run('original', 'Show me the Arabic of the Throne Verse of the Qur\'an beside an English translation.', { tools: { fused_search: fs, edition_lookup: ed },
       choice: { units: { named_work: 'Qur\'an', topic: 'the Throne Verse' } } });
-    expect(path(s).slice(0, 4)).toEqual(['o1', 'o1r', 'o1w', 'o3']);   // no chapter reference: o1r is skipped
+    expect(path(s).slice(0, 5)).toEqual(['o1', 'o1r', 'o1o', 'o1w', 'o3']);   // no chapter reference: o1r is skipped; a topic was asked: o1o (the opening) is skipped
     expect(fs.mock.calls[0][0]).toMatchObject({ query: 'the Throne Verse' }); expect(ed.mock.calls[0][0]).toMatchObject({ paragraph_id: 7, want: 'original' });
     expect(s.units.found_passages.some((p) => p.language === 'ar')).toBe(true);
   });

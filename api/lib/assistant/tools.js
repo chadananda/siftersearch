@@ -487,6 +487,24 @@ const ENTRIES = [
       const linked = await (await dep(ctx, 'withLinks', 'links'))(rows.map((r) => ({ id: r.id, doc_id: docId, paragraph_index: r.paragraph_index, text: r.text, title: meta.title }))).catch(() => []);
       return { passages: rows.map((r, i) => toPassage({ ...r, title: meta.title, author: meta.author, religion: meta.religion, year: meta.year, document_id: docId, source_url: linked[i]?.url || null })), copyright: false };
     } },
+  // the first paragraphs of one work (a reader asks for "the first couple paragraphs"): code reads them in order, no search, no words parsed
+  { name: 'opening_lookup', label: 'Opening Lookup', kind: 'tool', outputName: 'Opening', cost: C(false, 25),
+    purpose: 'The first n prose paragraphs of one document, in order (none for a copyrighted book).',
+    description: 'Read the opening paragraphs of a work (its document id): the first n prose paragraphs in order, headings and notes left out.',
+    input: { type: 'object', additionalProperties: false, required: ['document_id'], properties: { document_id: { type: 'integer' }, n: { type: 'integer', minimum: 1, maximum: 6, default: 3 } } },
+    output: { type: 'object', required: ['passages', 'copyright'], properties: { passages: { type: 'array', items: PASSAGE },
+      copyright: { type: 'boolean', description: 'true = a copyrighted book: its opening is not given' } } },
+    example: { input: { document_id: 12, n: 2 }, output: { passages: [{ ...P_EX, paragraph_index: 1 }, { ...P_EX, paragraph_index: 2 }], copyright: false } },
+    async run(a, ctx) {
+      const docId = Number(a.document_id), n = Math.min(6, Math.max(1, Number(a.n) || 3));
+      // fails CLOSED like context_lookup: consecutive paragraphs of a copyrighted (or rights-unknown) book are not a short excerpt
+      const enc = await (await dep(ctx, 'encumberedAmong', 'rights'))([docId]).catch((e) => { throw new ToolError('rights_unavailable', `rights check failed (${e?.message || e}) — not reading a book whose rights are unknown`, true); });
+      if (enc.has(docId)) return { passages: [], copyright: true };
+      const rows = (await (await dep(ctx, 'getParagraphs', 'docs'))(docId, { proseOnly: true, limit: n + 6, offset: 0 })).filter((r) => String(r.text ?? '').trim()).slice(0, n);
+      const meta = ctx?.meta || (await (await dep(ctx, 'getLinkMeta', 'docs'))([docId]).catch(() => new Map())).get(docId) || {};
+      const linked = await (await dep(ctx, 'withLinks', 'links'))(rows.map((r) => ({ id: r.id, doc_id: docId, paragraph_index: r.paragraph_index, text: r.text, title: meta.title }))).catch(() => []);
+      return { passages: rows.map((r, i) => toPassage({ ...r, title: meta.title, author: meta.author, religion: meta.religion, year: meta.year, document_id: docId, source_url: linked[i]?.url || null })), copyright: false };
+    } },
   // CTAI is an HTTP concordance (no model); the term is Arabic script — Latin → Arabic is Jev's unit (a transform), not this tool's
   { name: 'rendering_lookup', label: 'Rendering Lookup (CTAI)', kind: 'tool', outputName: 'Renderings', cost: C(false, 400),
     purpose: 'How Shoghi Effendi (or another translator) rendered an Arabic/Persian word or root (the CTAI concordance), with counts and paired passages.',

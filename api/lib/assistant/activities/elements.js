@@ -208,6 +208,17 @@ const E = {
         return finish(s, p, u.quoted_words ? 'thin' : 'none', { count: 0, read: { quoted_words: u.quoted_words } });
       } catch (err) { return finish(s, p, 'error', { error: err?.message }); }
     } },
+  // a work asked for with nothing more specific = its opening (structural: the unit named_work, by id — a name is evidence, not identity).
+  // untopiced: runs only when no topic was asked (a named work WITH a topic is searched inside first)
+  'fetch.opening': { kind: 'tool', cls: 'code', edges: ['one', 'several', 'none', 'error'], scope: 'strategy', params: ['n', 'untopiced', 'stage'], reads: ['named_work', 'topic'], writes: ['found_passages', ...OUT],
+    async run(s, p = {}) {
+      const u = U(s), w = namedWork(u);
+      if (!w?.documentId || (p.untopiced && String(flat(u.topic) ?? '').trim())) { const e = finish(s, p, 'none'); u.missing.pop(); u.found_outcome[s.node ?? '?'] = 'skipped'; return e; }
+      try {
+        const items = ((await call(s, 'opening_lookup', { document_id: w.documentId, n: p.n ?? 3 }))?.passages || []).map((x, i) => ({ ...x, anchor: i === 0 }));
+        merge(u, 'found_passages', items); return finish(s, p, classify(items.length, ['one', 'several']), { count: items.length, read: { named_work: w.documentId } });
+      } catch (err) { return finish(s, p, 'error', { error: err?.message || String(err) }); }
+    } },
   'fetch.align': { kind: 'tool', cls: 'code', edges: ['one', 'several', 'none', 'error'], scope: 'strategy', params: ['versions', 'passage', 'k', 'stage'], reads: ['found_passages'], writes: ['found_passages', ...OUT],
     async run(s, p = {}) {   // each passage's recorded original and translations (links_lookup), attached as annotations
       const u = U(s), todo = u.found_passages.filter((x) => x.id != null).slice(0, p.k ?? 3);
@@ -440,10 +451,11 @@ E['judge.prayer'] = { kind: 'decision', cls: 'jev', edges: ['picked', 'none', 'u
     if (!found.length) return finish(s, p, 'none');
     try {
       const pick = await (s.judges?.prayer || (async () => { const [{ pickOccasion }, { jevFetch }] = await Promise.all([import('../prayer-shelf.js'), import('../../systemone.js')]); return pickOccasion(s.messages || [], [], { profile: s.profile ?? s.ctx?.profile ?? {}, fetchImpl: jevFetch('anis-prayer-occasion'), found }); }))({ found });
-      s.note = { read: { found: found.length }, params: p, count: found.length, scope_excluded: 0, confidence: pick?.confidence ?? null };
-      if (!pick?.choice) { u.found_passages = u.found_passages.slice(0, 1); return 'unjudged'; }   // no answer: the code-ranked lead alone, no unchecked offers
-      const i = found.findIndex((f) => f.key === pick.choice);
-      if (i < 0 || pick.choice === 'none' || (pick.confidence ?? 0) < (await import('../../scope-extract.js')).MIN_CONFIDENCE) return 'none';
+      s.note = { read: { found: found.length }, params: p, count: found.length, scope_excluded: 0, choice: pick?.choice ?? null, confidence: pick?.confidence ?? null };
+      // "none fits" only when Jev is SURE; a hesitant pick (12 near-identical prayers split his vote) is no answer, never an absence (11-11 Remover of Difficulties: hit #1, then "not found")
+      const i = found.findIndex((f) => f.key === pick?.choice), sure = (pick?.confidence ?? 0) >= (await import('../../scope-extract.js')).MIN_CONFIDENCE;
+      if (pick?.choice === 'none' && sure) return 'none';
+      if (i < 0 || !sure) { u.found_passages = u.found_passages.slice(0, 1); return 'unjudged'; }   // no answer: the code-ranked lead alone, no unchecked offers
       // the offers pass the SAME choice: a prayer stays only if Jev rates it likelier than "none of these fits"; no distribution = the chosen alone
       const dist = pick.distribution || {}, none = dist.none ?? 0, keep = (j) => j === i || (dist[found[j]?.key] ?? 0) > none;
       u.found_passages = [u.found_passages[i], ...u.found_passages.filter((_, j) => j !== i && j < found.length && keep(j))];
@@ -723,6 +735,7 @@ export const ELEMENT_META = {
   'fetch.calendar': m('A Badí‘ calendar date or Holy Day (not built yet: answers none).', 'date or occasion', 'found_records', []),
   'fetch.activity': m('The reader’s reading plans (not built yet: answers none).', 'reader', 'reading_plan', []),
   'fetch.facts': m('Library facts and corpus status.', 'none', 'found_records', []),
+  'fetch.opening': m('Reads the first paragraphs of the named work (by id) in order; with untopiced it runs only when no topic was asked. A copyrighted book gives none.', 'named_work, topic', 'found_passages', ['opening_lookup']),
   'fetch.work_notes': m('Verified quotations on a core work’s significance, best authority first.', 'named_work', 'found_records', ['work_notes_lookup']),
   'search.shelf': m('Searches the library by authority (scripture, interpretation, guidance…), inside the scope. layers picks which layers run and merges them in one call (literal = exact words, phrase = meaning, hype = questions answered, originals); tiers is the escalation ladder (drop these filters one at a time while fewer than min results come back; each passage says its tier); spell corrects misspellings first, deterministically.', 'topic, scope, layers, tiers, spell', 'found_passages', ['fused_search']),
   'search.hype': m('Question search: paragraphs that answer a question like this one. authority keeps only passages of those standings (scripture, interpretation…).', 'topic, scope, authority', 'found_passages', ['hype_search']),

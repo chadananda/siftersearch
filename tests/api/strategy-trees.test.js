@@ -140,6 +140,11 @@ describe('prayer tree (11-09 redesign: the passage is the prayer, any tradition)
     const un = await run('prayer', q, { tools: t, extra: judge(null) });
     expect(path(un)).toEqual(['t0', 'p2', 'p4', 'p3', 'p5', 'p6']); expect(un.out.passages.map((x) => x.id)).toEqual([1]);
     expect(path(await run('prayer', q, { tools: t, extra: judge({ choice: 'none', confidence: 0.9 }) }))).toEqual(['t0', 'p2', 'p4', '$absence']);
+    // a hesitant choice (or a hesitant "none") is no answer, never an absence: the code-ranked lead is served (11-11 Remover of Difficulties)
+    for (const answer of [{ choice: 'found:1', confidence: 0.4 }, { choice: 'none', confidence: 0.3 }, { choice: 'found:9', confidence: 0.9 }]) {
+      const h = await run('prayer', q, { tools: t, extra: judge(answer) });
+      expect(path(h)).toEqual(['t0', 'p2', 'p4', 'p3', 'p5', 'p6']); expect(h.out.passages.map((x) => x.id)).toEqual([1]);
+    }
   });
   it('nothing found → $absence with prayer.absence, naming per tradition what was searched (never "prayer book")', async () => {
     const searched = [{ tradition: 'Hindu', how: ['meaning in Hindu scripture and devotion', 'phrase'], found: 0 }];

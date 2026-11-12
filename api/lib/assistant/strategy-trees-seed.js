@@ -282,7 +282,9 @@ const original = tree('original', 'o1', [
   ['o1', 'fetch.anchor', {}, 'tool', ['referent', 'reader_position', 'previous_evidence', 'quoted_words'], ['found_passages'], { one: 'o3', thin: 'o2', none: 'o1r', error: 'o2' }],
   // a scripture chapter named by number, order or name ("Qur'an 1", "the opening chapter of the Qur'an", "al-Fatiha"): its verses, read by the verse
   // table, are the anchors (round 5: o1w searched "the opening chapter" inside one Qur'an edition and anchored on a translator's footnote)
-  ['o1r', 'fetch.reference', {}, 'tool', ['scripture_reference'], ['found_passages'], { one: 'o3', several: 'o3', none: 'o1w', error: 'o1w' }],
+  ['o1r', 'fetch.reference', {}, 'tool', ['scripture_reference'], ['found_passages'], { one: 'o3', several: 'o3', none: 'o1o', error: 'o1o' }],
+  // a work named (or in focus) with NO topic: the passage asked for is its opening (11-12 "first couple paragraphs" after a title card)
+  ['o1o', 'fetch.opening', { untopiced: true, n: 3 }, 'tool', ['named_work', 'topic'], ['found_passages'], { one: 'o3', several: 'o3', none: 'o1w', error: 'o1w' }],
   // no anchor, no quoted words, but a named work ("the Arabic of the opening chapter of the Qur'an"): the passage asked for, searched INSIDE that work,
   // is the anchor whose original edition o3 fetches (round 4: o1 none went straight to absence while the library holds the Arabic Qur'an)
   ['o1w', 'search.shelf', { in_named: true, query: '{{topic}}', k: 3 }, 'tool', ['named_work', 'topic'], ['found_passages'], { one: 'o3', several: 'o3', thin: 'o3', none: '$absence', error: '$fallback' }],

@@ -475,6 +475,11 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     // …and when the book path already ran, its held near miss is what a recheck/planner `book` confirms (no second pick)
     const unmatchedBook = bookGate && !bookOn ? (choice) => bookFn({ messages, names: [choice?.units?.named_work ?? u.named_work].filter(Boolean), by: u.named_person ?? null, profile, decisions })
       : bookOn && held ? async () => { const { confidence, ...f } = held; return { ...f, via: `held:${f.via} ${confidence}` }; } : null;
+    // THE WORK IN FOCUS (11-12, "give me the first couple paragraphs" after a title card): an `original` turn that names no work reads the one the previous turn gave, by id
+    if (strat && strategyOf(strat) === 'original' && focus && !strat.units?.named_work) {
+      strat.units = { ...(strat.units || {}), named_work: focus.id };
+      decisions.record('original:focus', { by: 'code', saw: { named_work: null, focus }, chosen: focus.id, reason: 'no work named this turn: the work the previous turn gave' });
+    }
     const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { scope, ...(unmatchedBook ? { book: unmatchedBook } : {}), turnId: ex?.conversationId != null ? `${ex.conversationId}:${ex.round}` : null, stance: triageSummary?.stance ?? null,
       kind: route.kind, guarded: route.action === 'guarded', channel, readerName: participant.name ?? null, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, outcome: tri?.outcome ?? null, depth: triageSummary?.depth ?? null, query: (strat?.refersBack ? lastTopic(stateBefore, messages) : null) ?? resolved?.query ?? null, card: card?.text ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), ...(lkIntent ? { lookupIntent: lkIntent } : {}), strategy: strat, decisions, state: stateBefore, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
     streaming = false;
