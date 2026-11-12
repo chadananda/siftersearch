@@ -4,7 +4,7 @@ import { chooseStrategy } from '../../api/lib/assistant/strategy-choice.js';
 import { ELEMENTS } from '../../api/lib/assistant/activities/elements.js';
 import { entryUnits, graphFor } from '../../api/lib/assistant/activities/graph.js';
 import { lastPassages, lastSection, lastTopic, emptyState, applyPatch } from '../../api/lib/assistant/units.js';
-import { workPatch, openingOf } from '../../api/lib/assistant/turn.js';
+import { workPatch, openingOf, sectionRef } from '../../api/lib/assistant/turn.js';
 import { linkedInPrevious, jevState } from '../../api/lib/assistant/request-features.js';
 import { LOOKUP_KINDS, OUTCOMES, KINDS } from '../../api/lib/assistant/triage.js';
 
@@ -133,5 +133,10 @@ describe('the tree uses the last turn', () => {
     expect(await ELEMENTS['fetch.anchor'].run(s, {})).toBe('one');
     expect(calls).toEqual([30, 36, 42, 48]);
     expect(s.units.found_passages.map((p) => p.paragraph_index)).toEqual(Array.from({ length: 22 }, (_, k) => 30 + k));
+  });
+  it('an opened unit remembers its whole range for the next turn (dawnbreakers#3: "summarize that chapter")', () => {
+    const lk = { kind: 'reference', work: { doc: { id: 7 } }, passages: [30, 31, 52].map((i) => ({ paragraph_index: i })) };
+    expect(sectionRef(lk)).toBe('7:30-52');
+    expect(sectionRef({ passages: [] })).toBeNull();
   });
 });

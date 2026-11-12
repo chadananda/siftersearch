@@ -87,6 +87,9 @@ const LONG_UNIT = 20;   // paragraphs: a numbered reference longer than this is 
 // a numbered unit's card title: the section's own title ("CHAPTER XXV") + the chapter's ALL-CAPS title line when the book has one
 // (its mixed-case headings are marginal notes, not the chapter's name); else the first heading. Pure.
 // a numbered unit whose OPENING Jev read as asked (work_place opening): its first paragraph(s) — amount_wanted, else one — never the whole unit
+/** A reference unit's whole range as a given-section ref "doc:start-end" (units.lastSection reads it back), or null. Pure. */
+export const sectionRef = (lk) => { const ps = lk?.passages || [], d = lk?.work?.doc?.id ?? ps[0]?.document_id ?? ps[0]?.doc_id, a = ps[0]?.paragraph_index, b = ps.at(-1)?.paragraph_index;
+  return Number.isFinite(Number(d)) && Number.isFinite(a) && Number.isFinite(b) ? `${Number(d)}:${a}-${b}` : null; };
 export const openingOf = (lk, u = {}) => (lk?.kind === 'reference' && u.work_place === 'opening' && lk.passages?.length > 1
   ? { ...lk, passages: lk.passages.slice(0, Math.max(1, Math.min(LONG_UNIT, Number(u.amount_wanted?.n ?? u.amount_wanted) || 1))) } : lk);
 const unitTitle = (lk, first) => {
@@ -376,6 +379,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   let lk = lkFirst !== undefined ? lkFirst : lkIntent && lkIntent !== 'in_work' && lkIntent !== 'find_passage' ? await lookupNow() : null;
   // "the opening paragraph of chapter one": Jev read the place as the unit's opening → its first paragraph(s) quoted, never the chapter card (dawnbreakers#1, 11-12)
   const opened = openingOf(lk, u);
+  // …and the whole unit is remembered as given, so "summarize that chapter" next turn reads the chapter, not the one paragraph quoted (dawnbreakers#3, 11-12)
+  const openedSection = opened !== lk ? sectionRef(lk) : null;
   if (opened !== lk) {
     decisions.record('reference:opening', { by: 'code', saw: { label: lk.label ?? null, paragraphs: lk.passages.length, amount_wanted: u.amount_wanted ?? null }, chosen: opened.passages.length, reason: 'Jev: the opening of the unit is asked — its first paragraph(s), not the whole unit' });
     lk = opened;
@@ -556,6 +561,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     try {
       const cites = (r.citations || []).map((c) => ({ document_id: c.document_id, paragraph_index: c.paragraph_index ?? null, text: c.text || undefined, id: c.id })).filter((c) => c.document_id != null || c.id != null);
       codePatch = treePatch({ turn: turnNo ?? 0, strategy: strategyOf(strat) ?? r.plan?.shape ?? null, units: { current_user_question: resolved?.query || text, found_passages: cites }, ended: cites.length ? null : 'absence', state: stateBefore, channel: channel.id });
+      if (openedSection && codePatch) codePatch = { ...codePatch, given: [...(codePatch.given || []), { turn: turnNo ?? 0, kind: 'section', ref: openedSection }] };
     } catch { codePatch = null; }
     const path = await finish(reply, 'answered', { engine: 'anis', ...(deepReport ? { deep_report: deepReport } : {}), ...(documentInfo ? { document: documentInfo } : {}), evidence: r.evidence ?? null, recipe: r.plan?.shape ?? null,
       ...(r.steps ? { steps: r.steps } : {}),   // the strategy graph's trace [{node, step@v, ms, edge}], beside path.jev_calls
