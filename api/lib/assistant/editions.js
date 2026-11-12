@@ -89,9 +89,16 @@ export async function alignByVerseTable(src, want, d) {
 }
 
 const NEED = ['resolveLinks', 'workFamily', 'headingStarts', 'paragraphsInRange', 'paragraphsByIds', 'phrases'];
+// exact-text twins of a passage in OTHER docs: its first ~12 words through literal_search's layer (BM25), the rows by id
+const liveTwins = async (src) => {
+  const kw = await (await import('./tools.js')).layerFn('literal_search'), pr = await import('../paragraphs-repo.js');
+  const span = String(src.text || '').split(/\s+/).slice(0, 12).join(' ');
+  const hits = span ? (await kw(span, { limit: 12, filters: {}, timeoutMs: 3000 }))?.hits || [] : [];
+  return (await pr.paragraphsByIds(hits.map((h) => h.paragraph_id))).filter((r) => Number(r.doc_id) !== Number(src.doc_id));
+};
 const defaults = async () => {
   const [plinks, al, pr, layers] = await Promise.all([import('../passage-links.js'), import('../repos/alignment-repo.js'), import('../paragraphs-repo.js'), import('../search/qdrant-layers.js')]);
-  return { listDocs: (await import('../docs-repo.js')).listDocs, resolveLinks: plinks.resolveLinks, workFamily: al.workFamily, headingStarts: pr.headingStarts, paragraphsInRange: pr.paragraphsInRange, paragraphsByIds: pr.paragraphsByIds, phrases: layers.searchPhrases };
+  return { listDocs: (await import('../docs-repo.js')).listDocs, resolveLinks: plinks.resolveLinks, workFamily: al.workFamily, headingStarts: pr.headingStarts, paragraphsInRange: pr.paragraphsInRange, paragraphsByIds: pr.paragraphsByIds, phrases: layers.searchPhrases, twins: liveTwins };
 };
 const asPassage = (row, m, role, how) => ({ id: row.id, document_id: row.doc_id ?? m.id, paragraph_index: row.paragraph_index ?? null, text: row.text, title: m.title, author: m.author,
   religion: m.religion ?? null, collection: m.collection ?? null, language: langCode(m.language), role, aligned_by: how.by, exact: !!how.exact,
@@ -102,11 +109,20 @@ const asPassage = (row, m, role, how) => ({ id: row.id, document_id: row.doc_id 
 // author's other works are dropped — aligning by meaning against a different book returns a wrong "translation" (11-12: the Báb's
 // English Kawthar sat past the 12-row cap behind his other works). A title in another script scores 0: then all stay, in order.
 export function sameWorkFirst(self, members, min = 0.85) {
-  const k = mainKey(self?.title), sc = (m) => (k ? titleScore(k, mainKey(m.title)) : 0);
+  const k = mainKey(self?.title), sc = (m) => (k ? titleScore(k, mainKey(m.title)) : 0), sk = sourceKey(self?.source_url);
   const fixed = members.filter((m) => m.basis !== 'author'), cand = members.filter((m) => m.basis === 'author').map((m) => ({ m, s: sc(m) }));
-  const same = cand.filter((x) => x.s >= min).sort((a, b) => b.s - a.s).map((x) => x.m);
-  return [...fixed.map((m) => (m.basis === 'original_doc_id' ? { ...m, sameWork: true } : m)), ...(same.length ? same.map((m) => ({ ...m, sameWork: true })) : cand.slice(0, 12).map((x) => x.m))];
+  // the same file in another language (…/bab-pub02-77_en.docx ↔ …/bab-pub02-77-ar/) is the same work, ahead of any title match
+  const slug = sk ? cand.filter((x) => sourceKey(x.m.source_url) === sk).map((x) => x.m) : [];
+  const same = cand.filter((x) => x.s >= min && !slug.includes(x.m)).sort((a, b) => b.s - a.s).map((x) => x.m);
+  const pick = [...slug, ...same];
+  return [...fixed.map((m) => (m.basis === 'original_doc_id' ? { ...m, sameWork: true } : m)), ...(pick.length ? pick.map((m) => ({ ...m, sameWork: true })) : cand.slice(0, 12).map((x) => x.m))];
 }
+/** A source URL's file key: last path segment, lower-cased, extension and trailing language tag (_en, -ar …) stripped; '' when none. Pure. */
+export const sourceKey = (url) => {
+  const seg = String(url || '').split(/[?#]/)[0].split('/').filter(Boolean).pop() || '';
+  const k = seg.toLowerCase().replace(/\.[a-z0-9]{2,5}$/, '').replace(new RegExp(`[-_](${Object.keys(LANG).join('|')})$`), '');
+  return k.length >= 4 ? k : '';
+};
 
 /** paragraphId → { passages: [{…, role 'original'|'translation', aligned_by 'link'|'reference'|'meaning', exact}], self, family, missing_language }.
  *  want 'original' = an edition in another language (the recorded original first); 'translations' = the other editions. */
@@ -125,21 +141,43 @@ export async function editionsOf(paragraphId, { want = 'original', limit = 3 } =
   // 1b. a known verse table (the Qur’án editions): exact, no work family needed
   for (const p of await alignByVerseTable(src, want, d).catch(() => [])) push(p);
   // 2–3. the work family: each other-language member aligned by reference, else by meaning
-  const fam0 = await d.workFamily(src.doc_id, { authors: 5000 }).catch(() => ({ self: null, members: [] }));
-  const fam = { ...fam0, members: sameWorkFirst(fam0.self, fam0.members || []) };
-  const selfLang = langCode(fam.self?.language), origId = Number(fam.self?.original_doc_id) || null;
-  const members = (fam.members || []).filter((m) => langCode(m.language) !== selfLang)
-    // a recorded direction decides where it is known: this doc's original is its original_doc_id; the rest of the recorded family are translations
-    .filter((m) => m.basis !== 'original_doc_id' || (want === 'original') === (m.id === origId))
-    // with no recorded direction, an "original" is only an edition in the tradition's original languages (11-12: the Arabic tafsir's English
-    // translation came back as its "original" because it was simply another language)
-    .filter((m) => want !== 'original' || m.basis === 'original_doc_id' || !ORIGINAL_LANGS[fam.self?.religion] || ORIGINAL_LANGS[fam.self?.religion].includes(langCode(m.language)));
-  for (const m of members) {
-    if (found.length >= limit) break;
-    const how = (await alignByReference(src, m, d).catch(() => null)) || (await alignByMeaning(src, m, d).catch(() => null))
-      || (await alignByPlace(src, m, fam.self?.paragraph_count, d).catch(() => null));
-    for (const r of how?.rows || []) push(asPassage(r, m, role, how));
+  const sameWorkIds = new Set();
+  const family = async (row, out, cap) => {
+    const fam0 = await d.workFamily(row.doc_id, { authors: 5000 }).catch(() => ({ self: null, members: [] }));
+    const fam = { ...fam0, members: sameWorkFirst(fam0.self, fam0.members || []) };
+    const selfLang = langCode(fam.self?.language), origId = Number(fam.self?.original_doc_id) || null;
+    const members = (fam.members || []).filter((m) => langCode(m.language) !== selfLang)
+      // a recorded direction decides where it is known: this doc's original is its original_doc_id; the rest of the recorded family are translations
+      .filter((m) => m.basis !== 'original_doc_id' || (want === 'original') === (m.id === origId))
+      // with no recorded direction, an "original" is only an edition in the tradition's original languages (11-12: the Arabic tafsir's English
+      // translation came back as its "original" because it was simply another language)
+      .filter((m) => want !== 'original' || m.basis === 'original_doc_id' || !ORIGINAL_LANGS[fam.self?.religion] || ORIGINAL_LANGS[fam.self?.religion].includes(langCode(m.language)));
+    for (const m of members) {
+      if (out.length >= cap) break;
+      const how = (await alignByReference(row, m, d).catch(() => null)) || (await alignByMeaning(row, m, d).catch(() => null))
+        || (await alignByPlace(row, m, fam.self?.paragraph_count, d).catch(() => null));
+      for (const r of how?.rows || []) { const p = asPassage(r, m, role, how); if (p?.text && !seen.has(p.id) && !out.some((x) => x.id === p.id)) { out.push(p); if (m.sameWork) sameWorkIds.add(p.id); } }
+    }
+    return fam;
+  };
+  const fam = await family(src, found, limit);
+  found.forEach((p) => seen.add(p.id));
+  // 3b. nothing exact for an original: the same words in OTHER docs (the English twin of a prayer, a compilation's anchor) have their own work
+  // family; the first exact or same-work (slug/title) result wins, the meaning results stay as the last resort
+  if (want === 'original' && d.twins && !found.some((p) => p.exact)) {
+    // a twin holds the passage's own opening words (a BM25 neighbour sharing common words is not one), one per doc
+    const fold = (x) => String(x || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+    const head = fold(src.text).split(' ').slice(0, 8).join(' '), docs = new Set();
+    const twins = (await d.twins(src).catch(() => [])).filter((t) => t?.id && Number(t.doc_id) !== Number(src.doc_id) && head && fold(t.text).includes(head)
+      && !docs.has(Number(t.doc_id)) && docs.add(Number(t.doc_id))).slice(0, 3);
+    for (const t of twins) {
+      const got = []; await family(t, got, limit);
+      const best = got.filter((p) => p.exact || sameWorkIds.has(p.id));
+      // the twin's same work replaces the meaning-only guesses from the anchor's own family (unrelated tablets of the same author)
+      if (best.length) { const keep = found.filter((p) => p.exact || sameWorkIds.has(p.id)); found.splice(0, found.length, ...best.filter((p) => !seen.has(p.id)), ...keep); best.forEach((p) => seen.add(p.id)); break; }
+    }
   }
+  const selfLang = langCode(fam.self?.language);
   const trad = fam.self?.religion ?? null;
   // the passage IS the original: nothing else was found and its own work is in one of the tradition's original languages (11-12: the Arabic
   // Kawthar's opening answered "no original edition" and the side-by-side was never fetched)
