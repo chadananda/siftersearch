@@ -68,3 +68,23 @@ export async function quoteCards(reply, sources, { namedWork = null, docs = defa
   }
   return { cards, books };
 }
+
+/**
+ * Cards for what an agent reply CITES by ref (no blockquote to swap): exactly ONE strategy passage not already carded by a quote block → a
+ * `passage` card (the in-work convention: several hits stay a text list); a cited book_card book → its `book` card unless a card already
+ * shows that work. → { passage: card|null, books: [book] }. `passages` are shaped like the turn's sources; `books` like titleAnswer's book.
+ */
+export async function refCards({ reply, passages = [], books = [] }, { docs = defaultDocs } = {}) {
+  const blocks = matchBlocks(reply, passages);
+  const carded = new Set(blocks.map((m) => m.source.doc)), blockUrls = new Set(blocks.map((m) => m.source.url));
+  const open = passages.map((p) => ({ p, s: norm(p) })).filter(({ s }) => s.doc && s.url && !blockUrls.has(s.url));
+  let passage = null;
+  if (open.length === 1) {
+    const { p, s } = open[0];
+    const d = (await docs([s.doc]).catch(() => []))[0] || {};
+    passage = { work_id: s.doc, title: d.title || s.title, author: d.author || s.author, cover_url: coverOf(d) ?? sowCoverUrl({ title: s.title }), url: s.url, place: s.place,
+      excerpt: p.excerpt || String(s.text).replace(/⁅\/?[sp]\d+⁆/g, '').replace(/\s+/g, ' ').trim(), phrase: null };
+    carded.add(s.doc);
+  }
+  return { passage, books: books.filter((b) => !carded.has(Number(b.id))) };
+}

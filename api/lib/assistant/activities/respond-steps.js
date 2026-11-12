@@ -39,7 +39,7 @@ const agent = (s, params = {}) => {
   const { direction, d, deps, messages, onEvent, t0 } = s;
   const open = params.fallback ? !(s.fast || s.work || s.sourced || s.original || s.study || s.conversational) : !s.fast && !strategyOf(direction.strategy);
   if (!(open && agentOn(direction) && !(deps && !d.agentCreate))) return 'skip';
-  return agentRespond({ messages, onEvent, d, t0, subject: jevSubject(direction, null) }).catch((err) => { console.warn('anis agent failed', err?.message); return null; })
+  return agentRespond({ messages, onEvent, d, t0, subject: jevSubject(direction, null), direction }).catch((err) => { console.warn('anis agent failed', err?.message); return null; })
     .then((A) => { if (A) { s.done = A; return 'answered'; } return 'fail'; });
 };
 

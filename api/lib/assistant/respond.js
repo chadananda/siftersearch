@@ -587,17 +587,24 @@ export function liveResearch({ channel, depth } = {}) {
     ...(depth === 'research' ? { perBook: 2, extraMs: 800 } : {}) };
 }
 
-export async function agentRespond({ messages, onEvent, d, t0, subject = null }) {
-  const { agentAnswer, agentTools } = await import('./agent.js');
+export async function agentRespond({ messages, onEvent, d, t0, subject = null, direction = null }) {
+  const { agentAnswer, agentTools, agentCache } = await import('./agent.js');
   onEvent({ type: 'stage', stage: 'search' });
-  const A = await agentAnswer({ messages, onEvent, subject,
+  // the channel's reply frame (channels.js: length/tone, by Jev's depth when he gave one) is part of the agent's instructions
+  const { frameFor, greetByName } = await import('./channels.js');
+  const frame = direction?.channel ? greetByName(frameFor(direction.channel, direction.depth), direction.channel, direction.readerName) : null;
+  const A = await agentAnswer({ messages, onEvent, subject, frame,
     create: d.agentCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-agent', params)),
-    tools: d.agentTools || agentTools({ search: d.search, fastSearch: d.fastSearch }) });   // fused_search = the fast direct path; d.search only serves trace_source
+    tools: d.agentTools || agentTools({ search: d.search, fastSearch: d.fastSearch }),
+    cache: d.agentCache !== undefined ? d.agentCache : (d.agentTools ? null : agentCache), cardDocs: d.cardDocs });   // live tools share the 6 h tool-result cache   // fused_search = the fast direct path; d.search only serves trace_source
   if (!A.reply) return null;
   onEvent({ type: 'sources', sources: A.citations, plan: { shape: 'agent' }, ms: Date.now() - t0 });
   onEvent({ type: 'stage', stage: 'craft' });
+  // cards for what the reply cites by ref (quote-cards.js refCards), before the text like every other card
+  if (A.cards?.passage) onEvent({ type: 'passage', passage: A.cards.passage });
+  for (const book of A.cards?.books || []) onEvent({ type: 'book', book });
   onEvent({ type: 'text', content: A.reply });
-  return { reply: A.reply, quotes_removed: A.quotes_removed, quotes_recredited: A.quotes_recredited, quotes_linked: A.quotes_linked,
+  return { reply: A.reply, agent: A.agent, quotes_removed: A.quotes_removed, quotes_recredited: A.quotes_recredited, quotes_linked: A.quotes_linked,
     citations: A.citations, retrieved: A.retrieved, evidence: evidenceOf(A.retrieved),
     plan: { shape: 'agent', steps: A.steps, usage: A.usage }, search_query: A.steps.find((s) => s.tool === 'fused_search')?.args?.query ?? null,
     select: null, format: { id: 'agent', by: 'agent' }, profile: null,
@@ -631,7 +638,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
   // answers the whole turn — on a channel listed in ANIS_AGENT ("site-chat", "email", "all") or when the caller asks
   // (direction.engine: 'agent' | 'pipeline'). A failure falls through to the routed pipeline below.
   if (!fast && !strategyOf(direction.strategy) && agentOn(direction) && !(deps && !d.agentCreate)) {
-    const A = await agentRespond({ messages, onEvent, d, t0, subject: jevSubject(direction, null) }).catch((err) => { console.warn('anis agent failed', err?.message); return null; });
+    const A = await agentRespond({ messages, onEvent, d, t0, subject: jevSubject(direction, null), direction }).catch((err) => { console.warn('anis agent failed', err?.message); return null; });
     if (A) return A;
   }
   // Conversation (greetings, thanks, questions about Anis) is not a lookup: answer as ourselves, search nothing.
