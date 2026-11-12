@@ -316,7 +316,7 @@ async function commitHype(ctx, p, meta, parsed, opts, stats) {
   if (!opts.dryRun) {
     await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis, HYPE_VERSION);
     // the browsable list of implied items (premise_claims) follows the paragraph's hyp_questions — one row per item (implication browser, Chad 11-12)
-    if (implied?.length && ctx.store.saveImplied) await ctx.store.saveImplied(p.id, implied, { source: 'hype', model: HYPE_VERSION }).catch((e) => ctx.log.warn?.({ paraId: p.id, err: e.message }, 'retrieval/hype: implied list not saved'));
+    if (parsed.implied?.length && ctx.store.saveImplied) await ctx.store.saveImplied(p.id, parsed.implied, { source: 'hype', model: HYPE_VERSION }).catch((e) => ctx.log.warn?.({ paraId: p.id, err: e.message }, 'retrieval/hype: implied list not saved'));
     // Questions this paragraph received from a linked source before its own turn ('linked:' stamp) are KEPT.
     if (String(p.hypModel || '').startsWith('linked:') && ctx.store.mergeHype) {
       let prior = []; try { prior = JSON.parse(p.hyp || '[]'); } catch { /* legacy text */ }

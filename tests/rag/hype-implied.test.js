@@ -17,7 +17,7 @@ describe('the HyPE prompt carries the implied-question rules', () => {
     expect(sys).toMatch(/"implied": 0-2 IMPLIED questions/);
     expect(sys).toMatch(/The normal answer is an EMPTY list/);
     expect(sys).toMatch(/proof" must be words copied EXACTLY from the PARAGRAPH/);
-    expect(sys).toMatch(/"implied":\[\{"q":"…\?","premise":"…","implies":"…","proof":"verbatim words"\}\]/);
+    expect(sys).toMatch(/"implied":\[\{"q":"…\?","premise":"…","implies":"…","proof":"verbatim words","concept":"[^"]*"\}\]/);
   });
   it('carries the premise-pilot rules: a-fortiori implications, station, nature as potential, own terms, modern-assumption questions', () => {
     expect(sys).toMatch(/if a lesser right is granted, the greater is implied/);
