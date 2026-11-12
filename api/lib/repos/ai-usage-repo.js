@@ -104,3 +104,20 @@ export async function corpusRagSpendInRange(fromId, toId, provider, since = '') 
     WHERE id > ? AND id <= ? AND +provider = ? AND +caller = 'corpus-rag' AND +timestamp > ?`, [fromId, toId, provider, since || ''], 'spend-ledger:range');
   return Number(r?.s) || 0;
 }
+
+/** HyPE spend (service_type grounding:hype, any caller) in one timestamp window [from, to) → [{ day, model, docId, usd, calls }]. The implication
+ *  overview report walks windows so no read is long. */
+export const hypeSpendWindow = (from, to) => queryAll(`SELECT substr(timestamp, 1, 10) AS day, model, document_id AS docId, ROUND(SUM(estimated_cost_usd), 4) AS usd, COUNT(*) AS calls
+  FROM ai_usage WHERE timestamp >= ? AND timestamp < ? AND service_type = 'grounding:hype' AND success = 1 GROUP BY 1, 2, 3`, [from, to], 'ai-usage:hype-window');
+
+/** First ledger timestamp (the window walk's start). */
+export const firstUsageAt = async () => (await queryOne('SELECT MIN(timestamp) AS t FROM ai_usage', [], 'ai-usage:first'))?.t || null;
+
+/** All-time spend of the implied-question work outside HyPE itself: premise pilot/reconcile, the admin's propose button, the HyPE judge. → { [label]: usd } */
+export async function impliedSideSpend() {
+  const rows = await queryAll(`SELECT caller, service_type AS st, ROUND(SUM(estimated_cost_usd), 4) AS usd FROM ai_usage
+    WHERE caller IN ('premise-pilot', 'implied-admin') OR service_type = 'grounding:hype-judge' GROUP BY caller, service_type`, [], 'ai-usage:implied-side');
+  const out = { premise: 0, propose: 0, judge: 0 };
+  for (const r of rows) { if (r.caller === 'premise-pilot') out.premise += r.usd || 0; else if (r.caller === 'implied-admin') out.propose += r.usd || 0; else out.judge += r.usd || 0; }
+  return out;
+}

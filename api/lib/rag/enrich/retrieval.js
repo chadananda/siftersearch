@@ -19,6 +19,7 @@ import { segment } from '../kernel/segment.js';
 import { pool } from '../kernel/run.js';
 import { isCreditRefusal } from '../../spend-caps.js';
 import { isHyped, DISAMB_THRESHOLD } from '../../pipeline/processed.js';
+import { CONCEPTS } from '../../pipeline/premise-concepts.js';
 
 // v4 (2026-08-26, "hype-v4-seeker"): the questions are the retrieval surface, so their SHAPE is the product.
 // v3 wrote comprehension checks — "What does this passage ask the reader to ponder?" — and padded counts by
@@ -305,7 +306,7 @@ async function commitHype(ctx, p, meta, parsed, opts, stats) {
       if (fault) { stats.impliedFault = (stats.impliedFault || 0) + 1; continue; }
       if (spanPresent(it.proof, [p.text, p.original, p.partner?.text]) !== true) { stats.impliedUnproven = (stats.impliedUnproven || 0) + 1; continue; }
       if (implied.some((e) => fold(e.q) === fold(it.q))) continue;
-      implied.push({ q: it.q, implied: true, premise: it.premise, implies: it.implies, proof: it.proof });
+      implied.push({ q: it.q, implied: true, premise: it.premise, implies: it.implies, proof: it.proof, ...(it.concept ? { concept: it.concept } : {}) });
     }
     parsed = kept.length ? { questions: [...dedupeTiers(kept).slice(0, QUESTION_CEILING), ...implied], thesis: parsed.thesis, items: kept, implied } : null;
     if (implied.length) stats.implied = (stats.implied || 0) + implied.length;
@@ -314,6 +315,8 @@ async function commitHype(ctx, p, meta, parsed, opts, stats) {
   if (opts.dryRun) (stats.samples ||= []).push({ pidx: p.pidx, text: p.text.slice(0, 400), thesis: parsed.thesis, items: parsed.items });
   if (!opts.dryRun) {
     await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis, HYPE_VERSION);
+    // the browsable list of implied items (premise_claims) follows the paragraph's hyp_questions — one row per item (implication browser, Chad 11-12)
+    if (implied?.length && ctx.store.saveImplied) await ctx.store.saveImplied(p.id, implied, { source: 'hype', model: HYPE_VERSION }).catch((e) => ctx.log.warn?.({ paraId: p.id, err: e.message }, 'retrieval/hype: implied list not saved'));
     // Questions this paragraph received from a linked source before its own turn ('linked:' stamp) are KEPT.
     if (String(p.hypModel || '').startsWith('linked:') && ctx.store.mergeHype) {
       let prior = []; try { prior = JSON.parse(p.hyp || '[]'); } catch { /* legacy text */ }
@@ -475,7 +478,7 @@ export function dedupeByAnswer(items) {
 
 // IMPLIED questions (Chad 11-12): { q, premise, implies, proof } from the reply's "implied" field; an item with no question or no proof is no item.
 export const MAX_IMPLIED = 2;
-export const parseImplied = (list) => (Array.isArray(list) ? list : []).map((x) => ({ q: String(x?.q ?? '').trim(), premise: String(x?.premise ?? '').trim(), implies: String(x?.implies ?? '').trim(), proof: String(x?.proof ?? '').trim() }))
+export const parseImplied = (list) => (Array.isArray(list) ? list : []).map((x) => ({ q: String(x?.q ?? '').trim(), premise: String(x?.premise ?? '').trim(), implies: String(x?.implies ?? '').trim(), proof: String(x?.proof ?? '').trim(), ...(String(x?.concept ?? '').trim() ? { concept: String(x.concept).trim().slice(0, 120) } : {}) }))
   .filter((x) => x.q && x.proof).slice(0, MAX_IMPLIED);
 
 export function parseHype(raw) {
@@ -598,6 +601,8 @@ From the paragraph (use the disambiguation CONTEXT only to resolve who/what/wher
     • NATURE: good is inherent in every person as a POTENTIAL. Never say people are naturally oriented or inclined toward the good or toward God: a child is born selfish and animal; turning to God and freedom from animal impulses is attained, not initial or natural, though it is assured as possible for all.
     • "implies": ONE sentence naming the modern debate or assumption and the position the passage supports or challenges ("rights come from God and precede the state, against the view that governments grant them").
     • "proof": the verbatim words the inference rests on.
+    • "concept": the ONE modern-debate topic this item bears on, copied exactly from this list, or "" when none fits:
+${CONCEPTS.map((c) => `      - ${c}`).join('\n')}
 - "thesis": ONE sentence (20-45 words) stating what this paragraph teaches as a proposition, stated directly.
 
 If a HEADING is given, it names the question or subject this passage is part of answering. Use it to know WHICH discussion the passage belongs to and to phrase questions a reader of that subject would ask — but write questions about what THIS paragraph says, not about the heading's subject in general, and never quote the heading as if the passage answered all of it.
@@ -607,7 +612,7 @@ If ESTABLISHED FACTS are provided with the paragraph, they are cited claims extr
 
 If AUTHORITATIVE INTERPRETATIONS are provided, they are the doctrinal claims this passage establishes, each with its ORIGINAL-LANGUAGE TERM in brackets. These are what a serious reader comes for, so make each one findable. Where a concept carries an original term, write at least one question a reader would ask USING THAT TERM, in transliteration (never Arabic or Persian script) — "What does ʿirfán mean?", "What is the difference between ʿadl and inṣáf?" — because a reader who knows the term searches with it, and the English gloss will not retrieve them. Ask about the concept; never echo the interpretation's wording back as a question.
 
-Return exactly: {"seeker":[{"q":"…?","a":"verbatim answering words"}],"questions":[{"q":"…?","a":"verbatim words from the passage that answer it"}],"deep":[{"q":"…?","a":"verbatim answering words"}],"implied":[{"q":"…?","premise":"…","implies":"…","proof":"verbatim words"}],"thesis":"…"} (as many as the paragraph answers; "seeker", "deep" and "implied" may be empty for a narrative or transitional passage, never padded — "implied" is empty for most paragraphs and never more than 2; "questions" are the distinct things taught, not a quota)
+Return exactly: {"seeker":[{"q":"…?","a":"verbatim answering words"}],"questions":[{"q":"…?","a":"verbatim words from the passage that answer it"}],"deep":[{"q":"…?","a":"verbatim answering words"}],"implied":[{"q":"…?","premise":"…","implies":"…","proof":"verbatim words","concept":"one CONCEPT below, or empty"}],"thesis":"…"} (as many as the paragraph answers; "seeker", "deep" and "implied" may be empty for a narrative or transitional passage, never padded — "implied" is empty for most paragraphs and never more than 2; "questions" are the distinct things taught, not a quota)
 
 BOOK:
 ${bookMeta}${cast ? `\n\nBOOK CAST (who's-who — resolve a name to the right figure; do not ask about people not in the paragraph):\n${cast}` : ''}`;

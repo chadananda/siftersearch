@@ -2164,6 +2164,26 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_premise_claims_doc ON premise_claims(doc_id)');
     logger.info('Migration 201 complete: premise_claims');
   },
+  202: async () => {
+    // IMPLICATION BROWSER (Chad 11-12): premise_claims becomes the browsable list of IMPLIED items (one row per item; hyp_questions stays what is indexed).
+    // status: unreviewed|approved|edited|rejected|proposed (rejected/proposed rows are never in hyp_questions). implied_edits = the corrections log.
+    const addCol = async (col, def) => { try { await query(`ALTER TABLE premise_claims ADD COLUMN ${col} ${def}`); } catch { /* duplicate column */ } };
+    await addCol('question', 'TEXT');
+    await addCol('status', `TEXT DEFAULT 'unreviewed'`);
+    await addCol('source', 'TEXT');
+    await addCol('model', 'TEXT');
+    await addCol('k', 'INTEGER');
+    await addCol('updated_at', 'TEXT');
+    await addCol('editor', 'TEXT');
+    await addCol('note', 'TEXT');
+    await query('CREATE INDEX IF NOT EXISTS idx_premise_claims_status ON premise_claims(status)');
+    await query('CREATE INDEX IF NOT EXISTS idx_premise_claims_concept ON premise_claims(concept)');
+    await query(`CREATE TABLE IF NOT EXISTS implied_edits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, claim_id INTEGER, para_id INTEGER, action TEXT NOT NULL, before_json TEXT, after_json TEXT, note TEXT, editor TEXT, at TEXT)`);
+    await query('CREATE INDEX IF NOT EXISTS idx_implied_edits_claim ON implied_edits(claim_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_implied_edits_at ON implied_edits(at)');
+    logger.info('Migration 202 complete: premise_claims browse columns + implied_edits');
+  },
 };
 
 export const graphMigrations = {

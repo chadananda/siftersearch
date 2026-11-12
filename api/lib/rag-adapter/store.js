@@ -9,6 +9,7 @@ import { loadGazetteer, anchorFor, guardedPair } from './gazetteer.js'; // centr
 import { DISAMB_DONE_SQL } from '../pipeline/processed.js';
 import { INTERPRETATION_RELATIONS, unknownRelations } from '../rag/concepts/relations.js';
 import { LIVE_SQL, tombstoneFor, retiredStamp } from '../entity-live.js';
+import { saveImplied } from '../repos/implied-repo.js';   // implied items → premise_claims rows
 import { voiceLine } from '../authorship/voice.js';   // who speaks a paragraph / whom it quotes (Chad 10-09)
 
 // One record's rows for the lookup index — the SAME keys and folding as scripts/entity-read/build-lookup-index.mjs
@@ -170,6 +171,11 @@ export function makeStore() {
     // (hyp_model — mirrors context_model); flags the row for Meili re-index.
     async saveHype(paragraphId, questions, thesis, version) {
       await content.updateHype(paragraphId, questions, thesis, version);
+    },
+
+    // The implied items just written into hyp_questions → premise_claims rows (the implication browser's list; implied-repo.js).
+    async saveImplied(paragraphId, items, opts) {
+      await saveImplied(paragraphId, items, opts);
     },
 
     // Which of these content ids already carry concept claims from this extractor (claims are keyed by pid + doc).

@@ -7,6 +7,7 @@ import { withAIContext } from '../ai-context.js';
 import { spanPresent } from '../rag/enrich/retrieval.js';
 // spanPresent (proof check) lives with the HyPE gates in rag/enrich/retrieval.js — implied HyPE questions use the same one
 export { spanPresent };
+import { CONCEPTS } from './premise-concepts.js';
 import { JUDGE_MODEL } from './hype-rubric.js';
 import { calculateCost } from '../model-registry.js';
 import { isCreditRefusal, isSpendCap, CREDIT_WAIT_MS } from '../spend-caps.js';
@@ -14,7 +15,7 @@ import { isCreditRefusal, isSpendCap, CREDIT_WAIT_MS } from '../spend-caps.js';
 export const BUDGET_KEY = 'premise-pilot';
 export const EST_USD_PER_PARA = 0.008;   // ESTIMATE: ~1.8k in (prompt + ¶ + neighbours) + ~150 out at Sonnet 4.6 sync prices ($3/$15 per M); replace with the metered mean
 export const CONCURRENCY = 4, MIN_LEN = 40, TEXT_CAP = 600;
-export const CONCEPTS = ['source of rights (divine vs. state-granted)', 'limits of sovereign/state power', 'just and unjust taxation', 'private property', 'moral status of the unborn / right to life', 'justice (ʿadl) and equity (inṣáf)', 'equality before the law', 'rule of law and accountability of rulers', 'consultation and consent of the governed', 'freedom of conscience and religion', 'extremes of wealth and poverty / economic justice', 'punishment, mercy and the purpose of penalties', 'individual rights vs. the common good', 'war, peace and collective security', 'rights and duties of women', 'education as a right', 'the family and inheritance', 'human nature (noble vs. corrupt)', 'religion and the state', 'work as worship / labour and capital'];
+export { CONCEPTS };
 export const PILOT_TARGETS = [
   { docId: 20806 },   // Summons of the Lord of Hosts (Tablets to the Kings), whole book
   { docId: 21307 },   // The Kitáb-i-Aqdas, whole book

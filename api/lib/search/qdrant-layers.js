@@ -150,6 +150,7 @@ export function toQdrantFilter(filters = {}) {
   else if (filters.scope === 'supplemental') must.push({ key: 'scope', match: { value: 'supplemental' } });
   const eq = (key, v) => must.push(Array.isArray(v) ? { key, match: { any: v } } : { key, match: { value: v } });
   if (filters.religion) eq('religion', filters.religion);
+  if (filters.implied) must.push({ key: 'implied', match: { value: true } });   // hype collection: the implied-question points only (Implication browser)
   if (filters.collection) eq('collection', filters.collection);
   // the asked author as WRITER or as a QUOTED voice (voices_fold, stamped by the indexer's stamp-voices job): the Báb quoted
   // in Mazindarani's history answers "what did the Báb say" (Chad 10-19). Points not yet stamped still match by author_fold.
