@@ -1,0 +1,139 @@
+{
+ "doc": {
+  "id": 999,
+  "title": "The Hidden Words",
+  "original_title": "كلمات مكنونه",
+  "author": "Bahá’u’lláh",
+  "translator": "Shoghi Effendi",
+  "language": "ar",
+  "direction": "rtl",
+  "cover_url": null,
+  "source_url": null,
+  "paragraphs": 8
+ },
+ "sections": [
+  {
+   "title": "From the Arabic",
+   "start": 1
+  },
+  {
+   "title": "From the Persian",
+   "start": 5
+  }
+ ],
+ "paragraphs": [
+  {
+   "n": 1,
+   "kind": "text",
+   "rows": [
+    {
+     "o": "هو السلطان العليم الحكيم",
+     "t": "He is the Sovereign, the All-Knowing, the Wise."
+    }
+   ],
+   "aligned": "paragraph"
+  },
+  {
+   "n": 2,
+   "kind": "text",
+   "rows": [
+    {
+     "o": "يا ابن الروح",
+     "t": "O SON OF SPIRIT!"
+    },
+    {
+     "o": "أول ما أوصيك به أن تكون صادقاً",
+     "t": "My first counsel is this: Possess a pure, kindly and radiant heart."
+    },
+    {
+     "o": "لتكون لي مقراً",
+     "t": "That thine may be a sovereignty ancient, imperishable and everlasting."
+    }
+   ],
+   "aligned": "markers"
+  },
+  {
+   "n": 3,
+   "kind": "text",
+   "rows": [
+    {
+     "o": "*",
+     "t": "*"
+    }
+   ],
+   "aligned": "markers"
+  },
+  {
+   "n": 4,
+   "kind": "text",
+   "rows": [
+    {
+     "o": "يا ابن الوجود",
+     "t": "O SON OF BEING!"
+    },
+    {
+     "o": "حبي حصني",
+     "t": "\"Love is My stronghold,\" saith He, 'and he that entereth therein is safe.'"
+    }
+   ],
+   "aligned": "llm"
+  },
+  {
+   "n": 5,
+   "kind": "text",
+   "rows": [
+    {
+     "o": "يا ابن الانسان",
+     "t": "O SON OF MAN!"
+    },
+    {
+     "o": "اذكرني في أرضي",
+     "t": "Remember Me in My earth."
+    }
+   ],
+   "aligned": "markers"
+  },
+  {
+   "n": 6,
+   "kind": "text",
+   "rows": [
+    {
+     "o": "بسم الله",
+     "t": ""
+    }
+   ],
+   "aligned": "none"
+  },
+  {
+   "n": 7,
+   "kind": "text",
+   "rows": [
+    {
+     "o": "يا ابن العماء",
+     "t": "O SON OF THE SUPREME!"
+    },
+    {
+     "o": "جعلت لك الحياة",
+     "t": "I have made death a messenger of joy to thee."
+    }
+   ],
+   "aligned": "markers"
+  },
+  {
+   "n": 8,
+   "kind": "text",
+   "rows": [
+    {
+     "o": "يا ابن الانصاف",
+     "t": "O SON OF JUSTICE!"
+    },
+    {
+     "o": "فضلاً",
+     "t": "Thus it is."
+    }
+   ],
+   "aligned": "markers"
+  }
+ ],
+ "next_offset": null
+}
