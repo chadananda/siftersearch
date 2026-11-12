@@ -125,7 +125,7 @@ export async function editionsOf(paragraphId, { want = 'original', limit = 3 } =
   // 1b. a known verse table (the Qur’án editions): exact, no work family needed
   for (const p of await alignByVerseTable(src, want, d).catch(() => [])) push(p);
   // 2–3. the work family: each other-language member aligned by reference, else by meaning
-  const fam0 = await d.workFamily(src.doc_id, { authors: 300 }).catch(() => ({ self: null, members: [] }));
+  const fam0 = await d.workFamily(src.doc_id, { authors: 5000 }).catch(() => ({ self: null, members: [] }));
   const fam = { ...fam0, members: sameWorkFirst(fam0.self, fam0.members || []) };
   const selfLang = langCode(fam.self?.language), origId = Number(fam.self?.original_doc_id) || null;
   const members = (fam.members || []).filter((m) => langCode(m.language) !== selfLang)

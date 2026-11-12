@@ -51,7 +51,7 @@ const FAM_COLS = 'd.id, d.title, d.author, d.language, d.religion, d.collection,
  *  `original_doc_id` (recorded: this doc's original, or its siblings/translations), `alignment` (content_alignment doc pairs),
  *  `author` (same author + tradition, another language: a CANDIDATE only — the caller aligns or rejects it). Best basis first. */
 export async function workFamily(docId, { limit = 12, authors = limit } = {}) {
-  const id = Number(docId), n = Math.max(1, Math.min(Number(limit) || 12, 50)), na = Math.max(n, Math.min(Number(authors) || n, 400));   // authors: how many same-author candidates the caller will rank (by title)
+  const id = Number(docId), n = Math.max(1, Math.min(Number(limit) || 12, 50)), na = Math.max(n, Math.min(Number(authors) || n, 5000));   // authors: how many same-author candidates the caller will rank (by title) — all of a prolific author's titles (11-12: the Báb's English Kawthar was past an unordered 300)
   const self = await queryOne(`SELECT id, title, author, language, religion, collection, original_doc_id, paragraph_count FROM docs WHERE id = ? AND deleted_at IS NULL`, [id], 'alignment-repo:family-self');
   if (!self) return { self: null, members: [] };
   const root = Number(self.original_doc_id) || id;
