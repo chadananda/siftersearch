@@ -142,5 +142,6 @@ describe('entity-name reads on the read pool', () => {
     expect(src('paragraphs-repo.js')).toMatch(/offThread\('paragraphs:in-range'/);
     expect(src('paragraphs-repo.js')).toMatch(/offThread\('paragraphs:heading-starts'/);
     expect(src('docs-repo.js')).toMatch(/runRead\('docs:in-folder'/);
+    expect(src('assistant/quote-search.js')).toMatch(/runRead\('quote:literal-scan'/);
   });
 });

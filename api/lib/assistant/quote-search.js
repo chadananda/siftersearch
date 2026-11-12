@@ -4,6 +4,7 @@
 import { toPassage } from './tool-kit.js';
 import { sowCoverUrl } from '../sow-links.js';
 import { canonicalTradition } from './tradition-name.js';
+import { isMainThread } from 'node:worker_threads';
 
 /** Fold for matching: accents off, curly/odd apostrophes → ', lower case, every other non-letter → one space. Pure. */
 export const foldText = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘`ʻʼ]/g, "'").toLowerCase()
@@ -71,6 +72,15 @@ function excerptCut(text, words) {
   return `${idx[0] > 0 ? '… ' : ''}${boldWords(parts.join(' '), words)}${idx.at(-1) < sents.length - 1 ? ' …' : ''}`;
 }
 
+// Every paragraph of the named works, folded and matched (11-12: Star of the West = ~400 issue documents) — seconds of CPU and hundreds of
+// reads, so from the serving thread it runs in the read pool (api/lib/search/read-pool.js 'quote:literal-scan'). → matching rows + __doc.
+export async function literalScanRows(ids, range, phrase) {
+  const { paragraphTexts } = await import('../paragraphs-repo.js');
+  const hits = [];
+  for (const id of ids) for (const r of (await paragraphTexts(id, range)) || []) if (!isHeading(r) && holdsWords(r.text, phrase)) hits.push({ ...r, __doc: id });
+  return hits;
+}
+
 const repo = async (ctx, name, mod) => ctx?.deps?.[name] || (await import(mod))[name];
 const asList = (x) => (x == null || x === '' ? [] : Array.isArray(x) ? x : [x]);
 const uniq = (l) => [...new Set(l)];
@@ -126,8 +136,9 @@ export async function quoteSearch({ query: phrase, mode = 'auto', religions = []
   if (mode !== 'meaning') {
     let hits = [];
     if (named) {
-      const texts = await repo(ctx, 'paragraphTexts', '../paragraphs-repo.js');
-      for (const id of kept) hits.push(...((await texts(id, { from: lo, to: hi })) || []).filter((r) => !isHeading(r) && holdsWords(r.text, phrase)).map((r) => ({ ...r, __doc: id })));
+      const texts = ctx?.deps?.paragraphTexts;
+      if (texts) for (const id of kept) hits.push(...((await texts(id, { from: lo, to: hi })) || []).filter((r) => !isHeading(r) && holdsWords(r.text, phrase)).map((r) => ({ ...r, __doc: id })));
+      else hits = isMainThread ? await (await import('../search/read-pool.js')).runRead('quote:literal-scan', kept, { from: lo, to: hi }, phrase) : await literalScanRows(kept, { from: lo, to: hi }, phrase);
       total = hits.length;
       const shown = hits.slice(0, cap);
       let hydrated = [];
