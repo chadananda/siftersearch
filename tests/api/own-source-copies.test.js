@@ -69,6 +69,14 @@ describe('own source: the last-resort source gives way (battery round 4 timeline
     const r = await preferOwnWork([upl], { search: async () => [upl], shape: toPassage });
     expect(r.passages.map((p) => p.id)).toEqual([4601]);
   });
+  it('"Uncompiled Letters" → a published compilation carrying his words (the compiler is the book author; 11-12 decentralization)', async () => {
+    const C = 'Consultation, frank and unfettered, is the bedrock of this unique Order, and the institutions must follow it in every matter.';
+    const ul = toPassage({ ...upl, id: 4700, title: 'Shoghi Effendi: Uncompiled Letters', text: C });
+    const comp = { id: 12, document_id: 945906, paragraph_index: 12, title: 'Consultation', author: SE, book_author: 'Universal House of Justice', religion: B,
+      source_url: 'https://oceanlibrary.com/consultation/?paraId=para_12', text: C };
+    const r = await preferOwnWork([ul], { search: async () => [ul, comp], shape: toPassage });
+    expect(r.passages.map((p) => p.id)).toEqual([12, 4700]);
+  });
 });
 
 describe('own source: a scrape-host edition gives way to the published book holding the same words (r17 Shaykh Aḥmad)', () => {

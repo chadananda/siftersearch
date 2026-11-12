@@ -77,8 +77,13 @@ const betterCopy = (q, j, provisional) => !!q && Number(q.document_id) !== Numbe
   && holds(q.text, j.span).exact && !quotedOnly(q.text).some((x) => holds(x, j.span).exact);   // a book QUOTING the words is not a copy
 // a LAST-RESORT source (Shoghi Effendi's *Uncompiled Published Letters*; feedback citation source order) gives way to a published
 // work of the same writer holding the same words (battery 11-10 timeline: the 1844 declaration cited from it first)
-export const LAST_RESORT = /\bUncompiled Published Letters\b/i;
-const published = (q, j, provisional) => ownHolder(q, j.writer, j.span, provisional) && Number(q.document_id) !== Number(j.p.document_id) && !LAST_RESORT.test(q.title || '');
+// — or to a published compilation carrying his words (scenario 11-12 decentralization: "consultation, frank and unfettered, is the
+// bedrock" is in *Consultation*; the passage's author is his, the book's is the compiler's)
+export const LAST_RESORT = /\bUncompiled (?:Published )?Letters\b/i;
+const compiled = (q, j, provisional) => canon(q?.author) === j.writer && !provisional(q) && holds(q.text, j.span).exact
+  && !quotedOnly(q.text).some((x) => holds(x, j.span).exact);
+const published = (q, j, provisional) => (ownHolder(q, j.writer, j.span, provisional) || compiled(q, j, provisional))
+  && Number(q.document_id) !== Number(j.p.document_id) && !LAST_RESORT.test(q.title || '');
 // a SCRAPE-HOST edition (r17 11-11: Nabíl's opening of The Dawn-Breakers cited as "The Seven Proofs #610" from the Nicolas/Terry
 // edition on bahai-library.com, which carries his narrative): the same words in a published book (not another scrape, not a study)
 export const SCRAPE_HOST = /^https?:\/\/(?:www\.)?(?:bahai-library\.com|oceanoflights\.org)\//i;

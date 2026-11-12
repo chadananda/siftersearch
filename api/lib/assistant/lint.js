@@ -515,7 +515,7 @@ export function citeLinks(text, sources = []) {
 // LAST-RESORT SOURCE LAST (feedback citation source order: the same passage in several sources → the best published first; Shoghi
 // Effendi's *Uncompiled Published Letters* is the last resort). In a table cell listing several sources ("A; B; C"), a citation
 // of the Uncompiled Published Letters moves to the end (battery 11-10 timeline: it led the 1844 row). Pure.
-export const LAST_RESORT = /Uncompiled Published Letters/i;
+export const LAST_RESORT = /Uncompiled (?:Published )?Letters/i;
 export function lastResortLast(text) {
   let fixed = 0;
   const out = String(text || '').split('\n').map((line) => {
