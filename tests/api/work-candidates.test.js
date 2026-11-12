@@ -99,3 +99,23 @@ describe('original tree: work_place (Jev) reads the place asked for', () => {
     expect(s.path).toContain('o1w'); expect(s.tools.opening_lookup).not.toHaveBeenCalled();
   });
 });
+
+// Chad 11-12: "the first paragraph of the commentary on the surah of kawthar by the Bab" — no title recognised, Jev's work_place is the opening
+describe('original tree: an opening asked with no title recognised → the works go to Jev', () => {
+  const q = 'show me the first paragraph of the commentary on the surah of kawthar by the Bab in side-by-side';
+  it('his sure pick is read from its opening', async () => {
+    const book = vi.fn(async (_m, cs) => ({ choice: cs.find((c) => c.doc?.id === 20171).key, confidence: 0.95 }));
+    const s = await original(q, { judges: { book }, bookCandidates: cands, units: { work_place: 'opening' } });
+    expect(s.tools.opening_lookup).toHaveBeenCalledWith({ document_id: 20171, n: 3 }, expect.anything());
+    expect(s.decisions.find((d) => d.k === 'opening:which-work')).toMatchObject({ by: 'jev' });
+  });
+  it('hesitant → no opening read, the tree goes on', async () => {
+    const s = await original(q, { judges: { book: async () => ({ choice: 'c1', confidence: 0.2 }) }, bookCandidates: cands, units: { work_place: 'opening' } });
+    expect(s.tools.opening_lookup).not.toHaveBeenCalled();
+  });
+  it('no opening asked → no candidates, no Jev call', async () => {
+    const book = vi.fn(), find = vi.fn(async () => ({ cands: [] }));
+    await original('what does the Bab say about the kawthar?', { judges: { book }, bookCandidates: find });
+    expect(book).not.toHaveBeenCalled();
+  });
+});

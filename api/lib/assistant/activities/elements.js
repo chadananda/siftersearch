@@ -496,6 +496,23 @@ E['judge.passages'] = { kind: 'decision', cls: 'jev', edges: ['answers', 'mentio
     return edge;
   } };
 
+// the library's works for the whole message, put to Jev as ONE typed choice (book-pick.js); a work he is SURE of → its doc id, else null.
+// A name is a candidate, never an identity: no spelling lists, no case rules — "the commentary on the surah of kawthar" reaches him as typed (Chad 11-12).
+async function workPick(s, u, saw, key, picked, fallback) {
+  const log = s.direction?.decisions ?? s.ctx?.decisions;
+  try {
+    const [{ bookCandidates }, { groupCopies, pickBook }, { MIN_CONFIDENCE }] = await Promise.all([import('../book-finder.js'), import('../book-pick.js'), import('../../scope-extract.js')]);
+    const named = typeof u.named_work === 'string' && u.named_work.trim() ? [u.named_work.trim()] : [];
+    const found = await (s.ctx?.deps?.bookCandidates || bookCandidates)(u.current_user_question, { also: named });
+    const cands = groupCopies(found?.cands || []);
+    if (!cands.length) return null;
+    const pick = await (s.judges?.book || pickBook)(s.messages || [], cands, { profile: s.profile ?? s.ctx?.profile ?? {} }).catch(() => null);
+    const hit = pick?.choice && !['none', 'new'].includes(pick.choice) && (pick.confidence ?? 0) >= MIN_CONFIDENCE ? cands.find((c) => c.key === pick.choice) : null;
+    log?.record?.(key, { by: 'jev', saw: { ...saw, candidates: cands.map((c) => `${c.key} ${c.label}`) }, options: [...cands.map((c) => c.key), 'none'],
+      chosen: hit ? hit.key : 'none', reason: hit ? picked : !pick ? `no answer: ${fallback}` : `none / hesitant: ${fallback}` });
+    return hit ? (hit.kind === 'section' ? hit.sec.doc_id : hit.doc.id) : null;
+  } catch { return null; }
+}
 // a sūra NAME in the message is a candidate, not an identity (11-11 Kawthar: "tafsir-i-surata'l-Kawthar" became Qur'án 108, not the Báb's Tafsír). When the
 // reference came from a name, the library's works for the whole message are put to Jev beside it (ONE typed choice, book-pick.js); a work he is SURE of becomes
 // named_work (→ its opening, fetch.opening); none / hesitant / no answer → the sura as before. A numbered reference ("Sura 108") never asks.
@@ -504,23 +521,21 @@ E['fetch.reference'] = { ...fetchReference, reads: [...fetchReference.reads, 'na
   async run(s, p = {}) {
     const u = U(s), ref = u.scripture_reference || parseScriptureRef(text(s, u, p.query));
     if (!ref?.byName || Number.isFinite(Number(u.named_work))) return fetchReference.run(s, p);
-    const log = s.direction?.decisions ?? s.ctx?.decisions;
-    try {
-      const [{ bookCandidates }, { groupCopies, pickBook }, { MIN_CONFIDENCE }] = await Promise.all([import('../book-finder.js'), import('../book-pick.js'), import('../../scope-extract.js')]);
-      const named = typeof u.named_work === 'string' && u.named_work.trim() ? [u.named_work.trim()] : [];
-      const found = await (s.ctx?.deps?.bookCandidates || bookCandidates)(u.current_user_question, { also: named });
-      const cands = groupCopies(found?.cands || []);
-      if (cands.length) {
-        const pick = await (s.judges?.book || pickBook)(s.messages || [], cands, { profile: s.profile ?? s.ctx?.profile ?? {} }).catch(() => null);
-        const hit = pick?.choice && !['none', 'new'].includes(pick.choice) && (pick.confidence ?? 0) >= MIN_CONFIDENCE ? cands.find((c) => c.key === pick.choice) : null;
-        log?.record?.('reference:name-or-work', { by: 'jev', saw: { sura_name: ref.label, candidates: cands.map((c) => `${c.key} ${c.label}`) }, options: [...cands.map((c) => c.key), 'none'],
-          chosen: hit ? hit.key : 'none', reason: hit ? 'Jev picked a library work over the sura name' : !pick ? 'no answer: the sura stands' : 'none / hesitant: the sura stands' });
-        const id = hit ? (hit.kind === 'section' ? hit.sec.doc_id : hit.doc.id) : null;
-        if (id != null) { u.named_work = id; const e = finish(s, p, 'none', { read: { named_work: id } }); u.missing.pop(); u.found_outcome[s.node ?? p.id ?? '?'] = 'skipped'; return e; }   // → fetch.opening
-      }
-    } catch { /* the name stands as the sura, as before */ }
+    const id = await workPick(s, u, { sura_name: ref.label }, 'reference:name-or-work', 'Jev picked a library work over the sura name', 'the sura stands');
+    if (id != null) { u.named_work = id; const e = finish(s, p, 'none', { read: { named_work: id } }); u.missing.pop(); u.found_outcome[s.node ?? p.id ?? '?'] = 'skipped'; return e; }   // → fetch.opening
     return fetchReference.run(s, p);
   } };
+// fetch.opening with no work resolved: the reader asked for a work's opening ("the first paragraph of …") but no title was recognised —
+// the library's works for the message go to Jev (workPick); his sure pick is read from its opening (Chad 11-12)
+const fetchOpening = E['fetch.opening'];
+E['fetch.opening'] = { ...fetchOpening, writes: [...fetchOpening.writes, 'named_work'], async run(s, p = {}) {
+  const u = U(s), w = namedWork(u);
+  if (!(w?.documentId || w?.work) && u.work_place === 'opening') {
+    const id = await workPick(s, u, { work_place: 'opening' }, 'opening:which-work', 'Jev picked the work whose opening was asked', 'no work resolved');
+    if (id != null) u.named_work = id;
+  }
+  return fetchOpening.run(s, p);
+} };
 const fetchWork = E['fetch.work'];   // close titles are spelling candidates: never 'one' alone
 E['fetch.work'] = { ...fetchWork, async run(s, p = {}) {
   const e = await fetchWork.run(s, p), u = U(s), got = u.found_records || [];
