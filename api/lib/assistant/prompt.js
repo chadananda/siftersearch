@@ -82,7 +82,7 @@ export function anisDirection({ channelFrame = null, stance = null, conversation
   const lines = [];
   const scene = resolveScenario(scenario);   // an explicit scenario (Jev, reader card, host) — otherwise the writer reads it from context (SCENARIO_GUIDE)
   if (conversational) lines.push('This turn is conversation (a greeting, small talk, or a question about you): reply as yourself, warmly and briefly — one to three sentences, no quotes or citations; offer to explore whatever they are curious about.');
-  else lines.push(channelFrame || 'Be brief: usually under 150 words, 1–3 short paragraphs. The person can always ask for more.');
+  else lines.push(channelFrame || 'Be brief: under about 80 words, one short paragraph, unless the person asked for more. They can always ask for more.');
   // a short question wants a short answer (Chad 11-01: "Seven Valleys" got a lecture with a preamble)
   if (!conversational && shortQuestion(question)) lines.push('The question is only a few words: answer in 2–4 sentences, one paragraph. A bare title or name asks what it is — say so plainly, with no preamble.');
   if (!conversational && formatHow) lines.push(`Shape of this reply: ${formatHow}`);

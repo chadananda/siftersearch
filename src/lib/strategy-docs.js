@@ -54,8 +54,8 @@ export const targetsOf = (goesTo) => String(goesTo || '').split(/\s*\+\s*/).filt
 export const MODES = {
   sameEverywhere: 'The same strategy and the same evidence serve every mode; only the length and shape of the reply change.',
   audio: { name: 'Audio', live: false, lines: ['No voice channel exists yet.', 'It will be the shortest, spoken form.'] },
-  chat: { name: 'Chat', live: true, widgetWords: 150, siteWords: '150–250', deepWords: '500–900',
-    lines: ['Works live: progress is narrated while a longer step runs.', 'About 150 words in the widget on other sites; 150–250 in the chat on the library site, with tables and headings.', 'Full length (often 500–900 words) when Jev judges the question needs depth.'] },
+  chat: { name: 'Chat', live: true, widgetWords: 80, siteWords: '80', deepWords: 'asked for a full answer',
+    lines: ['Works live: progress is narrated while a longer step runs.', 'Short by default: under about 80 words in the widget and in the chat on the library site (tables and headings there).', 'Longer only when the person asked for a full answer, and no longer than that needs.'] },
   email: { name: 'Email', live: true, emailWords: 600,
     lines: ['A considered letter of up to about 600 words.', 'Passages are quoted in full; an Arabic or Persian original sits beside the English, line by line, as a table.', 'No progress messages: the letter arrives when it is ready.'] },
   document: { name: 'Document', live: true,

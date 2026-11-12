@@ -49,11 +49,11 @@ export const REACTIONS = {
 // How deep the turn should go (Chad 11-03): Jev reads the conversation, the reader card and the channel as context. The
 // channel is a prior in these instructions only; no code rule sets depth by channel, and no word rule reads it.
 export const DEPTHS = {
-  answer: 'a direct answer from the library is enough: a fact, a passage, a definition, a quick explanation, a conversational follow-up',
-  research: 'a fuller researched answer in this reply: the question has several sides or sources to weigh, or asks for a story, a life or a sequence of events to be told (what happened, how it unfolded, the stages or timeline), but one considered reply covers it',
+  answer: 'the DEFAULT, even for a large question: a short direct answer from the library (a fact, a passage, a definition, a quick explanation, a follow-up); the person can ask for more',
+  research: 'the person ASKED for a fuller answer in this reply: more detail, the whole story told through, every side, all the sources, a timeline or the stages; a big topic alone does not ask for it (Chad 11-12: "only make large answers if asked")',
   deep_report: 'the person wants (or plainly needs) a thorough study: a report across many sources and aspects, for a paper, a talk, a study group or long reflection, more than one reply can hold',
 };
-export const DEPTH_Q = 'Read with the conversation, the reader and the channel: how deep should the reply to the latest user turn go? The channel is context, not a rule: a letter by email is a considered exchange and leans somewhat toward more research, while a chat leans toward a prompt answer, but what the person asks for and who the reader is decide. Choose deep_report only when the person asks for, or clearly needs, a thorough study.';
+export const DEPTH_Q = 'Read with the conversation, the reader and the channel: how deep should the reply to the latest user turn go? The channel is context, not a rule: a letter by email is a considered exchange and leans somewhat toward more research, while a chat leans toward a prompt answer, but what the person asks for and who the reader is decide. A big question is not a request for a long answer: choose research only when the person asks for more than a short answer, and deep_report only when they ask for a thorough study.';
 // The document modality (Chad 11-10): the reader may want the answer as a printable PDF (branded, QR links). Jev reads it from the
 // conversation, never a word rule; where it goes (a link, or by email) is the second question.
 export const DOCUMENTS = {

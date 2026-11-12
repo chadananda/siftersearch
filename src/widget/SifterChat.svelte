@@ -12,6 +12,7 @@
   import { ANIS_SAMPLES, pickStarters } from '../lib/anis-samples.js';
   import { richLinks } from './rich-link.js';
   import { tableAt } from './rich-table.js';
+  import { settled } from './stream-tail.js';
   import { styleQuotes } from '../../api/lib/quote-style.js';
   import { quoteSegments } from '../../api/lib/quote-blocks.js';
   import SideBySide from '../components/widgets/SideBySide.svelte';
@@ -284,13 +285,19 @@
       if (table) { flushQuote(); out.push(table.html); i = table.next - 1; continue; }
       const bq = line.match(/^\s*&gt;\s?(.*)$/);
       if (bq) { quoteRun.push(inline(bq[1])); continue; }
+      if (quoteRun.length) {   // the quote's "— Title, place" line joins the quote's last line, no gap (Chad 11-12)
+        let j = i; while (j < lines.length && !lines[j].trim()) j++;
+        if (/^\s*[—–]\s/.test(lines[j] || '')) { quoteRun[quoteRun.length - 1] += ' <span class="qref">' + inline(lines[j].trim()) + '</span>'; i = j; continue; }
+      }
       flushQuote();
       const li = line.match(/^\s*[-•]\s+(.*)$/);
       if (li) { out.push('<span class="li">• ' + inline(li[1]) + '</span>'); continue; }
       out.push(inline(line));
     }
     flushQuote();
-    return styleQuotes(out.join('\n'));   // quoted words styled apart from Anís's own (Chad 11-04)
+    // never waste space (Chad 11-12): one blank line at most, none around a quote or a table (they carry their own margin)
+    const html = out.join('\n').replace(/\n{3,}/g, '\n\n').replace(/\n+(<blockquote|<div class="rt")/g, '$1').replace(/(<\/blockquote>|<\/div><\/div>)\n+/g, '$1').trim();
+    return styleQuotes(html);   // quoted words styled apart from Anís's own (Chad 11-04)
   }
   // Query-prep (perceived speed): while the user types their FIRST question, debounce
   // partials to /api/chat/prep — a settled pause starts the answer pipeline server-side,
@@ -558,7 +565,7 @@
                       {:else}
                         {#if m.widgets?.length}
                           <!-- a display widget (side_by_side): the reply's marker + table swapped for the component; the text around it as usual -->
-                          {#each widgetSegments(m.content, m.widgets) as ws}{#if ws.kind === 'widget'}<SideBySide widget={ws.widget} />{:else}{@html renderRich(ws.md)}{/if}{/each}
+                          {#each widgetSegments(m.pending ? settled(m.content) : m.content, m.widgets) as ws}{#if ws.kind === 'widget'}<SideBySide widget={ws.widget} />{:else}{@html renderRich(ws.md)}{/if}{/each}
                         {:else if m.quoteCards?.length && !m.pending}
                           {#each quoteSegments(m.content, m.quoteCards) as seg}
                             {#if seg.kind === 'quote'}
@@ -576,7 +583,7 @@
                             {:else}{@html renderRich(seg.md)}{/if}
                           {/each}
                         {:else}
-                        {@html renderRich(m.book ? withoutBookLead(m.content, m.book) : m.content)}{#if m.pending}<span class="caret" aria-hidden="true"></span>{/if}
+                        {@html renderRich((m.pending ? settled : (x) => x)(m.book ? withoutBookLead(m.content, m.book) : m.content))}{#if m.pending}<span class="caret" aria-hidden="true"></span>{/if}
                         {/if}
                       {/if}
                     {:else}{m.content}{/if}
@@ -851,6 +858,17 @@
   .bubble :global(.quote a) { color: inherit; }
   .bubble :global(table) { border-collapse: collapse; margin: .5em 0; width: 100%; font-size: .9em; display: block; overflow-x: auto; }
   .bubble :global(th), .bubble :global(td) { border: 1px solid color-mix(in srgb, currentColor 20%, transparent); padding: .3em .5em; vertical-align: top; text-align: start; }
+  /* tables: the full table when there is room; on a phone each row folds (rich-table.js) */
+  .bubble :global(.rt-rows) { display: none; }
+  .bubble :global(.rt-rows details), .bubble :global(.rt-one) { border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent); padding: .35em 0; }
+  .bubble :global(.rt-rows summary) { cursor: pointer; }
+  .bubble :global(.rt-rows details > div) { padding: .2em 0 0 1.1em; font-size: .92em; }
+  .bubble :global(.rt-k) { opacity: .65; font-size: .85em; }
+  @media (max-width: 640px) {
+    .bubble :global(.rt-wide) { display: none; }
+    .bubble :global(.rt-rows) { display: block; white-space: normal; }
+  }
+  .bubble :global(.qref) { font-style: normal; font-size: .86em; opacity: .85;  }
   .bubble :global(.li) { display: block; padding-left: .95em; text-indent: -0.95em; }
 
   /* Streaming caret — a breathing quill of accent-to-gold light. */

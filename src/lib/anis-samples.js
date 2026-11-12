@@ -22,9 +22,9 @@ export const ANIS_SAMPLES = [
 ];
 
 // Starter pills under Anís's greeting: three picked at random per visit. Short enough to tap on a phone, each one a
-// question the library answers well (side by side, timeline, compilation, trace, interfaith).
+// question tested live and answered well (Chad 11-12: only questions we can actually answer). Add one only after
+// trying it: `ops.mjs anis-try --question …`.
 export const ANIS_STARTERS = [
-  "Show the opening of the Qur'an side by side with English",
   'What do the scriptures say about the purpose of suffering?',
   'How do the Bible and the Qur\'an teach forgiveness?',
   "A timeline of the Báb's life",
@@ -32,13 +32,9 @@ export const ANIS_STARTERS = [
   'Where does "Let your vision be world-embracing" come from?',
   'A prayer for a friend who is ill',
   'What is dependent origination in Buddhism?',
-  'Compile passages on justice',
   'What does the Bhagavad Gita teach about duty?',
-  'How is "the kingdom of heaven" used across the scriptures?',
   "What happened at the Conference of Badasht?",
-  'What does the word irfán mean?',
   'What do the texts say about the nature of the soul?',
-  'Who founded Sikhism, and what did he teach?',
   "Compare the Golden Rule across the world's religions",
 ];
 export const pickStarters = (n = 3, list = ANIS_STARTERS) => [...list].sort(() => Math.random() - 0.5).slice(0, n);

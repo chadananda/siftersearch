@@ -5,7 +5,7 @@
 export const CHANNELS = {
   'widget-chat': {
     description: 'a small chat window embedded on a website; brief answers',
-    frame: 'Reply in about 150 words unless the question truly needs more. Quote briefly.'
+    frame: 'Reply in under about 80 words: two to four sentences and at most one short quotation, unless the person asked for more. Quote briefly.'
       + ' Give the shortest reply that fully answers what was asked: no preamble, no restating the question, no commentary, summaries or offers the reader did not ask for — they can always ask for more. A passage, table or document they asked for is given whole.',
     capabilities: ['links', 'lists', 'quotes'], linkCap: 1, newsCap: 1, renderer: 'markdown-lite', privileged: false,
     live: true, progress: true,   // progress: narrate.js says what is happening while a longer stage runs (a future voice channel sets it too)
@@ -13,7 +13,7 @@ export const CHANNELS = {
   },
   'site-chat': {
     description: 'the chat on siftersearch.com; brief-to-moderate answers',
-    frame: 'Usually under 150 words unless the question truly needs more.'
+    frame: 'Reply in under about 80 words: two to four sentences and at most one short quotation, unless the person asked for more.'
       + ' Give the shortest reply that fully answers what was asked: no preamble, no restating the question, no commentary, summaries or offers the reader did not ask for — they can always ask for more. A passage, table or document they asked for is given whole.',
     capabilities: ['links', 'lists', 'quotes', 'tables', 'headings'], linkCap: 2, newsCap: 1, renderer: 'markdown', privileged: false,
     live: true, progress: true,
@@ -39,7 +39,7 @@ export function channelFor(name, { trusted = false } = {}) {
 /** The reply-length frame from Jev's DEPTH for this turn (triage `depth`), never from the wording: depth = research on a chat
  *  channel replaces the brief chat frame (11-03: stories stopped at 2.4-3.6k characters under "about 150-250 words", before
  *  the climax, while the baseline told them in ~7.5k). Any other depth keeps the channel's own frame. Pure. */
-export const DEPTH_FRAME = 'Jev judged this question to need a full answer: give it fully, as long as the passages support — a story told in order through to its end (its climax and outcome), every side of the question covered — often 500–900 words. No padding, no preamble; each paragraph carries passages or specifics.';
+export const DEPTH_FRAME = 'The person asked for a full answer: give what they asked for fully — a story told in order through to its end (its climax and outcome), every side they asked about covered — and no longer than that needs. No padding, no preamble; each paragraph carries passages or specifics.';
 export function frameFor(channel = {}, depth = null) {
   if (depth === 'research' && channel?.live) return DEPTH_FRAME;
   return channel?.frame ?? null;
