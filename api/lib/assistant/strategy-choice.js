@@ -79,6 +79,12 @@ export function titleOptions(span) {
 }
 const titleAsk = (span) => `In the latest message, if "${span}" names a written work: which is the work's own title, as a library catalogue lists it? A word that only says WHICH copy the reader wants — its language, script, edition or translation ("the Arabic …", "the Persian …", "the authorized …") — is not part of the title; a word the title itself carries stays.`;
 /** Jev's span kinds → { named_work, named_person, named_subjects (his "subject" spans), topic } (units for the tree's `request`). Pure. */
+/** Each name span's kind (and, for a multi-word span, its own title) as typed choice questions — Jev's and his backup's alike. Pure. */
+export const nameSpansOf = (messages) => Object.keys(drawFromCriteria(messages) || {}).filter((k) => k !== 'none').slice(0, MAX_BOOK_SPANS);
+export function spanQuestions(spans) {
+  return { ...Object.fromEntries(spans.map((n, i) => [`kind_${i + 1}`, { type: 'choice', instructions: kindAsk(n), criteria: KINDS }])),
+    ...Object.fromEntries(spans.flatMap((n, i) => { const o = titleOptions(n); return o ? [[`title_${i + 1}`, { type: 'choice', instructions: titleAsk(n), criteria: o }]] : []; })) };
+}
 export function namedUnits(a = {}, spans = [], question = '', min = MIN_CONFIDENCE) {
   const titled = (n, i) => { const t = choice(a[`title_${i + 1}`]), o = titleOptions(n); return t?.choice && o?.[t.choice] && (t.confidence ?? 0) >= min ? t.choice : frameless(n); };
   const kinds = spans.map((n, i) => { const k = choice(a[`kind_${i + 1}`]); return { name: k?.choice === 'work' ? titled(n, i) : frameless(n), raw: n, ...k }; }).filter((k) => k.name && ['work', 'person'].includes(k.choice) && (k.confidence ?? 0) >= min);
@@ -116,7 +122,7 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
   const opts = options || strategyOptions();   // options: an OPTION-TEXT VARIANT (promotion's check: the active set + one candidate)
   const st = conversationState || emptyState();
   const state = [stateOf(messages, { profile }), stateText(st, turn)].filter(Boolean).join('\n');
-  const spans = Object.keys(drawFromCriteria(messages) || {}).filter((k) => k !== 'none').slice(0, MAX_BOOK_SPANS);
+  const spans = nameSpansOf(messages);
   if (!apiKey || !state.trim()) return null;
   const t0 = Date.now();
   const call = await jevCall('strategy', async (signal) => {
@@ -127,8 +133,7 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
         ...(messages.some((m) => m.role === 'assistant') ? { refers_back: { type: 'choice', instructions: 'Does the LATEST user message take its subject from the previous turn or reply ("that", "it", "the second one", "the actual words", "how does that compare with …", "who wrote it") rather than state its own subject?', criteria: REFERS } } : {}),
         ...Object.fromEntries(SIDE_KEYS.map((k, i) => [k, { type: 'choice', instructions: `If the latest message compares or asks about several traditions, which is the ${ORD[i]} tradition it names or means? Otherwise "none".${LANGUAGE_IS_NOT_A_TRADITION}`, criteria: SIDES }])),
         ...Object.fromEntries(spans.map((n, i) => [`book_${i + 1}`, { type: 'choice', instructions: bookAsk(n), criteria: SIDES }])),
-        ...Object.fromEntries(spans.map((n, i) => [`kind_${i + 1}`, { type: 'choice', instructions: kindAsk(n), criteria: KINDS }])),
-        ...Object.fromEntries(spans.flatMap((n, i) => { const o = titleOptions(n); return o ? [[`title_${i + 1}`, { type: 'choice', instructions: titleAsk(n), criteria: o }]] : []; })),
+        ...spanQuestions(spans),
         subject_religion: { type: 'choice', instructions: SUBJECT_ASK, criteria: SIDES },
         work_place: { type: 'choice', instructions: 'Does the LATEST user message ask to read a particular place in a work (a book, tablet, chapter or commentary named now or in the thread)? Which place?', criteria: WORK_PLACE },
         ...patchQuestions(st, TRADITIONS, turn),

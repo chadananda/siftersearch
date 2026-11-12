@@ -107,6 +107,13 @@ describe('the pieces', () => {
     expect(user).toContain(LOOKUP_KINDS.in_work);
     expect(r.tri.lookup.choice).toBe('in_work');
   });
+  it('a timed-out strategy call keeps the named work: the backup answers each name span’s kind, resolved as Jev’s are (11-12 Remover of Difficulties)', async () => {
+    const messages = [{ role: 'user', content: 'Give me the Remover of Difficulties prayer' }];
+    const llm = vi.fn(async ({ user }) => ({ text: JSON.stringify({ strategy: { choice: 'prayer', confidence: 0.9 }, ...(user.includes('kind_1') ? { kind_1: { choice: 'work', confidence: 0.9 } } : {}) }) }));
+    const r = await jevBackup({ messages, strategy: { prayer: 'a prayer', unmatched: 'other' }, llm });
+    expect(llm.mock.calls[0][0].user).toContain('"Remover of Difficulties"');
+    expect(r.strategy.units.named_work).toBe('Remover of Difficulties');
+  });
   it('the in_work option says the work may be the one the conversation is on', () => {
     expect(LOOKUP_KINDS.in_work).toMatch(/search it for X/);
   });

@@ -40,7 +40,7 @@ export function backupPrompt({ messages = [], card = null, focus = null, questio
 }
 
 /** The backup's JSON → { tri, strategy } in the shapes triageMessage / chooseStrategy return (null where not asked or invalid). Pure. */
-export function readBackup(j, { questions, messages = [] }) {
+export function readBackup(j, { questions, messages = [], spans = [], namedUnits = null }) {
   if (!j || typeof j !== 'object') return null;
   const keys = (k) => Object.keys(questions[k]?.options || {});
   let tri = null, strategy = null;
@@ -60,7 +60,9 @@ export function readBackup(j, { questions, messages = [] }) {
   if (questions.strategy) {
     const s = pick(j.strategy, keys('strategy'));
     const work = typeof j.named_work === 'string' && j.named_work.trim() ? j.named_work.trim().slice(0, 200) : null;
-    if (s) strategy = { strategy: s, sides: [], sources: {}, units: work ? { named_work: work } : {}, decisions: [], patch: null, by: 'haiku' };
+    const answers = Object.fromEntries(Object.keys(questions).filter((k) => /^(?:kind|title)_\d+$/.test(k)).map((k) => [k, pick(j[k], keys(k))]).filter(([, v]) => v));
+    const named = namedUnits && spans.length ? namedUnits(answers, spans, messages.filter((m) => m.role === 'user').at(-1)?.content || '') : {};
+    if (s) strategy = { strategy: s, sides: [], sources: {}, units: { ...(work ? { named_work: work } : {}), ...named }, decisions: [], patch: null, by: 'haiku' };
   }
   return tri || strategy ? { tri, strategy } : null;
 }
@@ -68,7 +70,7 @@ export function readBackup(j, { questions, messages = [] }) {
 export const CREDIT_ROLE = 'anis-jev-backup-credit';
 // Anthropic refusing for NO CREDIT (its billing, not our caps) → the same question once to CREDIT_ROLE; any other error throws.
 export const defaultLlm = async ({ system, user }, create = roleCreate) => {
-  const params = { messages: [{ role: 'system', content: system }, { role: 'user', content: user }], max_tokens: 300, temperature: 0, response_format: { type: 'json_object' } };
+  const params = { messages: [{ role: 'system', content: system }, { role: 'user', content: user }], max_tokens: 600, temperature: 0, response_format: { type: 'json_object' } };
   const r = await create(BACKUP_ROLE, params, { timeout: BACKUP_TIMEOUT_MS })
     .catch((err) => { if (!err?.credit) throw err; return create(CREDIT_ROLE, params, { timeout: BACKUP_TIMEOUT_MS }); });
   return { text: r?.choices?.[0]?.message?.content || '' };
@@ -81,11 +83,16 @@ export const defaultLlm = async ({ system, user }, create = roleCreate) => {
 export async function jevBackup({ messages = [], card = null, focus = null, triage = false, strategy = false, llm = defaultLlm } = {}) {
   const t0 = Date.now();
   try {
-    const strategies = strategy === true ? (await import('./strategy-choice.js')).strategyOptions() : strategy || null;
-    const questions = backupQuestions({ triage, strategies, first: turnFacts(messages).first });
+    const sc = strategy ? await import('./strategy-choice.js') : null;
+    const strategies = strategy === true ? sc.strategyOptions() : strategy || null;
+    // the name spans' kind/title questions Jev's strategy call carries: a timed-out turn keeps its named work or person (11-12: "the
+    // Remover of Difficulties prayer" lost its name to the backup and the prayer search ran the whole sentence in every tradition)
+    const spans = sc ? sc.nameSpansOf(messages) : [];
+    const sq = Object.fromEntries(Object.entries(sc ? sc.spanQuestions(spans) : {}).map(([k, v]) => [k, { ask: v.instructions, options: v.criteria }]));
+    const questions = { ...backupQuestions({ triage, strategies, first: turnFacts(messages).first }), ...(strategies ? sq : {}) };
     if (!Object.keys(questions).length) return null;
     const r = await llm({ system: BACKUP_SYSTEM, user: backupPrompt({ messages, card, focus, questions }) });
-    const out = readBackup(r?.json ?? firstJson(r?.text), { questions, messages });
+    const out = readBackup(r?.json ?? firstJson(r?.text), { questions, messages, spans, namedUnits: sc?.namedUnits });
     return out ? { ...out, ms: Date.now() - t0 } : null;
   } catch (err) { console.warn('anis jev backup failed', err?.message); return null; }
 }
