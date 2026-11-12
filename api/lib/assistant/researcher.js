@@ -121,7 +121,7 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
     if (!ps.length) return '(nothing)';
     // each head says the passage's standing (source-tier.js: Writings, Shoghi Effendi, reported speech, the House, commentary)
     const heads = ps.map(([r, p]) => { const tier = tierLabel(p);
-      return `[${r}] ${p.title || '?'} — ${p.author || '?'}${p.language && p.language !== 'en' ? ` (${p.language})` : ''}${tier ? ` · ${tier}` : ''}${p.translation ? ` · EXISTING TRANSLATION: ${p.translation}` : ''}${p.note ? ` · ${p.note}` : ''}${p.implied_by?.premise ? ` · IMPLIED (not stated): ${p.implied_by.premise}${p.implied_by.implies ? ` — bears on: ${p.implied_by.implies}` : ''}` : ''}`; });
+      return `[${r}] ${p.title || '?'} — ${p.author || '?'}${p.language && p.language !== 'en' ? ` (${p.language})` : ''}${tier ? ` · ${tier}` : ''}${p.translation ? ` · EXISTING TRANSLATION: ${p.translation}` : ''}${p.note ? ` · ${p.note}` : ''}${p.implied_by?.question ? ` · Implied: ${p.implied_by.question}${p.implied_by.premise ? ` — answered by implication: ${p.implied_by.premise}` : ''}${p.implied_by.implies ? ` (bears on: ${p.implied_by.implies})` : ''}` : ''}`; });
     const texts = ps.map(([, p]) => String(p.text || '').replace(/\s+/g, ' ').trim());
     // + "\n", the " …" a cut adds, and the "\n\n" between passages
     const caps = fitLengths(texts.map((t, i) => Math.min(t.length, ps[i][1].translation ? Math.max(n, 4000) : n)), SHOW_CHARS - heads.reduce((a, h) => a + h.length + 5, 0));
