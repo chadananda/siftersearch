@@ -234,7 +234,9 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
       if (!found.some((x) => x.translation)) return `no linked translation found from the original wording${found.length ? ` (the original: ${show(found.map((x) => add(x)))})` : ''} — draft an English rendering of one distinctive sentence and call quotation_candidates with it`;
       return show(found.map((x) => add(x)), 4000);
     },
-    rendering_lookup: async ({ word }) => {
+    // the contract names the word term_arabic (tools.js); `word` is the older name (11-12: the agent sent term_arabic, the runner read word → every call empty)
+    rendering_lookup: async ({ word: w, term_arabic: ta }) => {
+      const word = ta ?? w;
       const r = await impl.wordStudy(word);
       // an empty result is about the SPELLING, never evidence (10-19: "bayt" found nothing and the reply disowned a real chart)
       if (!r) return `no concordance entry for "${word}" in this spelling — this says nothing about the word; try it in Arabic script (e.g. بيت, غرفة, حجرة)`;
