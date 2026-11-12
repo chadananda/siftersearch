@@ -20,6 +20,10 @@ const get = (port, path, opts = {}) => new Promise((r, j) => {
 describe('gateway routing', () => {
   it('Anís, ops and search paths', () => {
     expect(routeFor('/api/chat/stream')).toBe('anis');
+    expect(routeFor('/api/admin/implied/overview')).toBe('ops');
+    expect(routeFor('/api/admin/implied?status=approved')).toBe('ops');
+    expect(routeFor('/api/admin/hype/paragraph/42')).toBe('ops');
+    expect(routeFor('/api/admin/impliedx')).toBe('search');
     expect(routeFor('/api/v1/anis/draft')).toBe('anis');
     expect(routeFor('/api/v1/widget/config/abc')).toBe('anis');
     expect(routeFor('/widget.js')).toBe('anis');

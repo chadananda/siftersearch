@@ -15,7 +15,8 @@ export const SERVICES = {
   ops: Number(process.env.GATEWAY_OPS_PORT || 7843),
 };
 const ANIS = /^\/(api\/(chat|v1\/anis|v1\/reading|v1\/companion|v1\/widget)(\/|$|\?)|widget(\.js|\/))/;
-const OPS = /^\/api\/admin\/ops(\/|$|\?)/;
+// ops service also owns the Implication browser (/api/admin/implied*, /api/admin/hype/paragraph/*) — registered in routes/sets/ops.js
+const OPS = /^\/api\/admin\/(ops|implied|hype\/paragraph)(\/|$|\?)/;
 
 /** Which service a path belongs to. Pure. */
 export const routeFor = (path) => (OPS.test(path) ? 'ops' : ANIS.test(path) ? 'anis' : 'search');
