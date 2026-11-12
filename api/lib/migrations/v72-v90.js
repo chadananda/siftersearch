@@ -2145,6 +2145,13 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_hype_bank_seeds_trad ON hype_bank_seeds(tradition, version)');
     logger.info('Migration 199 complete: hype_bank_seeds');
   },
+  200: async () => {
+    // SIDE-BY-SIDE SENTENCE ROWS (planning/sbs-document-plan.md, step 1): one row per paragraph pair the LLM aligned, keyed by
+    // sha1(original + NUL + english) so a changed text re-aligns and an unchanged one is paid for once, ever. rows_json = [{o, t}].
+    await query(`CREATE TABLE IF NOT EXISTS sbs_alignments (
+      key TEXT PRIMARY KEY, rows_json TEXT NOT NULL, model TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+    logger.info('Migration 200 complete: sbs_alignments');
+  },
 };
 
 export const graphMigrations = {

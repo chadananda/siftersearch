@@ -6,6 +6,12 @@
   ],
   "rules": [
     {
+      "group": "sbs",
+      "exact": [
+        "sbs-align"
+      ]
+    },
+    {
       "group": "premise-pilot",
       "exact": [
         "premise-pilot"
@@ -97,6 +103,13 @@
       {
         "from": "2026-11-10",
         "usd": 5
+      }
+    ],
+    "sbs": [
+      {
+        "from": "2026-11-12",
+        "usd": 5,
+        "why": "side-by-side sentence alignment (public page, reader-triggered, cached per text pair): its own group so a crawler can never spend 'other'"
       }
     ]
   },

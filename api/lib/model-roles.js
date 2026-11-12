@@ -127,6 +127,8 @@ export const MODEL_ROLES = {
   'publish-review': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-13', needs: ['judgement'], why: 'legacy publish pipeline' },
   'publish-light': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-13', needs: ['fast'], why: 'legacy publish pipeline' },
   'bio-timeline': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-13', needs: ['json', 'long-input'], why: 'bio life pages' },
+  'sbs-align': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-12', needs: ['fast', 'json', 'multilingual'],
+    why: 'side-by-side documents: break an original paragraph and its English into equal sentence rows, text unchanged (sbs/align.js; code verifies, cached per text pair)' },
   'hype-judge': { provider: 'anthropic', model: 'claude-sonnet-4-6', reviewed: '2026-11-09', needs: ['judgement', 'json', 'multilingual'],
     why: 'grades HyPE question sets with the score-hype rubric (tests/quality/score-hype.mjs and the hype-program 1% sample); the model score-hype has always used, kept so grades stay comparable' },
 };

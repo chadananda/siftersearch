@@ -2122,6 +2122,26 @@ Return ONLY the description text, no quotes or formatting.`;
   });
 
   /**
+   * Side-by-side document data: per paragraph, equal-count sentence rows {o, t} (lib/sbs/align.js). Public; encumbered → 403.
+   * Contract: .claude/context/brief-sbs-contract.md. Uncached paragraphs align lazily (≤40 per request) — re-fetch to fill the rest.
+   */
+  fastify.get('/documents/:id/sbs', {
+    preHandler: [optionalAuthenticate],
+    schema: {
+      params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
+      querystring: { type: 'object', properties: { offset: { type: 'integer', default: 0, minimum: 0 }, limit: { type: 'integer', default: 400, minimum: 1, maximum: 1000 } } }
+    }
+  }, async (request, reply) => {
+    const { buildSbs } = await import('../lib/sbs/align.js');
+    const repo = await import('../lib/repos/sbs-repo.js');
+    const out = await buildSbs(request.params.id, request.query, { doc: repo.sbsDoc, total: repo.sbsTotal, paragraphs: repo.sbsParagraphs,
+      sections: repo.sbsSections, cacheGet: repo.getAlignments, cachePut: repo.putAlignment });
+    if (!out) throw ApiError.notFound('Document not found');
+    if (out.copyright) return reply.code(403).send({ error: 'copyright' });
+    return out;
+  });
+
+  /**
    * Get paragraphs with translations for side-by-side view
    * Returns original text + English translation for non-English documents
    */
