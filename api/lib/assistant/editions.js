@@ -3,6 +3,7 @@
 // (alignment-repo workFamily) aligned BY REFERENCE (chapter heading number + verse marker / place in the chapter) → by MEANING
 // (cross-lingual phrase vectors inside the member edition). Deps injected (tests); defaults are the live repos and layer.
 import { headingNumber } from './lookup.js';
+import { mainKey, titleScore } from '../dewey/title-index.js';
 import { verseSpan } from './scripture-ref.js';
 import { QURAN_LAYOUTS, layoutTotal, quranIndex, quranVerseAt } from './numbering.js';
 
@@ -52,6 +53,17 @@ export async function alignByMeaning(src, member, d) {
   const row = (await d.paragraphsByIds([top.paragraph_id]).catch(() => []))[0];
   return row ? { rows: [row], by: 'meaning', exact: false, score: top.score ?? null } : null;
 }
+/** By PLACE (11-12): no chapter numbers and no phrase vectors for the member (a provisional translation not yet phrase-indexed) →
+ *  the rows at the same share of the work, marked approximate. Same-work members only (sameWorkFirst ranked them by title). */
+export async function alignByPlace(src, member, selfCount, d) {
+  const sc = Number(selfCount), mc = Number(member.paragraph_count), i = Number(src.paragraph_index);
+  if (!(sc > 0 && mc > 0 && Number.isFinite(i)) || !member.sameWork) return null;
+  const j = Math.round(i * mc / sc);
+  const rows = (await d.paragraphsInRange(member.id, Math.max(0, j - 3), j + 3, { limit: 7 }).catch(() => [])).filter(text0);
+  if (!rows.length) return null;
+  const near = rows.sort((a, b) => Math.abs(a.paragraph_index - j) - Math.abs(b.paragraph_index - j)).slice(0, 2).sort((a, b) => a.paragraph_index - b.paragraph_index);
+  return { rows: near, by: 'place', exact: false, ref: `~${Math.round(100 * i / sc)}%` };
+}
 
 // by VERSE TABLE (11-10): a Qur’án edition whose verse layout numbering.js knows (checked by title, language and paragraph_count) → the same
 // verses in the other known-layout editions, exact. Its authorless editions have no work family (Pickthall: author "Unknown"), so this needs none.
@@ -85,6 +97,17 @@ const asPassage = (row, m, role, how) => ({ id: row.id, document_id: row.doc_id 
   religion: m.religion ?? null, collection: m.collection ?? null, language: langCode(m.language), role, aligned_by: how.by, exact: !!how.exact,
   ...(how.ref ? { ref: how.ref } : {}), ...(how.score != null ? { score: how.score } : {}), basis: m.basis });
 
+// Same-author candidates are only candidates (a name is evidence, not identity): the ones whose MAIN title is the same work's
+// ("Tafsír-i-Súriy-i-Kawthar" ↔ "Tafsir-i-Suratu'l-Kawthar (… provisional translation)") come first, and when any does, the
+// author's other works are dropped — aligning by meaning against a different book returns a wrong "translation" (11-12: the Báb's
+// English Kawthar sat past the 12-row cap behind his other works). A title in another script scores 0: then all stay, in order.
+export function sameWorkFirst(self, members, min = 0.85) {
+  const k = mainKey(self?.title), sc = (m) => (k ? titleScore(k, mainKey(m.title)) : 0);
+  const fixed = members.filter((m) => m.basis !== 'author'), cand = members.filter((m) => m.basis === 'author').map((m) => ({ m, s: sc(m) }));
+  const same = cand.filter((x) => x.s >= min).sort((a, b) => b.s - a.s).map((x) => x.m);
+  return [...fixed.map((m) => (m.basis === 'original_doc_id' ? { ...m, sameWork: true } : m)), ...(same.length ? same.map((m) => ({ ...m, sameWork: true })) : cand.slice(0, 12).map((x) => x.m))];
+}
+
 /** paragraphId → { passages: [{…, role 'original'|'translation', aligned_by 'link'|'reference'|'meaning', exact}], self, family, missing_language }.
  *  want 'original' = an edition in another language (the recorded original first); 'translations' = the other editions. */
 export async function editionsOf(paragraphId, { want = 'original', limit = 3 } = {}, deps = {}) {
@@ -102,14 +125,16 @@ export async function editionsOf(paragraphId, { want = 'original', limit = 3 } =
   // 1b. a known verse table (the Qur’án editions): exact, no work family needed
   for (const p of await alignByVerseTable(src, want, d).catch(() => [])) push(p);
   // 2–3. the work family: each other-language member aligned by reference, else by meaning
-  const fam = await d.workFamily(src.doc_id).catch(() => ({ self: null, members: [] }));
+  const fam0 = await d.workFamily(src.doc_id, { authors: 300 }).catch(() => ({ self: null, members: [] }));
+  const fam = { ...fam0, members: sameWorkFirst(fam0.self, fam0.members || []) };
   const selfLang = langCode(fam.self?.language), origId = Number(fam.self?.original_doc_id) || null;
   const members = (fam.members || []).filter((m) => langCode(m.language) !== selfLang)
     // a recorded direction decides where it is known: this doc's original is its original_doc_id; the rest of the recorded family are translations
     .filter((m) => m.basis !== 'original_doc_id' || (want === 'original') === (m.id === origId));
   for (const m of members) {
     if (found.length >= limit) break;
-    const how = (await alignByReference(src, m, d).catch(() => null)) || (await alignByMeaning(src, m, d).catch(() => null));
+    const how = (await alignByReference(src, m, d).catch(() => null)) || (await alignByMeaning(src, m, d).catch(() => null))
+      || (await alignByPlace(src, m, fam.self?.paragraph_count, d).catch(() => null));
     for (const r of how?.rows || []) push(asPassage(r, m, role, how));
   }
   const trad = fam.self?.religion ?? null, have = new Set(found.map((x) => x.language));

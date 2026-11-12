@@ -51,7 +51,7 @@ export async function turn(q, { before = [] } = {}) {
   return send(q, messages, uid, cid);
 }
 
-async function send(q, history, uid, cid) {
+export async function send(q, history, uid, cid) {
   const t0 = Date.now(), at = {};
   const out = { text: '', chunks: '', events: {}, book: null, sources: [], citations: [], error: null, cid };
   try {

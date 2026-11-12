@@ -191,10 +191,19 @@ const E = {
     async run(s, p = {}) {
       try { const f = await (s.tools?.facts ? s.tools.facts({}, s.ctx) : import('../../library/library-stats.js').then((x) => x.readLibraryStats())); if (!f) return finish(s, p, 'error', { error: 'no stats' }); merge(U(s), 'found_records', [{ kind: 'library_facts', ...f }]); return finish(s, p, 'one', { count: 1 }); } catch (err) { return finish(s, p, 'error', { error: err?.message }); }
     } },
-  'fetch.anchor': { kind: 'tool', cls: 'code', edges: ['one', 'thin', 'none', 'error'], scope: 'strategy', params: ['stage'], reads: ['referent', 'reader_position', 'previous_evidence', 'quoted_words', 'last_passages'], writes: ['found_passages', ...OUT],
+  'fetch.anchor': { kind: 'tool', cls: 'code', edges: ['one', 'thin', 'none', 'error'], scope: 'strategy', params: ['stage'], reads: ['referent', 'reader_position', 'previous_evidence', 'quoted_words', 'last_passages', 'work_place', 'amount_wanted'], writes: ['found_passages', ...OUT],
     async run(s, p = {}) {   // the passage a question is about: the pointed-at item, the reader's place, the last evidence; quoted words alone are thin
       const u = U(s), pos = u.reader_position, hit = (u.referent && typeof u.referent === 'object' && u.referent.text ? u.referent : null) ?? u.previous_evidence?.passages?.[0];
       try {
+        // "the next paragraph" (Jev: work_place next): the paragraphs right after the last passage shown, in the same work
+        if (u.work_place === 'next' && u.last_passages?.length) {
+          const doc = u.last_passages[0].document_id, at = Math.max(...u.last_passages.filter((x) => x.document_id === doc).map((x) => x.paragraph_index));
+          const n = Math.min(5, Math.max(1, Number(u.amount_wanted) || 1));
+          const got = ((await call(s, 'context_lookup', { document_id: doc, paragraph_index: at, before: 0, after: n }))?.passages || []).filter((x) => x.paragraph_index > at).slice(0, n);
+          if (got.length) { merge(u, 'found_passages', got.map((x, i) => ({ ...x, anchor: i === 0 }))); return finish(s, p, 'one', { count: got.length, read: { work_place: 'next', after: `${doc}:${at}` } }); }
+        }
+        // the opening asked for (Jev: work_place opening): fetch.opening reads it, never the last reply's passages
+        if (u.work_place === 'opening' && u.named_work) return finish(s, p, 'none', { read: { work_place: 'opening' } });
         // the message points back at the last reply (Jev: refers_back): its cited passages, loaded whole, are the anchor
         if (!hit && u.refers_back && u.last_passages?.length) {
           const got = (await Promise.all(u.last_passages.slice(0, 3).map((x) => call(s, 'context_lookup', { document_id: x.document_id, paragraph_index: x.paragraph_index, before: 0, after: 0 }).then((c) => c?.passages?.[0] ?? null, () => null)))).filter(Boolean);
@@ -210,10 +219,10 @@ const E = {
     } },
   // a work asked for with nothing more specific = its opening (structural: the unit named_work, by id — a name is evidence, not identity).
   // untopiced: runs only when no topic was asked (a named work WITH a topic is searched inside first)
-  'fetch.opening': { kind: 'tool', cls: 'code', edges: ['one', 'several', 'none', 'error'], scope: 'strategy', params: ['n', 'untopiced', 'stage'], reads: ['named_work', 'topic'], writes: ['found_passages', ...OUT],
+  'fetch.opening': { kind: 'tool', cls: 'code', edges: ['one', 'several', 'none', 'error'], scope: 'strategy', params: ['n', 'untopiced', 'stage'], reads: ['named_work', 'topic', 'work_place'], writes: ['found_passages', ...OUT],
     async run(s, p = {}) {
       const u = U(s), w = namedWork(u);
-      if (!w?.documentId || (p.untopiced && String(flat(u.topic) ?? '').trim())) { const e = finish(s, p, 'none'); u.missing.pop(); u.found_outcome[s.node ?? '?'] = 'skipped'; return e; }
+      if (!w?.documentId || (p.untopiced && u.work_place !== 'opening' && String(flat(u.topic) ?? '').trim())) { const e = finish(s, p, 'none'); u.missing.pop(); u.found_outcome[s.node ?? '?'] = 'skipped'; return e; }
       try {
         const items = ((await call(s, 'opening_lookup', { document_id: w.documentId, n: p.n ?? 3 }))?.passages || []).map((x, i) => ({ ...x, anchor: i === 0 }));
         merge(u, 'found_passages', items); return finish(s, p, classify(items.length, ['one', 'several']), { count: items.length, read: { named_work: w.documentId } });
@@ -636,7 +645,7 @@ const themeOf = (x, by) => (Array.isArray(by) ? by.map((b) => themeOf({ ...x, th
 const writer = (s, id, extra = {}, opts = {}) => {
   const u = U(s), own = modal(tplText(s, id), u);
   const clause = tradsOf(u) && u.scope_excluded > 0 && ['conversation', 'reader'].includes(u.scope_source) ? `${u.religions_specified.join(', ')} sources only, as you asked — say 'all traditions' to widen.` : '';
-  const sl = { ...slots(u), scope_clause: clause, authority_order: authorityOrder(tradsOf(u)?.length === 1 ? tradsOf(u)[0] : null), widened_clause: u.widened ? `searched ${flat(u.widened.from)} first, then widened to all traditions` : 'in every tradition searched', missing_sides: (() => { const have = new Set(u.found_passages.map((x) => flat(x.side))), lack = [...new Set([...(Array.isArray(u.compare_sides) ? u.compare_sides : []).map(flat).filter((x) => !have.has(x)), ...u.missing.map((m) => m.side).filter(Boolean)])];
+  const sl = { ...slots(u), scope_clause: clause, authority_order: authorityOrder(tradsOf(u)?.length === 1 ? tradsOf(u)[0] : null), widened_clause: u.widened ? (u.widened.traditions_kept ? `searched ${flat(u.widened.from)} sources at every level of authority` : `searched ${flat(u.widened.from)} first, then widened to all traditions`) : 'in every tradition searched', missing_sides: (() => { const have = new Set(u.found_passages.map((x) => flat(x.side))), lack = [...new Set([...(Array.isArray(u.compare_sides) ? u.compare_sides : []).map(flat).filter((x) => !have.has(x)), ...u.missing.map((m) => m.side).filter(Boolean)])];
       return lack.length ? `Nothing the library returned from ${lack.join(', ')} answers this (each searched in its own texts): name them plainly in one line, never fill a side from another tradition or from memory.` : ''; })(), missing_line: u.missing.length ? `Not found: ${u.missing.map((m) => m.node).filter(Boolean).join(', ')}.` : '', ...extra };
   const inner = fill(own, sl);
   const how = (opts.shared ? fill(modal(tplText(s, opts.shared), u), { ...sl, base: inner }) : inner).trim();
@@ -737,7 +746,11 @@ E['end.absence'] = { kind: 'tool', cls: 'code', edges: ['done'], scope: 'strateg
       s.ctx?.decisions?.record?.('absence:research', { by: 'code', saw: { path: u.path.slice(-4), missing: u.missing.slice(-3) }, chosen: 'research path', reason: 'the plan found nothing; research answers before any absence' });
       return 'done';
     }
-    if (was !== 'all' || FLOOR[u.authority_floor]) { u.widened = { from: was, floor: u.authority_floor, why: 'nothing in scope' }; u.religions_specified = 'all'; u.authority_floor = 'any'; }
+    // a conversation's tradition, or a named work's, is never widened to every tradition (Chad 11-12: "bringing Hindu texts into a conversation
+    // on the Báb's commentary on Kawthar is simply not acceptable") — only the authority floor relaxes; a first, unanchored question still widens once
+    const anchored = !!u.named_work || !!u.previous_conversation_rounds?.length;
+    if (was !== 'all' && !anchored) { u.widened = { from: was, floor: u.authority_floor, why: 'nothing in scope' }; u.religions_specified = 'all'; u.authority_floor = 'any'; }
+    else if (FLOOR[u.authority_floor]) { u.widened = { from: was, floor: u.authority_floor, why: 'nothing at this authority', traditions_kept: was !== 'all' }; u.authority_floor = 'any'; }
     if (!u.found_passages.length) {
       try { const r = await call(s, 'fused_search', { query: text(s, u, '{{topic}}'), limit: 3 }); merge(u, 'found_passages', (r?.passages || []).slice(0, 3)); } catch { /* the reply still states the absence */ }
     }

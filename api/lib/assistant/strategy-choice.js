@@ -38,6 +38,10 @@ const SIDES = { ...Object.fromEntries(Object.entries(TRADITIONS).filter(([k]) =>
 const REFERS = { own: 'the message states its own subject, whole',
   subject: 'it asks something new about the person, event, book or topic the previous turn was about ("how did he die?", "when was it written?", "what happened next?")',
   previous: 'it asks about the previous reply itself or the passages it gave ("that quote", "the actual words", "the second one", "is that authentic?", "how does that compare with …")' };
+// WHERE in a work the reader wants to read (11-12 Kawthar: "the first couple paragraphs" after a title card searched the question's words inside
+// the tafsir and showed paragraphs 169/68/754; "and the next paragraph?" went to research). Jev's typed answer; code reads the place.
+const WORK_PLACE = { opening: 'the beginning of a work (its first paragraph or paragraphs)', next: 'the paragraph(s) that come right after the passage the previous reply showed',
+  subject: 'a particular subject, verse or passage inside the work', none: 'no place in a work is asked for' };
 const SIDE_KEYS = ['side_a', 'side_b', 'side_c'];
 const ORD = ['FIRST', 'SECOND', 'THIRD'];
 // the BOOKS a comparison names ("the Book of Mormon", "the Gospels", "the Torah"): each name span of the thread
@@ -53,7 +57,7 @@ const KINDS = { work: 'a written WORK: a book, tablet, treatise or scripture (it
 const kindAsk = (span) => `In the latest message, what is "${span}" — a written work, a person whose own teaching or writing is asked about, a subject the question is about (a person's life or story, a place, event or concept), or neither (no name or subject at all)? A capitalised first word of a sentence is a name only when it really is one; an ordinary command word or an acknowledgment ("Great.", "Thanks!") is neither.`;
 // a language names no tradition (round 5: "What does the Arabic word irfán mean?" → Islam scoped out the Bahá'í Writings that use the word)
 const LANGUAGE_IS_NOT_A_TRADITION = ' A language is not a tradition: "the Arabic word …", "in Persian", "the Hebrew term …", "the Sanskrit …" name the language of a word, which several traditions share — choose a tradition only when the message names or plainly means the tradition itself.';
-const SUBJECT_ASK = `Does the latest message ask about the texts, teachers or teachings of one particular religion or tradition ("Buddhist anatta", "Sufi Rumi on fana", "Augustine on grace")? Choose it. "none" when it names no tradition.${LANGUAGE_IS_NOT_A_TRADITION}`;
+const SUBJECT_ASK = `Does the latest message ask about the texts, teachers or teachings of one particular religion or tradition ("Buddhist anatta", "Sufi Rumi on fana", "Augustine on grace")? Choose it. A work belongs to its AUTHOR'S tradition, never to the scripture it comments on or quotes, nor to the genre's or language's usual tradition (a Bahá'í writer's commentary on a sūra of the Qur'án is Bahá'í; a Christian's study of the Gita is Christian). In a thread, the tradition already being discussed holds unless the latest message names another. "none" when it names no tradition.${LANGUAGE_IS_NOT_A_TRADITION}`;
 const FRAME = /^(?:according to|as (?:stated|explained|written|said) (?:in|by)|per|by|from|in|on)\s+/i;
 const FUNCTION_WORDS = /^(?:who|what|whom|whose|which|when|where|why|how|was|were|is|are|am|be|did|do|does|the|a|an|of|to|in|on|and|or|about|tell|me)\W*$/i;   // question/function words carry no search content
 const ASK_WORDS = /^(?:can|could|would|will|you|please|i|know|like|more|some|anything|something|give|explain|describe|say|said)\W*$/i;   // an asking frame's words ("can you tell me about …")
@@ -108,6 +112,7 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
         ...Object.fromEntries(spans.map((n, i) => [`book_${i + 1}`, { type: 'choice', instructions: bookAsk(n), criteria: SIDES }])),
         ...Object.fromEntries(spans.map((n, i) => [`kind_${i + 1}`, { type: 'choice', instructions: kindAsk(n), criteria: KINDS }])),
         subject_religion: { type: 'choice', instructions: SUBJECT_ASK, criteria: SIDES },
+        work_place: { type: 'choice', instructions: 'Does the LATEST user message ask to read a particular place in a work (a book, tablet, chapter or commentary named now or in the thread)? Which place?', criteria: WORK_PLACE },
         ...patchQuestions(st, TRADITIONS, turn),
       } }),
       signal,
@@ -143,6 +148,14 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
     const subj = choice(a.subject_religion), subjectOn = strategy.choice !== 'comparison' && subj?.choice && subj.choice !== 'none' && SIDES[subj.choice] && (subj.confidence ?? 0) >= min && !jevPatch.patch.scope?.religions_specified && !jevPatch.turnOnly;
     const turnOnly = subjectOn ? { scope: { religions_specified: [subj.choice] } } : jevPatch.turnOnly;
     const units = namedUnits(a, spans, messages.filter((m) => m.role === 'user').at(-1)?.content || '', min);
+    const wp = choice(a.work_place);
+    if (wp?.choice && WORK_PLACE[wp.choice] && wp.choice !== 'none' && (wp.confidence ?? 0) >= min) units.work_place = wp.choice;
+    // "and the next paragraph?" continues the reading the last turn did — its strategy, never a fresh research turn on the bare words
+    const lastStrat = st.thread?.at(-1)?.strategy;
+    if (units.work_place === 'next' && lastStrat && opts[lastStrat] && lastStrat !== strategy.choice) {
+      strategy = { ...strategy, was: strategy.choice ?? null, choice: lastStrat, reason: 'next-in-work' };
+      decisions[0] = { ...decisions[0], chosen: strategy.choice, reason: strategy.reason };
+    }
     // the message is ONLY a work's name (Jev's own kind answer: a work, nothing else asked) → the book, never Unmatched: Jev's
     // below-confidence book/about pick stands, any other pick becomes book (Chad 11-09: "God Passes By" fell to Unmatched, was read as a
     // quotation and ran slow research — "how could a quoted title of one of the core books not match the book? Even in unmatched fallback")

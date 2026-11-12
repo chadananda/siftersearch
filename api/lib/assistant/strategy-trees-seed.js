@@ -295,7 +295,7 @@ const original = tree('original', 'o1', [
   ['o4', 'fetch.edition', { want: 'translations' }, 'tool', ['found_passages'], ['found_passages', 'found_records'], { one: 'o5', several: 'o5', none: 'o5', error: 'o5' }],
   ['o5', 'shape', { template: 'original.side_by_side', shared: 'tpl.one_passage', format: 'original' }, 'synthesize', ['found_passages', 'found_records'], [], { done: END }],
   ['o6', 'shape', { template: 'original.none', shared: 'tpl.one_passage', format: 'original' }, 'synthesize', ['found_passages', 'found_records'], [], { done: END }],
-], { needs: ['quoted_words', 'referent', 'scripture_reference', 'named_work', 'topic'], units: { absence_template: 'original.absence' } });
+], { needs: ['quoted_words', 'referent', 'scripture_reference', 'named_work', 'topic', 'work_place', 'amount_wanted'], units: { absence_template: 'original.absence' } });
 
 // the lookup trees: seeded as v2 CANDIDATES above their v1 lookup graphs (strategy-seed.js LOOKUP_GRAPHS)
 const L = { quote_trace, term, original };

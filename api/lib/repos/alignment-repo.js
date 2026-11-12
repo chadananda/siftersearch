@@ -46,13 +46,13 @@ export async function insertLinks(links, basis, method) {
 }
 
 // ── work family (Anís original / term / quote_trace, 11-09): the other-language editions of ONE work, for any tradition ──────
-const FAM_COLS = 'd.id, d.title, d.author, d.language, d.religion, d.collection';
+const FAM_COLS = 'd.id, d.title, d.author, d.language, d.religion, d.collection, d.paragraph_count';
 /** One doc's work family: other editions/translations of the same work, each with the BASIS that ties it —
  *  `original_doc_id` (recorded: this doc's original, or its siblings/translations), `alignment` (content_alignment doc pairs),
  *  `author` (same author + tradition, another language: a CANDIDATE only — the caller aligns or rejects it). Best basis first. */
-export async function workFamily(docId, { limit = 12 } = {}) {
-  const id = Number(docId), n = Math.max(1, Math.min(Number(limit) || 12, 50));
-  const self = await queryOne(`SELECT id, title, author, language, religion, collection, original_doc_id FROM docs WHERE id = ? AND deleted_at IS NULL`, [id], 'alignment-repo:family-self');
+export async function workFamily(docId, { limit = 12, authors = limit } = {}) {
+  const id = Number(docId), n = Math.max(1, Math.min(Number(limit) || 12, 50)), na = Math.max(n, Math.min(Number(authors) || n, 400));   // authors: how many same-author candidates the caller will rank (by title)
+  const self = await queryOne(`SELECT id, title, author, language, religion, collection, original_doc_id, paragraph_count FROM docs WHERE id = ? AND deleted_at IS NULL`, [id], 'alignment-repo:family-self');
   if (!self) return { self: null, members: [] };
   const root = Number(self.original_doc_id) || id;
   const recorded = await queryAll(`SELECT ${FAM_COLS}, 'original_doc_id' AS basis FROM docs d WHERE d.deleted_at IS NULL AND d.id != ? AND (d.id = ? OR d.original_doc_id = ?) LIMIT ?`,
@@ -63,10 +63,10 @@ export async function workFamily(docId, { limit = 12 } = {}) {
     JOIN docs d ON d.id = x.doc AND d.deleted_at IS NULL ORDER BY x.links DESC LIMIT ?`, [id, id, n], 'alignment-repo:family-aligned');
   const byAuthor = self.author ? await queryAll(`SELECT ${FAM_COLS}, 'author' AS basis FROM docs d WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
       AND d.author = ? AND COALESCE(d.religion, '') = COALESCE(?, '') AND d.id != ? AND LOWER(COALESCE(d.language, '')) != LOWER(COALESCE(?, '')) LIMIT ?`,
-    [self.author, self.religion, id, self.language, n], 'alignment-repo:family-author') : [];
+    [self.author, self.religion, id, self.language, na], 'alignment-repo:family-author') : [];
   const seen = new Set(), members = [];
   for (const m of [...recorded, ...aligned, ...byAuthor]) if (!seen.has(m.id)) { seen.add(m.id); members.push(m); }
-  return { self, members: members.slice(0, n) };
+  return { self, members: members.slice(0, n + na) };
 }
 
 /** What links editions today, per tradition (the work-families ops report): recorded original_doc_id, aligned doc pairs,

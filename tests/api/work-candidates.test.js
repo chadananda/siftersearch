@@ -40,13 +40,13 @@ describe('parseScriptureRef: byName', () => {
   });
 });
 
-async function original(question, { judges = {}, bookCandidates, tools = {} } = {}) {
+async function original(question, { judges = {}, bookCandidates, tools = {}, units = {}, state } = {}) {
   const g = graphFor('original', 2);
   const decisions = [];
   const s = { choice: {}, ctx: { deps: { bookCandidates }, decisions: { record: (k, v) => decisions.push({ k, ...v }) } }, trace: [], question, messages: [{ role: 'user', content: question }], judges,
     tools: { fused_search: async () => ({ passages: [] }), context_lookup: async () => ({ passages: [] }), edition_lookup: async () => ({ passages: [], family: [], self: null, missing_language: null }),
       reference: vi.fn(async () => ({ passages: [QURAN] })), opening_lookup: vi.fn(async () => ({ passages: [P(1), P(2)] })), ...tools }, templates: TPL, onEvent: () => {} };
-  s.units = entryUnits(g, {}, { query: question, question, channel: { id: 'site-chat' }, messages: [] });
+  s.units = entryUnits(g, { units }, { query: question, question, channel: { id: 'site-chat' }, messages: [], ...(state ? { state } : {}) });
   await runGraph(g, s); s.decisions = decisions; s.path = s.trace.map((x) => x.node); return s;
 }
 const cands = async () => ({ cands: [{ kind: 'work', doc: TAFSIR, score: 1 }, { kind: 'work', doc: { id: 956819, title: "Tafsir-i-Suratu'l-Kawthar (provisional translation)", author: 'The Báb', paragraph_count: 400 }, score: 0.9 }] });
@@ -76,5 +76,26 @@ describe('original tree: a sūra name is a candidate, Jev picks', () => {
     const book = vi.fn(), find = vi.fn();
     const s = await original('Sura 108 in Arabic', { judges: { book }, bookCandidates: find });
     expect(book).not.toHaveBeenCalled(); expect(find).not.toHaveBeenCalled(); expect(s.tools.reference).toHaveBeenCalled();
+  });
+});
+
+// 11-12 follow-ups: "the first couple paragraphs" with a topic left over / "and the next paragraph?" — Jev's work_place, code reads the place
+describe('original tree: work_place (Jev) reads the place asked for', () => {
+  const state = { given: [{ kind: 'passage', ref: '20171:1', turn: 1 }, { kind: 'passage', ref: '20171:2', turn: 1 }] };
+  it('opening with a topic set → still the opening, never a search of the question inside the work', async () => {
+    const s = await original('yes, the first couple paragraphs side by side', { units: { named_work: 20171, topic: 'first couple paragraphs side by side', work_place: 'opening' }, state });
+    expect(s.path).toEqual(expect.arrayContaining(['o1', 'o1o', 'o3'])); expect(s.path).not.toContain('o1w');
+    expect(s.tools.opening_lookup).toHaveBeenCalledWith({ document_id: 20171, n: 3 }, expect.anything());
+  });
+  it('next → the paragraph after the last one shown, same work', async () => {
+    const context_lookup = vi.fn(async (a) => ({ passages: [P(a.paragraph_index), P(a.paragraph_index + 1)] }));
+    const s = await original('and the next paragraph?', { units: { work_place: 'next' }, state, tools: { context_lookup } });
+    expect(context_lookup).toHaveBeenCalledWith(expect.objectContaining({ document_id: 20171, paragraph_index: 2, before: 0, after: 1 }), expect.anything());
+    expect(s.path[0]).toBe('o1'); expect(s.path).toContain('o3');
+    expect(s.units.found_passages.map((x) => x.paragraph_index)).toEqual([3]);
+  });
+  it('no work_place → a topic still searches inside the work (unchanged)', async () => {
+    const s = await original('the passage on abundance', { units: { named_work: 20171, topic: 'abundance' } });
+    expect(s.path).toContain('o1w'); expect(s.tools.opening_lookup).not.toHaveBeenCalled();
   });
 });

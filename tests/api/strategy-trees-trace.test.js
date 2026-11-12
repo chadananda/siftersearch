@@ -249,7 +249,7 @@ describe('original@2: a scripture chapter named by order or name (round 5)', () 
 describe('workFamily + work-families report', () => {
   beforeEach(() => {
     const m = memDb(); rig = m.mod;
-    m.db.exec(`CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, author TEXT, language TEXT, religion TEXT, collection TEXT, original_doc_id INTEGER, duplicate_of INTEGER, deleted_at TEXT);
+    m.db.exec(`CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, author TEXT, language TEXT, religion TEXT, collection TEXT, original_doc_id INTEGER, paragraph_count INTEGER, duplicate_of INTEGER, deleted_at TEXT);
       CREATE TABLE content_alignment (trans_doc INTEGER, orig_doc INTEGER, retired_at TEXT);
       INSERT INTO docs (id, title, author, language, religion, original_doc_id) VALUES (1, 'Gleanings', 'Bahá’u’lláh', 'en', 'Baha''i', 2), (2, 'Muntakhabat', 'Bahá’u’lláh', 'ar', 'Baha''i', NULL),
         (10, 'Qur’án (Yusuf Ali)', 'Muhammad', 'En', 'Islam', NULL), (11, 'القرآن', 'Muhammad', 'Arabic', 'Islam', NULL), (20, 'Tao Te Ching', 'Laozi', 'en', 'Tao', NULL), (21, '道德經', 'Lao Tzu', 'zh', 'Tao', NULL);
