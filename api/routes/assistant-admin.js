@@ -3,6 +3,7 @@
 // Auth: requireInternal = admin JWT or X-Internal-Key, so ops tooling can read a thread when an answer goes wrong.
 // Each section fails on its own (a missing store shows as unavailable, never breaks the page).
 import { requireInternal } from '../lib/auth.js';
+import { listResearchSets } from '../lib/repos/research-sets-repo.js';
 import { getAnisOverview } from '../lib/assistant/admin-overview.js';
 import { threadsOverview, threadDetail, strategyGaps, turnTrace, parseTurnId } from '../lib/assistant/admin-threads.js';
 import { tracesForThread, tracesForTurn, childTraces, docTitles } from '../lib/repos/search-trace-repo.js';
@@ -138,6 +139,11 @@ export default async function anisAdminRoutes(fastify) {
     try { ladder = (await import('../lib/assistant/activities/catalog.js')).activityCatalog(); } catch (err) { request.log?.warn?.({ err }, 'improve-overview: activity catalog'); }
     return improveOverview({ data: improveOverviewData({ now }), ...strat, cap, heartbeat, theories, decisions, runs, ladder, anisCap, now });
   });
+
+  // The research cache (research-cache.js): newest sets, for curation and to see capture working.
+  fastify.get('/anis/research-sets', { preHandler: requireInternal,
+    schema: { querystring: { type: 'object', properties: { status: { type: 'string' }, limit: { type: 'integer', minimum: 1, maximum: 1000, default: 50 } } } },
+  }, async (request) => ({ sets: await listResearchSets({ limit: request.query.limit || 50, status: request.query.status || null }) }));
 
   fastify.get('/anis/improvements', {
     preHandler: requireInternal,

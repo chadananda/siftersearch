@@ -136,7 +136,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   let researchQ = null;
   if (raw?.researchLookup) run.research_lookup = async ({ question }) => {
     researchQ = String(question || '').trim() || researchQ;
-    const r = await raw.researchLookup(researchQ).catch(() => null);
+    const r = await raw.researchLookup(researchQ).catch((err) => { console.warn(`[anis] research lookup failed: ${err.message}`); return null; });
     if (!r?.passages?.length) return 'no research held for this question yet — research it with the tools';
     return `research held (${r.status}, similarity ${r.similarity.toFixed(2)}): start from these; search further only for what they do not cover\n\n${show(give(r.passages))}`;
   };
@@ -202,7 +202,9 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     ...retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url, religion: q.religion, document_id: q.doc_id, paragraph_index: q.paragraph_index ?? null, text: String(q.text).slice(0, 300) }))]
     .filter((c) => c.url && reply.includes(c.url));
   const cited = retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url));
-  if (researchQ && raw?.researchCapture && cited.length) raw.researchCapture(researchQ, cited.filter((q) => /^\d+$/.test(String(q.id)))).catch(() => {});   // fire and forget
+  const keep = cited.filter((q) => /^\d+$/.test(String(q.id)));
+  if (cited.length && !keep.length) console.warn(`[anis] research capture: no paragraph ids among ${cited.length} cited (${cited.slice(0, 3).map((q) => q.id).join(', ')})`);
+  if (researchQ && raw?.researchCapture && keep.length) raw.researchCapture(researchQ, keep).catch((err) => console.warn(`[anis] research capture failed: ${err.message}`));   // fire and forget
   // cards from the refs the reply cites (quote-cards.js refCards): one strategy passage → its passage card; a book_card book → its card unless a card already shows that work
   let cards = { passage: null, books: [] };
   if (reply) cards = await import('./quote-cards.js').then((m) => m.refCards({ reply, passages: cited.filter((q) => fromStrategy.has(q.ref)),

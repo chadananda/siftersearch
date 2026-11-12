@@ -12,6 +12,7 @@
 //   node scripts/ops/ops.mjs qdrant-optimizer [<collection> --threads N|auto]   searched collections' optimizer state; --threads caps merges live (bulk runs)
 //   node scripts/ops/ops.mjs search-latency [--minutes 60] [--slow qsrv:concepts [--over ms]]   per-stage p50/p95 vs the search budget (search/latency-budget.js); --slow lists that stage's slowest trace ids
 //   node scripts/ops/ops.mjs anis-forensics [--days 7] [--stage rank] [--json]   stage × class defect queue (replies, searches) + Opus judge tally
+//   node scripts/ops/ops.mjs anis-research [--status candidate|curated] [--limit 30]   the research cache's newest sets
 //   node scripts/ops/ops.mjs anis-improvements [--status open] | anis-improvement-status <id> <open|accepted|done|rejected> [note]
 //   node scripts/ops/ops.mjs anis-improve-digest [--since 24h|ISO] [--json]   DAILY for Claude Code: assessment + new/grown CODE recommendations + DATA changes
 //   node scripts/ops/ops.mjs anis-improve-report [--days 7] [--target code|data|<target>] [--stage S] [--status open] [--since ISO]   audits → conclusions → solutions (JSON)
@@ -92,6 +93,10 @@ else if (cmd === 'anis-forensics') {
       + `JUDGE (Opus 5.5): judged ${jd.judged} · pending ${jd.pending} · weak ${jd.weak} (${jd.weak_rate ?? '–'}) · $${jd.usd} ($${jd.usd_per_item ?? '–'}/item)\n`
       + (jd.weak_classes || []).slice(0, 15).map((c) => `  ${c.class.padEnd(26)} ${c.n}`).join('\n') + '\n', r));
   }
+} else if (cmd === 'anis-research') {
+  const j = await call('GET', `/anis/research-sets?limit=${val('--limit') || 30}${val('--status') ? `&status=${val('--status')}` : ''}`);
+  if (flag('--json')) await out(j);
+  else await new Promise((r) => process.stdout.write(`${(j.sets || []).map((x) => `#${x.id} [${x.status}] hits ${x.hits} v${x.version} ${x.passages} passages  ${x.question}`).join('\n')}\n`, r));
 } else if (cmd === 'anis-improvements') {
   const j = await call('GET', `/anis/improvements?status=${val('--status') || 'open'}&limit=${val('--limit') || 50}`);
   if (flag('--json')) await out(j);

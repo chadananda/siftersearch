@@ -30,3 +30,9 @@ export async function upsertResearchCandidate({ question, hash, embedding = null
 }
 /** Count one serve of a set. */
 export const bumpResearchHit = (id) => query('UPDATE research_sets SET hits = hits + 1 WHERE id = ?', [Number(id)], 'research-sets:hit');
+/** Newest sets for the ops view (no embeddings): question, status, hits, passage count. */
+export async function listResearchSets({ limit = 50, status = null } = {}) {
+  return (await queryAll(`SELECT id, question, kind, status, hits, version, passages, updated_at FROM research_sets ${status ? 'WHERE status = ?' : ''}
+    ORDER BY updated_at DESC LIMIT ?`, [...(status ? [status] : []), Number(limit)], 'research-sets:list'))
+    .map((r) => ({ ...r, passages: parse(r.passages, []).length }));
+}
