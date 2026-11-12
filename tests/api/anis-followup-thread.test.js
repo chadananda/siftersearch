@@ -4,7 +4,7 @@ import { chooseStrategy } from '../../api/lib/assistant/strategy-choice.js';
 import { ELEMENTS } from '../../api/lib/assistant/activities/elements.js';
 import { entryUnits, graphFor } from '../../api/lib/assistant/activities/graph.js';
 import { lastPassages, lastSection, lastTopic, emptyState, applyPatch } from '../../api/lib/assistant/units.js';
-import { workPatch } from '../../api/lib/assistant/turn.js';
+import { workPatch, openingOf } from '../../api/lib/assistant/turn.js';
 import { linkedInPrevious, jevState } from '../../api/lib/assistant/request-features.js';
 import { LOOKUP_KINDS, OUTCOMES, KINDS } from '../../api/lib/assistant/triage.js';
 
@@ -117,6 +117,12 @@ describe('the tree uses the last turn', () => {
     expect(calls.map((c) => c.document_id)).toEqual([20910, 20915]);
     expect(s.units.found_passages.every((p) => p.anchor)).toBe(true);
   });  // 11-12 Dawn-Breakers: "summarize that chapter" after the chapter-one card searched the library (Selections of the Báb, Letters to Australia)
+  it('"the opening paragraph of chapter one": a numbered unit\'s opening is its first paragraph(s), not the chapter card (dawnbreakers#1)', () => {
+    const lk = { kind: 'reference', passages: Array.from({ length: 22 }, (_, k) => ({ paragraph_index: 30 + k })) };
+    expect(openingOf(lk, { work_place: 'opening' }).passages.map((p) => p.paragraph_index)).toEqual([30]);
+    expect(openingOf(lk, { work_place: 'opening', amount_wanted: 3 }).passages).toHaveLength(3);
+    expect(openingOf(lk, {})).toBe(lk); expect(openingOf(null, { work_place: 'opening' })).toBe(null);
+  });
   it('a chapter card remembers its range; fetch.anchor reads that chapter whole next turn', async () => {
     const st = applyPatch(emptyState(), workPatch({ turn: 1, strategy: 'book', id: 15, title: 'The Dawn-Breakers', section: { start: 30, end: 51 } }));
     expect(lastSection(st)).toEqual({ document_id: 15, start: 30, end: 51 });

@@ -45,7 +45,7 @@ const REFERS = { own: 'the message states its own subject, whole',
   extend: 'it asks to add to, narrow or reshape the previous reply, keeping its subject ("add two from …", "more like these", "only the ones by …", "put it in a table", "shorter")' };
 // WHERE in a work the reader wants to read (11-12 Kawthar: "the first couple paragraphs" after a title card searched the question's words inside
 // the tafsir and showed paragraphs 169/68/754; "and the next paragraph?" went to research). Jev's typed answer; code reads the place.
-const WORK_PLACE = { opening: 'the beginning of a work: its first paragraph or paragraphs, or its first numbered items ("the first three" Hidden Words, verses or prayers of a work)', next: 'the paragraph(s) that come right after the passage the previous reply showed',
+const WORK_PLACE = { opening: 'the beginning of a work or of one of its chapters or sections: its first paragraph or paragraphs, or its first numbered items ("the first three" Hidden Words, verses or prayers of a work)', next: 'the paragraph(s) that come right after the passage the previous reply showed',
   subject: 'a particular subject, verse or passage inside the work', none: 'no place in a work is asked for' };
 const SIDE_KEYS = ['side_a', 'side_b', 'side_c'];
 const ORD = ['FIRST', 'SECOND', 'THIRD'];

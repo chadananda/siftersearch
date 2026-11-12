@@ -86,6 +86,9 @@ export async function defaultDeps() {   // exported for the strategy dry run (st
 const LONG_UNIT = 20;   // paragraphs: a numbered reference longer than this is carded, not quoted
 // a numbered unit's card title: the section's own title ("CHAPTER XXV") + the chapter's ALL-CAPS title line when the book has one
 // (its mixed-case headings are marginal notes, not the chapter's name); else the first heading. Pure.
+// a numbered unit whose OPENING Jev read as asked (work_place opening): its first paragraph(s) — amount_wanted, else one — never the whole unit
+export const openingOf = (lk, u = {}) => (lk?.kind === 'reference' && u.work_place === 'opening' && lk.passages?.length > 1
+  ? { ...lk, passages: lk.passages.slice(0, Math.max(1, Math.min(LONG_UNIT, Number(u.amount_wanted?.n ?? u.amount_wanted) || 1))) } : lk);
 const unitTitle = (lk, first) => {
   const h = String(first?.heading || '').trim(), caps = h && !/\p{Ll}/u.test(h);
   if (!lk.unit_title) return h ? softCaps(h) : null;
@@ -370,7 +373,13 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     if (found?.kind === 'work') return bookAnswer(found.work, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
     if (found?.kind === 'section') return sectionCard(found, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
   }
-  const lk = lkFirst !== undefined ? lkFirst : lkIntent && lkIntent !== 'in_work' && lkIntent !== 'find_passage' ? await lookupNow() : null;
+  let lk = lkFirst !== undefined ? lkFirst : lkIntent && lkIntent !== 'in_work' && lkIntent !== 'find_passage' ? await lookupNow() : null;
+  // "the opening paragraph of chapter one": Jev read the place as the unit's opening → its first paragraph(s) quoted, never the chapter card (dawnbreakers#1, 11-12)
+  const opened = openingOf(lk, u);
+  if (opened !== lk) {
+    decisions.record('reference:opening', { by: 'code', saw: { label: lk.label ?? null, paragraphs: lk.passages.length, amount_wanted: u.amount_wanted ?? null }, chosen: opened.passages.length, reason: 'Jev: the opening of the unit is asked — its first paragraph(s), not the whole unit' });
+    lk = opened;
+  }
   // a numbered unit too long to quote whole (a CHAPTER of a narrative, 11-11 "Dawn-Breakers chapter 25" got an essay with no link)
   // → that chapter's card: its heading, the book, a link to where it starts. Short units ("Gleanings 27") stay verbatim.
   if (lk?.kind === 'reference' && lk.passages?.length > LONG_UNIT && lk.work?.doc) {
