@@ -2192,6 +2192,17 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_question_scores_score ON question_scores(score, updated_at)');
     logger.info('Migration 203 complete: question_scores');
   },
+  204: async () => {
+    // RESEARCH SETS (Chad 11-12): the curated/candidate passage set behind a question (identities + roles, never reply text), matched by
+    // embedding so a close question starts from the best passages found so far. embedding = Float32 blob (same model as answer_cache).
+    await query(`CREATE TABLE IF NOT EXISTS research_sets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, question TEXT NOT NULL, question_hash TEXT NOT NULL UNIQUE, embedding BLOB,
+      kind TEXT NOT NULL DEFAULT 'question', passages TEXT NOT NULL DEFAULT '[]', gaps TEXT NOT NULL DEFAULT '[]',
+      status TEXT NOT NULL DEFAULT 'candidate', curated_by TEXT, version INTEGER NOT NULL DEFAULT 1, hits INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP, last_verified_at TEXT)`);
+    await query('CREATE INDEX IF NOT EXISTS idx_research_sets_status ON research_sets(status, hits)');
+    logger.info('Migration 204 complete: research_sets');
+  },
 };
 
 export const graphMigrations = {
