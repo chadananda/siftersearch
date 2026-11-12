@@ -106,6 +106,12 @@ describe('premisePilotJob', () => {
 });
 
 describe('parsePremises + policy', () => {
+  it('implied questions are carried into the result (at most 3, strings only)', async () => {
+    const { deps } = world({ ask: (m) => (m[1].content.includes('PASSAGE:\nParagraph 5') ? reply([{ ...good(), implies: 'rights precede the state', questions: ['Do the unborn have rights?', '', 7, 'b?', 'c?', 'd?'] }]) : reply([])) });
+    const r = await premisePilotJob({ maxUsd: 5 }, deps);
+    expect(r.premises[0].questions).toEqual(['Do the unborn have rights?', 'b?', 'c?']);
+    expect(r.premises[0].implies).toBe('rights precede the state');
+  });
   it('proof check ignores footnote and page markers (Aqdas unborn ¶ was dropped for [^41])', () => {
     const text = 'When We heard the clamor of the children as yet unborn,[^41] We doubled their share and decreased those of the rest.';
     expect(spanPresent('When We heard the clamor of the children as yet unborn, We doubled their share and decreased those of the rest.', [text])).toBe(true);
@@ -123,7 +129,8 @@ describe('parsePremises + policy', () => {
     expect(SYSTEM).toMatch(/lesser right/);
     expect(SYSTEM).toMatch(/"implies"/);
     expect(SYSTEM).toMatch(/Manifestation of God founding a new religion/);   // Chad 11-12: never "a religious authority"
-    expect(SYSTEM).toMatch(/Keep the passage's OWN terms/);   // Chad 11-12: "love of God" was abstracted to "moral conduct"
+    expect(SYSTEM).toMatch(/Keep the passage's OWN terms/);
+    expect(SYSTEM).toMatch(/"questions"/); expect(SYSTEM).toMatch(/BY IMPLICATION/);   // Chad 11-12: implied questions as the retrieval key   // Chad 11-12: "love of God" was abstracted to "moral conduct"
     expect(SYSTEM).toMatch(/POTENTIAL/); expect(SYSTEM).toMatch(/never say people are naturally oriented/i);   // Chad 11-12
   });
   it("proof check tolerates straight quotes against the text's curly ones, still rejects absent words", () => {

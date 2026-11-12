@@ -42,13 +42,14 @@ Rules:
 - Keep the passage's OWN terms. If it says love of God, detachment from all save Him, turning unto God, say exactly that; never abstract it into a vaguer category ("moral conduct", "spiritual qualities", "values", "worth", "virtue"). A generalised premise loses what the passage is about. Any wider bearing on modern debates goes only in "implies".
 - Say "assumes" or "presupposes", never "teaches": this is an inference from the words, not a statement of the faith's teaching.
 - Plain words, no jargon. One plain sentence per premise.
+- "questions": 1-3 questions a modern reader would actually ask, in their own everyday words, that this passage answers BY IMPLICATION (for example "Do people have rights before any government grants them?", "Can the religious laws of a former dispensation be annulled?", "Do the unborn have rights?"). Plain, neutral, not loaded; the answer stays in the passage's own terms in "premise".
 - "proof" must be words copied EXACTLY from the PASSAGE (not the context paragraphs), the words the inference rests on.
 - "concept" is one of the CONCEPTS below (copy it exactly), or "other: <short label>".
 - "basis" is "states" (the passage says it), "presupposes" (it takes it for granted) or "implies" (it follows from the passage by plain reasoning, as above).
 - "strength" is "strong" or "moderate"; leave out weak ones.
 CONCEPTS:
 ${CONCEPTS.map((c) => `- ${c}`).join('\n')}
-Reply with JSON only: {"premises":[{"premise":"...","concept":"...","basis":"states|presupposes|implies","implies":"... or empty","proof":"...","why":"one sentence linking proof to premise","strength":"strong|moderate"}]}`;
+Reply with JSON only: {"premises":[{"premise":"...","concept":"...","basis":"states|presupposes|implies","implies":"... or empty","questions":["..."],"proof":"...","why":"one sentence linking proof to premise","strength":"strong|moderate"}]}`;
 const r4 = (n) => Math.round(n * 10000) / 10000;
 const userMsg = (doc, p, prev, next) => `WORK: ${doc.title || '?'}${doc.author ? ` by ${doc.author}` : ''}\nSECTION: ${p.heading || '(none)'}\n\nPREVIOUS PARAGRAPH (context only):\n${prev?.text || '(none)'}\n\nPASSAGE:\n${p.text}\n\nNEXT PARAGRAPH (context only):\n${next?.text || '(none)'}`;
 
@@ -115,9 +116,9 @@ export async function premisePilotJob(params = {}, deps = {}) {
         if (!list) { out.unparsed++; return; }
         let kept = 0;
         for (const x of list) {
-          if (spanPresent(x.proof, [p.text]) !== true || !x.premise) { out.unverified++; out.dropped.push({ docId: doc.id ?? p.doc_id, title: doc.title, paraId: p.id, ord: p.ord, text: String(p.text).slice(0, TEXT_CAP), premise: x?.premise, concept: x?.concept, basis: x?.basis, implies: x?.implies || '', proof: x?.proof, why: x?.why, strength: x?.strength, reason: 'proof-not-found' }); continue; }
+          if (spanPresent(x.proof, [p.text]) !== true || !x.premise) { out.unverified++; out.dropped.push({ docId: doc.id ?? p.doc_id, title: doc.title, paraId: p.id, ord: p.ord, text: String(p.text).slice(0, TEXT_CAP), premise: x?.premise, concept: x?.concept, basis: x?.basis, implies: x?.implies || '', questions: Array.isArray(x?.questions) ? x.questions : [], proof: x?.proof, why: x?.why, strength: x?.strength, reason: 'proof-not-found' }); continue; }
           kept++; out.byConcept[x.concept] = (out.byConcept[x.concept] || 0) + 1;
-          out.premises.push({ docId: doc.id ?? p.doc_id, title: doc.title, paraId: p.id, ord: p.ord, text: String(p.text).slice(0, TEXT_CAP), premise: x.premise, concept: x.concept, basis: x.basis, implies: x.implies || '', proof: x.proof, why: x.why, strength: x.strength });
+          out.premises.push({ docId: doc.id ?? p.doc_id, title: doc.title, paraId: p.id, ord: p.ord, text: String(p.text).slice(0, TEXT_CAP), premise: x.premise, concept: x.concept, basis: x.basis, implies: x.implies || '', questions: (Array.isArray(x.questions) ? x.questions : []).filter((q) => typeof q === 'string' && q.trim()).slice(0, 3), proof: x.proof, why: x.why, strength: x.strength });
         }
         if (kept) out.withPremises++;
         return;
