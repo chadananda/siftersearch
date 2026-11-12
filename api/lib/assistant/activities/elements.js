@@ -5,6 +5,7 @@
 // Test seams: s.tools[name](input, ctx) replaces a tool, s.jev(q) the Jev call, s.templates[id] a template, s.agentRun the agent.
 import { run as runTool } from '../tools.js';
 import { canonicalTradition } from '../tradition-name.js';
+import { isAttribution } from '../prayer-sections.js';
 import { parseScriptureRef } from '../scripture-ref.js';
 import { template, fill } from './templates.js';
 import { AUTH_KINDS } from './contract.js';
@@ -381,7 +382,10 @@ E['read.whole'] = { kind: 'transform', cls: 'code', edges: ['one', 'several', 'n
       .then((w) => (w?.passages?.length ? w.passages : [x]), () => [x])));
     const inWhole = (x) => whole.some((rows) => rows.some((r) => Number(r.document_id) === Number(x.document_id) && r.paragraph_index === x.paragraph_index));
     const offers = trads.length > 1 ? [] : c.filter((x) => x !== leads[0] && !inWhole(x)).slice(0, p.offers ?? 2);
-    u.found_passages = [...whole.flatMap((rows, i) => rows.map((r) => ({ ...r, work: leads[i].work ?? r.title, tradition: tr(leads[i]), theme: trads.length > 1 ? tr(leads[i]) : 'prayer' }))),
+    // a prayer book's own "—The Báb" line is the prayer's attribution, not a passage of its own (11-12: the writer hedged that "a passage marked —The Báb" had no text)
+    const by = (rows) => { const a = rows.find((r) => isAttribution(r.text)); return a ? String(a.text).replace(/[_*]/g, '').replace(/^\s*[—–-]\s*/, '').trim() : null; };
+    const bodyOf = (rows) => (rows.some((r) => !isAttribution(r.text)) ? rows.filter((r) => !isAttribution(r.text)) : rows);
+    u.found_passages = [...whole.flatMap((rows, i) => { const a = by(rows); return bodyOf(rows).map((r) => ({ ...r, ...(a ? { author: a, attribution: a } : {}), work: leads[i].work ?? r.title, tradition: tr(leads[i]), theme: trads.length > 1 ? tr(leads[i]) : 'prayer' })); }),
       ...offers.map((x) => ({ ...x, theme: 'alternative' }))];
     s.note = { read: { found_passages: c.length, traditions: trads }, params: p, count: whole.flat().length, scope_excluded: 0 };
     return !leads.length ? 'none' : trads.length > 1 ? 'several' : 'one';

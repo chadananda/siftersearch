@@ -141,6 +141,12 @@ describe('prayer tree (11-09 redesign: the passage is the prayer, any tradition)
     await run('prayer', 'q', { tools: { prayer_lookup: lookup(two) }, extra: { units: { named_work: 'Remover of Difficulties' }, judges: { prayer: async () => { asked = true; return { choice: 'found:1', confidence: 0.9 }; } } } });
     expect(asked).toBe(true);
   });
+  it("read.whole: a prayer book's own attribution line becomes the prayer's author, never a passage of its own (11-12 '—The Báb')", async () => {
+    const whole = async (i) => ({ passages: [C(i.paragraph_index, { text: 'Is there any Remover of difficulties save God?' }), C(i.paragraph_index + 1, { text: '—The Báb' })], bound: 'attribution' });
+    const s = await run('prayer', 'q', { tools: { prayer_lookup: lookup([C(1)]), whole_lookup: whole }, extra: { units: { named_work: 'Remover of Difficulties' } } });
+    expect(path(s)).toEqual(['t0', 'p1', 'p5', 'p6']);
+    expect(s.out.passages.filter((x) => x.theme === 'prayer').map((x) => [x.text, x.author])).toEqual([['Is there any Remover of difficulties save God?', 'The Báb']]);
+  });
   it('named, nothing found → the need path (no extra model call); need, no tradition → several traditions → prayer.many, each in full', async () => {
     const tools = { prayer_lookup: async (i) => (i.name ? { passages: [], searched: [] } : { passages: [C(1), P(2, { religion: 'Islam', tradition: 'Islam' })], searched: [] }) };
     const s = await run('prayer', q, { tools, extra: { units: { named_work: 'Prayer of St Francis' }, ...judge({ choice: 'found:0', confidence: 0.9, distribution: { 'found:0': 0.5, 'found:1': 0.4, none: 0.1 } }) } });
