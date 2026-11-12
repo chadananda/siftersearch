@@ -42,7 +42,7 @@ Rules:
 - Keep the passage's OWN terms. If it says love of God, detachment from all save Him, turning unto God, say exactly that; never abstract it into a vaguer category ("moral conduct", "spiritual qualities", "values", "worth", "virtue"). A generalised premise loses what the passage is about. Any wider bearing on modern debates goes only in "implies".
 - Say "assumes" or "presupposes", never "teaches": this is an inference from the words, not a statement of the faith's teaching.
 - Plain words, no jargon. One plain sentence per premise.
-- "questions": 1-3 questions a modern reader would actually ask, in their own everyday words, that this passage answers BY IMPLICATION (for example "Do people have rights before any government grants them?", "Can the religious laws of a former dispensation be annulled?", "Do the unborn have rights?"). Plain, neutral, not loaded; the answer stays in the passage's own terms in "premise".
+- "questions": 1-3 SHORT first-principle questions (under ~10 words) that this passage answers BY IMPLICATION, aimed at the modern debate it bears on but asked at the level of principle: "Do the unborn have rights?", "Do rights come from the state?", "Can a sacred law be annulled?", "Is taxation without limit just?". Plain and neutral, never loaded, never tied to one passage's wording; the answer stays in the passage's own terms in "premise".
 - "proof" must be words copied EXACTLY from the PASSAGE (not the context paragraphs), the words the inference rests on.
 - "concept" is one of the CONCEPTS below (copy it exactly), or "other: <short label>".
 - "basis" is "states" (the passage says it), "presupposes" (it takes it for granted) or "implies" (it follows from the passage by plain reasoning, as above).
