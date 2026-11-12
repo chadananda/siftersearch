@@ -14,6 +14,8 @@
   import { tableAt } from './rich-table.js';
   import { styleQuotes } from '../../api/lib/quote-style.js';
   import { quoteSegments } from '../../api/lib/quote-blocks.js';
+  import SideBySide from '../components/widgets/SideBySide.svelte';
+  import { widgetSegments } from '../../api/lib/assistant/widgets/segments.js';
   import { BUILD, tagFor } from './version.js';
   let { token = '', api = 'https://siftersearch.com', accent = '', name = '', mission = '', opened = '', samples = '', fullscreen = '' } = $props();
   // "Try a sample" menu (one showcase question per strategy): on by default (Chad 11-10); a host turns it off with
@@ -232,6 +234,7 @@
           else if (ev.type === 'book' && ev.book?.title) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.book = ev.book; messages = [...messages]; } }
           // the reply's quoted blockquotes → passage cards; the book(s) the answer is about (both drawn once the reply is complete)
           else if (ev.type === 'quote_cards' && Array.isArray(ev.cards)) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.quoteCards = ev.cards; messages = [...messages]; } }
+          else if (ev.type === 'widget' && ev.widget?.id) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.widgets = [...(last.widgets || []), ev.widget]; messages = [...messages]; } }
           else if (ev.type === 'books' && Array.isArray(ev.books)) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.books = ev.books; messages = [...messages]; } }
           else if (ev.type === 'citations' && Array.isArray(ev.citations)) { pendCites = ev.citations; }
           else if (ev.type === 'complete') { if (Array.isArray(ev.citations) && ev.citations.length) pendCites = ev.citations; streamDone = true; }
@@ -521,7 +524,10 @@
                           : phase === 'deepening-more' ? 'Still searching — combing the historical records…'
                           : 'Searching the ocean of texts…'}</span>
                       {:else}
-                        {#if m.quoteCards?.length && !m.pending}
+                        {#if m.widgets?.length && !m.pending}
+                          <!-- a display widget (side_by_side): the reply's marker + table swapped for the component; the text around it as usual -->
+                          {#each widgetSegments(m.content, m.widgets) as ws}{#if ws.kind === 'widget'}<SideBySide widget={ws.widget} />{:else}{@html renderRich(ws.md)}{/if}{/each}
+                        {:else if m.quoteCards?.length && !m.pending}
                           {#each quoteSegments(m.content, m.quoteCards) as seg}
                             {#if seg.kind === 'quote'}
                               <figure class="qcard">

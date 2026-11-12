@@ -13,6 +13,8 @@ import { standingOf, authorityOrder } from '../tradition-authority.js';
 import { TIER_ORDER, translationRank } from '../source-tier.js';
 import { judgeHolds, judgeTimeline, judgeDated, termScript, generateList } from '../judges.js';
 import { currentAIContext } from '../../ai-context.js';
+import { buildSideBySide } from '../widgets/side-by-side.js';
+import { exactLink } from '../quotes.js';
 
 // ── units, scope, outcomes ──────────────────────────────────────────────────────────────────────────────────────────────
 export const U = (s) => {
@@ -702,12 +704,15 @@ const writer = (s, id, extra = {}, opts = {}) => {
     format: { id: fid, by: opts.format ? `strategy:${opts.format}` : 'element:shape', how, variant: id, ...(opts.direct ? { direct: true } : {}) } };
   return how;
 };
-E.shape = { kind: 'writer', cls: 'code', edges: ['done'], scope: 'strategy', params: ['template', 'shared', 'by_count', 'allow', 'offers', 'direct', 'theme_by', 'format', 'plan', 'stage'], reads: ['found_passages', 'found_records', 'channel', 'depth', 'reply_language', 'path'], writes: ['offers'],
+E.shape = { kind: 'writer', cls: 'code', edges: ['done'], scope: 'strategy', params: ['template', 'shared', 'by_count', 'allow', 'offers', 'direct', 'theme_by', 'format', 'plan', 'widget', 'layout', 'fallback_template', 'stage'], reads: ['found_passages', 'found_records', 'channel', 'depth', 'reply_language', 'path'], writes: ['offers'],
   run(s, p = {}) {   // the writer instruction from a template (by count, or '@sub' = the sub-tree's) wrapped in its shared tpl.<shape>, for the mode; a sub-run stopped at evidence leaves it alone
     const u = U(s);
     if (s.stopAtShape) return 'done';
     const n = u.found_passages.length, id = p.by_count ? (n === 1 ? p.by_count[1] ?? p.by_count.n : p.by_count.n ?? p.by_count[1]) : p.template === '@sub' ? u.sub_template : p.template;
-    writer(s, id, {}, { shared: p.shared, direct: p.direct, theme_by: p.theme_by, format: p.format, plan: p.plan });
+    // widget (widgets/): code builds the display object from the passages; no rows → the writer's own template (fallback_template) as before
+    const wd = p.widget === 'side_by_side' ? buildSideBySide(u.found_passages, { link: exactLink, layout: p.layout }) : null;
+    writer(s, p.widget && !wd && p.fallback_template ? p.fallback_template : id, {}, { shared: p.shared, direct: p.direct, theme_by: p.theme_by, format: p.format, plan: p.plan });
+    if (wd?.rows.length) s.out.format.widget = wd;
     for (const o of [p.offers].flat().filter(Boolean)) u.offers.push({ what: sub(u, o), turn: s.turn ?? null, strategy: s.choice?.strategy ?? null });
     s.note = { read: { template: id, mode: modeOf(u) }, params: p, count: n, scope_excluded: 0, ...(p.direct ? { direct: true } : {}) };
     return 'done';

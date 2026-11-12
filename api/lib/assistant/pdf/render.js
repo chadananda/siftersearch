@@ -1,8 +1,9 @@
 // Branded PDF from Markdown (Anís document modality). Pure JS: pdfkit + marked + lib/qr.js (cached vector QR), TTFs in api/assets/fonts/pdf (no browser,
 // safe on tower). Any answer shape (headings, paragraphs, quotes, lists, tables); every link stays clickable, is numbered, and
-// gets a vector QR (shortened URL) in the Sources list; closing QR to OceanLibrary. Chars no bundled font covers (Arabic script) are dropped.
+// gets a vector QR (shortened URL) in the Sources list; closing QR to OceanLibrary. Chars no text font covers (Arabic script) are dropped, except in display widgets (pdf/side-by-side.js: Amiri, shaped RTL).
 import PDFDocument from 'pdfkit';
 import { drawQr, shortUrl } from '../../qr.js';
+import { drawSideBySide } from './side-by-side.js';
 import * as fontkit from 'fontkit';
 import { marked } from 'marked';
 import { readFileSync } from 'node:fs';
@@ -12,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 const FONT_DIR = join(ROOT, 'api', 'assets', 'fonts', 'pdf');
 const FILES = { r: ['libre-caslon-normal-400-latin', 'libre-caslon-normal-400-latin-ext'], b: ['libre-caslon-normal-700-latin', 'libre-caslon-normal-700-latin-ext'],
-  i: ['libre-caslon-italic-400-latin', 'libre-caslon-italic-400-latin-ext'], m: ['ibm-plex-mono-400-latin'], h: ['../Gloock-Regular'], s: ['space-grotesk-400-latin'] };
+  i: ['libre-caslon-italic-400-latin', 'libre-caslon-italic-400-latin-ext'], m: ['ibm-plex-mono-400-latin'], h: ['../Gloock-Regular'], s: ['space-grotesk-400-latin'], a: ['amiri-regular-arabic'] };   // a = Arabic-script (side_by_side print only; the text chains above still drop it)
 const COLOR = { ink: '#2b2621', sea: '#1f6f8b', mist: '#7a8890', rule: '#d6dde0', zebra: '#f3f7f8' };
 const P = { w: 612, h: 792, l: 60, r: 60, top: 84, bottom: 70 };
 const SITE = 'https://oceanlibrary.com';
@@ -71,7 +72,7 @@ function inline(doc, spans, { x, y, width, size = 10.5, gap = 2.5, color = COLOR
 }
 
 /** Markdown → PDF Buffer. opts: { title, markdown, date, siteUrl, onlineUrl, lang } */
-export async function renderPdf({ title = '', markdown = '', date = new Date(), siteUrl = SITE, onlineUrl = null } = {}) {
+export async function renderPdf({ title = '', markdown = '', date = new Date(), siteUrl = SITE, onlineUrl = null, widgets = [] } = {}) {
   const doc = new PDFDocument({ size: [P.w, P.h], margins: { top: P.top, bottom: P.bottom, left: P.l, right: P.r }, bufferPages: true,
     info: { Title: String(title).slice(0, 200), Author: 'Anís, Ocean AI Research Assistant', Creator: 'Anís · OceanLibrary.com' } });
   const chunks = []; doc.on('data', (c) => chunks.push(c));
@@ -131,8 +132,16 @@ export async function renderPdf({ title = '', markdown = '', date = new Date(), 
     doc.y += 10;
   }
 
+  // display widgets: `<!-- widget:ID -->` before a table (+ the approximate note) → the widget drawn for print; no data for the id → the markdown table as is
+  const wById = new Map((widgets || []).map((w) => [w?.id, w]));
+  let pendingWidget = null;
+  const wctx = (cx, cw) => ({ x: cx, width: cw, bottom, color: COLOR, need, addPage: () => doc.addPage(), inline: (d, sp, o) => inline(d, sp, o), measure, drawQr });
   function blocks(tokens, cx, cw) {
     for (const t of tokens || []) {
+      if (t.type === 'html') { const id = /^\s*<!--\s*widget:([\w-]+)\s*-->/.exec(t.raw || '')?.[1]; if (id && wById.has(id)) { pendingWidget = wById.get(id); continue; } }
+      if (pendingWidget && t.type === 'table') { drawSideBySide(doc, pendingWidget, wctx(cx, cw)); pendingWidget = { done: true, ...pendingWidget }; continue; }
+      if (pendingWidget?.done && t.type === 'paragraph' && /^\s*Aligned approximately/.test(plain(t.tokens))) { pendingWidget = null; continue; }
+      if (t.type !== 'space') pendingWidget = null;
       if (t.type === 'space') continue;
       if (t.type === 'heading') {
         const sz = [0, 16, 14, 12, 11, 10.5, 10.5][t.depth] || 11, sp = spansOf(t.tokens, reg, t.depth > 2 ? { b: 1 } : {});

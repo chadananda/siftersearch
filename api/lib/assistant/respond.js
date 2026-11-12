@@ -1037,8 +1037,16 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const studyEvidence = study ? [{ title: `CTAI concordance: ${study.term}${study.root ? ` (root ${study.root})` : ''}`, author: 'CTAI', url: study.researchUrl || null,
     religion: "Bahá'í", text: `Shoghi Effendi's renderings of ${study.term}, counted over ${study.counted || study.total} aligned passages (${study.total} in all): `
       + study.renderings.map((r) => `${r.en} ${r.count}`).join(', ') }] : [];
+  // display widget (widgets/, built by the shape node): its work link and OceanLibrary range links, here with the other links; never blocks the reply
+  let widget = format?.widget ?? null;
+  if (widget) {
+    const up = (u) => (u && d.upgradeLinks ? d.upgradeLinks(u).catch(() => u) : Promise.resolve(u ?? null)), w = widget;
+    const wurl = w.work?.document_id != null ? await workLinks([{ id: w.work.document_id, title: w.work.title }]).then((m) => m.get(w.work.document_id) ?? null).catch(() => null) : null;
+    widget = { ...w, work: { ...w.work, url: wurl },
+      rows: await Promise.all(w.rows.map(async (r) => ({ original: { ...r.original, url: await up(r.original.url) }, translations: await Promise.all(r.translations.map(async (c) => (c?.url ? { ...c, url: await up(c.url) } : c))) }))) };
+  }
   return { reply, quotes_removed: guarded.removed, quotes_completed: introduced.completed || introduced.rewritten ? { placed: introduced.completed, rewritten: introduced.rewritten } : null, quotes_linked: quoteLinked.linked || 0, quotes_recredited: speakers.fixed || 0, evidence: [...studyEvidence, ...evidenceOf(retrieved)], citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
-    search_query: searchQ ?? searchQueryFor(messages), select, format: format ? { id: format.id, by: format.by } : null, profile: describeProfile(evidenceProfile),
+    search_query: searchQ ?? searchQueryFor(messages), select, format: format ? { id: format.id, by: format.by } : null, ...(widget ? { widget } : {}), profile: describeProfile(evidenceProfile),
     timings: { search_ms: searchMs, first_token_ms: firstTokenMs ?? Date.now() - t0, total_ms: Date.now() - t0 },
     ...(runs[0] ? { variants: written.map((w, i) => variantResult(runs[i], w)) } : {}), ...(s.trace.length ? { steps: s.trace } : {}) };   // steps = the strategy graph's trace
 }

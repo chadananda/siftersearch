@@ -9,7 +9,7 @@ import path from 'node:path';
 const BANK_DIR = path.join(process.cwd(), 'tests', 'quality', 'question-bank');
 
 /** The stream events that are cards (book card, passage cards, quote cards, named-work books): stored with a warmed answer and replayed. */
-export const CARD_EVENTS = new Set(['book', 'passage', 'quote_cards', 'books']);
+export const CARD_EVENTS = new Set(['book', 'passage', 'quote_cards', 'books', 'widget']);
 
 /** Cache key text: the question without trailing punctuation, so "…jesus?" and "…jesus" share a row (answer-cache normalises case/space). Pure. */
 export const keyText = (q) => String(q || '').trim().replace(/[\s?.!¿؟]+$/u, '');

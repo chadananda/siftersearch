@@ -35,6 +35,7 @@ import { resolveLookup } from './lookup.js';
 import { createHash } from 'node:crypto';
 import { makeDocuments, DOC_TEXT } from './pdf/documents.js';   // Jev document = pdf_* → a branded PDF, link or mail
 import { makeReports, renderReport, emailIn, REPORT_TEXT } from './deep-report.js';   // Jev depth = deep_report → a queued job + mail
+import { widgetBlock } from './widgets/index.js';
 import { cacheDeps, cacheKey, cacheEligible, CARD_EVENTS } from './precache.js';   // precached common questions: opening site-chat turns, warm job writes
 
 const OUTPUT_BREAK = 0.8;
@@ -460,10 +461,10 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     // deliver it (delivery = email | link). pdf_previous renders the assistant's last reply; pdf_new renders this turn's reply below.
     const docChoice = d.documents && tri && route.action !== 'refuse' && route.action !== 'canned' && (tri.document?.confidence ?? 0) >= T.document ? tri.document.choice : null;
     const wantEmail = tri?.delivery?.choice === 'email' && (tri.delivery.confidence ?? 0) >= T.document;
-    const sendDoc = async (title, markdown) => {
+    const sendDoc = async (title, markdown, widgets = []) => {
       const src = createHash('sha1').update(markdown).digest('hex').slice(0, 16), email = wantEmail ? (participant.email || emailIn(text)) : null;
       let doc = offerKey ? await d.documents.last(offerKey).catch(() => null) : null;
-      if (!doc || doc.src !== src) { doc = await d.documents.create({ title, markdown }).catch(() => null); if (doc) { doc.src = src; if (offerKey) await d.documents.remember(offerKey, doc).catch(() => {}); } }
+      if (!doc || doc.src !== src) { doc = await d.documents.create({ title, markdown, ...(widgets.length ? { widgets } : {}) }).catch(() => null); if (doc) { doc.src = src; if (offerKey) await d.documents.remember(offerKey, doc).catch(() => {}); } }
       if (!doc) return { text: DOC_TEXT.failed, ok: false };
       if (email) { const how = await d.documents.email(doc, email).catch(() => null); return { text: DOC_TEXT.emailed(email, doc.url), ok: true, url: doc.url, mailed: how }; }
       return { text: wantEmail ? DOC_TEXT.linkAskEmail(doc.url) : DOC_TEXT.link(doc.url), ok: true, url: doc.url };
@@ -522,10 +523,18 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const broken = await timed('output-check', () => d.outputCheck(reply, { persona: name })).catch(() => null);
     const replaced = broken != null && broken >= OUTPUT_BREAK;
     if (replaced) { d.strikes.strike(who); reply = cannedReply('refuse', { name, seed }); }
+    // display widget (widgets/): the writer framed it; code appends its markdown fallback after a marker (stored reply, email, PDF, battery) and the live
+    // clients swap that span for the component on the `widget` event. Not on a replaced reply; before the PDF so the document carries it.
+    const wblock = r.widget && !replaced && typeof reply === 'string' && reply.trim() ? widgetBlock(r.widget) : '';
+    if (wblock) {
+      reply = `${reply}\n\n${wblock}`;
+      if (channel.renderer !== 'email-html') onEvent({ type: 'text', content: `\n\n${wblock}` });
+      if (channel.live) onEvent({ type: 'widget', widget: r.widget });
+    }
     // pdf_new: the researched reply, delivered as the branded PDF (a letter gets the link in its HTML; a chat gets link or mail)
     let documentInfo;
     if (docChoice && docChoice !== 'text' && !replaced && typeof reply === 'string' && reply.trim()) {
-      const out = await timed('pdf', () => sendDoc(String(resolved?.query || text).replace(/\s+/g, ' ').slice(0, 160) || 'Research', reply)).catch(() => null);
+      const out = await timed('pdf', () => sendDoc(String(resolved?.query || text).replace(/\s+/g, ' ').slice(0, 160) || 'Research', reply, r.widget ? [r.widget] : [])).catch(() => null);
       if (out) {
         const line = channel.renderer === 'email-html' && out.url ? DOC_TEXT.letterLink(out.url) : out.text;
         reply = `${reply}\n\n${line}`; if (channel.renderer !== 'email-html') onEvent({ type: 'text', content: `\n\n${line}` });

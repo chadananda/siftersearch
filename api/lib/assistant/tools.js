@@ -591,7 +591,9 @@ const ENTRIES = [
       const all = await Promise.all(ids.map((id) => ed(id, { want: a.want || 'original' }, ctx?.deps?.editions || {})));   // one reference's verses, in order
       const r = { ...all[0], passages: all.flatMap((x) => x.passages || []) };
       if (r.passages.length) r.missing_language = null;
-      return { passages: dedupePassages((r.passages || []).map((x) => ({ ...toPassage(x), role: x.role, aligned_by: x.aligned_by, exact: x.exact, ...(x.ref ? { ref: x.ref } : {}) }))), self: r.self ?? null, family: r.family || [], missing_language: r.missing_language ?? null };
+      // aligned_to = the anchor paragraph ids a passage was fetched for (one translation passage may answer several verses): the side-by-side widget's row key
+      const anchors = new Map(); all.forEach((x, i) => (x.passages || []).forEach((p) => anchors.set(p.id, [...new Set([...(anchors.get(p.id) || []), ids[i]])])));
+      return { passages: dedupePassages((r.passages || []).map((x) => ({ ...toPassage(x), role: x.role, aligned_by: x.aligned_by, exact: x.exact, aligned_to: anchors.get(x.id), ...(x.ref ? { ref: x.ref } : {}) }))), self: r.self ?? null, family: r.family || [], missing_language: r.missing_language ?? null };
     } },
   // quotation_candidates: the sourcehunt engine with NO model — phrase + keyword layers, holds() on the wording, links; the decision is a tree node (judge.passages)
   { name: 'quotation_candidates', label: 'Quotation Candidates', kind: 'tool', outputName: 'Passage[]', cost: C(true, 900),

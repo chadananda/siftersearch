@@ -27,8 +27,8 @@ export function makeDocuments({ render = renderPdf, upload, outbox = reportOutbo
   };
   return {
     /** → { url, key, bytes, title } or null when it could not be stored. */
-    async create({ title, markdown, onlineUrl = null }) {
-      const buf = await render({ title, markdown, onlineUrl, ...(siteUrl ? { siteUrl } : {}) });
+    async create({ title, markdown, onlineUrl = null, widgets = [] }) {
+      const buf = await render({ title, markdown, onlineUrl, widgets, ...(siteUrl ? { siteUrl } : {}) });
       const key = `anis/pdf/${randomBytes(16).toString('hex')}/anis-${slug(title)}.pdf`;
       const url = await put(key, buf);
       return url ? { url, key, bytes: buf.length, title } : null;

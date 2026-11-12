@@ -10,6 +10,8 @@
   import PassageCard from './chat/PassageCard.svelte';
   import QuoteCard from './chat/QuoteCard.svelte';
   import { quoteSegments } from '../../api/lib/quote-blocks.js';
+  import SideBySide from './widgets/SideBySide.svelte';
+  import { widgetSegments } from '../../api/lib/assistant/widgets/segments.js';
   // the passage card shows the quote + citation: drop the reply's leading blockquote, keep anything else
   const withoutQuote = (text) => String(text || '').replace(/^(?:>.*(?:\n|$))+\s*/, '');
   // the book card already shows the description: the reply's first paragraph (the same words) is not shown twice
@@ -1331,6 +1333,9 @@
         } else if (event.type === 'quote_cards' && Array.isArray(event.cards)) {
           // each quoted blockquote of the reply → its passage card (tiny cover + linked citation); unmatched blocks stay plain
           researchMessages = researchMessages.map((m, i) => i === assistantIdx ? { ...m, quoteCards: event.cards } : m);
+        } else if (event.type === 'widget' && event.widget?.id) {
+          // a display widget (side_by_side …): the reply holds its markdown fallback after a marker; swapped for the component once complete
+          researchMessages = researchMessages.map((m, i) => i === assistantIdx ? { ...m, widgets: [...(m.widgets || []), event.widget] } : m);
         } else if (event.type === 'books' && Array.isArray(event.books)) {
           researchMessages = researchMessages.map((m, i) => i === assistantIdx ? { ...m, books: event.books } : m);
         } else if (event.type === 'passage' && event.passage) {
@@ -2063,7 +2068,9 @@
                   {#if msg.isStreaming && !msg.content}
                     <span class="research-typing"><span></span><span></span><span></span></span>
                   {:else}
-                    {#if msg.quoteCards?.length && !msg.isStreaming}
+                    {#if msg.widgets?.length && !msg.isStreaming}
+                      <div class="research-msg-text prose">{#each widgetSegments(msg.content, msg.widgets) as ws}{#if ws.kind === 'widget'}<SideBySide widget={ws.widget} />{:else}{#each (msg.quoteCards?.length ? quoteSegments(ws.md, msg.quoteCards) : [{ kind: 'text', md: ws.md }]) as seg}{#if seg.kind === 'quote'}<QuoteCard card={seg.card} html={formatResearchText(seg.body)} />{:else}{@html formatResearchText(seg.md)}{/if}{/each}{/if}{/each}</div>
+                    {:else if msg.quoteCards?.length && !msg.isStreaming}
                       <!-- quoted passages as cards (the reply's own blockquotes, swapped in once it is complete) -->
                       <div class="research-msg-text prose">{#each quoteSegments(msg.content, msg.quoteCards) as seg}{#if seg.kind === 'quote'}<QuoteCard card={seg.card} html={formatResearchText(seg.body)} />{:else}{@html formatResearchText(seg.md)}{/if}{/each}</div>
                     {:else}
