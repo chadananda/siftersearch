@@ -154,3 +154,10 @@ describe('source questions', async () => {
     expect(r.reply).not.toMatch(/\]\(/);
   });
 });
+
+describe('renderRefs stray bold', () => {
+  it('a ref that rendered to nothing leaves no lone ** behind a bold heading', async () => {
+    const { renderRefs } = await import('../../api/lib/assistant/agent.js');
+    expect(renderRefs('**6. The sweetness of prayer** **\n\n**a** and **b**', { found: new Map(), works: new Map() })).toBe('**6. The sweetness of prayer**\n\n**a** and **b**');
+  });
+});
