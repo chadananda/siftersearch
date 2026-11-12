@@ -130,7 +130,10 @@ export async function editionsOf(paragraphId, { want = 'original', limit = 3 } =
   const selfLang = langCode(fam.self?.language), origId = Number(fam.self?.original_doc_id) || null;
   const members = (fam.members || []).filter((m) => langCode(m.language) !== selfLang)
     // a recorded direction decides where it is known: this doc's original is its original_doc_id; the rest of the recorded family are translations
-    .filter((m) => m.basis !== 'original_doc_id' || (want === 'original') === (m.id === origId));
+    .filter((m) => m.basis !== 'original_doc_id' || (want === 'original') === (m.id === origId))
+    // with no recorded direction, an "original" is only an edition in the tradition's original languages (11-12: the Arabic tafsir's English
+    // translation came back as its "original" because it was simply another language)
+    .filter((m) => want !== 'original' || m.basis === 'original_doc_id' || !ORIGINAL_LANGS[fam.self?.religion] || ORIGINAL_LANGS[fam.self?.religion].includes(langCode(m.language)));
   for (const m of members) {
     if (found.length >= limit) break;
     const how = (await alignByReference(src, m, d).catch(() => null)) || (await alignByMeaning(src, m, d).catch(() => null))

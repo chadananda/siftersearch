@@ -48,4 +48,15 @@ describe('editionsOf: the Arabic opening → the English same work', () => {
     expect(r.passages.length).toBeGreaterThan(0);
     expect(r.passages.every((p) => p.document_id === 4 && p.aligned_by === 'place' && p.role === 'translation')).toBe(true);
   });
+  it('want original from the Arabic: the English same work is never called its original', async () => {
+    const deps = {
+      resolveLinks: async () => new Map(), headingStarts: async () => [],
+      paragraphsByIds: async (ids) => ids.map((id) => ({ id, doc_id: 1, paragraph_index: 1, text: 'بسم الله', heading: null })),
+      paragraphsInRange: async (doc, from, to) => Array.from({ length: to - from + 1 }, (_, k) => ({ id: doc * 1000 + from + k, doc_id: doc, paragraph_index: from + k, text: `en ${from + k}`, blocktype: 'paragraph' })),
+      phrases: async () => ({ hits: [] }),
+      workFamily: async () => ({ self: { ...self, religion: "Baha'i" }, members: [{ ...other(4, "Tafsir-i-Suratu'l-Kawthar (provisional translation)"), paragraph_count: 860 }] }),
+    };
+    const r = await editionsOf(5, { want: 'original' }, deps);
+    expect(r.passages).toEqual([]);
+  });
 });
