@@ -11,6 +11,8 @@ import { jevProbabilities } from './decision-log.js';
 import { drawFromCriteria } from '../search-plan.js';
 import { catalog } from '../repos/strategies-repo.js';
 import { UNMATCHED, isUnmatched } from './strategy-seed.js';
+import { TREE_GRAPHS, LOOKUP_TREE_GRAPHS } from './strategy-trees-seed.js';
+const PLACE_READERS = new Set(Object.entries({ ...TREE_GRAPHS, ...LOOKUP_TREE_GRAPHS }).filter(([, g]) => g.needs?.includes('work_place')).map(([id]) => id));
 import { emptyState, stateText, patchQuestions, patchFromAnswers } from './units.js';   // conversation_state: Jev's patch rides in this same call
 
 // Jev's STRATEGY options = the active strategy rows (strategies-repo; seed: strategy-seed.js): option key = row name, criterion =
@@ -150,8 +152,9 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
     const units = namedUnits(a, spans, messages.filter((m) => m.role === 'user').at(-1)?.content || '', min);
     const wp = choice(a.work_place);
     if (wp?.choice && WORK_PLACE[wp.choice] && wp.choice !== 'none' && (wp.confidence ?? 0) >= min) units.work_place = wp.choice;
-    // "and the next paragraph?" continues the reading the last turn did — its strategy, never a fresh research turn on the bare words
-    const lastStrat = st.thread?.at(-1)?.strategy;
+    // "and the next paragraph?" continues the last READING in the thread (a strategy whose tree reads places in a work), never a fresh
+    // research turn on the bare words (11-12: after "what is the Báb saying?" it went to understanding and claimed absence)
+    const lastStrat = [...(st.thread || [])].reverse().find((e) => PLACE_READERS.has(e.strategy))?.strategy ?? st.thread?.at(-1)?.strategy;
     if (units.work_place === 'next' && lastStrat && opts[lastStrat] && lastStrat !== strategy.choice) {
       strategy = { ...strategy, was: strategy.choice ?? null, choice: lastStrat, reason: 'next-in-work' };
       decisions[0] = { ...decisions[0], chosen: strategy.choice, reason: strategy.reason };

@@ -205,7 +205,7 @@ export function entryUnits(g, choice, ctx = {}) {
     ...(floorLayer && floorLayer !== 'default' && sc.authority_floor ? { authority_floor: sc.authority_floor } : {}) };
   const ch = ctx.channel?.id ?? ctx.channel ?? null;
   const u = buildUnits({ question: ctx.query ?? ctx.question ?? '', messages: ctx.messages || [], state: ctx.state || emptyState(), turnLayer, profile: ctx.profile || {}, needs: g.needs || [],
-    request: { ...(choice?.units || {}), ...(choice?.sides?.length ? { compare_sides: choice.sides } : {}) }, channel: ch, depth: ctx.depth ?? null });
+    request: { ...(choice?.units || {}), ...(choice?.sides?.length ? { compare_sides: choice.sides } : {}) }, channel: ch, depth: ctx.depth ?? null, strategy: choice?.choice ?? null });
   if (u.authority_floor === 'interpretation' && !turnLayer.authority_floor && (u.scope_sources?.authority_floor ?? 'default') === 'default') u.authority_floor = 'any';   // the registry default is not a filter
   Object.assign(u, g.units || {});   // the tree's own unit defaults (absence_template)
   u.given = ctx.state?.given || [];

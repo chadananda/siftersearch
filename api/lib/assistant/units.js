@@ -128,10 +128,12 @@ const pairs = (messages = []) => {
   return out.slice(-6);
 };
 /** The passages the LAST turn cited, from the state's given refs ("doc:paragraph") → [{ref, document_id, paragraph_index}]. Pure. */
-export function lastPassages(state = emptyState()) {
+export function lastPassages(state = emptyState(), { strategy = null } = {}) {
   const g = (state.given || []).filter((x) => x.kind === 'passage');
   if (!g.length) return [];
-  const t = Math.max(...g.map((x) => x.turn));
+  // strategy: the passages of the last turn THAT strategy ran ("and the next paragraph?" continues the reading, not the explanation between)
+  const ran = strategy ? (state.thread || []).filter((e) => e.strategy === strategy && g.some((x) => x.turn === e.turn)).at(-1)?.turn : null;
+  const t = ran ?? Math.max(...g.map((x) => x.turn));
   return g.filter((x) => x.turn === t).map((x) => { const [d, p] = String(x.ref).split(':'); return d !== '' && p != null && p !== '' && Number.isFinite(Number(d)) && Number.isFinite(Number(p)) ? { ref: x.ref, document_id: Number(d), paragraph_index: Number(p) } : null; }).filter(Boolean);
 }
 /** The subject of the last turn: the state's thread entry, else the previous user message. Pure. */
@@ -141,7 +143,7 @@ export const lastTopic = (state = emptyState(), messages = []) => state.thread?.
  * The units object a tree runs on (s.units). Code-filled units always; scope through the layers; request units (Jev's, `request`) only when the
  * strategy declares them in `needs` (null needs = none). previous_* come from the last turns. Pure.
  */
-export function buildUnits({ question = '', messages = [], state = emptyState(), turnLayer = {}, reader = {}, profile = {}, needs = null, request = {}, channel = null, depth = null, previous = null } = {}) {
+export function buildUnits({ question = '', messages = [], state = emptyState(), turnLayer = {}, reader = {}, profile = {}, needs = null, request = {}, channel = null, depth = null, previous = null, strategy = null } = {}) {
   const layers = { turn: turnLayer, conversation: conversationLayer(state), reader, site: siteLayer(profile) };
   const { units, sources } = resolveScope(layers);
   const u = { ...units, current_user_question: question, previous_conversation_rounds: pairs(messages), previous_scope: state.scope && Object.keys(state.scope).length ? { ...state.scope } : null, scope_sources: sources };
@@ -151,7 +153,7 @@ export function buildUnits({ question = '', messages = [], state = emptyState(),
   for (const n of ['audience', 'reader_state', 'topic', 'named_person', 'named_work', 'term']) { const r = resolveUnit(n, layers); if (r.layer !== 'default' || UNITS[n].default != null) u[n] = r.value; }
   const given = state.given || [];
   u.referent = given.length ? [given[given.length - 1]] : null;
-  u.last_topic = lastTopic(state, messages); u.last_passages = lastPassages(state);
+  u.last_topic = lastTopic(state, messages); u.last_passages = lastPassages(state, request.work_place === 'next' ? { strategy } : {});
   for (const n of needs || []) if (isRequestUnit(n) && request[n] != null) u[n] = request[n];
   return u;
 }

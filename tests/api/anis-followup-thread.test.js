@@ -21,6 +21,13 @@ describe('thread units', () => {
     expect(lastPassages(st)).toEqual([{ ref: '5:3', document_id: 5, paragraph_index: 3 }]);
     expect(lastPassages(emptyState())).toEqual([]);
   });
+  it('lastPassages by strategy: "the next paragraph" continues the last READING, not the explanation turn after it', () => {
+    const st = { ...emptyState(), thread: [{ turn: 0, strategy: 'original' }, { turn: 1, strategy: 'understanding' }],
+      given: [{ kind: 'passage', ref: '20171:0', turn: 0 }, { kind: 'passage', ref: '8632:40', turn: 1 }] };
+    expect(lastPassages(st, { strategy: 'original' })).toEqual([{ ref: '20171:0', document_id: 20171, paragraph_index: 0 }]);
+    expect(lastPassages(st)).toEqual([{ ref: '8632:40', document_id: 8632, paragraph_index: 40 }]);
+    expect(lastPassages(st, { strategy: 'comparison' })).toEqual([{ ref: '8632:40', document_id: 8632, paragraph_index: 40 }]);
+  });
   it('lastTopic: the thread entry, else the previous user message', () => {
     expect(lastTopic(state, thread('x'))).toBe(Q1);
     expect(lastTopic(emptyState(), thread('x'))).toBe(Q1);
@@ -35,6 +42,13 @@ describe('thread units', () => {
 });
 
 describe('Jev decides what a follow-up refers to', () => {
+  it('"and the next paragraph?" returns to the last reading strategy in the thread, past the explanation turn (11-12 Kawthar)', async () => {
+    const fetchImpl = async () => ({ ok: true, json: async () => ({ answers: { strategy: ans('understanding'), work_place: ans('next') } }) });
+    const conversationState = { ...emptyState(), thread: [{ turn: 0, strategy: 'original' }, { turn: 1, strategy: 'understanding' }] };
+    const r = await chooseStrategy(thread('and the next paragraph?'), { apiKey: 'k', fetchImpl, conversationState, options: { original: 'o', understanding: 'u', unmatched: 'x' } });
+    expect(r.strategy.choice ?? r.strategy).toBe('original');
+    expect(r.units.work_place).toBe('next');
+  });
   it('chooseStrategy asks refers_back only in a thread and returns refersBack from Jev\'s answer', async () => {
     let body;
     const fetchImpl = async (url, o) => { body = JSON.parse(o.body); return { ok: true, json: async () => ({ answers: { strategy: ans('comparison'), refers_back: ans('previous'), side_a: ans('Bahá’í'), scope_religion: ans('unchanged') } }) }; };
