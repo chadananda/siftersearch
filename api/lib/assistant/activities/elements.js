@@ -106,6 +106,8 @@ const namedWork = (u) => (typeof u.named_work === 'string' && u.named_work.trim(
   : Array.isArray(u.named_sources) && u.named_sources.length ? { documentId: u.named_sources[0] } : null);
 const personOf = (u) => { const n = flat(u.named_person); return typeof n === 'string' && n.trim() && !Number.isFinite(Number(n)) ? n.trim() : null; };
 // HARD filters first (Chad 11-09): the tradition, the named work, the named author. `wide` = the widening pass: none of them (run when the filtered pass was thin)
+// asked_author: the person Jev named is not the one the question is about ("what did Shoghi Effendi write about her?" — topic Ṭáhirih): search that author's own works (tahirih#3, 11-12)
+const askedAuthor = (u) => { const who = personOf(u), t = String(flat(u.topic) ?? '').toLowerCase(); return !!who && !!t.trim() && !t.includes(who.toLowerCase()); };
 const subjectsOf = (u) => (Array.isArray(u.named_subjects) ? u.named_subjects : []).filter((n) => typeof n === 'string' && n.trim());
 // about_person: runs only when Jev named a person or a subject (11-11 Quddús: Jev read "Quddús" as a subject, not a person, so only scripture came back), no author filter, whole question (the histories and studies ABOUT them — 11-11 Siyyid Káẓim)
 // by_person: Jev named the person; the author_lookup tool resolves the library's spellings of the name (array = any), the raw name when none resolve
@@ -114,7 +116,7 @@ const authorsOf = async (s, who) => { try { const a = ((await call(s, 'author_lo
 // the deep passage a book holds is often not its best-scoring paragraph library-wide (dry run 6: the Sutra Collection's anatta discourse)
 const booksOf = (u, n = 3) => [...new Set((u.found_passages || []).map((x) => Number(x.document_id)).filter(Number.isFinite))].slice(0, n);
 const searchInput = async (s, p, u, trad) => { if (p.inside) return { query: text(s, u, p.query, '{{follows_topic}}', '{{current_user_question}}'), limit: kOf(p, u) ?? 6, filters: { documentId: booksOf(u, p.books ?? 3) } };
-  const who = !p.wide && p.by_person ? personOf(u) : null, filters = p.wide ? {} : { ...(trad ? { tradition: trad } : {}), ...(p.in_named ? namedWork(u) : {}), ...(who ? { author: await authorsOf(s, who) } : {}), ...(p.author ? { author: p.author } : {}), ...(p.language ? { language: p.language } : {}), ...(p.work ? { work: p.work } : {}),
+  const who = !p.wide && (p.by_person || p.asked_author) ? personOf(u) : null, filters = p.wide ? {} : { ...(trad ? { tradition: trad } : {}), ...(p.in_named ? namedWork(u) : {}), ...(who ? { author: await authorsOf(s, who) } : {}), ...(p.author ? { author: p.author } : {}), ...(p.language ? { language: p.language } : {}), ...(p.work ? { work: p.work } : {}),
     // the authority kinds are a search filter (fused_search over-fetches ×3 for it), not only a post-filter over the top k: a history search post-filtered from 6 generic hits found none (11-10)
     ...([p.authority].flat().filter(Boolean).length ? { authority: [p.authority].flat().filter(Boolean) } : {}) };
   // the topic (question minus the named spans) only where a hard filter carries those names; every other pass keeps the whole question
@@ -256,8 +258,8 @@ const E = {
       for (const { x, l } of res) if (l?.original || l?.translations?.length) { n++; x.original = l.original ?? x.original; x.translations = l.translations; }
       return finish(s, p, classify(n, ['one', 'several']), { count: n });
     } },
-  'search.shelf': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'fused_search', params: ['authority', 'doctrinal', 'language', 'author', 'work', 'layers', 'tiers', 'spell', 'in_named', 'by_person', 'about_person', 'wide', 'quoted', 'inside', 'books'], reads: ['topic', 'named_work', 'named_person', 'named_subjects', 'quoted_words', 'found_passages'], input: searchInput, take: passages,
-    gate: (s, u, p) => (!p.in_named || !!namedWork(u)) && (!p.by_person || !!personOf(u)) && (!p.about_person || !!personOf(u) || subjectsOf(u).length > 0) && (!p.wide || hardFiltered(u)) && (!p.quoted || !!String(flat(u.quoted_words) ?? '').trim()) && (!p.inside || booksOf(u).length > 0) }),
+  'search.shelf': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'fused_search', params: ['authority', 'doctrinal', 'language', 'author', 'work', 'layers', 'tiers', 'spell', 'in_named', 'by_person', 'asked_author', 'about_person', 'wide', 'quoted', 'inside', 'books'], reads: ['topic', 'named_work', 'named_person', 'named_subjects', 'quoted_words', 'found_passages'], input: searchInput, take: passages,
+    gate: (s, u, p) => (!p.in_named || !!namedWork(u)) && (!p.by_person || !!personOf(u)) && (!p.asked_author || askedAuthor(u)) && (!p.about_person || !!personOf(u) || subjectsOf(u).length > 0) && (!p.wide || hardFiltered(u)) && (!p.quoted || !!String(flat(u.quoted_words) ?? '').trim()) && (!p.inside || booksOf(u).length > 0) }),
   'search.hype': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'hype_search', params: ['authority', 'doctrinal', 'language', 'wide'], reads: ['topic'], input: searchInput, take: passages,
     gate: (s, u, p) => !p.wide || hardFiltered(u) }),
   'search.originals': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'originals_search', reads: ['topic', 'search_originals'], input: searchInput, take: passages,

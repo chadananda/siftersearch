@@ -60,6 +60,15 @@ describe('hard filters first, widening when thin', () => {
     const s2 = mk({}, { tools: { fused_search: fused } }); seen.length = 0;
     await ELEMENTS['search.shelf'].run(s2, { by_person: true }); expect(seen.length).toBe(0); expect(s2.units.found_outcome.n).toBe('skipped');
   });
+  it('search.shelf asked_author: the author asked about searched for the subject; free when the person IS the subject (tahirih#3)', async () => {
+    const seen = [];
+    const fused = async (i) => { seen.push(i); return { passages: [P(1, { authority: 'interpretation' })] }; };
+    const s = mk({ named_person: 'Shoghi Effendi', topic: 'Ṭáhirih' }, { tools: { fused_search: fused } });
+    expect(await ELEMENTS['search.shelf'].run(s, { asked_author: true })).toBe('one');
+    expect(seen[0].filters.author).toBe('Shoghi Effendi'); expect(seen[0].query).toContain('Ṭáhirih');
+    const s2 = mk({ named_person: 'Vaḥíd', topic: 'Vaḥíd' }, { tools: { fused_search: fused } }); seen.length = 0;
+    await ELEMENTS['search.shelf'].run(s2, { asked_author: true }); expect(seen.length).toBe(0); expect(s2.units.found_outcome.n).toBe('skipped');
+  });
   it('search.shelf about_person: the histories ABOUT the named person — no author filter, whole question, gated free when none', async () => {
     const seen = [];
     const fused = async (i) => { seen.push(i); return { passages: [P(1, { authority: 'history' })] }; };
