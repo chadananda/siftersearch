@@ -6,7 +6,7 @@
 import { detectQuotation, stripMarkup } from '../quote-detect.js';
 import { foldVerbatim } from '../search/verbatim.js';
 import { findTitled, titleCandidates, coreWork } from './work-request.js';
-import { sectionRange, verseWork, versePlace } from './numbering.js';
+import { sectionRange, verseWork, versePlace, workParts, partRange } from './numbering.js';
 import { isCoreLiterature } from '../rights/canonical.js';
 import { firstPerson } from '../authorship/reader.js';
 import { authorAuthority } from '../authority.js';
@@ -32,7 +32,9 @@ export function parseReference(text) {
   const title = m[1].replace(/[,\s:\-–—]+$/, '').trim();
   // the unit word, when it names a whole division ("chapter 25" is a chapter, never paragraph 25)
   const unit = /^(?:chapter|ch|section|sec|§|part|talk|lesson|letter|tablet)/i.exec(m[3] || '')?.[0].toLowerCase().replace(/^ch$/, 'chapter').replace(/^sec$/, 'section');
-  return num && title.split(/\s+/).length <= 6 ? { title, num, ...(unit ? { unit } : {}) } : null;
+  // the part a work numbers separately ("Arabic Hidden Word 5", "Hidden Words (Persian) 12") — numbering.js WORK_PARTS
+  const part = /\b(arabic|persian)\b/i.exec(title)?.[1].toLowerCase();
+  return num && title.split(/\s+/).length <= 6 ? { title, num, ...(unit ? { unit } : {}), ...(part ? { part } : {}) } : null;
 }
 
 /** The number a heading carries ("Chapter 33", "XXXIII. On ...", "33 — ...", "Verse 183"), or null. Pure. */
@@ -164,10 +166,13 @@ export async function resolveLookup(messages, deps = {}) {
   };
   if (intent === 'reference') {
     const ref = parseReference(text);
-    const w = ref && await titled([ref.title], { min: 0.9 }).catch(() => null);
+    // a work numbered in parts resolves to the edition its table was verified on — the reference's title words ("What is Arabic
+    // Hidden Word") name no edition (live 11-11: "work not found", the turn fell to search and said the text was not found)
+    const parts = ref && workParts(ref.title);
+    const w = ref && await titled([parts ? parts.find : ref.title], { min: 0.9 }).catch(() => null);
     // which step resolved the reference (11-11: "Dawn-Breakers - Chapter 25" fell to search and the trace could not say why)
     const step = (via, r) => { deps.decisions?.record('lookup:reference', { by: 'code', saw: { ref, work: w ? `${w.doc.id} ${w.doc.title}` : null },
-      options: ['display number', 'verse table', 'chapter heading', 'section table', 'none'], chosen: r ? via : 'none', reason: r ? `${r.passages?.length ?? 0} passages` : via }); return r; };
+      options: ['parts table', 'display number', 'verse table', 'chapter heading', 'section table', 'none'], chosen: r ? via : 'none', reason: r ? `${r.passages?.length ?? 0} passages` : via }); return r; };
     if (!w) return step(ref ? 'work not found' : 'no reference pattern', null);
     // a numbered reference answers with the WHOLE numbered unit (Chad 11-04: "Gleanings 27" is all of section XXVII, never one line)
     const repo = deps.paragraphsByPn && deps.paragraphsInRange && deps.headingStarts ? {} : await import('../paragraphs-repo.js');
@@ -193,6 +198,12 @@ export async function resolveLookup(messages, deps = {}) {
       }
       return undefined;
     };
+    // 0. a work numbered in parts (Hidden Words: Arabic 1–71, Persian 1–82): the saying, from the table
+    const pr = parts && partRange(parts, w.doc, ref.part, ref.num);
+    if (pr) {
+      const rows = await inRange(w.doc.id, pr.from, pr.to).catch(() => []);
+      return step('parts table', await answer(w.doc, rows, { section: pr, label: `${w.doc.title}, ${pr.part} ${pr.num}` }));
+    }
     // a named division ("chapter 25") is a chapter first: paragraph 25 answered "Dawn-Breakers - Chapter 25" with one line (11-11)
     if (!ref.unit) { const r = await byDisplay(); if (r !== undefined) return r; }
     const heads = await (starts ? starts(w.doc.id).catch(() => []) : []);

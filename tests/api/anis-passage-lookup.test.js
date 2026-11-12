@@ -142,3 +142,29 @@ describe('blockquotes hold only book text', () => {
     expect(bookOnlyBlockquotes('Plain words.', ps)).toEqual({ text: 'Plain words.', unquoted: 0 });
   });
 });
+
+// Hidden Words: Arabic and Persian each counted from 1 (numbering.js WORK_PARTS). Live 11-11: "What is Arabic Hidden Word number 5?"
+// parsed the title as "What is Arabic Hidden Word", found no work, fell to search and said the text was not found.
+describe('a work numbered in parts', () => {
+  const HW = { id: 20809, title: 'The Hidden Words of Bahá’u’lláh', author: 'Bahá’u’lláh', paragraph_count: 314 };
+  const rows = [10, 12, 14, 141, 142, 144, 145, 147, 149, 184, 186, 188].map((i) => ({ id: i, paragraph_index: i, heading: null, text: `Row ${i} of the book.` }));
+  const deps = (asked) => ({ intent: 'reference', findTitled: async (c) => { asked.push(...c); return { doc: HW }; }, paragraphsByPn: async () => [],
+    headingStarts: async () => [], paragraphsInRange: inRangeOf(rows), withLinks: links });
+  it('the part comes from the reference; the edition from the table, not the question\'s words', async () => {
+    const asked = [];
+    const r = await resolveLookup(user('What is Arabic Hidden Word number 5?'), deps(asked));
+    expect(asked).toEqual(['The Hidden Words of Bahá’u’lláh']);
+    expect(r).toMatchObject({ kind: 'reference', exact: true, label: 'The Hidden Words of Bahá’u’lláh, Arabic 5' });
+    expect(r.passages.map((p) => p.paragraph_index)).toEqual([12]);
+  });
+  it('Arabic 70 spans two rows; Arabic 71 ends before the Persian invocation; Persian 20 opens with its own line', async () => {
+    expect((await resolveLookup(user('Arabic Hidden Words 70'), deps([]))).passages.map((p) => p.paragraph_index)).toEqual([141, 142]);
+    expect((await resolveLookup(user('Arabic Hidden Words 71'), deps([]))).passages.map((p) => p.paragraph_index)).toEqual([144]);
+    expect((await resolveLookup(user('Persian Hidden Words 1'), deps([]))).passages.map((p) => p.paragraph_index)).toEqual([147]);
+    expect((await resolveLookup(user('Persian Hidden Word no. 20'), deps([]))).passages.map((p) => p.paragraph_index)).toEqual([184, 186]);
+  });
+  it('another edition (paragraph count differs) is not read by the table', async () => {
+    const r = await resolveLookup(user('Persian Hidden Words 1'), { ...deps([]), findTitled: async () => ({ doc: { ...HW, paragraph_count: 334 } }) });
+    expect(r).toBeNull();
+  });
+});

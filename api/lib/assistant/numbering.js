@@ -83,6 +83,26 @@ export function sectionRange(doc, n) {
   return { unit: t.unit, num: n, from: t.starts[n - 1], to: n < t.starts.length ? t.starts[n] - 1 : t.end };
 }
 
+/** Works numbered in PARTS, each counted from 1 ("Arabic Hidden Word 5" ≠ "Persian Hidden Word 5"). `find` = the edition the table
+ *  was verified on (the reference's own title words — "What is Arabic Hidden Word" — never name it; live 11-11 fell to search).
+ *  Hidden Words = doc "The Hidden Words of Bahá’u’lláh" (314 ¶, verified 11-11 via context_lookup): one row per saying, except
+ *  Arabic 70 (address + text in two rows) and the four Persian sayings whose opening line ("In the eighth of the most holy lines…",
+ *  "Alas! Alas!…") is its own row before the "O …!" address. */
+export const WORK_PARTS = Object.freeze([
+  Object.freeze({ title: /hidden\s+words?/i, find: 'The Hidden Words of Bahá’u’lláh', paragraphCount: 314, unit: 'Hidden Word', first: 'arabic', parts: Object.freeze({
+    arabic: Object.freeze({ label: 'Arabic', end: 144, starts: Object.freeze([4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84, 86, 88, 90, 92, 94, 96, 98, 100, 102, 104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126, 128, 130, 132, 134, 136, 138, 140, 141, 144]) }),
+    persian: Object.freeze({ label: 'Persian', end: 312, starts: Object.freeze([147, 149, 151, 153, 155, 157, 159, 161, 163, 165, 167, 169, 171, 173, 175, 177, 179, 181, 183, 184, 188, 190, 192, 194, 196, 198, 200, 202, 204, 206, 208, 210, 212, 214, 216, 218, 219, 223, 225, 227, 229, 231, 233, 235, 236, 239, 241, 242, 246, 248, 250, 252, 254, 256, 258, 260, 262, 264, 266, 268, 270, 272, 274, 276, 278, 280, 282, 284, 286, 288, 290, 292, 294, 296, 298, 300, 302, 304, 306, 308, 310, 312]) }) }) }),
+]);
+/** The parts table a reference's title words point to, or null. Pure. */
+export const workParts = (title) => WORK_PARTS.find((w) => w.title.test(String(title || ''))) || null;
+/** Saying n of a part ('arabic' | 'persian'; none = the table's first) in an edition → { unit, part, num, from, to } | null when
+ *  the edition is not the verified one (paragraph count) or n is out of range. Pure. */
+export function partRange(t, doc, part, n) {
+  const pt = t && Number(doc?.paragraph_count) === t.paragraphCount && t.parts[part || t.first];
+  if (!pt || !(n >= 1 && n <= pt.starts.length)) return null;
+  return { unit: t.unit, part: pt.label, num: n, from: pt.starts[n - 1], to: n < pt.starts.length ? pt.starts[n] - 1 : pt.end };
+}
+
 /** Works numbered by VERSE straight through, across chapters (the reference "Dhammapada 183" is verse 183, not chapter 183):
  *  `chapters` = verses per chapter in the standard numbering (Dhammapada: 26 vaggas, 423 verses). The edition's own chapter
  *  headings place the chapter; the verse is counted inside it, exact only when the chapter has one paragraph per verse. */
