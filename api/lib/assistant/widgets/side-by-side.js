@@ -9,20 +9,23 @@ const clean = (t) => String(t || '').replace(/⁅\/?s\d+⁆/g, '').replace(/\s+/
 const hash = (s) => { let h = 5381; for (const c of s) h = ((h * 33) ^ c.codePointAt(0)) >>> 0; return h.toString(36); };
 const keys = (p) => new Set([p.id, ...[p.aligned_to].flat().filter((x) => x != null)]);
 const meets = (a, b) => [...a].some((x) => b.has(x));
+// the script decides when the label is wrong (11-12: the Kawthar's Arabic is catalogued 'en', so no passage came back as role 'original')
+const scriptLang = (p) => { const t = clean(p.text), l = code(p.language); if (/[\u0600-\u06ff]/.test(t)) return l === 'fa' || l === 'ur' ? l : 'ar'; if (/[\u0590-\u05ff]/.test(t)) return 'he'; return l; };
+const isOriginal = (p) => p.role === 'original' || (!p.role && RTL.has(scriptLang(p)));
 
 /** Aligned passages [{id, text, role, language, document_id, paragraph_index, aligned_to[], aligned_by, exact, title, translator, source_url}] → widget data, or null
  *  (no original). opts: link(p) → url, layout 'tight'|'study', workUrl. One row per original paragraph; a translation passage covering several originals is ONE
  *  cell with `span` (continuation rows hold null); a verse nothing covers gets an empty cell. */
 export function buildSideBySide(passages, { link = (p) => p.source_url ?? p.citation_url ?? null, layout = 'tight', workUrl = null } = {}) {
   const list = (passages || []).filter((p) => p && p.id != null && clean(p.text));
-  const first = list.find((p) => p.role === 'original');
+  const first = list.find((p) => p.role === 'original') ?? list.find(isOriginal);
   if (!first) return null;
-  const lang = code(first.language), anchorIds = new Set(list.flatMap((p) => [p.aligned_to].flat()).filter((x) => x != null));
+  const lang = scriptLang(first), anchorIds = new Set(list.flatMap((p) => [p.aligned_to].flat()).filter((x) => x != null));
   const seen = new Set();
-  const origs = list.filter((p) => p.role === 'original' && p.document_id === first.document_id && !seen.has(p.id) && seen.add(p.id))
+  const origs = list.filter((p) => isOriginal(p) && p.document_id === first.document_id && !seen.has(p.id) && seen.add(p.id))
     .map((p, i) => ({ p, i })).sort((a, b) => (a.p.paragraph_index ?? 1e9) - (b.p.paragraph_index ?? 1e9) || a.i - b.i).map((x) => x.p);
   // translations: the editions found (role translation) and the anchor passage itself (no role) — one column per document
-  const trs = list.filter((p) => p.role === 'translation' || (!p.role && anchorIds.has(p.id) && code(p.language) !== lang));
+  const trs = list.filter((p) => p.role === 'translation' || (!p.role && anchorIds.has(p.id) && scriptLang(p) !== lang));
   const docs = [...new Map(trs.map((p) => [p.document_id ?? p.title, p])).keys()].slice(0, 3);
   const cols = docs.map((d) => trs.filter((p) => (p.document_id ?? p.title) === d).sort((a, b) => (a.paragraph_index ?? 0) - (b.paragraph_index ?? 0)));
   const oKeys = origs.map(keys);

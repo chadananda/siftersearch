@@ -100,4 +100,11 @@ describe('print (PDF)', () => {
       expect(text).toContain('Kawthar'); expect(text).toMatch(/[؀-ۿ]/);
     }
   });
+  it('an anchor in Arabic script is the original even when catalogued "en" (kawthar: the writer built its own table)', () => {
+    const w = buildSideBySide([
+      { id: 1, document_id: 20171, paragraph_index: 0, language: 'en', text: 'بسم اللّه الرحمن الرحيم' },
+      { id: 9, document_id: 77, paragraph_index: 0, language: 'en', role: 'translation', aligned_to: [1], text: 'In the Name of God' }]);
+    expect(w.original.lang).toBe('ar'); expect(w.original.dir).toBe('rtl');
+    expect(w.rows).toHaveLength(1); expect(w.rows[0].translations[0].text).toBe('In the Name of God');
+  });
 });
