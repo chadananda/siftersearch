@@ -27,6 +27,20 @@ export function unitChange(old, u, key) {
  *  was indexed. The vector is unchanged (no embed, $0) but Qdrant filters on these, so the point must be re-sent. Pure. */
 export const labelsStale = (old, labels) => !!old && ['religion', 'author', 'collection', 'scope'].some((f) => (old[f] ?? '') !== (labels[f] ?? ''));
 
+/** Stale-label units → Qdrant batch set_payload operations, one per distinct label set. has_id (not `points`) so a point that is
+ *  not in this collection (main vs the hot RAM tier) is no error. Pure. */
+export function labelPatches(rows, foldAuthor) {
+  const groups = new Map();
+  for (const r of rows) {
+    const k = JSON.stringify([r.religion, r.author, r.collection, r.scope]);
+    if (!groups.has(k)) groups.set(k, { labels: r, ids: [] });
+    groups.get(k).ids.push(r.id);
+  }
+  return [...groups.values()].map(({ labels: l, ids }) => ({ set_payload: {
+    payload: { religion: l.religion, author: l.author, author_fold: foldAuthor(l.author), collection: l.collection, scope: l.scope },
+    filter: { must: [{ has_id: ids }] } } }));
+}
+
 export const vecKey = (model, dims, text) => createHash('sha1').update(`${model}\u0000${dims}\u0000${text}`).digest('hex');
 
 export const packF16 = (v) => Buffer.from(new Float16Array(v).buffer);

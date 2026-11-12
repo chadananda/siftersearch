@@ -1,6 +1,6 @@
 // Phrase-indexer pure helpers: units of a paragraph, the vector cache key, half-precision storage, Arabic-script share.
 import { describe, it, expect } from 'vitest';
-import { unitsOf, unitChange, labelsStale, vecKey, packF16, unpackF16, arabicShare, pointId, paragraphLang, normLang, estTokens } from '../../api/lib/phrase-vectors.js';
+import { unitsOf, unitChange, labelsStale, labelPatches, vecKey, packF16, unpackF16, arabicShare, pointId, paragraphLang, normLang, estTokens } from '../../api/lib/phrase-vectors.js';
 import { segment, SEG_VERSION, segVersion } from '../../api/lib/phrases.js';
 
 describe('unitsOf', () => {
@@ -97,4 +97,12 @@ describe('labelsStale (re-attributed paragraph → re-send the point, no embed)'
   it('doc moved scope → true', () => expect(labelsStale(old, { ...old, scope: 'supplemental' })).toBe(true));
   it('null and missing compare equal', () => expect(labelsStale({ ...old, collection: null }, { ...old, collection: undefined })).toBe(false));
   it('no stored unit → false (that is a new unit, not a relabel)', () => expect(labelsStale(undefined, old)).toBe(false));
+});
+
+describe('labelPatches (stale labels patched in place, never re-sent through the RAM tier)', () => {
+  const a = { religion: "Baha'i", author: 'Shoghi Effendi', collection: 'Letters', scope: 'primary' };
+  const ops = labelPatches([{ id: 1, ...a }, { id: 2, ...a }, { id: 3, ...a, author: "Abdu'l-Baha" }], (x) => x.toLowerCase());
+  it('one operation per label set', () => expect(ops).toHaveLength(2));
+  it('groups ids by has_id filter', () => expect(ops[0].set_payload.filter).toEqual({ must: [{ has_id: [1, 2] }] }));
+  it('payload carries the folded author', () => expect(ops[1].set_payload.payload).toEqual({ religion: "Baha'i", author: "Abdu'l-Baha", author_fold: "abdu'l-baha", collection: 'Letters', scope: 'primary' }));
 });

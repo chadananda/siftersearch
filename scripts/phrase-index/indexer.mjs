@@ -32,7 +32,7 @@ import dotenv from 'dotenv';
 import { mkdirSync, statfsSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { unitsOf, unitChange, labelsStale, vecKey, packF16, unpackF16, arabicShare, paragraphLang, estTokens } from '../../api/lib/phrase-vectors.js';
+import { unitsOf, unitChange, labelsStale, labelPatches, vecKey, packF16, unpackF16, arabicShare, paragraphLang, estTokens } from '../../api/lib/phrase-vectors.js';
 import { faShare } from '../../api/lib/arabic-script.js';
 import { dirBytes, hotVerdict, parseMemAvailable } from './hot-space.mjs';
 import { boilerplateTexts, keepSiteParagraph } from '../../api/lib/site-boilerplate.js';
@@ -207,11 +207,15 @@ function unitsFor(p, seg) {
 const unitsInBlock = store.prepare('SELECT point_id FROM units WHERE point_id BETWEEN ? AND ?');
 const dropUnit = store.prepare('DELETE FROM units WHERE point_id = ?');
 const stale = [];
+// Already-sent units whose filter labels went stale: their payload is patched in place (set_payload, main + hot), never
+// re-sent through the RAM tier — 11-12 round 2 re-sent 572K vectors for labels alone and filled qdrant-hot in 20 min.
+const repayload = [];
+const relabelUnit = store.prepare('UPDATE units SET religion = @religion, author = @author, collection = @collection, scope = @scope WHERE point_id = @id');
 
 // Paragraphs → units (stored) + texts still needing a vector. Returns the pending map for this chunk.
 function unitize(paras) {
   const pending = new Map(), buf = [], relabel = [];
-  let relabeled = 0;
+  let relabeled = 0, inPlace = 0;
   for (const p of paras) {
     const { seg, group } = paragraphLang(p.text, p.language);
     const units = unitsFor(p, seg);
@@ -225,7 +229,8 @@ function unitize(paras) {
       const labels = { religion: p.religion, author: paragraphAuthor(p), collection: p.collection || null, scope: p.scope || 'primary' };
       const relabelOnly = same && labelsStale(old, labels);
       if (relabelOnly) relabeled++;
-      if (!same || relabelOnly)
+      if (relabelOnly && old.upserted) { repayload.push({ id: u.pointId, ...labels }); inPlace++; }
+      else if (!same || relabelOnly)
         buf.push({ ...u, pid: String(p.id), doc: String(p.doc_id), key, fa: faShare(u.embedText), ...labels,
           lang: p.language, field: FIELD, group });
       // An unchanged unit already UPSERTED had its vector (the upsert joins vec), so skip the lookup: vec's key index is
@@ -242,7 +247,7 @@ function unitize(paras) {
   }
   if (FIELD === 'text') store.transaction(() => { for (const p of paras) unskip.run(p.id); })();
   tx(buf); if (relabel.length) store.transaction(() => relabel.forEach((r) => restamp.run(...r)))();
-  return { pending, units: buf.length - relabeled, relabeled };
+  return { pending, units: buf.length - (relabeled - inPlace), relabeled };
 }
 
 // Where the time goes (ms, summed over the run; embed is wall time of the concurrent API calls): logged on every chunk/done line
@@ -360,6 +365,15 @@ const withheldDocs = () => {
 async function upsert() {
   let sent = 0, pages = 0, dropped = 0;
   const skip = withheldDocs();
+  while (repayload.length) {
+    const rows = repayload.splice(0, 5000), operations = labelPatches(rows, authorKey);
+    let t1 = Date.now();
+    await qd('POST', `/collections/${COLL}/points/batch?wait=true`, { operations });
+    if (HOT) await qd('POST', `/collections/${HOT_COLL}/points/batch?wait=true`, { operations }, HOT);
+    T.qdrant_ms += Date.now() - t1; t1 = Date.now();
+    store.transaction(() => rows.forEach((r) => relabelUnit.run(r)))();   // after Qdrant took it: a failed patch is retried next run
+    T.sqlite_ms += Date.now() - t1;
+  }
   while (stale.length) {
     const points = stale.splice(0, 1000);
     await qd('POST', `/collections/${COLL}/points/delete?wait=true`, { points });
