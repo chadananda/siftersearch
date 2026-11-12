@@ -46,6 +46,7 @@ export function scoped(items, u, rank) {
   const keep = items.filter((p) => inScope(p) && (!FLOOR[u.authority_floor] || !kindOf(p) || FLOOR[u.authority_floor].includes(kindOf(p))));
   return { items: order(keep), excluded: items.length - keep.length };
 }
+const SECTION_MAX = 40;   // paragraphs of a remembered chapter fetch.anchor reads whole
 const merge = (u, into, items) => { const seen = new Set(u[into].map(key)); for (const p of items) if (!seen.has(key(p))) { seen.add(key(p)); u[into].push(p); } };
 const classify = (n, edges, thin = false) => (n === 0 ? 'none' : thin && edges.includes('thin') ? 'thin' : n === 1 && edges.includes('one') ? 'one' : edges.includes('several') ? 'several' : 'one');
 const finish = (s, p, edge, { count = 0, excluded = 0, read = {}, error = null, search = null } = {}) => {
@@ -191,7 +192,7 @@ const E = {
     async run(s, p = {}) {
       try { const f = await (s.tools?.facts ? s.tools.facts({}, s.ctx) : import('../../library/library-stats.js').then((x) => x.readLibraryStats())); if (!f) return finish(s, p, 'error', { error: 'no stats' }); merge(U(s), 'found_records', [{ kind: 'library_facts', ...f }]); return finish(s, p, 'one', { count: 1 }); } catch (err) { return finish(s, p, 'error', { error: err?.message }); }
     } },
-  'fetch.anchor': { kind: 'tool', cls: 'code', edges: ['one', 'thin', 'none', 'error'], scope: 'strategy', params: ['stage'], reads: ['referent', 'reader_position', 'previous_evidence', 'quoted_words', 'last_passages', 'work_place', 'amount_wanted'], writes: ['found_passages', ...OUT],
+  'fetch.anchor': { kind: 'tool', cls: 'code', edges: ['one', 'thin', 'none', 'error'], scope: 'strategy', params: ['stage'], reads: ['referent', 'reader_position', 'previous_evidence', 'quoted_words', 'last_passages', 'last_section', 'work_place', 'amount_wanted'], writes: ['found_passages', ...OUT],
     async run(s, p = {}) {   // the passage a question is about: the pointed-at item, the reader's place, the last evidence; quoted words alone are thin
       const u = U(s), pos = u.reader_position, hit = (u.referent && typeof u.referent === 'object' && u.referent.text ? u.referent : null) ?? u.previous_evidence?.passages?.[0];
       try {
@@ -208,6 +209,16 @@ const E = {
         if (!hit && u.refers_back && u.last_passages?.length) {
           const got = (await Promise.all(u.last_passages.slice(0, 3).map((x) => call(s, 'context_lookup', { document_id: x.document_id, paragraph_index: x.paragraph_index, before: 0, after: 0 }).then((c) => c?.passages?.[0] ?? null, () => null)))).filter(Boolean);
           if (got.length) { merge(u, 'found_passages', got.map((x) => ({ ...x, anchor: true }))); return finish(s, p, 'one', { count: got.length, read: { last_passages: u.last_passages } }); }
+        }
+        // the last turn gave a CHAPTER as a card ("summarize that chapter"): the chapter is the anchor, read whole (up to SECTION_MAX paragraphs), unless
+        // this message names its own place (a work, a scripture reference, quoted words) or asks for the next part
+        const sec = u.last_section;
+        if (!hit && sec && u.work_place !== 'next' && !u.quoted_words && !u.scripture_reference && (!u.named_work || Number(u.named_work) === sec.document_id || typeof u.named_work === 'string')) {
+          const last = Math.min(sec.end, sec.start + SECTION_MAX - 1), at = [];   // context_lookup gives 6 paragraphs a call (after ≤ 5)
+          for (let i = sec.start; i <= last; i += 6) at.push(i);
+          const got = (await Promise.all(at.map((i) => call(s, 'context_lookup', { document_id: sec.document_id, paragraph_index: i, before: 0, after: 5 }).then((c) => c?.passages || [], () => []))))
+            .flat().filter((x) => x.paragraph_index >= sec.start && x.paragraph_index <= last);
+          if (got.length) { merge(u, 'found_passages', got.map((x, i) => ({ ...x, anchor: i === 0 }))); return finish(s, p, 'one', { count: got.length, read: { last_section: sec } }); }
         }
         if (hit) { merge(u, 'found_passages', [{ ...hit, anchor: true }]); return finish(s, p, 'one', { count: 1, read: { referent: u.referent } }); }
         // a message that names nothing of its own ("who translated it?") is about what the thread last showed (11-12: Jev read it as its own question,

@@ -61,8 +61,8 @@ export function focusWork(state = emptyState()) {
   return Number.isFinite(id) && id > 0 ? { id, title: e.topic || null } : null;
 }
 /** The code patch a work-giving turn stores (thread entry + the title given). Pure. */
-export const workPatch = ({ turn, strategy, id, title }) => sanitizePatch({ thread: [{ turn, strategy, topic: title || null, found_outcome: 'one' }],
-  given: [{ turn, kind: 'title', ref: String(id) }] }, 'code');
+export const workPatch = ({ turn, strategy, id, title, section = null }) => sanitizePatch({ thread: [{ turn, strategy, topic: title || null, found_outcome: 'one' }],
+  given: [{ turn, kind: 'title', ref: String(id) }, ...(section ? [{ turn, kind: 'section', ref: `${id}:${section.start}-${section.end}` }] : [])] }, 'code');
 
 export async function defaultDeps() {   // exported for the strategy dry run (strategy-try.js), which swaps the thread/mail deps out
   const { anisRespond } = await import('./respond.js');
@@ -181,7 +181,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   const titled = titleFn && engine === undefined && research === undefined && !variants && !llm ? await titleFn(text).catch(() => null) : null;
   // the book card answer (one book event, description, link, offer): the bare-title gate below and Jev's book strategy on a named-work-only turn
   const rememberWork = (ex, strategy, doc) => (ex?.conversationId && d.state?.append && doc?.id
-    ? d.state.append({ conversationId: ex.conversationId, turn: ex.round, by: 'code', patch: workPatch({ turn: ex.round, strategy, id: doc.id, title: doc.title }) }).catch((err) => console.warn(`[conversation-state] work focus not stored: ${err?.message}`))
+    ? d.state.append({ conversationId: ex.conversationId, turn: ex.round, by: 'code', patch: workPatch({ turn: ex.round, strategy, id: doc.id, title: doc.title, section: doc.section }) }).catch((err) => console.warn(`[conversation-state] work focus not stored: ${err?.message}`))
     : null);
   const bookAnswer = async (work, ex, extra = {}) => {
     onEvent({ type: 'sources', sources: [], plan: { shape: 'work', work: work.doc.id }, ms: Date.now() - t0 });
@@ -205,7 +205,9 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const path = { gate: 'title', route: 'title', strategy: 'book', work: plan.work, section: { title: sec.title, start_index: sec.start_index }, ...extra, meta: turnMeta({ status: 'answered', meter, ms: Date.now() - t0 }),
       timeline: timelineOf(timeline, t0), llm: meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null })) };
     if (ex) await d.close({ ...ex, reply, status: 'answered', path, channel: channel.id }).catch(() => {});
-    await rememberWork(ex, 'book', { id: plan.work, title: doc?.title ?? sec.book ?? null });
+    // the chapter itself is remembered too, so "summarize that chapter" next turn reads THIS chapter (11-12 Dawn-Breakers: it searched the library instead)
+    const section = Number.isFinite(sec.start_index) && Number.isFinite(sec.end_index) ? { start: sec.start_index, end: sec.end_index } : null;
+    await rememberWork(ex, 'book', { id: plan.work, title: doc?.title ?? sec.book ?? null, section });
     return { reply, status: 'answered', citations, retrieved: [], plan, conversationId: ex?.conversationId ?? null, timings: { total_ms: Date.now() - t0 } };
   };
   // the in-work find's list (find-in-work.js inWorkReply: built by code, no writer), links upgraded to OceanLibrary ranges like any reply

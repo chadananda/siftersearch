@@ -3,7 +3,8 @@ import { describe, it, expect } from 'vitest';
 import { chooseStrategy } from '../../api/lib/assistant/strategy-choice.js';
 import { ELEMENTS } from '../../api/lib/assistant/activities/elements.js';
 import { entryUnits, graphFor } from '../../api/lib/assistant/activities/graph.js';
-import { lastPassages, lastTopic, emptyState, applyPatch } from '../../api/lib/assistant/units.js';
+import { lastPassages, lastSection, lastTopic, emptyState, applyPatch } from '../../api/lib/assistant/units.js';
+import { workPatch } from '../../api/lib/assistant/turn.js';
 import { linkedInPrevious, jevState } from '../../api/lib/assistant/request-features.js';
 import { LOOKUP_KINDS, OUTCOMES, KINDS } from '../../api/lib/assistant/triage.js';
 
@@ -115,5 +116,16 @@ describe('the tree uses the last turn', () => {
     expect(await ELEMENTS['fetch.anchor'].run(s, {})).toBe('one');
     expect(calls.map((c) => c.document_id)).toEqual([20910, 20915]);
     expect(s.units.found_passages.every((p) => p.anchor)).toBe(true);
+  });  // 11-12 Dawn-Breakers: "summarize that chapter" after the chapter-one card searched the library (Selections of the Báb, Letters to Australia)
+  it('a chapter card remembers its range; fetch.anchor reads that chapter whole next turn', async () => {
+    const st = applyPatch(emptyState(), workPatch({ turn: 1, strategy: 'book', id: 15, title: 'The Dawn-Breakers', section: { start: 30, end: 51 } }));
+    expect(lastSection(st)).toEqual({ document_id: 15, start: 30, end: 51 });
+    expect(lastSection(applyPatch(st, { given: [{ turn: 2, kind: 'passage', ref: '9:1' }] }))).toBe(null);   // a later turn moved on
+    const calls = [];
+    const s = mk({ last_section: lastSection(st), named_work: 'The Dawn-Breakers' }, { tools: { context_lookup: async (i) => { calls.push(i.paragraph_index);
+      return { passages: Array.from({ length: 6 }, (_, k) => ({ id: `15:${i.paragraph_index + k}`, text: 't', document_id: 15, paragraph_index: i.paragraph_index + k })) }; } } });
+    expect(await ELEMENTS['fetch.anchor'].run(s, {})).toBe('one');
+    expect(calls).toEqual([30, 36, 42, 48]);
+    expect(s.units.found_passages.map((p) => p.paragraph_index)).toEqual(Array.from({ length: 22 }, (_, k) => 30 + k));
   });
 });

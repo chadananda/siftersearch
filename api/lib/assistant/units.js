@@ -13,7 +13,7 @@ const ROWS = [
   ['named_sources', 'ids', 'jev+code', [], null], ['search_originals', 'bool', 'jev', true, 'conversation'], ['scope_excluded', 'count', 'elements', 0, null],
   ['reads_scripts', 'scripts', 'jev', [], 'conversation'],
   ['topic', 'text', 'jev', null, 'conversation'], ['question_frame', 'enum', 'jev', 'what', null], ['quoted_words', 'text', 'jev+code', null, null], ['quoted_clean', 'text', 'jev', null, null],
-  ['last_topic', 'text', 'code', null, null], ['last_passages', 'items', 'code', [], null], ['refers_back', 'bool', 'code', false, null], ['follows_topic', 'text', 'code', null, null], ['side_sources', 'map', 'code', {}, null],
+  ['last_topic', 'text', 'code', null, null], ['last_passages', 'items', 'code', [], null], ['last_section', 'item', 'code', null, null], ['refers_back', 'bool', 'code', false, null], ['follows_topic', 'text', 'code', null, null], ['side_sources', 'map', 'code', {}, null],
   ['incipit', 'text', 'jev', null, null], ['named_person', 'id', 'jev+code', null, 'conversation'], ['named_work', 'id', 'jev+code', null, 'conversation'], ['translation_wanted', 'id', 'jev+code', 'authorized', null],
   ['parallel_direction', 'enum', 'jev', 'to_original', null], ['work_place', 'enum', 'jev', null, null], ['target_lang', 'lang', 'jev', null, null], ['scripture_reference', 'ref', 'code', null, null], ['term', 'word', 'jev', null, 'conversation'],
   ['fact_asked', 'enum', 'jev', null, null], ['occasion', 'text', 'jev', null, null], ['compare_sides', 'list', 'jev', null, null], ['named_subjects', 'list', 'jev', null, null], ['audience', 'enum', 'jev', null, 'conversation'],
@@ -55,7 +55,7 @@ const FIELDS = {
     reads_scripts: (v) => { const a = Array.isArray(v) ? [...new Set(v.filter((x) => /^[a-z]{3,12}$/.test(x)))].slice(0, 6) : []; return a.length ? a : undefined; } },
   subjects: { topic: (v) => str(v, 200) ?? undefined, named_person: (v) => (typeof v === 'number' ? v : str(v, 80) ?? undefined), named_work: (v) => (typeof v === 'number' ? v : str(v, 80) ?? undefined), term: (v) => str(v, 80) ?? undefined },
 };
-const KINDS = ['passage', 'title', 'record'];
+const KINDS = ['passage', 'title', 'record', 'section'];   // section ref = "doc:start-end" (a chapter the turn gave as a card)
 const smallUnits = (x) => { if (!x || typeof x !== 'object') return {}; try { const j = JSON.stringify(x); return j.length <= 1500 ? JSON.parse(j) : {}; } catch { return {}; } };
 const ENTRY = {
   thread: (e) => (Number.isFinite(e?.turn) ? { turn: e.turn, strategy: str(e.strategy, 60), topic: str(e.topic, 200), output_form: str(e.output_form, 40), found_outcome: str(e.found_outcome, 20) } : null),
@@ -136,6 +136,12 @@ export function lastPassages(state = emptyState(), { strategy = null } = {}) {
   const t = ran ?? Math.max(...g.map((x) => x.turn));
   return g.filter((x) => x.turn === t).map((x) => { const [d, p] = String(x.ref).split(':'); return d !== '' && p != null && p !== '' && Number.isFinite(Number(d)) && Number.isFinite(Number(p)) ? { ref: x.ref, document_id: Number(d), paragraph_index: Number(p) } : null; }).filter(Boolean);
 }
+/** The numbered unit (a chapter) the LAST turn gave as a card → { document_id, start, end }, or null. Pure. */
+export function lastSection(state = emptyState()) {
+  const g = state.given || [], t = g.length ? Math.max(...g.map((x) => x.turn)) : null;
+  const m = String(g.filter((x) => x.turn === t && x.kind === 'section').at(-1)?.ref ?? '').match(/^(\d+):(\d+)-(\d+)$/);
+  return m ? { document_id: Number(m[1]), start: Number(m[2]), end: Number(m[3]) } : null;
+}
 /** The subject of the last turn: the state's thread entry, else the previous user message. Pure. */
 export const lastTopic = (state = emptyState(), messages = []) => state.thread?.at(-1)?.topic ?? messages.filter((m) => m.role === 'user').slice(0, -1).at(-1)?.content?.slice(0, 300) ?? null;
 
@@ -153,7 +159,7 @@ export function buildUnits({ question = '', messages = [], state = emptyState(),
   for (const n of ['audience', 'reader_state', 'topic', 'named_person', 'named_work', 'term']) { const r = resolveUnit(n, layers); if (r.layer !== 'default' || UNITS[n].default != null) u[n] = r.value; }
   const given = state.given || [];
   u.referent = given.length ? [given[given.length - 1]] : null;
-  u.last_topic = lastTopic(state, messages); u.last_passages = lastPassages(state, request.work_place === 'next' ? { strategy } : {});
+  u.last_topic = lastTopic(state, messages); u.last_passages = lastPassages(state, request.work_place === 'next' ? { strategy } : {}); u.last_section = lastSection(state);
   for (const n of needs || []) if (isRequestUnit(n) && request[n] != null) u[n] = request[n];
   return u;
 }
