@@ -7,8 +7,15 @@ import { withAIContext } from '../ai-context.js';
 import { spanIsPresent } from '../rag/enrich/retrieval.js';
 // quotes/dashes normalised on both sides: a model returns straight quotes for the texts' curly ones (11-11: a4 framingProof flagged for that)
 // footnote markers ([^41]) and page markers ([pg 26]) stripped: a model copies the words without them (11-12: Aqdas unborn ¶ dropped for that)
-const qnorm = (t) => String(t || '').replace(/\[\^[^\]]*\]|\[pg\s*[\w.-]+\]/gi, '').replace(/[\u2018\u2019\u02BC\u2032\u00B4`]/g, "'").replace(/[\u201C\u201D\u00AB\u00BB]/g, '"').replace(/[\u2013\u2014]/g, '-');
-export const spanPresent = (span, texts) => spanIsPresent(qnorm(span), texts.map(qnorm));
+// all quote marks → one (a model writes 'None shall…' for “None shall…”, 11-12)
+const qnorm = (t) => String(t || '').replace(/\[\^[^\]]*\]|\[pg\s*[\w.-]+\]/gi, '').replace(/[\u2018\u2019\u02BC\u2032\u00B4`\u201C\u201D\u00AB\u00BB"]/g, "'").replace(/[\u2013\u2014]/g, '-');
+// a proof may join separate phrases ("A... B", or two non-adjacent sentences): every piece must be present; pieces too short to check are skipped
+export function spanPresent(span, texts) {
+  const t = texts.map(qnorm), whole = spanIsPresent(qnorm(span), t);
+  if (whole !== false) return whole;
+  const pieces = qnorm(span).split(/\.{3}|\u2026|(?<=[.!?;])\s+/).map((x) => x.trim()).filter((x) => x.length >= 12);
+  return pieces.length > 1 && pieces.every((x) => spanIsPresent(x, t) === true) ? true : false;
+}
 import { JUDGE_MODEL } from './hype-rubric.js';
 import { calculateCost } from '../model-registry.js';
 import { isCreditRefusal, isSpendCap, CREDIT_WAIT_MS } from '../spend-caps.js';

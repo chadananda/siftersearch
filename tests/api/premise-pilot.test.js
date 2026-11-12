@@ -111,6 +111,13 @@ describe('parsePremises + policy', () => {
     expect(spanPresent('When We heard the clamor of the children as yet unborn, We doubled their share and decreased those of the rest.', [text])).toBe(true);
     expect(spanPresent('Muhammad never fought against the Christians; on the contrary', ['[pg 26]  Muhammad never fought against the Christians; on the contrary, He treated them'])).toBe(true);
   });
+  it('a proof joining separate phrases passes only when every piece is in the passage (11-12 drops)', () => {
+    const text = 'Beware lest ye shed the blood of anyone. Unsheathe the sword of your tongue. God\u2019s mercy, hath, verily, encompassed all created things. The one true God hath said: \u201cNone shall bear the burden of another.\u201d';
+    expect(spanPresent('Beware lest ye shed the blood of anyone. God\'s mercy, hath, verily, encompassed all created things', [text])).toBe(true);
+    expect(spanPresent('Beware lest ye shed the blood of anyone... Unsheathe the sword of your tongue', [text])).toBe(true);
+    expect(spanPresent("The one true God hath said: 'None shall bear the burden of another.'", [text])).toBe(true);
+    expect(spanPresent('Beware lest ye shed the blood of anyone... words that are nowhere in it at all', [text])).toBe(false);
+  });
   it('the prompt asks for implications (lesser right implies the greater) in an "implies" field', () => {
     expect(SYSTEM).toMatch(/unborn/);
     expect(SYSTEM).toMatch(/lesser right/);
