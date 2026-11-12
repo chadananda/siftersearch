@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-12T16:47:22.570Z",
+  "generated": "2026-11-12T18:28:52.735Z",
   "entries": [
     {
       "hash": "d77f43242",
@@ -678,13 +678,6 @@
       "date": "2026-10-31",
       "type": "Other",
       "description": "A talk missing only finish stages goes to cpu-finish, never back to gpu; gpu re-runs only when the pure remaster input is gone (have.pure false) or remaster never ran",
-      "scope": null
-    },
-    {
-      "hash": "9514d5d3a",
-      "date": "2026-10-30",
-      "type": "Other",
-      "description": "Whole bootstrap exports the image's LD_LIBRARY_PATH (ssh sessions lack it → sherpa CUDA couldn't load libcublasLt.so.12, every 'unsure' talk failed at diarize after its GPU remaster); diarize falls back to CPU if the CUDA provider can't load",
       "scope": null
     }
   ],
@@ -1389,15 +1382,6 @@
         "date": "2026-10-31",
         "type": "Other",
         "description": "A talk missing only finish stages goes to cpu-finish, never back to gpu; gpu re-runs only when the pure remaster input is gone (have.pure false) or remaster never ran",
-        "scope": null
-      }
-    ],
-    "2026-10-30": [
-      {
-        "hash": "9514d5d3a",
-        "date": "2026-10-30",
-        "type": "Other",
-        "description": "Whole bootstrap exports the image's LD_LIBRARY_PATH (ssh sessions lack it → sherpa CUDA couldn't load libcublasLt.so.12, every 'unsure' talk failed at diarize after its GPU remaster); diarize falls back to CPU if the CUDA provider can't load",
         "scope": null
       }
     ]
