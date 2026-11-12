@@ -96,3 +96,15 @@ describe('cut quotations and the hit’s own issue (11-12)', () => {
     expect(replyOf({ ...r, passages: [{ ...r.passages[0], document_id: 13234 }] })).toContain('[*Star of the West, v1, i1*, #44]');
   });
 });
+
+describe('subject words (11-12: "maxwell birth … in Star of the West" searched the whole sentence)', async () => {
+  const { subjectWords } = await import('../../api/lib/assistant/find-in-work.js');
+  it('the model names the subject; the work title or nothing → null', async () => {
+    const msgs = [{ role: 'user', content: 'Can you try again to see if the maxwell birth is mentioned in Star of the West?' }];
+    let seen = '';
+    expect(await subjectWords({ messages: msgs, title: 'Star of the West', complete: async (m) => { seen = m[0].content; return { content: '{"words": "birth of Mary Maxwell"}' }; } })).toBe('birth of Mary Maxwell');
+    expect(seen).toContain('maxwell birth');
+    expect(await subjectWords({ messages: msgs, title: 'Star of the West', complete: async () => ({ content: '{"words": "Star of the West"}' }) })).toBeNull();
+    expect(await subjectWords({ messages: msgs, title: 'X', complete: async () => ({ content: '{"words": ""}' }) })).toBeNull();
+  });
+});

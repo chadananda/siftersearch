@@ -174,8 +174,12 @@ export async function findInWorkAnswer({ messages, names = [], by = null, topic 
   const other = await import('./work-request.js').then((m) => m.namesOf(doc.title)).catch(() => []);   // "KIQ", "World Order letters"
   // titles = the RESOLVED work's own names only: Jev's named units are unverified (11-12: '"five diamonds" in star of the west' — he
   // named the quote as a work, and its span was dropped as a title → "no words to find", the SoW card instead of the search)
-  const words = wordsToFind({ quoted, topic, titles: [doc.title, sec?.title, ...other] });
-  decisions?.record?.('in-work:resolve', { by: 'code', saw: { quoted, topic, work: doc.id, section: sec?.title ?? null }, chosen: words || 'none', reason: words ? null : 'no words to find: the work itself (its card)' });
+  // no quoted words → the subject to look for, read from the conversation by a small model (11-12: "Can you try again to see if the
+  // maxwell birth is mentioned in Star of the West?" was searched whole, asking words and all). Quoted words stay the reader's own.
+  const ask = deps.subjectWords ?? (search ? null : subjectWords);
+  const said = !quoted.length && ask ? await ask({ messages, title: doc.title }).catch(() => null) : null;
+  const words = said || wordsToFind({ quoted, topic, titles: [doc.title, sec?.title, ...other] });
+  decisions?.record?.('in-work:resolve', { by: said ? 'anis-find-words' : 'code', saw: { quoted, topic, work: doc.id, section: sec?.title ?? null }, chosen: words || 'none', reason: words ? null : 'no words to find: the work itself (its card)' });
   if (!words) return { book: found, work: doc };   // the work itself was asked for → the turn gives its card
   const run = search || (async (a) => (await import('./tools.js')).run('quote_search', a, { deps: deps.toolDeps || {} }));
   // Star of the West is filed one document per issue: the magazine named → every issue searched (Chad 11-11)
@@ -184,6 +188,21 @@ export async function findInWorkAnswer({ messages, names = [], by = null, topic 
   if (!res) return null;
   const r = await withVoices(asWorkResult(res, words, doc), deps);
   return { result: r, reply: inWorkReply(r, { section: sec?.title ?? null }), cards: passageCards(r, { cover: doc.cover_url ?? null }), work: doc, section: sec };
+}
+
+const WORDS_PROMPT = (convo, title) => `A reader is talking with a research assistant about the work "${title}". From the conversation below, what should be searched for inside that work to answer the reader's LAST message? Give the subject or words as the texts themselves would say them (names, the event, the idea), a few words — never the asking words ("can you", "try again", "see if", "mentioned", "find") and never the work's own title. Resolve "it", "that", "again" from the earlier turns. The work's name alone with nothing to look for → "".
+
+${convo}
+
+Reply with JSON only: {"words": "..."}`;
+/** The words to look for in a work when none were quoted: one small-model call over the last turns. → string or null. */
+export async function subjectWords({ messages, title, complete = null }) {
+  const convo = (messages || []).slice(-5).map((m) => `${m.role === 'user' ? 'Reader' : 'Assistant'}: ${String(m.content || '').slice(0, 600)}`).join('\n');
+  const call = complete || (async (msgs) => (await import('../ai.js')).chatCompletion(msgs, { ...(await import('../model-roles.js')).modelFor('anis-find-words'), temperature: 0, maxTokens: 80, thinking: false, caller: 'anis-find-words' }));
+  const out = await call([{ role: 'user', content: WORDS_PROMPT(convo, title) }]);
+  const t = String(out?.content ?? out?.text ?? out ?? '').match(/\{[\s\S]*\}/)?.[0];
+  const w = t ? String(JSON.parse(t).words || '').trim() : '';
+  return w && foldText(w) !== foldText(title) ? w : null;
 }
 
 /** quote_search's result → the shape inWorkReply / passageCards read: { work, query, mode, total, passages }. Pure. */
