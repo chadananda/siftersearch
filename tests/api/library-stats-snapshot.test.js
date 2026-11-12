@@ -84,7 +84,7 @@ describe('library-stats snapshot', () => {
   };
   it('shapes totals and facet maps from one facet pass', () => {
     const s = shapeLibraryStats(rows, Date.parse('2026-10-23T12:00:00Z'));
-    expect(s.totals).toEqual({ documents: 17, docs_with_content: 14, paragraphs: 600, authors: 7, languages: 2, recently_updated: 4 });
+    expect(s.totals).toEqual({ documents: 17, docs_with_content: 14, paragraphs: 600, authors: 7, languages: 2, recently_updated: 4, people: 0 });
     expect(s.religionCounts).toEqual({ 'Bahá’í': 15, Islam: 2 });
     expect(s.religionParagraphs['Bahá’í']).toBe(600);
     expect(s.collectionCounts).toEqual({ 'Core Tablets': 15 });

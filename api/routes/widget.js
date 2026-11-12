@@ -15,6 +15,7 @@ import { nanoid } from 'nanoid';
 import { query, queryAll, queryOne } from '../lib/db.js';
 import { requireInternal } from '../lib/auth.js';
 import { logger } from '../lib/logger.js';
+import { fillFacts } from '../lib/library/library-stats.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const STATIC_DIR = join(__dirname, '..', 'static', 'widget');
@@ -195,7 +196,9 @@ function init(){
     }
     return reply.header('cache-control', 'public, max-age=60, s-maxage=300').send({
       token: row.token, name: row.name,
-      greeting: cfg.greeting || 'Hello! Ask me anything about the sacred literature.',
+      greeting: fillFacts(cfg.greeting || 'Hello! Ask me anything about the sacred literature.'),
+      // several greetings → the widget picks one per visit (the response is edge-cached, so the choice is the reader's, not ours)
+      greetings: Array.isArray(cfg.greetings) ? cfg.greetings.filter((g) => typeof g === 'string' && g.trim()).map((g) => fillFacts(g)) : [],
       accent: cfg.accent || '#1a6b5e', position: cfg.position || 'bottom-right',
       chatbotLocation: cfg.chatbotLocation || null, placeholder: cfg.placeholder || 'Ask a question…',
     });

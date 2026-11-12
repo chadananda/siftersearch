@@ -91,7 +91,8 @@
         if (accent) cfg.accent = accent;
         if (name) cfg.name = name;
         try { messages = JSON.parse(localStorage.getItem(storeKey()) || '[]'); } catch { messages = []; }
-        if (!messages.length && c.greeting) messages = [{ role: 'assistant', content: c.greeting, done: true }];
+        const hello = c.greetings?.length ? c.greetings[Math.floor(Math.random() * c.greetings.length)] : c.greeting;
+        if (!messages.length && hello) messages = [{ role: 'assistant', content: hello, done: true }];
         track('widget_load');
         maybeOfferOnetap();   // a restored transcript may already qualify — don't wait for the next answer
       })

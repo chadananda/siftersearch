@@ -3,6 +3,7 @@
 // job gives the costly ones a TTL. ai_usage is read INCREMENTALLY by rowid range (usageDelta), never month-wide.
 // Deps: db.js, pipeline/snapshot-queries.js.
 import { queryAll, queryOne } from '../db.js';
+import { LIVE_SQL } from '../entity-live.js';
 import { LANG_TOTALS_SQL, LANG_PENDING_EMBEDDING_SQL, LANG_PENDING_SYNC_V2_SQL, mergeByLanguage,
   EMB_TOTAL_SQL, EMB_MISSING_SQL, EMB_DIRTY_SQL } from '../pipeline/snapshot-queries.js';
 
@@ -150,7 +151,8 @@ export async function libraryStatsRows({ recentSince }) {
     GROUP BY author ORDER BY documents DESC LIMIT 25`, [], 'snapshot:library-top-authors');
   const recentlyUpdated = (await queryOne(`SELECT COUNT(*) AS n FROM docs WHERE deleted_at IS NULL AND updated_at > ?`,
     [recentSince], 'snapshot:library-recent'))?.n ?? 0;
-  return { facets, authors, byEra, topAuthors, recentlyUpdated };
+  const people = (await queryOne(`SELECT COUNT(*) AS n FROM graph_entities WHERE entity_type = 'person' AND ${LIVE_SQL()}`, [], 'snapshot:library-people'))?.n ?? 0;
+  return { facets, authors, byEra, topAuthors, recentlyUpdated, people };
 }
 
 /** Every live, non-duplicate document's reader path parts (data/library-sitemap.json → /sitemap-library*.xml): one

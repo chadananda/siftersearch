@@ -11,12 +11,12 @@ const DEFAULT_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '
 
 const EMPTY = Object.freeze({
   generated_at: null, missing: true,
-  totals: { documents: 0, docs_with_content: 0, paragraphs: 0, authors: 0, languages: 0, recently_updated: 0 },
+  totals: { documents: 0, docs_with_content: 0, paragraphs: 0, authors: 0, languages: 0, recently_updated: 0, people: 0 },
   religionCounts: {}, religionParagraphs: {}, collectionCounts: {}, languageCounts: {}, facets: [], byEra: [], topAuthors: [],
 });
 
 /** rows from pipeline-snapshot-repo.libraryStatsRows() → the published snapshot. */
-export function shapeLibraryStats({ facets = [], authors = 0, byEra = [], topAuthors = [], recentlyUpdated = 0 }, now = Date.now()) {
+export function shapeLibraryStats({ facets = [], authors = 0, byEra = [], topAuthors = [], recentlyUpdated = 0, people = 0 }, now = Date.now()) {
   const religionCounts = {}, religionParagraphs = {}, collectionCounts = {}, languageCounts = {};
   let documents = 0, withContent = 0, paragraphs = 0;
   for (const r of facets) {
@@ -29,7 +29,7 @@ export function shapeLibraryStats({ facets = [], authors = 0, byEra = [], topAut
   return {
     generated_at: new Date(now).toISOString(),
     totals: { documents, docs_with_content: withContent, paragraphs, authors: Number(authors) || 0,
-      languages: new Set(facets.map((r) => r.language).filter((l) => l != null)).size, recently_updated: Number(recentlyUpdated) || 0 },
+      languages: new Set(facets.map((r) => r.language).filter((l) => l != null)).size, recently_updated: Number(recentlyUpdated) || 0, people: Number(people) || 0 },
     religionCounts, religionParagraphs, collectionCounts, languageCounts,
     facets: facets.map((r) => ({ religion: r.religion ?? null, collection: r.collection ?? null, language: r.language ?? null, n: Number(r.n) || 0 })),
     byEra, topAuthors,
@@ -74,4 +74,13 @@ export function religionCollectionCounts(snap = readLibraryStats()) {
     m.set(k, (m.get(k) || 0) + (r.n || 0));
   }
   return [...m].map(([k, count]) => { const [religion, collection] = JSON.parse(k); return { religion, collection, count }; });
+}
+
+/** A greeting's live facts: {paragraphs} → "10.2 million", {people} → "41,000" (rounded down), from the snapshot. A fact
+ *  the snapshot lacks drops its whole sentence rather than show a zero. */
+export function fillFacts(text, totals = readLibraryStats().totals) {
+  const round = (n) => (n >= 1e6 ? `${Math.floor(n / 1e5) / 10} million` : n >= 1000 ? (Math.floor(n / 1000) * 1000).toLocaleString('en-US') : String(n));
+  const facts = { paragraphs: totals?.paragraphs, people: totals?.people, documents: totals?.documents, languages: totals?.languages };
+  return String(text || '').split(/(?<=[.!?])\s+/).filter((s) => [...s.matchAll(/\{(\w+)\}/g)].every(([, k]) => facts[k] > 0))
+    .map((s) => s.replace(/\{(\w+)\}/g, (_, k) => round(facts[k]))).join(' ');
 }
