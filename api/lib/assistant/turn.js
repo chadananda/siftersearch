@@ -351,7 +351,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   // '"Dispensation of Baha'u'llah"' — Unmatched, lookup quote — never reached the probe and got a quote search of its own title)
   const probeKey = strategyOf(strat) ?? (unmatchedName(strat?.strategy?.choice) || (!strat && lkIntent === 'quote') ? 'unmatched' : null);
   const probe = bookGate && !bookOn ? PROBE_ALT[probeKey] : null;
-  const lookupNow = () => timed('lookup', () => d.lookup(messages, { intent: lkIntent, profile, decisions, onJev: (info) => decisions.record('jev:timeout', timeoutDecision(info)) }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null);
+  const lookupNow = () => timed('lookup', () => d.lookup(messages, { intent: lkIntent, focus, work: u.named_work ?? null, profile, decisions, onJev: (info) => decisions.record('jev:timeout', timeoutDecision(info)) }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null);
   // Jev read a numbered reference: it resolves BEFORE the book card, which answers only when no numbered unit is found (11-11
   // "Dawn-Breakers - Chapter 25": named-work-only made it the book strategy and it carded a one-chapter scrape instead)
   const lkFirst = lkIntent === 'reference' && (bookOn || probe) ? await lookupNow() : undefined;

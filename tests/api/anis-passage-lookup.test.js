@@ -2,7 +2,7 @@
 // and blockquotes that hold only book text. Fixtures: Gleanings 27 (pn sections), Dhammapada 183 (verse-numbered, no
 // numbers in the edition), Some Answered Questions 33 (chapters numbered by order). All deps mocked; no DB.
 import { describe, it, expect } from 'vitest';
-import { resolveLookup, headingNumber, referenceHow, ensureWholeReference } from '../../api/lib/assistant/lookup.js';
+import { resolveLookup, headingNumber, bareReference, wordNumber, referenceHow, ensureWholeReference } from '../../api/lib/assistant/lookup.js';
 import { verseWork, versePlace, VERSE_WORKS } from '../../api/lib/assistant/numbering.js';
 import { bookOnlyBlockquotes } from '../../api/lib/assistant/quotes.js';
 
@@ -166,5 +166,30 @@ describe('a work numbered in parts', () => {
   it('another edition (paragraph count differs) is not read by the table', async () => {
     const r = await resolveLookup(user('Persian Hidden Words 1'), { ...deps([]), findTitled: async () => ({ doc: { ...HW, paragraph_count: 334 } }) });
     expect(r).toBeNull();
+  });
+});
+
+// 11-12 dawnbreakers#2: "give me the opening paragraph of chapter one" with The Dawn-Breakers in focus carded a one-chapter scrape
+describe('a numbered unit with no title → the work in focus', () => {
+  const rows = [{ id: 1, paragraph_index: 40, heading: 'CHAPTER I', text: 'Shaykh Aḥmad-i-Ahsá’í, the first paragraph of the chapter.' },
+    { id: 2, paragraph_index: 41, heading: 'CHAPTER I', text: 'The second paragraph of chapter one.' }, { id: 3, paragraph_index: 90, heading: 'CHAPTER II', text: 'two' }];
+  const deps = { intent: 'reference', paragraphsByPn: async () => [], headingStarts: async () => [rows[0], rows[2]], paragraphsInRange: inRangeOf(rows), withLinks: links };
+  it('spelled cardinals read as numbers', () => {
+    expect([wordNumber('one'), wordNumber('twenty-five'), wordNumber('forty'), wordNumber('ahmad')]).toEqual([1, 25, 40, null]);
+    expect(bareReference('give me the opening paragraph of chapter one')).toEqual({ title: null, num: 1, unit: 'chapter' });
+    expect(bareReference('chapter XII please')).toMatchObject({ num: 12 });
+  });
+  it('resolves in the focus work, never by searching titles', async () => {
+    const r = await resolveLookup(user('give me the opening paragraph of chapter one'), { ...deps, focus: { id: 21308, title: 'The Dawn-Breakers' },
+      findTitled: async () => { throw new Error('no title search'); } });
+    expect(r.work.doc.id).toBe(21308);
+    expect(r.passages.map((p) => p.paragraph_index)).toEqual([40, 41]);
+  });
+  it('no focus: the work Jev named this turn', async () => {
+    const r = await resolveLookup(user('chapter one'), { ...deps, work: 'The Dawn-Breakers', findTitled: async (c) => c[0] === 'The Dawn-Breakers' ? { doc: { id: 7, title: 'The Dawn-Breakers' } } : null });
+    expect(r.work.doc.id).toBe(7);
+  });
+  it('no focus and no named work: no reference', async () => {
+    expect(await resolveLookup(user('chapter one'), { ...deps, findTitled: async () => null })).toBeNull();
   });
 });

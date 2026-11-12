@@ -37,6 +37,27 @@ export function parseReference(text) {
   return num && title.split(/\s+/).length <= 6 ? { title, num, ...(unit ? { unit } : {}), ...(part ? { part } : {}) } : null;
 }
 
+// spelled cardinals are numerals written out ("chapter one", "section twenty-five") — grammar, not a list of spellings of any name
+const ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+export function wordNumber(w) {
+  const [a, b] = String(w || '').toLowerCase().split(/[\s-]+/);
+  if (ONES.includes(a) && !b) return ONES.indexOf(a) || null;
+  const t = TENS.indexOf(a);
+  return t > 1 ? (b ? (ONES.indexOf(b) > 0 && ONES.indexOf(b) < 10 ? t * 10 + ONES.indexOf(b) : null) : t * 10) : null;
+}
+/** A numbered unit with no title ("the opening paragraph of chapter one") → { num, unit } | null — the work comes from the
+ *  conversation (11-12 Dawn-Breakers in focus: no title in the message, so the turn carded a one-chapter scrape). Pure. */
+export function bareReference(text) {
+  const t = stripMarkup(text);
+  const m = /\b(chapter|ch\.|section|part|talk|lesson|letter|tablet)\s+(\d{1,4}|[ivxlcdm]{1,8}|[a-z]+(?:[\s-][a-z]+)?)\b/i.exec(t);
+  if (!m) return null;
+  const raw = m[2], words = raw.split(/[\s-]+/);
+  const num = /^\d+$/.test(raw) ? Number(raw) : ROMAN.test(raw) ? romanToInt(raw) : wordNumber(raw) ?? wordNumber(words[0]);
+  const unit = m[1].toLowerCase().replace(/^ch\.$/, 'chapter');
+  return num ? { title: null, num, unit } : null;
+}
+
 /** The number a heading carries ("Chapter 33", "XXXIII. On ...", "33 — ...", "Verse 183"), or null. Pure. */
 export function headingNumber(h) {
   const m = /^\s*(?:\[pg\s*\d+\]\s*)*(?:(?:chapter|section|part|talk|lesson|verse|prayer|tablet|no\.?|number|#)\s*)?(\d{1,4}|[ivxlcdm]{1,8})(?=$|[\s.:)\-–—,])/i.exec(String(h || ''));
@@ -165,11 +186,14 @@ export async function resolveLookup(messages, deps = {}) {
     return w ? done({ kind: 'book', work: w }) : null;
   };
   if (intent === 'reference') {
-    const ref = parseReference(text);
+    // a reference that names no work is read in the work in focus (the previous turn's), else the work Jev named this turn
+    const ref = parseReference(text) ?? ((deps.focus || deps.work) ? bareReference(text) : null);
     // a work numbered in parts resolves to the edition its table was verified on — the reference's title words ("What is Arabic
     // Hidden Word") name no edition (live 11-11: "work not found", the turn fell to search and said the text was not found)
-    const parts = ref && workParts(ref.title);
-    const w = ref && await titled([parts ? parts.find : ref.title], { min: 0.9 }).catch(() => null);
+    const parts = ref?.title && workParts(ref.title);
+    const w = !ref ? null : ref.title ? await titled([parts ? parts.find : ref.title], { min: 0.9 }).catch(() => null)
+      : deps.focus ? { doc: { id: deps.focus.id, title: deps.focus.title || deps.work || '' } }
+      : await titled([deps.work], { min: 0.9 }).catch(() => null);
     // which step resolved the reference (11-11: "Dawn-Breakers - Chapter 25" fell to search and the trace could not say why)
     const step = (via, r) => { deps.decisions?.record('lookup:reference', { by: 'code', saw: { ref, work: w ? `${w.doc.id} ${w.doc.title}` : null },
       options: ['parts table', 'display number', 'verse table', 'chapter heading', 'section table', 'none'], chosen: r ? via : 'none', reason: r ? `${r.passages?.length ?? 0} passages` : via }); return r; };
