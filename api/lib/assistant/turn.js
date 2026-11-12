@@ -252,7 +252,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       timeline: timelineOf(timeline, t0), llm: meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null })) };
     if (ex) await d.close({ ...ex, reply, status: 'answered', path, channel: channel.id }).catch(() => {});
     if (got.work) await rememberWork(ex, 'in_work', { id: got.work.id, title: got.work.title ?? r.work?.title ?? null });
-    return { reply, status: 'answered', citations, retrieved: [], plan, conversationId: ex?.conversationId ?? null, timings: { total_ms: Date.now() - t0 } };
+    return { reply, status: 'answered', citations, retrieved: [], plan, path, conversationId: ex?.conversationId ?? null, timings: { total_ms: Date.now() - t0 } };
   };
   if (titled) {
     const ex = await d.open(logArgs).catch(() => null);
