@@ -929,6 +929,8 @@
     .qcard .qcard-cite em { color: #f1ede3; }
     .bubble.lit::first-letter { color: color-mix(in srgb, var(--accent) 45%, #cfe1ff); }
     .bubble :global(a), .cites a { color: color-mix(in srgb, var(--accent) 30%, #cfe1ff); }
+    .nextq button { color: #c4cddb; border-color: rgba(196, 205, 219, .3); }   /* subtle, never unreadable (Chad 11-12) */
+    .nextq button:hover:not(:disabled) { color: #eef1f6; border-color: rgba(196, 205, 219, .55); }
     .cites a { background: color-mix(in srgb, var(--gold) 8%, transparent); border-color: color-mix(in srgb, var(--gold) 40%, transparent); }
     .stage { background-image: linear-gradient(90deg, #6d7789 0%, color-mix(in srgb, var(--accent) 40%, #cfe1ff) 45%, var(--gold-soft) 55%, #6d7789 100%); }
     footer { border-top: 1px solid #232a35; }
