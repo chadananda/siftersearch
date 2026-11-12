@@ -106,6 +106,16 @@ describe('premisePilotJob', () => {
 });
 
 describe('parsePremises + policy', () => {
+  it('proof check ignores footnote and page markers (Aqdas unborn ¶ was dropped for [^41])', () => {
+    const text = 'When We heard the clamor of the children as yet unborn,[^41] We doubled their share and decreased those of the rest.';
+    expect(spanPresent('When We heard the clamor of the children as yet unborn, We doubled their share and decreased those of the rest.', [text])).toBe(true);
+    expect(spanPresent('Muhammad never fought against the Christians; on the contrary', ['[pg 26]  Muhammad never fought against the Christians; on the contrary, He treated them'])).toBe(true);
+  });
+  it('the prompt asks for implications (lesser right implies the greater) in an "implies" field', () => {
+    expect(SYSTEM).toMatch(/unborn/);
+    expect(SYSTEM).toMatch(/lesser right/);
+    expect(SYSTEM).toMatch(/"implies"/);
+  });
   it("proof check tolerates straight quotes against the text's curly ones, still rejects absent words", () => {
     const text = "Bahá\u2019u\u2019lláh said \u201Cjustice\u201D \u2014 the best beloved";
     expect(spanPresent("Bahá'u'lláh said \"justice\" - the best beloved", [text])).toBe(true);

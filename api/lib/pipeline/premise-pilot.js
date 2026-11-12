@@ -6,7 +6,8 @@ import path from 'node:path';
 import { withAIContext } from '../ai-context.js';
 import { spanIsPresent } from '../rag/enrich/retrieval.js';
 // quotes/dashes normalised on both sides: a model returns straight quotes for the texts' curly ones (11-11: a4 framingProof flagged for that)
-const qnorm = (t) => String(t || '').replace(/[\u2018\u2019\u02BC\u2032\u00B4`]/g, "'").replace(/[\u201C\u201D\u00AB\u00BB]/g, '"').replace(/[\u2013\u2014]/g, '-');
+// footnote markers ([^41]) and page markers ([pg 26]) stripped: a model copies the words without them (11-12: Aqdas unborn ¶ dropped for that)
+const qnorm = (t) => String(t || '').replace(/\[\^[^\]]*\]|\[pg\s*[\w.-]+\]/gi, '').replace(/[\u2018\u2019\u02BC\u2032\u00B4`]/g, "'").replace(/[\u201C\u201D\u00AB\u00BB]/g, '"').replace(/[\u2013\u2014]/g, '-');
 export const spanPresent = (span, texts) => spanIsPresent(qnorm(span), texts.map(qnorm));
 import { JUDGE_MODEL } from './hype-rubric.js';
 import { calculateCost } from '../model-registry.js';
@@ -24,6 +25,8 @@ export const PILOT_TARGETS = [
 ];
 export const SYSTEM = `You read ONE passage from a religious or historical work and list the PREMISES it rests on: things it ASSUMES (presupposes) or plainly states that carry real political, legal, economic, ethical or philosophical weight for contemporary debate.
 Example: a ruler is rebuked for unjust taxation. That presupposes rights exist before the state (from God), a sovereign can be wrong, and the power to tax has moral limits.
+Example: a law gives children still unborn a share of inheritance. That presupposes the unborn already have standing and rights of their own; and if they hold the lesser right (property), it implies the greater one (life), which bears directly on today's abortion debate.
+IMPLICATIONS (the point of this work): a passage often bears on a modern debate it never names. Draw the implication when it follows by plain reasoning: if a lesser right is granted, the greater is implied; if a ruler can be rebuked for taking something, it was never his to give. Put it in "implies": one sentence naming the modern debate and the position the passage supports or challenges (for example "rights come from God and precede the state, against the view that governments grant them"). Leave "implies" empty when nothing follows beyond the premise.
 Rules:
 - The normal answer is an EMPTY list. Narrative, devotional, ritual and descriptive passages usually have no such premise. Never manufacture one.
 - Stay inside what the passage itself addresses. When it speaks of one aspect (the station God created man for, the higher or spiritual nature, an ideal, one specific law), NAME that aspect in the premise; never generalise into a claim about the whole of human nature, all rulers, or all property.
@@ -31,11 +34,11 @@ Rules:
 - Plain words, no jargon. One plain sentence per premise.
 - "proof" must be words copied EXACTLY from the PASSAGE (not the context paragraphs), the words the inference rests on.
 - "concept" is one of the CONCEPTS below (copy it exactly), or "other: <short label>".
-- "basis" is "states" (the passage says it) or "presupposes" (it takes it for granted).
+- "basis" is "states" (the passage says it), "presupposes" (it takes it for granted) or "implies" (it follows from the passage by plain reasoning, as above).
 - "strength" is "strong" or "moderate"; leave out weak ones.
 CONCEPTS:
 ${CONCEPTS.map((c) => `- ${c}`).join('\n')}
-Reply with JSON only: {"premises":[{"premise":"...","concept":"...","basis":"states|presupposes","proof":"...","why":"one sentence linking proof to premise","strength":"strong|moderate"}]}`;
+Reply with JSON only: {"premises":[{"premise":"...","concept":"...","basis":"states|presupposes|implies","implies":"... or empty","proof":"...","why":"one sentence linking proof to premise","strength":"strong|moderate"}]}`;
 const r4 = (n) => Math.round(n * 10000) / 10000;
 const userMsg = (doc, p, prev, next) => `WORK: ${doc.title || '?'}${doc.author ? ` by ${doc.author}` : ''}\nSECTION: ${p.heading || '(none)'}\n\nPREVIOUS PARAGRAPH (context only):\n${prev?.text || '(none)'}\n\nPASSAGE:\n${p.text}\n\nNEXT PARAGRAPH (context only):\n${next?.text || '(none)'}`;
 
@@ -102,9 +105,9 @@ export async function premisePilotJob(params = {}, deps = {}) {
         if (!list) { out.unparsed++; return; }
         let kept = 0;
         for (const x of list) {
-          if (spanPresent(x.proof, [p.text]) !== true || !x.premise) { out.unverified++; out.dropped.push({ docId: doc.id ?? p.doc_id, title: doc.title, paraId: p.id, ord: p.ord, text: String(p.text).slice(0, TEXT_CAP), premise: x?.premise, concept: x?.concept, basis: x?.basis, proof: x?.proof, why: x?.why, strength: x?.strength, reason: 'proof-not-found' }); continue; }
+          if (spanPresent(x.proof, [p.text]) !== true || !x.premise) { out.unverified++; out.dropped.push({ docId: doc.id ?? p.doc_id, title: doc.title, paraId: p.id, ord: p.ord, text: String(p.text).slice(0, TEXT_CAP), premise: x?.premise, concept: x?.concept, basis: x?.basis, implies: x?.implies || '', proof: x?.proof, why: x?.why, strength: x?.strength, reason: 'proof-not-found' }); continue; }
           kept++; out.byConcept[x.concept] = (out.byConcept[x.concept] || 0) + 1;
-          out.premises.push({ docId: doc.id ?? p.doc_id, title: doc.title, paraId: p.id, ord: p.ord, text: String(p.text).slice(0, TEXT_CAP), premise: x.premise, concept: x.concept, basis: x.basis, proof: x.proof, why: x.why, strength: x.strength });
+          out.premises.push({ docId: doc.id ?? p.doc_id, title: doc.title, paraId: p.id, ord: p.ord, text: String(p.text).slice(0, TEXT_CAP), premise: x.premise, concept: x.concept, basis: x.basis, implies: x.implies || '', proof: x.proof, why: x.why, strength: x.strength });
         }
         if (kept) out.withPremises++;
         return;

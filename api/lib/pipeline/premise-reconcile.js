@@ -46,7 +46,7 @@ Authority order: Bahá'u'lláh and the Báb > 'Abdu'l-Bahá > Shoghi Effendi > o
 3. For every ENTRY give a verdict, judged against the WHOLE paragraph, not the proof words alone (read what the paragraph makes it conditional on):
 - "keep": consistent with the framing and scoped to what the paragraph addresses.
 - "rescope": true only of one aspect, rewrite "premise" to name it. A paragraph that speaks of a POTENTIAL, a station humans are CALLED to, or a condition ("whosoever turneth unto this Countenance shall manifest the potentialities of that inborn nature, and whosoever remaineth veiled shall be deprived") MUST be rescoped to say so; never state it as a fact about people as they are.
-- "drop": overreach, or contradicts the framing.
+- "drop": overreach, or contradicts the framing. An "implies" that follows by plain reasoning (a lesser right granted implies the greater; a ruler rebuked for taking what was never his) is NOT overreach: keep it unless the framing contradicts it.
 - "move": the premise is sound but belongs to a different concept; give "concept" (copy one from the CONCEPTS list below, or "other: <short label>"). Wrong concept is NOT overreach.
 Never assign a faculty or quality (reason, will, love…) to the higher or the lower nature unless an anchor or the paragraph says so.
 "reason" is one short sentence.
@@ -54,7 +54,7 @@ CONCEPTS:
 ${CONCEPTS.map((c) => `- ${c}`).join('\n')}
 Reply with JSON only: {"framing":"...","framingProof":[...],"verdicts":[{"id":"e1","verdict":"keep|rescope|drop|move","premise":"only when rescope","concept":"only when move","reason":"..."}]}`;
 const r4 = (n) => Math.round(n * 10000) / 10000;
-const userMsg = (concept, anchors, entries, framing) => `CONCEPT: ${concept}\n\n${framing ? `FRAMING ALREADY ESTABLISHED (use it as given; keep "framing" the same and judge only these entries):\n${framing}\n\n` : ''}ANCHORS:\n${anchors.map((a) => `[${a.id}] ${a.title}${a.author ? ` — ${a.author}` : ''}\n${a.text}`).join('\n\n') || '(none found)'}\n\nENTRIES (grouped by paragraph):\n${paraGroups(entries).map((g) => `PARAGRAPH — ${g[0].title} ¶${g[0].ord}:\n${String(g[0].fullText || g[0].text || '').slice(0, PARA_CAP)}\n${g.map((e) => `  [${e.id}] premise: ${e.premise}\n      proof: ${e.proof}`).join('\n')}`).join('\n\n')}`;
+const userMsg = (concept, anchors, entries, framing) => `CONCEPT: ${concept}\n\n${framing ? `FRAMING ALREADY ESTABLISHED (use it as given; keep "framing" the same and judge only these entries):\n${framing}\n\n` : ''}ANCHORS:\n${anchors.map((a) => `[${a.id}] ${a.title}${a.author ? ` — ${a.author}` : ''}\n${a.text}`).join('\n\n') || '(none found)'}\n\nENTRIES (grouped by paragraph):\n${paraGroups(entries).map((g) => `PARAGRAPH — ${g[0].title} ¶${g[0].ord}:\n${String(g[0].fullText || g[0].text || '').slice(0, PARA_CAP)}\n${g.map((e) => `  [${e.id}] premise: ${e.premise}${e.implies ? `\n      implies: ${e.implies}` : ''}\n      proof: ${e.proof}`).join('\n')}`).join('\n\n')}`;
 /** entries → arrays sharing one paragraph (docId + paraId), so each paragraph's text is sent once per call. */
 export const paraGroups = (entries) => [...entries.reduce((m, e) => { const k = `${e.docId}:${e.paraId}`; (m.get(k) || m.set(k, []).get(k)).push(e); return m; }, new Map()).values()];
 
