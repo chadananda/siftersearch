@@ -262,8 +262,10 @@ const ownSource = (s) => {
   const { fast: f, work: w, sourced, original, study, res, deps, d } = s;
   if (!(!f && !w && !sourced && !original && !study && res?.passages?.length)) return 'skip';
   const ownDeps = deps ? { search: d.ownSourceSearch || null, link: d.ownSourceLink || null } : { search: literalOwnSearch, link: linkHits };
+  // a passage a strategy read from the named work (its opening, its own editions: named_read) is kept too — 11-12 ahmad-sbs: the
+  // authorized English, hosted on bahai-library, was traded for Hofman's biography quoting it as a block
   const named = new Set([...(res._plan?.namedWorks || []), ...(res._plan?.steps || []).filter((x) => x.tool === 'named_source').flatMap((x) => x.args?.works || [])].map(Number));
-  return timed('own-source', () => preferOwnWork(res.passages, { ...ownDeps, shape: toPassage, keep: named.size ? (p) => named.has(Number(p.document_id)) : null }),
+  return timed('own-source', () => preferOwnWork(res.passages, { ...ownDeps, shape: toPassage, keep: (p) => !!p.named_read || named.has(Number(p.document_id)) }),
     (r) => ({ swapped: r.swapped.length, searches: r.searches, late: r.late })).catch((err) => { console.warn('anis own-source failed', err?.message); return null; })
     .then((own) => {
       if (!own) return 'kept';

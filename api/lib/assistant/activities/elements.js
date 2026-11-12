@@ -163,7 +163,9 @@ const E = {
   // translations, aligned by reference (sura:ayah, chapter:verse) else by meaning; never translated. No edition → a record naming the missing language.
   'fetch.edition': { ...retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'edition_lookup', rank: true, params: ['want'], reads: ['found_passages'], thin: () => false,
     gate: (s, u) => !!editionAnchor(u),
-    input: (s, p, u) => { const more = editionAnchors(u); return { paragraph_id: editionAnchor(u).id, ...(more.length ? { paragraph_ids: more } : {}), want: p.want === 'translations' ? 'translations' : 'original' }; }, take: (o) => o?.passages || [],
+    input: (s, p, u) => { const more = editionAnchors(u); return { paragraph_id: editionAnchor(u).id, ...(more.length ? { paragraph_ids: more } : {}), want: p.want === 'translations' ? 'translations' : 'original' }; },
+    // the editions of a passage read from the named work are that work's own words too: never traded for a book quoting them (own-source keep)
+    take: (o, p, u) => (o?.passages || []).map((x) => (editionAnchor(u)?.named_read ? { ...x, named_read: true } : x)),
     after: (o, u, items) => { if (!items.length && o) merge(u, 'found_records', [{ kind: 'absence', missing_language: o.missing_language ?? null, searched: o.self?.title ?? null, family: (o.family || []).length }]); } }),
   writes: ['found_passages', 'found_records', ...OUT] },
   // a prayer of ANY tradition (11-09): mode 'named' = the name (named_work) or opening words (incipit / quoted_words) across the tradition's whole scope,
@@ -246,7 +248,7 @@ const E = {
       if (!(w?.documentId || w?.work) || (p.untopiced && u.work_place !== 'opening' && String(flat(u.topic) ?? '').trim())) { const e = finish(s, p, 'none'); u.missing.pop(); u.found_outcome[s.node ?? '?'] = 'skipped'; return e; }
       try {
         const which = w.documentId ? { document_id: w.documentId } : { work: w.work, ...(p.linked ? { linked: true, said: String(u.current_user_question ?? '').slice(0, 600) } : {}) };   // a title is resolved by the tool, as every search's work filter is; linked = its aligned copy
-        const items = ((await call(s, 'opening_lookup', { ...which, n: p.n ?? 3 }))?.passages || []).map((x, i) => ({ ...x, anchor: i === 0 }));
+        const items = ((await call(s, 'opening_lookup', { ...which, n: p.n ?? 3 }))?.passages || []).map((x, i) => ({ ...x, anchor: i === 0, named_read: true }));
         merge(u, 'found_passages', items); return finish(s, p, classify(items.length, ['one', 'several']), { count: items.length, read: { named_work: w.documentId ?? w.work } });
       } catch (err) { return finish(s, p, 'error', { error: err?.message || String(err) }); }
     } },
