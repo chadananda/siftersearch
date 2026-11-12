@@ -130,7 +130,7 @@ describe('parsePremises + policy', () => {
     expect(SYSTEM).toMatch(/"implies"/);
     expect(SYSTEM).toMatch(/Manifestation of God founding a new religion/);   // Chad 11-12: never "a religious authority"
     expect(SYSTEM).toMatch(/Keep the passage's OWN terms/);
-    expect(SYSTEM).toMatch(/"questions"/); expect(SYSTEM).toMatch(/BY IMPLICATION/);   // Chad 11-12: implied questions as the retrieval key   // Chad 11-12: "love of God" was abstracted to "moral conduct"
+    expect(SYSTEM).toMatch(/"questions"/); expect(SYSTEM).toMatch(/BY IMPLICATION/); expect(SYSTEM).toMatch(/CHALLENGE A MODERN ASSUMPTION/); expect(SYSTEM).toMatch(/purpose of charity/);   // Chad 11-12: implied questions as the retrieval key   // Chad 11-12: "love of God" was abstracted to "moral conduct"
     expect(SYSTEM).toMatch(/POTENTIAL/); expect(SYSTEM).toMatch(/never say people are naturally oriented/i);   // Chad 11-12
   });
   it("proof check tolerates straight quotes against the text's curly ones, still rejects absent words", () => {
