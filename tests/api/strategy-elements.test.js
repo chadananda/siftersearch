@@ -127,6 +127,8 @@ describe('named-thing, reference, not-built, facts', () => {
     // after a side-by-side (Arabic first, translation after) both works are read: one passage per work (11-12 kawthar "who translated it?")
     const sbs = await go('fetch.anchor', mk({ context_lookup: async (i) => ({ passages: [{ ...P(i.paragraph_index), document_id: i.document_id }] }) }, { last_passages: [{ document_id: 20171, paragraph_index: 0 }, { document_id: 20171, paragraph_index: 1 }, { document_id: 900, paragraph_index: 0 }] }));
     expect(sbs.u.found_passages.map((x) => x.document_id)).toEqual([20171, 900]);
+    const cited = await go('fetch.anchor', mk({ context_lookup: async (i) => ({ passages: [{ ...P(i.document_id + i.paragraph_index), document_id: i.document_id }] }) }, { previous_evidence: { passages: [{ ...P(0), document_id: 20171 }] }, last_passages: [{ document_id: 20171, paragraph_index: 0 }, { document_id: 900, paragraph_index: 0 }] }));
+    expect(cited.u.found_passages.map((x) => x.document_id)).toEqual([20171, 900]);   // the cited Arabic AND the uncited translation beside it
     expect((await go('fetch.anchor', mk({ context_lookup: ret([P(1)]) }, { ...last, named_work: 'Gleanings' }))).edge).toBe('none');
     expect((await go('fetch.anchor', mk({ context_lookup: ret([P(1)]) }, { ...last, quoted_words: 'abc' }))).edge).toBe('thin');
     const al = await go('fetch.align', mk({ links_lookup: async () => ({ original: 'orig', translations: [] }) }, { found_passages: [P(1)] }));

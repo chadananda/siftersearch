@@ -226,7 +226,13 @@ const E = {
             .flat().filter((x) => x.paragraph_index >= sec.start && x.paragraph_index <= last);
           if (got.length) { merge(u, 'found_passages', got.map((x, i) => ({ ...x, anchor: i === 0 }))); return finish(s, p, 'one', { count: got.length, read: { last_section: sec } }); }
         }
-        if (hit) { merge(u, 'found_passages', [{ ...hit, anchor: true }]); return finish(s, p, 'one', { count: 1, read: { referent: u.referent } }); }
+        if (hit) {
+          // the last reply's CITED passage (previous_evidence) is one work of what it showed; the others it showed uncited come too, one passage per work
+          // (11-12 kawthar "who translated it?": the Arabic was cited, the Phelps English beside it had no link and was never read)
+          const fromPrev = hit !== u.referent, others = fromPrev ? [...new Map((u.last_passages || []).filter((x) => String(x.document_id) !== String(hit.document_id)).map((x) => [x.document_id, x])).values()].slice(0, 2) : [];
+          const more = (await Promise.all(others.map((x) => call(s, 'context_lookup', { document_id: x.document_id, paragraph_index: x.paragraph_index, before: 0, after: 0 }).then((c) => c?.passages?.[0] ?? null, () => null)))).filter(Boolean);
+          merge(u, 'found_passages', [{ ...hit, anchor: true }, ...more]); return finish(s, p, 'one', { count: 1 + more.length, read: { referent: u.referent, ...(more.length ? { last_passages: others } : {}) } });
+        }
         // a message that names nothing of its own ("who translated it?") is about what the thread last showed (11-12: Jev read it as its own question,
         // the anchor came back empty and the turn said it would "rather not guess a name")
         if (!pos?.doc && !u.quoted_words && !u.named_work && !u.scripture_reference && u.last_passages?.length) {
