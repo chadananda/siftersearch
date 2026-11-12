@@ -52,7 +52,8 @@ export function strategyImpl({ search, fastSearch, deps = {} } = {}) {
         const s = sectionNamed(section, secs);
         if (s) range = { from: s.start_index, to: s.end_index ?? s.start_index };
       }
-      const qs = uniq((queries || []).map((q) => String(q || '').trim()).filter(Boolean));
+      const qs = uniq([].concat(queries || []).map(   // one wording may come as a plain string
+      (q) => String(q || '').trim()).filter(Boolean));
       const per = await Promise.all(qs.flatMap((q) => ['literal', 'meaning'].map((mode) => quote({ query: q, mode, works: w.ids, limit: 10, ...range })
         .then((r) => ({ q, mode, r })).catch(() => ({ q, mode, r: null })))));
       const seen = new Set(), passages = [];

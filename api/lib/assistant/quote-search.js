@@ -115,7 +115,8 @@ export async function quoteSearch({ query: phrase, mode = 'auto', religions = []
   }
   const named = asList(works).length > 0;
   const docs = new Map();
-  for (const id of uniq(ids)) docs.set(id, await Promise.resolve(getDoc(id)).catch(() => null));
+  // in parallel: a periodical is hundreds of documents (Star of the West 395 one at a time took ~5 s, 11-12)
+  await Promise.all(uniq(ids).map(async (id) => docs.set(id, await Promise.resolve(getDoc(id)).catch(() => null))));
   // the work's own religion / author must pass the other filters (AND)
   const docOk = (d) => (!rels.length || (d?.religion && rels.includes(canonicalTradition(d.religion)))) && (!auts.length || (d?.author && auts.some((a) => authorKey(d.author).includes(authorKey(a)))));
   const kept = [...docs.entries()].filter(([, d]) => docOk(d)).map(([id]) => id);

@@ -4,6 +4,7 @@ import { toolCache, cachedImpl, callScope, canonicalJson } from '../../api/lib/a
 import { strategyImpl, sowVolumeOf } from '../../api/lib/assistant/agent-strategies.js';
 import { agentAnswer, AGENT_TOOL_NAMES, AGENT_SYSTEM, AGENT_TOOLS, NOT_FOUND } from '../../api/lib/assistant/agent.js';
 import { refCards } from '../../api/lib/assistant/quote-cards.js';
+import { FILTERS } from '../../api/lib/assistant/tool-kit.js';
 
 const call = (id, name, args) => ({ id, function: { name, arguments: JSON.stringify(args) } });
 // a scripted model: each entry is a round — tool calls, or the final text
@@ -61,6 +62,17 @@ describe('strategyImpl', () => {
     const s = strategyImpl({ deps: { quoteSearch: vi.fn(), findTitled: find, sowDocs: async () => [{ id: 9, title: 'Star of the West, v1, i3' }] } });
     expect((await s.searchInWork({ work: 'Star of the West', queries: ['x'], years: [1920] })).passages).toEqual([]);
     expect(await s.searchInWork({ work: 'Nope', queries: ['x'] })).toBeNull();
+  });
+  it('search_in_work: one wording as a plain string is searched, not dropped (11-12 live: the agent sent a string)', async () => {
+    const quote = vi.fn(async () => ({ total: 0, passages: [] }));
+    const s = strategyImpl({ deps: { quoteSearch: quote, findTitled: async () => ({ doc: { id: 7, title: 'Some Book' }, others: [] }) } });
+    await s.searchInWork({ work: 'Some Book', queries: 'a daughter was born' });
+    expect(quote.mock.calls.map(([a]) => a.query)).toEqual(['a daughter was born', 'a daughter was born']);
+  });
+  it('a document filter holds every Star of the West issue (395; the cap of 10 failed every in-periodical meaning search, 11-12)', async () => {
+    const Ajv = (await import('ajv')).default;
+    const v = new Ajv({ strict: false }).compile(FILTERS.properties.documentId);
+    expect(v(Array.from({ length: 395 }, (_, i) => i + 1))).toBe(true);
   });
   it('find_passage maps author / religion / work to the quote search', async () => {
     const quote = vi.fn(async () => ({ total: 0, passages: [], mode_used: 'none' }));
