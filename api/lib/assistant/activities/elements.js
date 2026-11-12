@@ -203,10 +203,15 @@ const E = {
       const u = U(s), pos = u.reader_position, hit = (u.referent && typeof u.referent === 'object' && u.referent.text ? u.referent : null) ?? u.previous_evidence?.passages?.[0];
       try {
         // "the next paragraph" (Jev: work_place next): the paragraphs right after the last passage shown, in the same work
+        // continues the most authoritative work shown, its original script first (11-12 kawthar: the Báb's Arabic and Lawson's study were shown;
+        // the reading went on in the study because it came first)
         if (u.work_place === 'next' && u.last_passages?.length) {
-          const doc = u.last_passages[0].document_id, at = Math.max(...u.last_passages.filter((x) => x.document_id === doc).map((x) => x.paragraph_index));
           const n = Math.min(5, Math.max(1, Number(u.amount_wanted) || 1));
-          const got = ((await call(s, 'context_lookup', { document_id: doc, paragraph_index: at, before: 0, after: n }))?.passages || []).filter((x) => x.paragraph_index > at).slice(0, n);
+          const works = [...new Set(u.last_passages.map((x) => x.document_id))].slice(0, 3).map((doc) => ({ doc, at: Math.max(...u.last_passages.filter((x) => x.document_id === doc).map((x) => x.paragraph_index)) }));
+          const read = await Promise.all(works.map((w) => call(s, 'context_lookup', { document_id: w.doc, paragraph_index: w.at, before: 0, after: n })
+            .then((c) => ({ ...w, got: (c?.passages || []).filter((x) => x.paragraph_index > w.at).slice(0, n) }), () => ({ ...w, got: [] }))));
+          const best = read.filter((w) => w.got.length).sort((a, b) => nextRank(b.got[0]) - nextRank(a.got[0]))[0];
+          const { doc, at, got = [] } = best ?? {};
           if (got.length) { merge(u, 'found_passages', got.map((x, i) => ({ ...x, anchor: i === 0 }))); return finish(s, p, 'one', { count: got.length, read: { work_place: 'next', after: `${doc}:${at}` } }); }
         }
         // the opening asked for (Jev: work_place opening): fetch.opening reads it, never the last reply's passages
@@ -866,5 +871,9 @@ export const ELEMENT_META = {
   'end.fallback': m('The shared fallback end: the research agent after a tier errored.', 'question', 'a finished reply', []),
   'end.unavailable': m('The shared unavailable end: says the library could not be searched just now, never “not in the library”.', 'none', 'the unavailable reply', []),
 };
+
+// "the next paragraph" ranks the works shown: the Writings before what is written about them, original script before a rendering
+const AUTH_RANK = { scripture: 3, interpretation: 2, guidance: 1 };
+export const nextRank = (x = {}) => (AUTH_RANK[x.authority] ?? 0) * 2 + (/[\u0590-\u08ff]/.test(x.text || '') ? 1 : 0);
 
 export const ELEMENTS = E;

@@ -123,6 +123,13 @@ describe('the tree uses the last turn', () => {
     expect(openingOf(lk, { work_place: 'opening', amount_wanted: 3 }).passages).toHaveLength(3);
     expect(openingOf(lk, {})).toBe(lk); expect(openingOf(null, { work_place: 'opening' })).toBe(null);
   });
+  it('"and the next paragraph?" continues the Writings shown, not a study that came first (kawthar-explicit#3)', async () => {
+    const lp = [{ document_id: 900, paragraph_index: 12 }, { document_id: 20171, paragraph_index: 0 }];
+    const s = mk({ work_place: 'next', last_passages: lp }, { tools: { context_lookup: async (i) => ({ passages: [0, 1].map((k) => ({ id: `${i.document_id}:${i.paragraph_index + k}`, document_id: i.document_id, paragraph_index: i.paragraph_index + k,
+      authority: i.document_id === 20171 ? 'scripture' : 'scholarship', text: i.document_id === 20171 ? 'الحمد لله' : 'Lawson writes' })) }) } });
+    expect(await ELEMENTS['fetch.anchor'].run(s, {})).toBe('one');
+    expect(s.units.found_passages.map((p) => [p.document_id, p.paragraph_index])).toEqual([[20171, 1]]);
+  });
   it('a chapter card remembers its range; fetch.anchor reads that chapter whole next turn', async () => {
     const st = applyPatch(emptyState(), workPatch({ turn: 1, strategy: 'book', id: 15, title: 'The Dawn-Breakers', section: { start: 30, end: 51 } }));
     expect(lastSection(st)).toEqual({ document_id: 15, start: 30, end: 51 });
