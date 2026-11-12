@@ -263,21 +263,21 @@ const placeIn = (label, tail) => {
 // A RUN OF ONE UNLINKED CITATION (11-12 examples: "(Memories of the Holy Family)" after every sentence of one story; "(X) (X)"
 // side by side). In a paragraph, a plain "(Title)" naming a turn source is dropped when the next citation in that paragraph is the
 // same title — the run is cited once, at its end; one standing before a blockquote that names the same title goes too. Pure.
+const CITE_RUN = /[ \t]*\((?:\[([^\]\n]{3,200})\]\(([^)\s]+)\)|([^()\n]{3,160}))\)/g;
 export function dropPlainCiteRun(text, sources = []) {
   const titles = [...new Set(sources.map((x) => foldT(x?.title)).filter((t) => t.length > 3))];
-  if (!titles.length) return { text: String(text ?? ''), fixed: 0 };
   const isCite = (inner) => { const t = foldT(inner); return t.length > 3 && titles.some((x) => t === x || t.startsWith(`${x} `) || x.startsWith(`${t} `)); };
   let fixed = 0;
   const paras = String(text ?? '').split(/\n{2,}/);
   const out = paras.map((para, i) => {
     if (/^\s*>/.test(para)) return para;
-    const hits = [...para.matchAll(/[ \t]*\(([^()\n]{3,160})\)/g)].filter((m) => isCite(m[1]));
+    const hits = [...para.matchAll(CITE_RUN)].filter((m) => m[2] || isCite(m[3])).map((m) => Object.assign(m, { key: m[2] ? `u:${m[2]}` : foldT(m[3]) }));
     const next = paras[i + 1] || '';
-    const drop = new Set(hits.filter((m, k) => (hits[k + 1] ? foldT(hits[k + 1][1]) === foldT(m[1])
-      : /^\s*>/.test(next) && /:$/.test(para.slice(0, m.index).trimEnd()) && para.slice(m.index + m[0].length).trim() === '' && foldT(next).includes(foldT(m[1])))).map((m) => m.index));
+    const drop = new Set(hits.filter((m, k) => (hits[k + 1] ? hits[k + 1].key === m.key
+      : /^\s*>/.test(next) && /:$/.test(para.slice(0, m.index).trimEnd()) && para.slice(m.index + m[0].length).trim() === '' && !m[2] && foldT(next).includes(foldT(m[3])))).map((m) => m.index));
     if (!drop.size) return para;
     fixed += drop.size;
-    return para.replace(/[ \t]*\(([^()\n]{3,160})\)/g, (m, inner, off) => (drop.has(off) ? '' : m));
+    return para.replace(CITE_RUN, (m, label, url, plain, off) => (drop.has(off) ? '' : m));
   });
   return fixed ? { text: out.join('\n\n'), fixed } : { text: String(text ?? ''), fixed: 0 };
 }

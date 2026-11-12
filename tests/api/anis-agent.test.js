@@ -170,5 +170,6 @@ describe('dropPlainCiteRun', () => {
     expect(dropPlainCiteRun('He wrote x (Light of the World) (Light of the World)', src).text).toBe('He wrote x (Light of the World)');
     expect(dropPlainCiteRun('He wrote: (Light of the World)\n\n> "I treat"\n> — Light of the World', src).text).toBe('He wrote:\n\n> "I treat"\n> — Light of the World');
     expect(dropPlainCiteRun('He said (an aside) here. (Light of the World)', src).text).toBe('He said (an aside) here. (Light of the World)');
+    expect(dropPlainCiteRun('A *"x"* ([Will](https://o/w?p=1)) B *"y"* ([Will](https://o/w?p=1))', []).text).toBe('A *"x"* B *"y"* ([Will](https://o/w?p=1))');
   });
 });
