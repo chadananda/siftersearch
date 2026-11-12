@@ -138,5 +138,8 @@ describe('entity-name reads on the read pool', () => {
     expect(src('search/hydrate-thread.js')).toMatch(/runRead\('hydrate'/);
     expect(src('bio.js')).toMatch(/runRead\('bio:persons'/);
     expect(src('bio.js')).not.toMatch(/function computeBookSources/);
+    // whole-document reads of a turn (reference lookup, prayer shelf): 4–5 s on the serving thread stalled Jev's calls (11-12)
+    expect(src('paragraphs-repo.js')).toMatch(/offThread\('paragraphs:in-range'/);
+    expect(src('paragraphs-repo.js')).toMatch(/offThread\('paragraphs:heading-starts'/);
   });
 });

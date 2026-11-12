@@ -14,6 +14,17 @@ export const JEV_LIMITS = Object.freeze({
   book: { timeoutMs: 1000, budgetMs: 2000 },
 });
 
+/** AbortSignal.timeout(ms) that measures JEV's time, not our loop's: a timer that fires late (the serving thread was blocked —
+ *  11-12: 1–9 s stalls) aborts only after `graceMs` more, so a reply already waiting on the socket is read instead of thrown
+ *  away (10/10 round-20 turns "timed out" while Jev answered in ~200 ms). Aborts with a TimeoutError like AbortSignal.timeout. */
+export function stallTolerantTimeout(ms, { graceMs = 250, lateMs = 100, now = Date.now, setT = setTimeout } = {}) {
+  const c = new AbortController(), due = now() + ms;
+  const abort = () => c.abort(new DOMException('The operation was aborted due to timeout', 'TimeoutError'));
+  const t = setT(() => { if (now() - due > lateMs) { const g = setT(abort, graceMs); g?.unref?.(); } else abort(); }, ms);
+  t?.unref?.();
+  return c.signal;
+}
+
 const isTimeout = (e) => e?.name === 'TimeoutError' || (e?.name === 'AbortError' && /time/i.test(String(e?.message || e?.cause || '')));
 
 /**
@@ -21,7 +32,7 @@ const isTimeout = (e) => e?.name === 'TimeoutError' || (e?.name === 'AbortError'
  * A timeout retries once when the limits already spent + timeoutMs ≤ budgetMs (counted by limit, not wall time: an aborted attempt
  * ends a few ms past its limit); any other error (or a null answer) ends the call.
  */
-export async function jevCall(call, attempt, { timeoutMs, budgetMs = timeoutMs, retries = 1, onJev = null, now = Date.now, signalFor = (ms) => AbortSignal.timeout(ms) } = {}) {
+export async function jevCall(call, attempt, { timeoutMs, budgetMs = timeoutMs, retries = 1, onJev = null, now = Date.now, signalFor = (ms) => stallTolerantTimeout(ms) } = {}) {
   const t0 = now(); const timeouts = []; let value = null, error = null, attempts = 0;
   while (attempts <= retries) {
     attempts++;

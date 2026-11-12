@@ -1,7 +1,7 @@
 // Jev timeouts are never silent (launch gate 11-03, defect: "Jev calls past their limit fall back silently"): one retry within the
 // budget, the timeout reported to the turn → a jev:timeout decision + meta.jev_timeouts. Limits measured from the battery.
 import { describe, it, expect, afterEach } from 'vitest';
-import { jevCall, JEV_LIMITS, timeoutDecision, jevTimeoutsOf } from '../../api/lib/assistant/jev-call.js';
+import { jevCall, JEV_LIMITS, timeoutDecision, jevTimeoutsOf, stallTolerantTimeout } from '../../api/lib/assistant/jev-call.js';
 import { triageMessage } from '../../api/lib/assistant/triage.js';
 import { chooseStrategy } from '../../api/lib/assistant/strategy-choice.js';
 import { prayerShelf } from '../../api/lib/assistant/prayer-shelf.js';
@@ -94,5 +94,34 @@ describe('the turn shows a Jev timeout', () => {
     const path = closed[0].path;
     expect(path.decisions.find((d) => d.point === 'jev:timeout')).toMatchObject({ saw: 'triage', chosen: 'fail open', ms: 3001 });
     expect(path.meta.jev_timeouts).toEqual([{ call: 'triage', outcome: 'fail open', ms: 3001 }]);
+  });
+});
+
+describe('a Jev limit measures Jev, not a blocked serving loop (11-12)', () => {
+  // a fake clock + timer queue: run(at) fires the timers due by `at` with the clock set to `at`
+  const clock = () => {
+    let t = 0; const q = [];
+    const setT = (fn, ms) => { q.push({ at: t + ms, fn }); return null; };
+    const run = (at) => { t = at; for (let i = 0; i < q.length; i++) if (q[i].at <= at && !q[i].done) { q[i].done = true; q[i].fn(); } };
+    return { now: () => t, setT, run };
+  };
+  it('a timer that fires on time aborts at once, with a TimeoutError', () => {
+    const c = clock(); const sig = stallTolerantTimeout(1000, c);
+    c.run(1000);
+    expect(sig.aborted).toBe(true);
+    expect(sig.reason.name).toBe('TimeoutError');
+  });
+  it('a timer that fires late (the loop stalled) waits the grace first, so a waiting reply is read', () => {
+    const c = clock(); const sig = stallTolerantTimeout(1000, { ...c, graceMs: 250 });
+    c.run(4000);   // the loop was blocked 3 s past the limit
+    expect(sig.aborted).toBe(false);
+    c.run(4250);
+    expect(sig.aborted).toBe(true);
+    expect(sig.reason.name).toBe('TimeoutError');
+  });
+  it('triage and the persona check use it (not AbortSignal.timeout)', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../../api/lib/assistant/triage.js', import.meta.url), 'utf8');
+    expect(src).not.toMatch(/AbortSignal\.timeout/);
   });
 });

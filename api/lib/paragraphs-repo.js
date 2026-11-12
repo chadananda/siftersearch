@@ -2,6 +2,7 @@
 // docs-repo.js; planning/architecture-data-access-20261009.md). paragraphDoc() is the ONE search-document shape: what the
 // sync worker indexes AND what search hits are hydrated with — so switching engines changes nothing a caller sees.
 // Deps: db, authority, authorship.
+import { isMainThread } from 'node:worker_threads';
 import { queryAll, transaction } from './db.js';
 import { authorAuthority, getAuthority } from './authority.js';
 import { paragraphAuthor } from './authorship/effective.js';
@@ -9,6 +10,11 @@ import { olCiteTitle } from './library/ol-works.js';
 import { paragraphLocator } from './refs/locator.js';
 import { paraNum } from './sections.js';
 import { topSections, sectionPlace } from './refs/section-place.js';
+
+// A whole-document read (a long book's heading scan, a big section) can hold the serving thread for seconds — the loop stalls and
+// every in-flight call of the turn (Jev's 1 s decisions) times out with it (11-12: 4–5 s main-thread reads, 1–9 s stalls).
+// From the serving thread these run on the read pool; inside a pool thread (or tests) the rows function runs directly.
+const offThread = async (task, rows, ...args) => (isMainThread ? (await import('./search/read-pool.js')).runRead(task, ...args) : rows(...args));
 
 /** Paragraph row + its doc row → the search document (no vectors). `authority` = the doc's, when the caller has it. */
 export function paragraphDoc(p, doc, authority = null) {
@@ -227,14 +233,16 @@ export async function paragraphsByPn(docId, pn) {
 }
 
 /** The first paragraph under each distinct heading, in reading order (numbering by chapter heading: "Some Answered Questions 33"). → [{ id, doc_id, paragraph_index, text, heading }] */
-export async function headingStarts(docId) {
+export async function headingStarts(docId) { return offThread('paragraphs:heading-starts', headingStartRows, docId); }
+export async function headingStartRows(docId) {
   return queryAll(`SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading FROM content c
     JOIN (SELECT heading, MIN(paragraph_index) mi FROM content WHERE doc_id = ? AND deleted_at IS NULL AND heading IS NOT NULL AND heading != '' GROUP BY heading) h
       ON c.doc_id = ? AND c.paragraph_index = h.mi ORDER BY c.paragraph_index LIMIT 2000`, [Number(docId), Number(docId)], 'paragraphs-repo:heading-starts');
 }
 /** A document's paragraphs in an index range (a section's rows: the prayer shelf, a scripture chapter). Capped; `context` carries
  *  a verse marker where the edition has one ("Chapter 2 (verse 14)"). → rows in order. */
-export async function paragraphsInRange(docId, from, to, { limit = 400 } = {}) {
+export async function paragraphsInRange(docId, from, to, opts = {}) { return offThread('paragraphs:in-range', paragraphRangeRows, docId, from, to, opts); }
+export async function paragraphRangeRows(docId, from, to, { limit = 400 } = {}) {
   return queryAll(`SELECT id, doc_id, paragraph_index, text, heading, blocktype, context, block_attrs, external_para_id FROM content WHERE doc_id = ? AND deleted_at IS NULL
     AND paragraph_index BETWEEN ? AND ? ORDER BY paragraph_index LIMIT ?`, [Number(docId), Number(from), Number(to), Math.min(Number(limit) || 400, 2000)], 'paragraphs-repo:in-range');
 }

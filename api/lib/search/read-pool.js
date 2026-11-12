@@ -18,6 +18,8 @@ export const TASKS = {
   'entity:lookup': async ([q]) => (await import('../repos/entity-names-repo.js')).entityLookupKeyRows(q),
   'docs:find': async ([text, opts]) => (await import('../docs-repo.js')).findDocuments(text, opts),
   'bio:persons': async ([books]) => (await import('../repos/bio-persons-repo.js')).bioPersonRows(books),
+  'paragraphs:in-range': async ([docId, from, to, opts]) => (await import('../paragraphs-repo.js')).paragraphRangeRows(docId, from, to, opts),
+  'paragraphs:heading-starts': async ([docId]) => (await import('../paragraphs-repo.js')).headingStartRows(docId),
 };
 
 async function runTask(task, args, timing) {
