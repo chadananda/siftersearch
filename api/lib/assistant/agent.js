@@ -79,7 +79,7 @@ export function renderRefs(text, { found, works }) {
 
 const STATUS = { book_card: (a) => `Finding ${clip(a.title, 60)}`, search_in_work: (a) => `Searching ${clip(a.work, 40)}`, find_passage: (a) => `Finding the passage: ${clip(a.query, 50)}`,
   extract_from_work: (a) => `Reading ${clip(a.work, 40)} for ${clip(a.select, 40)}`, fused_search: (a) => `Searching the library: ${clip(a.query, 60)}`, combined_search: (a) => `Searching the library: ${clip(a.query, 60)}`, document_search: (a) => `Finding ${clip(a.title, 60)}`,
-  work_notes_lookup: (a) => `What the sources say about ${clip(a.title, 50)}`, context_lookup: () => 'Reading around a passage', quotation_candidates: () => 'Tracing a quotation',
+  work_notes_lookup: (a) => `What the sources say about ${clip(a.title, 50)}`, context_lookup: () => 'Reading around a passage', whole_lookup: () => 'Reading the whole prayer', quotation_candidates: () => 'Tracing a quotation',
   original_lookup: () => 'Finding the original', translation_lookup: () => 'Finding a translation', rendering_lookup: (a) => `Word study: ${clip(a.word, 40)}`,
   source_trace: () => 'Tracing to the primary texts', web_search: () => 'Searching the web' };
 

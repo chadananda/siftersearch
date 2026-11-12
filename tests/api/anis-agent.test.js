@@ -118,6 +118,15 @@ describe('source questions', async () => {
     expect(asksForOriginal('what is the Persian original of the two wings quote')).toBe(true);
     expect(asksForOriginal('religion science two wings bird quote')).toBe(false);
   });
+  it('whole_lookup reads the whole prayer a found passage belongs to (11-12: the Short Obligatory Prayer lost its last line)', async () => {
+    const whole = vi.fn(async () => ({ passages: [{ id: 8, text: 'I bear witness, O my God…', document_id: 3, paragraph_index: 4 }, { id: 9, text: 'There is none other God but Thee, the Help in Peril, the Self-Subsisting.', document_id: 3, paragraph_index: 5 }] }));
+    const { run } = toolRunner({ ...T, whole });
+    await run.quotation_candidates({ quotation: Q });
+    const out = await run.whole_lookup({ ref: 'P1' });
+    expect(whole).toHaveBeenCalledWith(expect.objectContaining({ document_id: 3 }));
+    expect(out).toContain('the Help in Peril');
+    expect(await run.whole_lookup({ ref: 'P99' })).toBe('unknown ref');
+  });
   it('no result: the runner returns guidance, and a source the tools never gave is dropped', async () => {
     const { run } = toolRunner({ ...T, sourceOf: async () => [] });
     expect(await run.quotation_candidates({ quotation: 'God helps those who help themselves' })).toMatch(/^no published source found for that wording — combined_search/);

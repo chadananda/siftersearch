@@ -203,6 +203,15 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
       if (!p?.document_id) return 'unknown ref';
       return readAround(p, before, after);
     },
+    // the whole prayer a found passage belongs to (tools.js whole_lookup: it never reads around a copyrighted book) — 11-12: the agent quoted the
+    // Short Obligatory Prayer without its last line
+    whole_lookup: async ({ ref }) => {
+      const p = found.get(String(ref).toUpperCase());
+      if (!p?.document_id) return 'unknown ref';
+      if (!impl.whole) return 'no whole-prayer reading here';
+      const r = await impl.whole(p).catch(() => null);
+      return r?.passages?.length ? show(r.passages.map((x) => add(x))) : 'no whole prayer found around this passage — context_lookup it';
+    },
     document_search: async ({ title }) => {
       const w = await (impl.work || (async (t) => (await import('./work-request.js')).findTitled([t])))(title).catch(() => null);
       if (!w) return `no work titled "${title}" in the library`;
@@ -523,6 +532,8 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
     // the found passage's own title/author/religion label its neighbours (ctx.meta), as before
     around: async (p, before, after) => (await runTool('context_lookup', { document_id: p.document_id, paragraph_index: Number(p.paragraph_index) || 0, before, after },
       { ...ctx, meta: { title: p.title, author: p.author, religion: p.religion } })).passages,
+    whole: (p) => runTool('whole_lookup', { document_id: p.document_id, paragraph_index: Number(p.paragraph_index) || 0 },
+      { ...ctx, meta: { title: p.title, author: p.author, religion: p.religion } }),
     original: (english) => passages('original_lookup', { english }),
     translation: (original) => passages('translation_lookup', { original }),
     wordStudy: async (word) => {
