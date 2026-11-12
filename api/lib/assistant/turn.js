@@ -315,6 +315,16 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     strat = { ...(strat || {}), strategy: { ...(strat?.strategy || {}), choice: 'unmatched', was, via, missed }, units: { ...(strat?.units || {}), named_work: work ?? strat?.units?.named_work ?? null } };
     decisions.record(`${via}:unmatched`, { by: 'llm', saw: { via }, chosen: 'unmatched', reason: missed });
   };
+  const cardMisses = async (title) => {
+    const finishFn = d.finishLookup ?? (deps ? null : finishLookup);
+    if (!finishFn || !title) return false;
+    const fin = await timed('card-check', () => finishFn({ messages, check: true, did: `The book *${title}* was found by its title`,
+      draft: `A card for *${title}*: its cover, author, a short description of the book and a Read link. Nothing from inside the book.` }), (x) => ({ ok: x?.ok, kept: x?.kept ?? null })).catch(() => null);
+    decisions.record('book:check', { by: 'llm', saw: title, chosen: fin?.ok === false ? 'miss' : 'card', reason: fin?.why ?? fin?.kept ?? null });
+    if (fin?.ok !== false) return false;
+    missed = fin.why; missToUnmatched('book', title);
+    return true;
+  };
   for (const info of jevTimeouts) decisions.record('jev:timeout', timeoutDecision(info));
   // Jev's triage answer on every turn's record (11-11: a follow-up skipped the in-book path and the trace could not say what lookup he gave)
   if (tri) decisions.record('triage', { by: tri.by || (backup?.tri === tri ? 'llm' : 'jev'), chosen: { kind: tri.kind?.choice ?? null, lookup: tri.lookup?.choice ?? null, outcome: tri.outcome?.choice ?? null },
@@ -419,8 +429,10 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
         (r) => (r ? { work: r.work?.id, mode: r.result?.mode, total: r.result?.total } : null)).catch(() => null);
       if (got?.reply) { const a = await inWorkAnswer(got, ex, { gate: 'strategy', via: 'book', ...(jevFallback ? { jev_fallback: jevFallback } : {}), decisions: decisions.list() }); if (a) return a; missToUnmatched('in_work', got.work?.title); }
     }
-    if (!missed && found?.kind === 'work') return bookAnswer(found.work, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
-    if (!missed && found?.kind === 'section') return sectionCard(found, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
+    // the card answers "do you have X / show me X" only (11-12 "What does the Bhagavad Gita teach about duty?" got the Gita's card):
+    // the light writer reads the question against what a card holds; a miss → Unmatched with the work named
+    if (!missed && found?.kind === 'work' && !(await cardMisses(found.work.doc.title))) return bookAnswer(found.work, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
+    if (!missed && found?.kind === 'section' && !(await cardMisses(found.sec?.title ?? found.sec?.book))) return sectionCard(found, ex, { gate: 'strategy', via: found.via, decisions: decisions.list() });
   }
   let lk = lkFirst !== undefined ? lkFirst : lkIntent && !['in_work', 'from_work', 'find_passage'].includes(lkIntent) ? await lookupNow() : null;
   // "the opening paragraph of chapter one": Jev read the place as the unit's opening → its first paragraph(s) quoted, never the chapter card (dawnbreakers#1, 11-12)

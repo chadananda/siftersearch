@@ -20,13 +20,21 @@ ${rewrite
     : 'If the data answers the question, reply with exactly ANSWER on line 1 and nothing else.'}
 If it does not answer it (wrong thing searched, wrong work or part, a literal search where the reader asked about a subject, nothing relevant found where it plainly could be), line 1 is MISS: then one sentence saying what should have been looked for instead. Nothing else.`;
 
-/** → { ok: true, reply } | { ok: false, why }. A writer failure keeps the code draft (never a lost answer). */
-export async function finishLookup({ messages, draft, did, complete = null }) {
+const CARD = ({ convo, did }) => `You are Anís, a research assistant over a library of sacred and historical texts. ${did}. The reply would be ONLY that book's card: cover, author, a short description, a Read link — nothing from inside the book.
+
+CONVERSATION:
+${convo}
+
+Is the card by itself a complete answer to the reader's LAST message? Yes when they want the book itself: asking for it, whether it is here, to read or open it, a bare title. No when they ask what it says, teaches or contains, about a passage, words or a subject inside it, or anything the card cannot answer.
+Line 1: exactly ANSWER, or MISS: then one sentence saying what should be looked for in the book instead. Nothing else.`;
+
+/** → { ok: true, reply } | { ok: false, why }. check: verdict only (a book card: does the card itself answer?). A writer failure keeps the code draft (never a lost answer). */
+export async function finishLookup({ messages, draft, did, check = false, complete = null }) {
   const convo = (messages || []).slice(-6).map((m) => `${m.role === 'user' ? 'Reader' : 'Anís'}: ${String(m.content || '').slice(0, 900)}`).join('\n');
-  const rewrite = String(draft).length <= REWRITE_MAX;
-  const call = complete || (async (msgs) => (await import('../ai.js')).chatCompletion(msgs, { ...modelFor('anis-light-writer'), temperature: 0.2, maxTokens: rewrite ? 1500 : 60, thinking: false, caller: 'anis-lookup-finish' }));
+  const rewrite = !check && String(draft).length <= REWRITE_MAX;
+  const call = complete || (async (msgs) => (await import('../ai.js')).chatCompletion(msgs, { ...modelFor('anis-light-writer'), temperature: 0.2, maxTokens: rewrite ? 1500 : 160, thinking: false, caller: 'anis-lookup-finish' }));
   let out;
-  try { out = String((await call([{ role: 'user', content: PROMPT({ convo, did, draft, rewrite }) }]))?.content ?? ''); } catch { return { ok: true, reply: draft, kept: 'writer-failed' }; }
+  try { out = String((await call([{ role: 'user', content: check ? CARD({ convo, did }) : PROMPT({ convo, did, draft, rewrite }) }]))?.content ?? ''); } catch { return { ok: true, reply: draft, kept: 'writer-failed' }; }
   const [head, ...rest] = out.trim().split('\n');
   if (/^MISS\b/i.test(head)) return { ok: false, why: head.replace(/^MISS:?\s*/i, '').trim() || 'the data does not answer the question' };
   if (!/^ANSWER\b/i.test(head)) return { ok: true, reply: draft, kept: 'unparsed' };

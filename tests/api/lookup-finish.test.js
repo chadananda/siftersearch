@@ -23,3 +23,15 @@ describe('lookup finish', () => {
     expect(r.reply).toBe(big); expect(asked).toContain('nothing else');
   });
 });
+
+describe('finishLookup check (a book card)', () => {
+  it('asks the card question and returns the verdict without rewriting', async () => {
+    let seen = '';
+    const complete = async ([m]) => { seen = m.content; return { content: 'MISS: look inside for duty (dharma)' }; };
+    const r = await finishLookup({ messages: [{ role: 'user', content: 'What does the Gita teach about duty?' }], check: true, did: 'The book *Gita* was found by its title', draft: 'card', complete });
+    expect(seen).toMatch(/ONLY that book's card/);
+    expect(r).toEqual({ ok: false, why: 'look inside for duty (dharma)' });
+    const ok = await finishLookup({ messages: [], check: true, did: 'x', draft: 'card', complete: async () => ({ content: 'ANSWER' }) });
+    expect(ok).toEqual({ ok: true, reply: 'card' });
+  });
+});
