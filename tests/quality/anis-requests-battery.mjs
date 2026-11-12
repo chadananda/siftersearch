@@ -44,7 +44,7 @@ export const CONVS = [
     { q: 'Give me a timeline of the Báb\'s life with sources', text: /1819/, forbid: ['hindu', 'buddhist'] },
     { q: 'expand on the year 1848', text: /badasht|chihr[ií]q|tabriz|1848/i, forbid: ['hindu', 'buddhist'] } ] },
   { id: 'study-guide-seven-valleys', turns: [
-    { q: 'Create a study guide for the Valley of Search in The Seven Valleys, with the key passages and discussion questions', cite: /seven valleys/i, text: /\?/, forbid: ['hindu', 'buddhist', 'christian', 'jewish'] } ] },
+    { q: 'Create a study guide for the Valley of Search in The Seven Valleys, with the key passages and discussion questions', cite: /seven valleys|call of the divine beloved/i, text: /\?/, forbid: ['hindu', 'buddhist', 'christian', 'jewish'] } ] },
   { id: 'tahirih', turns: [
     { q: 'Who was Ṭáhirih?', text: /badasht|qurratu|poet/i },
     { q: 'what happened at Badasht?', text: /veil|unveil|badasht/i, forbid: ['hindu', 'buddhist'] },

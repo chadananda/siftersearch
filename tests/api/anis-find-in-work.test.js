@@ -208,4 +208,16 @@ describe('quote_search: religion / author / work filters', () => {
     expect(calls.got[0]).toMatchObject({ authors: ["Bahá'u'lláh"], topic: 'love is the light', works: [] });
     expect(r.reply).toContain('Gleanings');
   });
+  it('a compilation Jev chose is never answered by the find-passage shortcut (11-12: scholars’ sentences labelled Bahá’u’lláh)', async () => {
+    const calls = { respond: 0, got: 0 };
+    const tri = { malicious: 0.01, complete: 0.99, stop_request: 0, stance: { choice: 'curious' }, kind: { choice: 'research', confidence: 0.9 }, lookup: { choice: 'find_passage', confidence: 0.9 }, outcome: { choice: 'search', confidence: 0.9 }, features: { first: true, turn: 0, words: 14, short: false } };
+    const strat = { strategy: { choice: 'compilation', confidence: 0.9 }, sides: [], sources: {}, decisions: [], units: { named_person: "Bahá'u'lláh", topic: 'justice' } };
+    const d2 = { titleOnly: async () => null, triage: async () => tri, strategy: async () => strat, state: { load: async () => emptyState(), append: async () => {} }, lookup: vi.fn(async () => null),
+      findPassage: async () => { calls.got++; return null; },
+      respond: async () => { calls.respond++; return { reply: 'compiled', citations: [], retrieved: [], plan: { shape: 'topic' }, timings: {} }; },
+      open: async () => ({ conversationId: 'c', round: 0 }), close: async () => {}, fail: async () => {}, card: async () => null, outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {} };
+    await anisTurn({ messages: [{ role: 'user', content: 'Make me a short compilation of passages on justice from Bahá’u’lláh’s writings' }], participant: { id: 's', authed: true }, clientKey: 's', onEvent: () => {}, deps: d2 });
+    expect(calls.got).toBe(0);
+    expect(calls.respond).toBe(1);
+  });
 });

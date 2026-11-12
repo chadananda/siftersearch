@@ -17,6 +17,8 @@ import { narrate } from './narrate.js';
 import { turnMeta } from './turn-meta.js';
 import { progressText } from './progress.js';
 import { chooseStrategy, strategyOf } from './strategy-choice.js';
+// strategies that build a document from many passages (a compilation, a timeline, a comparison): a lookup shortcut never answers for them
+const MAKE_STRATEGIES = new Set(['compilation', 'timeline', 'comparison']);
 import { isUnmatched as unmatchedName } from './strategy-seed.js';
 import { titleOnly, titleAnswer, sectionAnswer, softCaps } from './title-answer.js';
 import { bookFastPath } from './book-pick.js';
@@ -333,7 +335,11 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   // that says X, no book named) → quote_search held to Jev's units: the religions he scoped (this turn / conversation, never a host default),
   // the person he named as the author, a work he named → a code-built list. No words resolved → research as before.
   const passageFn = d.findPassage ?? (deps ? null : findPassageAnswer);
-  if (passageFn && lkIntent === 'find_passage' && !strat?.refersBack && engine === undefined && research === undefined && !variants && !llm) {
+  // …never when Jev chose to MAKE something from passages (11-12 battery: "a short compilation … from Bahá'u'lláh's writings" got a
+  // find-passage list of scholars' sentences labelled Bahá'u'lláh): the strategy is his, the shortcut only serves a plain find
+  const makes = MAKE_STRATEGIES.has(strategyOf(strat));
+  if (makes && lkIntent === 'find_passage') decisions.record('find-passage:skip', { by: 'code', saw: { strategy: strategyOf(strat), lookup: 'find_passage' }, chosen: 'strategy', reason: 'Jev chose a strategy that builds from passages' });
+  if (passageFn && lkIntent === 'find_passage' && !makes && !strat?.refersBack && engine === undefined && research === undefined && !variants && !llm) {
     const explicit = ['turn', 'conversation'].includes(scopeR.units.scope_source) ? scopeR.units.religions_specified : null;
     const got = await timed('find_passage', () => passageFn({ messages, religions: Array.isArray(explicit) ? explicit : [], authors: [u.named_person].filter(Boolean), works: [u.named_work].filter(Boolean),
       topic: u.topic ?? null, language: scopeR.units.reply_language || 'en', decisions }), (r) => (r ? { mode: r.result?.mode, total: r.result?.total } : null)).catch(() => null);
