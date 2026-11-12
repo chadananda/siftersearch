@@ -24,6 +24,8 @@
   {#if error}<p class="text-error mb-3">{error} — showing last data.</p>{/if}
   {#if !ov && loading}
     <div class="skel big"></div><div class="skel"></div>
+  {:else if ov && (ov.pending || !s)}
+    <section class="headline"><p class="eyebrow">Where the HyPE money goes</p><h1>Tallying the ledger…</h1><p class="sub">The first spend and coverage report is being computed. This page fills in on its own once it lands.</p></section>
   {:else if ov}
     <section class="headline">
       <p class="eyebrow">Where the HyPE money goes</p>
