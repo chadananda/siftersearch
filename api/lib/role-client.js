@@ -96,8 +96,9 @@ export function logStreamUsage(stream, log) {
   if (!inner) return stream;
   stream[Symbol.asyncIterator] = async function* () {
     let usage = null;
-    try { for await (const chunk of inner()) { if (chunk?.usage) usage = chunk.usage; yield chunk; } }
-    finally { log(usage); }
+    const it = inner(); // an async generator returns itself — drive next() so the wrapper never re-enters (11-12)
+    try { for (let r = await it.next(); !r.done; r = await it.next()) { if (r.value?.usage) usage = r.value.usage; yield r.value; } }
+    finally { await it.return?.(); log(usage); }
   };
   return stream;
 }

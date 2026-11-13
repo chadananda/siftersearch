@@ -21,4 +21,13 @@ describe('logStreamUsage', () => {
     for await (const c of s) { void c; break; }
     expect(logged).toEqual([{ prompt_tokens: 3, completion_tokens: 1 }]);
   });
+
+  it('wraps an async generator (its iterator is itself) without recursing — 11-12 native stream overflow', async () => {
+    const logged = [];
+    const s = logStreamUsage((async function* () { yield { choices: [{ delta: { content: 'a' } }] }; yield { choices: [], usage: { prompt_tokens: 2 } }; })(), (u) => logged.push(u));
+    const out = [];
+    for await (const c of s) out.push(c);
+    expect(out).toHaveLength(2);
+    expect(logged).toEqual([{ prompt_tokens: 2 }]);
+  });
 });
