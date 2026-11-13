@@ -205,7 +205,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   };
   for (let round = 0; round < maxRounds; round++) {
     const last = round === maxRounds - 1 || calls >= maxCalls;
-    const r = await readRound(create, { messages: msgs, ...(last ? {} : { tools: AGENT_TOOLS, tool_choice: 'auto' }), max_tokens: roleReplyCap('anis-agent') }, streamed || gate === false ? null : onText);   // the reply's safety ceiling, never a length cut (11-04)
+    const r = await readRound(create, { messages: msgs, ...(last ? {} : { tools: AGENT_TOOLS, tool_choice: 'auto' }), max_tokens: roleReplyCap('anis-agent'), thinking: false }, streamed || gate === false ? null : onText);   // the reply's safety ceiling, never a length cut (11-04); no thinking (11-12: Claude 5 thinks by default — seconds every round)
     usage.in += r?.usage?.prompt_tokens || 0; usage.out += r?.usage?.completion_tokens || 0;
     const m = r?.choices?.[0]?.message || {};
     if (r?.leaked) gate = false;   // text shown before a tool call: the final replay replaces it; nothing more streams
