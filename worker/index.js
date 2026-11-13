@@ -17,6 +17,7 @@ import { mailRoute, mailCron } from './mail/index.js';
 import { deweyEmail } from './mail/dewey.js';
 import { deweyUploadRoute } from './dewey-upload.js';
 import { mediaFile, warmMedia, ensureMedia, MEDIA_FILE } from './media.js';
+import { shortLink, SHORT_PATH } from './short-links.js';
 import { version as BUILD_VERSION } from '../package.json';
 import { als, evict, installFetchCache, policyFor, cacheKey, serveCached, apiProducer, API_ORIGIN } from './edge-cache.js';
 
@@ -140,6 +141,7 @@ export function createExports(manifest) {
         }
         if (request.method === 'GET' && /^\/dewey\/item\/\d+$/.test(url.pathname)) return fetch(`${API_ORIGIN}/api/v1/dewey-mail/item/${url.pathname.split('/').pop()}${url.search}`, { headers: { accept: 'text/html' } });
         if (url.pathname.startsWith('/_work/')) return workRoute(request, env);
+        { const m = request.method === 'GET' && SHORT_PATH.exec(url.pathname); if (m) return shortLink(m[1], { base: env.DOCS_PUBLIC_URL || undefined }); }   // a PDF's permanent short link (worker/short-links.js)
         // Anís at the edge (worker/anis, service binding ANIS): chat turns go there only while the ANIS_EDGE secret is '1' —
         // flip with `wrangler secret put ANIS_EDGE` (no build); delete it → tower again
         if (env.ANIS_EDGE === '1' && env.ANIS && url.pathname === '/api/chat/stream' && request.method === 'POST') return env.ANIS.fetch(request);

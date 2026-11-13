@@ -17,14 +17,20 @@ const slug = (s) => String(s || 'research').normalize('NFKD').replace(/[^\w\s-]/
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** Documents service. Every dependency injectable; defaults = live R2 upload, report outbox, tower mail. */
-export const PDF_CACHE_VERSION = 6;   // bump when the print design changes: every cached document re-renders once
-export function makeDocuments({ render = renderPdf, upload, exists, publicUrl, outbox = reportOutbox(), sendMail, store = offerStore(), mode = process.env.ANIS_REPORT_SEND, siteUrl } = {}) {
-  const put = async (key, body) => {
-    if (upload) return upload(key, body);
+export const PDF_CACHE_VERSION = 7;   // bump when the print design changes: every cached document re-renders once
+// permanent short links (Chad 11-13: "short URLs that work with QR codes"): <base>/<code> → the site Worker reads the map
+// anis/s/<code>.json and redirects (worker/short-links.js). A cached work's code comes from its cacheKey, so it outlives re-renders.
+export const SHORT_BASE = process.env.ANIS_SHORT_URL || 'https://siftersearch.com/d';
+const B62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+export const shortCode = (bytes) => { let n = BigInt(`0x${Buffer.from(bytes).subarray(0, 8).toString('hex')}`), s = ''; for (let i = 0; i < 8; i++) { s += B62[Number(n % 62n)]; n /= 62n; } return s; };
+
+export function makeDocuments({ render = renderPdf, upload, exists, publicUrl, outbox = reportOutbox(), sendMail, store = offerStore(), mode = process.env.ANIS_REPORT_SEND, siteUrl, shortBase = SHORT_BASE } = {}) {
+  const put = async (key, body, contentType = 'application/pdf') => {
+    if (upload) return upload(key, body, contentType);
     const s = await import('../../storage.js');
     s.initStorage();
     if (!s.hasCloudStorage()) return null;
-    return (await s.uploadFile(key, body, { contentType: 'application/pdf' }))?.url ?? null;
+    return (await s.uploadFile(key, body, { contentType }))?.url ?? null;
   };
   const cached = async (key) => {
     if (exists) return exists(key);
@@ -46,11 +52,16 @@ export function makeDocuments({ render = renderPdf, upload, exists, publicUrl, o
       const key = cacheKey
         ? `anis/pdf/c/${createHash('sha256').update(`${PDF_CACHE_VERSION}|${cacheKey}`).digest('hex').slice(0, 32)}/anis-${slug(title)}.pdf`
         : `anis/pdf/${randomBytes(16).toString('hex')}/anis-${slug(title)}.pdf`;
-      if (cacheKey) { const hit = await cached(key); if (hit) return { url: hit, key, title, cached: true }; }
-      const pdfUrl = await urlOf(key).catch(() => null);
+      const code = shortCode(cacheKey ? createHash('sha256').update(`short|${cacheKey}`).digest() : randomBytes(8));
+      const short = shortBase ? `${shortBase}/${code}` : null;
+      if (cacheKey) { const hit = await cached(key); if (hit) return { url: short || hit, file_url: hit, key, title, cached: true }; }
+      const fileUrl = await urlOf(key).catch(() => null);
+      // the map first: the PDF's own share QR carries the short link only once it resolves
+      const mapped = short && fileUrl ? await put(`anis/s/${code}.json`, Buffer.from(JSON.stringify({ url: fileUrl, title })), 'application/json').catch(() => null) : null;
+      const pdfUrl = mapped ? short : fileUrl;
       const buf = await render({ title, markdown, onlineUrl, widgets, qr, running, pdfUrl, ...(siteUrl ? { siteUrl } : {}) });
       const url = await put(key, buf);
-      return url ? { url, key, bytes: buf.length, title } : null;
+      return url ? { url: mapped ? short : url, file_url: url, key, bytes: buf.length, title } : null;
     },
     /** A mail with the download link: an outbox draft (default) or a direct send. → 'drafted' | 'sent' */
     async email(doc, to) {

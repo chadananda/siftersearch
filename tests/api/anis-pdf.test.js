@@ -69,9 +69,9 @@ describe('documents service', () => {
   it('creates the PDF under an unguessable key and returns the link', async () => {
     const { d, up } = mk();
     const a = await d.create({ title: 'Timeline of the Báb', markdown: TIMELINE }), b = await d.create({ title: 'Timeline of the Báb', markdown: TIMELINE });
-    expect(a.url).toMatch(/^https:\/\/files\.example\/anis\/pdf\/[a-f0-9]{32}\/anis-timeline-of-the-bab\.pdf$/);
+    expect(a.file_url).toMatch(/^https:\/\/files\.example\/anis\/pdf\/[a-f0-9]{32}\/anis-timeline-of-the-bab\.pdf$/);
     expect(a.key).not.toBe(b.key);
-    expect(up[0].b.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(up.find((x) => x.k.endsWith('.pdf')).b.subarray(0, 5).toString()).toBe('%PDF-');
   });
   it('the PDF carries its own address (the share QR on its last page, 11-13): the URL it is stored under', async () => {
     const seen = [];
