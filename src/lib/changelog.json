@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-12T18:41:59.744Z",
+  "generated": "2026-11-13T13:09:37.361Z",
   "entries": [
+    {
+      "hash": "670f4bbe8",
+      "date": "2026-11-12",
+      "type": "Other",
+      "description": "Opt-in embed deadline — past it a vector layer still waiting on Gemini gives way when the BM25 layer already answers (Gemini query embed 0.3–6 s on tower, Qdrant ~40 ms); the agent's fused_search uses 900 ms",
+      "scope": null
+    },
     {
       "hash": "d77f43242",
       "date": "2026-11-12",
@@ -683,6 +690,13 @@
   ],
   "grouped": {
     "2026-11-12": [
+      {
+        "hash": "670f4bbe8",
+        "date": "2026-11-12",
+        "type": "Other",
+        "description": "Opt-in embed deadline — past it a vector layer still waiting on Gemini gives way when the BM25 layer already answers (Gemini query embed 0.3–6 s on tower, Qdrant ~40 ms); the agent's fused_search uses 900 ms",
+        "scope": null
+      },
       {
         "hash": "d77f43242",
         "date": "2026-11-12",
