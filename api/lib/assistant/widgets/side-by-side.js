@@ -11,7 +11,11 @@ const keys = (p) => new Set([p.id, ...[p.aligned_to].flat().filter((x) => x != n
 const meets = (a, b) => [...a].some((x) => b.has(x));
 // the script decides when the label is wrong (11-12: the Kawthar's Arabic is catalogued 'en', so no passage came back as role 'original')
 const scriptLang = (p) => { const t = clean(p.text), l = code(p.language); if (/[\u0600-\u06ff]/.test(t)) return l === 'fa' || l === 'ur' ? l : 'ar'; if (/[\u0590-\u05ff]/.test(t)) return 'he'; return l; };
-const isOriginal = (p) => p.role === 'original' || (!p.role && RTL.has(scriptLang(p)));
+// a language whose original is only ever written in its own script: its text in Latin letters is a romanization (11-13: the Kawthar's
+// "original" column showed "bsm llh lrḥmn lrḥym" — the Arabic stored stripped to Latin consonants), never the original nor a translation
+const OWN_SCRIPT = new Set([...RTL, 'el', 'grc', 'zh', 'ru']);
+export const romanized = (p) => OWN_SCRIPT.has(code(p.language)) && !/[^\p{Script=Latin}\p{Script=Common}\p{Script=Inherited}]/u.test(clean(p.text));
+const isOriginal = (p) => !romanized(p) && (p.role === 'original' || (!p.role && RTL.has(scriptLang(p))));
 // a column whose whole text is a few words beside a long original is a byline or a heading ("by the Bab", 11-12), never a translation
 const chars = (ps) => ps.reduce((n, p) => n + clean(p.text).length, 0);
 // each column's source, named by its site, shown once under the column — never the cell text as a link (Chad 11-12). Our own reader is the last-chance
@@ -32,7 +36,7 @@ export function titleParts(t) {
  *  (no original). opts: link(p) → url, layout 'tight'|'study', workUrl. One row per original paragraph; a translation passage covering several originals is ONE
  *  cell with `span` (continuation rows hold null); a verse nothing covers gets an empty cell. */
 export function buildSideBySide(passages, { link = (p) => p.source_url ?? p.citation_url ?? null, layout = 'tight', workUrl = null } = {}) {
-  const list = (passages || []).filter((p) => p && p.id != null && clean(p.text));
+  const list = (passages || []).filter((p) => p && p.id != null && clean(p.text) && !romanized(p));
   const first = list.find((p) => p.role === 'original') ?? list.find(isOriginal);
   if (!first) return null;
   const lang = scriptLang(first), anchorIds = new Set(list.flatMap((p) => [p.aligned_to].flat()).filter((x) => x != null));

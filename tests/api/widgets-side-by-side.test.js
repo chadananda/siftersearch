@@ -136,3 +136,13 @@ describe('print (PDF)', () => {
     expect(w.rows).toHaveLength(1); expect(w.rows[0].translations[0].text).toBe('In the Name of God');
   });
 });
+
+describe('side_by_side never shows a romanized original', () => {
+  it('an "original" in Latin letters for a language with its own script (the Kawthar stored as "bsm llh …") is no original → no widget; real script is kept', async () => {
+    const { buildSideBySide, romanized } = await import('../../api/lib/assistant/widgets/side-by-side.js');
+    const t = { id: 3, role: 'translation', language: 'en', document_id: 8, paragraph_index: 1, aligned_to: [1, 2], text: 'In the Name of God, the Most Merciful, the Compassionate.' };
+    expect(buildSideBySide([{ id: 1, role: 'original', language: 'ar', document_id: 9, paragraph_index: 1, text: 'bsm llh lrḥmn lrḥym' }, t])).toBeNull();
+    expect(buildSideBySide([{ id: 2, role: 'original', language: 'ar', document_id: 9, paragraph_index: 1, text: 'بسم الله الرحمن الرحيم' }, t]).rows[0].original.text).toBe('بسم الله الرحمن الرحيم');
+    expect(romanized({ language: 'pi', text: 'dhammo have rakkhati' })).toBe(false);   // Pali is written in Latin letters: not a romanization
+  });
+});
