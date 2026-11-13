@@ -131,7 +131,7 @@ export async function readRound(create, params, onText = null) {
 // The server pieces are injected (agent.js): toolDefs (the LLM tool schemas), canonical (tool name resolver), workNotes(title, notes) → { work, notes },
 // post.dropPreamble, runner (toolRunner with the server fallbacks: rights, title finder, link maps), cards(args, opts) → refCards, maxTokens (reply ceiling). Each defaults to a pure no-op so the core runs in a Worker.
 export async function agentAnswer({ messages, create, tools: raw, onEvent = () => {}, maxRounds = 8, maxCalls = 24, subject = null, cache = null, cardDocs = undefined, frame = null,
-  toolDefs = [], canonical = (n) => n, workNotes = (title, notes) => workNotesLookup(title, notes || (async () => ({ works: [] }))), post = {}, cards: cardsFn = null, maxTokens = 16000, runner = toolRunner }) {
+  toolDefs = [], canonical = (n) => n, held = null, workNotes = (title, notes) => workNotesLookup(title, notes || (async () => ({ works: [] }))), post = {}, cards: cardsFn = null, maxTokens = 16000, runner = toolRunner }) {
   const dropPreamble = post.dropPreamble || ((t) => t);
   const impl = cache ? cachedImpl(raw, cache) : raw;   // data-level cache: refs are per turn, so what is stored is the passages, never the rendered text
   // spec #5 (11-06): the first round's library search must carry Jev's subject (query-anchor.js) — code checks, never intent
@@ -176,6 +176,16 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     if (same && r.question) researchQ = r.question;   // a reworded question grows the set it matched, not a duplicate
     return `${same ? `research held for this question (${r.status}): these passages answered it before — answer from them; search only for a point the reader raises that they do not cover` : `research held for an EARLIER question ("${r.question}"; you judge: if it asks the same thing, treat it as this question's research and answer from it; if only related, start from it and search for the rest; if unrelated, ignore it) (${r.status})`}\n\n${show(give(r.passages))}`;   // a hit answers from the held research (11-13: hits re-searched 9–15 tower calls, 15–20 s)
   };
+  // research looked up BEFORE the first round (the Worker, on a same-question hit): it rides in the reader's turn, not a tool result —
+  // the API holds a reply written after a tool result until it is complete (11-13: first word 5–6 s after research_lookup; in the turn, 0.9 s)
+  let heldText = null;
+  if (held?.passages?.length) {
+    // same: this question's set (grows it). Close but not same: an EARLIER question's set the agent judges; answered with no search → it was the same question
+    if (held.same) researchQ = held.question;
+    const head = held.same ? `RESEARCH HELD FOR THIS QUESTION (${held.status}): these passages answered it before — answer from them; search only for a point the reader raises that they do not cover.`
+      : `RESEARCH HELD FOR AN EARLIER QUESTION ("${held.question}", ${held.status}) — you judge: if the reader asks about the same subject in other words (\"tell me about X\" = \"who was X?\"; a casual or misspelt form = the canonical one), it IS this question: answer from these passages with no searching. If it asks something narrower or different, start from them and search only for the rest; if unrelated, ignore them and research.`;
+    heldText = `${head} research_lookup is already done this turn — do not call it.\n\n${show(give(held.passages))}`;
+  }
   run.work_notes_lookup = async ({ title }) => {
     const { work, notes } = await workNotes(title, impl.notes);
     if (!work) return `no compiled notes for "${title}" — fused_search for passages that name it`;
@@ -187,6 +197,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   // a turn inside a conversation answers its one new point (11-12: a follow-up objection came back as a 550–700-word survey)
   const followUp = convo.some((m) => m.role === 'assistant') ? `\n\nTHIS TURN CONTINUES A CONVERSATION. The reader has read your earlier replies: answer only the new point, in about 150–250 words — a direct answer, then the 2–3 passages that settle it. Do not repeat or re-survey what earlier replies covered; more is offered under the reply. Never say an earlier reply was cut off, incomplete or wrong unless a passage you hold now shows it.` : '';
   const msgs = [{ role: 'system', content: frame ? `${AGENT_SYSTEM}${followUp}\n\nTHIS CHANNEL'S REPLY FRAME (it governs length and tone; it overrides the lengths above): ${frame}` : `${AGENT_SYSTEM}${followUp}` }, ...convo];
+  if (heldText) { const u = msgs.findLastIndex((m) => m.role === 'user'); msgs[u] = { ...msgs[u], content: `${msgs[u].content}\n\n---\n${heldText}` }; }
   const steps = [], usage = { in: 0, out: 0 };
   let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false;
   // the answering round streams a sentence at a time; only sentences whose quotations are in a passage held are shown
@@ -261,6 +272,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const cited = retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url));
   const keep = cited.filter((q) => /^\d+$/.test(String(q.id)));
   if (cited.length && !keep.length) console.warn(`[anis] research capture: no paragraph ids among ${cited.length} cited (${cited.slice(0, 3).map((q) => q.id).join(', ')})`);
+  if (held?.passages?.length && !held.same) researchQ = librarySearches(steps, canonical) ? (researchQ || held.asked) : held.question;
   if (researchQ && raw?.researchCapture && keep.length) raw.researchCapture(researchQ, keep).catch((err) => console.warn(`[anis] research capture failed: ${err.message}`));   // fire and forget
   // cards from the refs the reply cites (quote-cards.js refCards): one strategy passage → its passage card; a book_card book → its card unless a card already shows that work
   let cards = { passage: null, books: [] };

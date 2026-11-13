@@ -10,6 +10,7 @@ import { thinkingParam } from '../../api/lib/model-registry.js';
 import { lookup, capture, logQuestion, saveTurn, embed, EMBED_MODEL, SAME_QUESTION } from './research-store.js';
 import snapshot from './agent-tools.json';
 
+const HELD_IN_TURN = 0.75;
 const enc = new TextEncoder();
 const json = (o, status = 200, h = {}) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json', ...h } });
 // Map/Set results cross tower's wire as {__map}/{__set} (anis-impl-tools.js encode)
@@ -34,15 +35,19 @@ export async function* sseEvents(body) {
     if (done) return;
   }
 }
-export const nativeFetchCreate = (env, model, fetchFn = fetch) => async (params) => {
+export const nativeFetchCreate = (env, model, fetchFn = fetch, trace = null) => async (params) => {
+  const t0 = Date.now();
   const body = toNative(params, { model, thinking: thinkingParam(model, params.thinking) });
   const send = () => fetchFn('https://api.anthropic.com/v1/messages', { method: 'POST',
-    headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json', 'accept-encoding': 'identity' },
     body: JSON.stringify(params.stream ? { ...body, stream: true } : body) });
   let res = await send();
   if (res.status === 429 || res.status >= 500) res = await send();   // one retry, as the SDK's maxRetries: 1
   if (!res.ok) throw new Error(`anthropic ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  return params.stream ? chunksOf(sseEvents(res.body)) : fromNative(await res.json());
+  const seen = trace && { headers: Date.now() - t0 };
+  if (seen) trace.push(seen);
+  const events = !seen ? sseEvents(res.body) : (async function* () { for await (const e of sseEvents(res.body)) { const k = e.delta?.type || e.content_block?.type || e.type; seen[k] ??= Date.now() - t0; yield e; } })();
+  return params.stream ? chunksOf(events) : fromNative(await res.json());
 };
 
 // ── tower's research tools over HTTP (anis-impl-tools.js); researchLookup/Capture are local (D1/Vectorize) ──
@@ -99,7 +104,7 @@ export async function chat(request, env, ctx, deps = {}) {
   if (!messages.length) return json({ error: 'messages required' }, 400, cors(request));
   // per-visitor turn limit (CHAT_LIMIT ratelimit binding, wrangler.jsonc): every turn here is a paid model call
   const ip = request.headers.get('cf-connecting-ip') || 'unknown';
-  if (env.CHAT_LIMIT && !(await env.CHAT_LIMIT.limit({ key: ip }).catch(() => ({ success: true }))).success) return json({ error: 'Too many questions at once — please wait a minute.' }, 429, { ...cors(request), 'retry-after': '60' });
+  if (env.CHAT_LIMIT && request.headers.get('x-internal-key') !== env.TOWER_KEY && !(await env.CHAT_LIMIT.limit({ key: ip }).catch(() => ({ success: true }))).success) return json({ error: 'Too many questions at once — please wait a minute.' }, 429, { ...cors(request), 'retry-after': '60' });
   const { readable, writable } = new TransformStream(), writer = writable.getWriter();
   let chain = Promise.resolve();
   const send = (o) => { chain = chain.then(() => writer.write(enc.encode(`data: ${JSON.stringify(o)}\n\n`))).catch(() => {}); return chain; };
@@ -107,6 +112,7 @@ export async function chat(request, env, ctx, deps = {}) {
   const run = async () => {
     const t0 = Date.now();
     let firstText = null, rounds = 0;
+    const roundMs = [], trace = [];   // per model round: [first token ms, done ms] from the round's start
     const emit = (e) => { if (firstText == null && (e.type === 'text' || e.type === 'chunk')) firstText = Date.now() - t0; return send(e); };
     try {
       const question = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
@@ -128,10 +134,22 @@ export async function chat(request, env, ctx, deps = {}) {
         },
         researchCapture: (q, ps) => { const p = capture(env, q, ps); ctx.waitUntil(p.catch(() => {})); return p; },
       };
+      // a first question close to held research (≥ HELD_IN_TURN: paraphrases 0.78–0.88 raw; the agent judges below SAME_QUESTION): looked up now and put in the turn, saving a round and letting the reply stream
+      let held = null;
+      if (!messages.some((m) => m.role === 'assistant')) {
+        const hit = await lookup(env, question).catch(() => null);
+        if (hit && hit.similarity >= HELD_IN_TURN) {
+          const same = hit.similarity >= SAME_QUESTION;
+          sim = hit.similarity; setId = hit.set.id; matchedQ = hit.set.question; if (same) researchQ = matchedQ;
+          held = { same, asked: question, status: hit.set.status, question: hit.set.question, passages: hit.set.passages };
+        }
+      }
       const { impl, stat } = remoteImpl(env, { turn, local, fetchFn });
-      const tally = {}, model = modelFor('anis-agent').model, create = metered(deps.create || nativeFetchCreate(env, model, fetchFn), model, 'anis-agent-edge', tally);
-      const A = await agentAnswer({ messages, onEvent: emit, frame, tools: impl, toolDefs: snapshot.tools, runner: runnerFor(impl),
-        create: (p) => { rounds++; return create(p); }, workNotes: (title) => impl.workNotes(title).catch(() => ({ work: null, notes: [] })) });
+      const tally = {}, model = modelFor('anis-agent').model, create = metered(deps.create || nativeFetchCreate(env, model, fetchFn, body.trace ? trace : null), model, 'anis-agent-edge', tally);
+      const A = await agentAnswer({ messages, onEvent: emit, frame, tools: impl, toolDefs: snapshot.tools, runner: runnerFor(impl), held,
+        create: async (p) => { rounds++; const t = Date.now(), rec = [null, null]; roundMs.push(rec); const r = await create(p);
+          if (!p.stream) { rec[0] = rec[1] = Date.now() - t; return r; }
+          return (async function* () { for await (const c of r) { rec[0] ??= Date.now() - t; yield c; } rec[1] = Date.now() - t; })(); }, workNotes: (title) => impl.workNotes(title).catch(() => ({ work: null, notes: [] })) });
       if (!A.reply) { emit({ type: 'error', message: 'An error occurred. Please try again.' }); return; }
       // the form pass every tower reply gets (turn.js): emphasis repaired, link labels checked, a closing search offer dropped
       A.reply = formPass(A.reply, { sources: [...A.citations, ...A.retrieved].map((x) => ({ title: x?.title, url: x?.url ?? x?.source_url ?? null, text: x?.text ?? null })) }).text;
@@ -147,7 +165,7 @@ export async function chat(request, env, ctx, deps = {}) {
       const cites = citations.slice(0, 8).map((q) => ({ document_id: q.document_id, paragraph_index: q.paragraph_index, text: q.text, title: q.title, author: q.author, religion: q.religion, url: q.url }));
       if (cites.length) emit({ type: 'citations', citations: cites });
       if (items.length) emit({ type: 'followups', items });
-      const timings = { total_ms: Date.now() - t0, first_text_ms: firstText, tower_ms: stat.ms, tower_calls: stat.calls, tower_by: stat.by, rounds, research: sim == null ? null : { similarity: +sim.toFixed(3), question: matchedQ }, asked: researchQ };
+      const timings = { total_ms: Date.now() - t0, first_text_ms: firstText, tower_ms: stat.ms, tower_calls: stat.calls, tower_by: stat.by, rounds, round_ms: roundMs, ...(body.trace ? { trace } : {}), research: sim == null ? null : { similarity: +sim.toFixed(3), question: matchedQ }, asked: researchQ };
       emit({ type: 'complete', citations: cites, meta: { engine: 'anis-edge', retrieved_count: A.retrieved.length, gate_passed: true, conversation_id: conversationId, format: 'agent', timings } });
       // persistence never on the critical path
       const round = messages.filter((m) => m.role === 'user').length;

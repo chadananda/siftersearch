@@ -15,8 +15,8 @@ const n = Number(arg) || seeds.length;
 
 export async function ask(q, history = []) {
   const t0 = Date.now();
-  const r = await fetch(`${URL0}/api/chat/stream`, { method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ messages: [...history, { role: 'user', content: q }] }) });
+  const r = await fetch(`${URL0}/api/chat/stream`, { method: 'POST', headers: { 'content-type': 'application/json', ...(KEY ? { 'x-internal-key': KEY } : {}) },
+    body: JSON.stringify({ messages: [...history, { role: 'user', content: q }], trace: !!process.env.TRACE }) });
   const dec = new TextDecoder(); let buf = '', firstByte = null, firstText = null, reply = '', streamed = '';
   const ev = [];
   for await (const chunk of r.body) {
