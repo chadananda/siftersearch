@@ -108,5 +108,6 @@ export async function sbsDocument({ paragraph_id: pid, document_id: did }, deps 
     running: [`${name} Study`, `${data.original.label} original · ${by}`],
     cacheKey: failed ? null : `sbs|${docId}|${best}` });   // an alignment still pending → not cached: the next request completes it
   if (!doc?.url) return { error: 'the document could not be stored just now' };
-  return { url: doc.url, title, rows: verses, sentences: data.rows.length, approximate: !!data.approximate, document_id: docId };
+  return { url: doc.url, title, rows: verses, sentences: data.rows.length, approximate: !!data.approximate, document_id: docId,
+    translation: { document_id: best, votes: Object.fromEntries([...votes].sort((x, y) => score(y) - score(x)).slice(0, 5)) } };   // which edition won, and why (visibility)
 }
