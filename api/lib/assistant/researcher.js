@@ -175,7 +175,9 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
     const orig = await originalsFor(query, hits, early);
     hits = byTier(hits).slice(0, 10 - orig.length);
     // the agent's own-source pass (own-source.js preferOwnWork): a Writing quoted in a compilation or another's book → the writer's own work
+    const o0 = Date.now();
     if (impl.ownSource) hits = (await impl.ownSource(hits).catch(() => null)) || hits;
+    if (impl.ownSource) (await import('./tool-cache.js')).part('own_source', Date.now() - o0);
     searched.push({ query, docs: hits.map((p) => p.document_id).filter((x) => x != null) });
     const refs = hits.map((p) => add(p));
     return show([...refs, ...(await showOriginals(orig))]);

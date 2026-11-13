@@ -29,9 +29,12 @@ export const cachedImpl = (impl, cache, prefix = 'impl') => Object.fromEntries(O
 
 /** Run one tool call; → { out, cache: 'hit'|'miss'|'partial'|'none' } by the cached calls made inside it. */
 export async function callScope(fn) {
-  const s = { hit: 0, miss: 0 };
+  const s = { hit: 0, miss: 0, parts: {} };
   const out = await scope.run(s, fn);
-  return { out, cache: !s.hit && !s.miss ? 'none' : !s.miss ? 'hit' : !s.hit ? 'miss' : 'partial' };
+  return { out, parts: s.parts, cache: !s.hit && !s.miss ? 'none' : !s.miss ? 'hit' : !s.hit ? 'miss' : 'partial' };
 }
+
+/** Time spent in a named stage of the current tool call (summed; the step shows it as parts). Outside a call: nothing. */
+export const part = (name, ms) => { const s = scope.getStore(); if (s?.parts) s.parts[name] = (s.parts[name] || 0) + Math.round(ms); };
 
 export const agentCache = toolCache();

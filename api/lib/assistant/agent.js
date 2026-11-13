@@ -204,10 +204,10 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
       }
       onEvent({ type: 'status', text: STATUS[canonical(name)]?.(args) || name });
       const s0 = Date.now();
-      const { out, cache: hit } = fn ? await callScope(() => fn(args).catch((err) => `tool failed: ${String(err.message).slice(0, 160)}`)) : { out: 'unknown tool', cache: 'none' };
+      const { out, cache: hit, parts } = fn ? await callScope(() => fn(args).catch((err) => `tool failed: ${String(err.message).slice(0, 160)}`)) : { out: 'unknown tool', cache: 'none' };
       if (i === li) heldNow(String(out).startsWith('research held'));
       const n = (String(out).match(/^\[[PWB]\d+\]/gm) || []).length;
-      steps.push({ tool: name, args, found: n, count: n, ms: Date.now() - s0, cache: hit, ...(rebuilt?.index === i ? { rebuilt_from: rebuilt.from } : {}) });
+      steps.push({ tool: name, args, found: n, count: n, ms: Date.now() - s0, cache: hit, ...(parts && Object.keys(parts).length ? { parts } : {}), ...(rebuilt?.index === i ? { rebuilt_from: rebuilt.from } : {}) });
       return { tc, out };
     }));
     calls += tcs.length;
