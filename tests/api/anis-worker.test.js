@@ -7,7 +7,7 @@ import { capture } from '../../worker/anis/research-store.js';
 
 const cos = (a, b) => { let d = 0, x = 0, y = 0; for (let i = 0; i < a.length; i++) { d += a[i] * b[i]; x += a[i] * a[i]; y += b[i] * b[i]; } return d / (Math.sqrt(x * y) || 1); };
 const mkEnv = () => {
-  const db = new Database(':memory:'); db.exec(readFileSync('worker/d1/anis/0015_anis_edge.sql', 'utf8'));
+  const db = new Database(':memory:'); db.exec(readFileSync('worker/d1/anis/0015_anis_edge.sql', 'utf8')); db.exec(readFileSync('worker/d1/anis/0016_anis_pills.sql', 'utf8'));
   const stored = new Map();
   const stmt = (sql) => ({ bind: (...a) => { const s = db.prepare(sql);
     return { first: async () => s.get(...a) ?? null, all: async () => ({ results: s.all(...a) }), run: async () => (s.reader ? (s.get(...a), {}) : s.run(...a)) }; } });
@@ -29,7 +29,8 @@ const rig = (env, script, { towerStatus = 200, restated = 'NONE' } = {}) => {
     if (String(url).startsWith('https://api.anthropic.com')) {
       seen.anthropic.push(body);
       const restating = JSON.stringify(body.system || '').includes('canonical form');
-      if (!body.stream) return new Response(JSON.stringify({ content: [{ type: 'text', text: restating ? restated : '["Who translated it?","Is there an original?"]' }], stop_reason: 'end_turn', usage: {} }));
+      const pill = restating && /Latest message: (Who translated it\?|Is there an original\?)/.exec(JSON.stringify(body.messages))?.[1];
+      if (!body.stream) return new Response(JSON.stringify({ content: [{ type: 'text', text: restating ? pill || restated : '["Who translated it?","Is there an original?"]' }], stop_reason: 'end_turn', usage: {} }));
       return script.shift()();
     }
     const fn = String(url).split('/tool/')[1];
@@ -78,6 +79,20 @@ describe('anis worker chat', () => {
     const streamed = events.filter((e) => e.type === 'text').map((e) => e.content).join('').trim();
     expect(streamed).toContain('](https://x/1)');
     expect(events.filter((e) => e.type === 'chunk').map((e) => e.text).join('')).toBe(streamed);
+  });
+
+  it('pills: each offered pill is backed by a research set; a click resolves to its pinned question with no restatement', async () => {
+    const env = mkEnv();
+    await capture(env, 'what is prayer?', [P(1), P(2)]);
+    const { seen, post } = rig(env, [() => callTool('t1', 'research_lookup', { question: 'what is prayer?' }), () => say('Prayer is communion with God [[P1]].'), () => say('Translated by Shoghi Effendi.')]);
+    const first = await post();
+    const pills = first.events.find((e) => e.type === 'followups').items, reply = first.events.filter((e) => e.type === 'chunk').map((e) => e.text).join('');
+    expect(pills).toEqual(['Who translated it?', 'Is there an original?']);
+    expect(env.db.prepare('SELECT question FROM anis_pills ORDER BY question').all().map((r) => r.question)).toEqual(['what is prayer?', 'what is prayer?']);
+    const before = seen.anthropic.length;
+    await post([{ role: 'user', content: 'what is prayer?' }, { role: 'assistant', content: reply }, { role: 'user', content: pills[0] }]);
+    const restates = seen.anthropic.slice(before).filter((b) => JSON.stringify(b.system || '').includes('canonical form') && /Latest message: Who translated/.test(JSON.stringify(b.messages)));
+    expect(restates).toHaveLength(0);
   });
 
   it('cache hit: research_lookup is local (no tower call), events arrive in protocol order, turn is persisted', async () => {

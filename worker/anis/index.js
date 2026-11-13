@@ -10,6 +10,7 @@ import { thinkingParam } from '../../api/lib/model-registry.js';
 import { lookup, capture, logQuestion, saveTurn, embed, EMBED_MODEL, SAME_QUESTION } from './research-store.js';
 import { restate, underPriceBoundary } from './restate.js';
 import { finishLinks, templateFilter } from './links.js';
+import { backPills, pinnedQuestion } from './pills.js';
 const formSources = (xs) => xs.map((x) => ({ title: x?.title, url: x?.url ?? x?.source_url ?? null, text: x?.text ?? null }));
 import snapshot from './agent-tools.json';
 
@@ -148,7 +149,10 @@ export async function chat(request, env, ctx, deps = {}) {
       const tally = {}, guarded = (create, m) => async (p) => { if (!underPriceBoundary(m, p.messages || []).ok) throw new Error(`${m}: prompt over the price boundary`); return create(p); };
       // A first question's own wording is looked up beside Haiku: already the same question (≥ SAME_QUESTION) → no wait for Haiku.
       const rmodel = modelFor('anis-restate').model, tr = Date.now(), firstTurn = !messages.some((m) => m.role === 'assistant');
-      const canonP = restate(guarded(metered(deps.create || nativeFetchCreate(env, rmodel, fetchFn), rmodel, 'anis-restate-edge', tally), rmodel), rmodel, messages).catch(() => null);
+      const rcreate = guarded(metered(deps.create || nativeFetchCreate(env, rmodel, fetchFn), rmodel, 'anis-restate-edge', tally), rmodel);
+      // a clicked follow-up pill was restated and researched when it was offered (pills.js): its question is pinned, no Haiku wait
+      const pinned = firstTurn ? null : await pinnedQuestion(env, messages).catch(() => null);
+      const canonP = pinned ? Promise.resolve(pinned) : restate(rcreate, rmodel, messages).catch(() => null);
       const raw = firstTurn ? await lookup(env, question).catch(() => null) : null;
       const rawSame = raw && raw.similarity >= SAME_QUESTION;
       if (rawSame) ctx.waitUntil(canonP);
@@ -185,7 +189,10 @@ export async function chat(request, env, ctx, deps = {}) {
       for (const w of reply.split(/(\s+)/)) if (w) emit({ type: 'chunk', text: w });
       const cites = citations.slice(0, 8).map((q) => ({ document_id: q.document_id, paragraph_index: q.paragraph_index, text: q.text, title: q.title, author: q.author, religion: q.religion, url: q.url }));
       if (cites.length) emit({ type: 'citations', citations: cites });
-      const items = await pills;
+      // only pills research backs are offered: each restated, looked up, a miss searched + captured now (no model call but Haiku)
+      const items = await backPills(env, { items: await pills, messages, reply }, { restate: (msgs) => restate(rcreate, rmodel, msgs),
+        lookup: (q) => lookup(env, q), capture: (q, ps) => capture(env, q, ps),
+        research: async (q) => { const r = runnerFor(impl)(impl, { search: 'fused_search' }); await r.run.fused_search({ query: q }); return [...r.found.values()]; } });
       if (items.length) emit({ type: 'followups', items });
       const timings = { total_ms: Date.now() - t0, first_text_ms: firstText, tower_ms: stat.ms, tower_calls: stat.calls, tower_by: stat.by, rounds, round_ms: roundMs, restate_ms: restateMs, restated: canon, widgets: (A.widgets || []).map((w) => w.kind), links: { narrowed: fin.narrowed, unplaced: fin.unplaced }, ...(body.trace ? { trace } : {}), research: sim == null ? null : { similarity: +sim.toFixed(3), question: matchedQ }, asked: researchQ };
       emit({ type: 'complete', citations: cites, meta: { engine: 'anis-edge', retrieved_count: A.retrieved.length, gate_passed: true, conversation_id: conversationId, format: 'agent', timings } });
