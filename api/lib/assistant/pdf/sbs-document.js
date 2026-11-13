@@ -39,7 +39,7 @@ export async function sentenceRows(rows, { cacheGet, cachePut, llm, lang }) {
   let failed = 0;
   await pool(todo.filter((x) => !got.get(x.key)?.length), 4, async (x) => {
     let out;
-    try { out = await llm(x.o, x.e, lang); } catch { failed++; return; }   // transient: not cached, the next request retries
+    try { out = await llm(x.o, x.e, lang); } catch (err) { failed++; console.warn(`[sbs-document] alignment failed: ${err?.message || err}`); return; }   // transient: not cached, the next request retries
     const lines = verifyLines(x.o, x.e, out) || [{ o: x.o, t: x.e }];      // rejected → one row, cached: never paid for twice
     await cachePut(x.key, lines, 'sbs-align').catch(() => {});
     got.set(x.key, lines);

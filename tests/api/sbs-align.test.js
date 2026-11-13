@@ -1,6 +1,6 @@
 // SBS sentence rows: marker grouping, LLM verify, cache, encumbered, payload shape. No network, no DB.
 import { describe, it, expect, vi } from 'vitest';
-import { alignByMarkers, verifyLines, alignParagraphs, buildSbs, alignKey } from '../../api/lib/sbs/align.js';
+import { alignByMarkers, verifyLines, parseAlignReply, alignParagraphs, buildSbs, alignKey } from '../../api/lib/sbs/align.js';
 
 const marked = '⁅s1⁆⁅p1⁆A one⁅/p1⁆ ⁅p2⁆and two.⁅/p2⁆⁅/s1⁆ ⁅s2⁆Second sentence.⁅/s2⁆';
 const segs = [{ original: 'A one', translation: 'Uno' }, { original: 'and two.', translation: 'y dos.' }, { original: 'Second sentence.', translation: 'Segunda.' }];
@@ -51,6 +51,17 @@ describe('llm', () => {
     const c = mem(); const llm = vi.fn(async () => good);
     const ps = Array.from({ length: 6 }, (_, i) => para({ text: `${LONG_O} ${i}`, translation_text: `${LONG_E} ${i}` }));
     await alignParagraphs(ps, { docLang: 'ar', ...c, llm, maxUncached: 3 }); expect(llm).toHaveBeenCalledTimes(3);
+  });
+  it('verifyLines cuts OUR text where the model broke it, though the model re-voweled it and dropped the * (11-13)', () => {
+    const o = 'هَذِهِ وَرَقَةُ الفِرْدَوْسِ * تُغَنِّي عَلَى أَفْنَانِ سِدْرَةِ البَقَاءِ', e = 'Lo, the Nightingale of Paradise. Singeth upon the twigs.';
+    const rows = verifyLines(o, e, { source: 'هذه ورقة الفردوس\nتغني على أفنان سدرة البقاء', translation: 'Lo, the Nightingale of Paradise.\nSingeth upon the twigs.' });
+    expect(rows).toEqual([{ o: 'هَذِهِ وَرَقَةُ الفِرْدَوْسِ *', t: 'Lo, the Nightingale of Paradise.' }, { o: 'تُغَنِّي عَلَى أَفْنَانِ سِدْرَةِ البَقَاءِ', t: 'Singeth upon the twigs.' }]);
+    expect(verifyLines(o, e, { source: 'هذه ورقة\nتغني على أفنان سدرة البقاء', translation: 'Lo, the Nightingale of Paradise.\nSingeth upon the twigs.' })).toBeNull();   // a word lost
+  });
+  it('parseAlignReply reads the tagged form, and JSON with raw newlines in its strings', () => {
+    expect(parseAlignReply('<source>\na\nb\n</source>\n<translation>\nc\nd\n</translation>')).toEqual({ source: 'a\nb', translation: 'c\nd' });
+    expect(parseAlignReply('{"source": "a\nb", "translation": "c\nd"}')).toEqual({ source: 'a\nb', translation: 'c\nd' });
+    expect(parseAlignReply('no')).toBeNull();
   });
   it('verifyLines demands equal counts and unchanged text', () => {
     expect(verifyLines('a b', 'c d', { source: 'a\nb', translation: 'c' })).toBeNull();

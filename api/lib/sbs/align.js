@@ -38,12 +38,48 @@ export function alignByMarkers(marked, segments) {
   return i === segments.length ? rows : null;
 }
 
-/** The LLM's {source, translation} (lines joined by \n) → rows, only if text unchanged on both sides and counts equal; else null. */
+// The letters a model must not change. Vowel marks, tatweel, joiners, punctuation and spacing are not words (11-13: Haiku
+// re-voweled the Tablet of Aḥmad and dropped its * separators, so every split was refused); the rows are cut from OUR text.
+const skel = (c) => /[\p{L}\p{N}]/u.test(c) && !/[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/.test(c);
+const letters = (s) => [...String(s || '').normalize('NFC')].filter(skel).join('');
+
+/** text cut into pieces of the given letter counts. */
+function cutAt(text, counts) {
+  const ch = [...String(text).normalize('NFC')], out = [];
+  let i = 0;
+  for (const [n, want] of counts.entries()) {
+    const from = i;
+    for (let k = 0; k < want && i < ch.length; i++) if (skel(ch[i])) k++;
+    if (n === counts.length - 1) i = ch.length;
+    else {   // marks and separators (" *", ".") stay with this piece; an opening mark after the last space starts the next
+      let j = i, ws = -1;
+      for (; j < ch.length && !skel(ch[j]); j++) if (/\s/.test(ch[j])) ws = j;
+      i = ws >= 0 ? ws + 1 : j;
+    }
+    out.push(ch.slice(from, i).join('').trim());
+  }
+  return out;
+}
+
+/** The LLM's {source, translation} (lines joined by \n) → rows cut from the original texts, only if the letters are unchanged on
+ *  both sides and the counts equal; else null. */
 export function verifyLines(original, english, out) {
   const lines = (v) => String(v ?? '').split('\n').map((x) => x.trim()).filter(Boolean);
   const o = lines(out?.source), t = lines(out?.translation);
-  if (!o.length || o.length !== t.length || norm(o.join(' ')) !== norm(original) || norm(t.join(' ')) !== norm(english)) return null;
-  return o.map((x, i) => ({ o: x, t: t[i] }));
+  if (!o.length || o.length !== t.length || letters(o.join('')) !== letters(original) || letters(t.join('')) !== letters(english)) return null;
+  if (o.some((x) => !letters(x)) || t.some((x) => !letters(x))) return null;
+  const oo = cutAt(original, o.map((x) => letters(x).length)), tt = cutAt(english, t.map((x) => letters(x).length));
+  return oo.map((x, i) => ({ o: x, t: tt[i] }));
+}
+
+/** A model reply → { source, translation }: the tagged form asked for, else JSON (raw newlines inside strings repaired). */
+export function parseAlignReply(text) {
+  const s = String(text || ''), tag = (k) => s.match(new RegExp(`<${k}>\\s*([\\s\\S]*?)\\s*</${k}>`))?.[1];
+  if (tag('source') != null && tag('translation') != null) return { source: tag('source'), translation: tag('translation') };
+  const m = s.match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try { return JSON.parse(m[0]); } catch { /* raw newlines in the strings */ }
+  try { return JSON.parse(m[0].replace(/"(?:[^"\\]|\\.)*"/g, (q) => q.replace(/\r?\n/g, '\\n'))); } catch { return null; }
 }
 
 /** Default LLM: Haiku via the role client (spend policy + metering). → { source, translation } | null */
@@ -67,11 +103,17 @@ ${original}
 Translation (English):
 ${english}
 
-Return ONLY valid JSON with exactly two keys:
-{"source": "line1\\nline2\\nline3", "translation": "line1\\nline2\\nline3"}`;
+Return ONLY the two texts, one segment per line, in exactly this form:
+<source>
+segment 1
+segment 2
+</source>
+<translation>
+segment 1
+segment 2
+</translation>`;
   const r = await roleCreate('sbs-align', { messages: [{ role: 'user', content: prompt }], max_tokens: 4096, temperature: 0 });
-  const m = String(r?.choices?.[0]?.message?.content || '').match(/\{[\s\S]*\}/);
-  return m ? JSON.parse(m[0]) : null;
+  return parseAlignReply(r?.choices?.[0]?.message?.content);
 }
 
 /** Original/English per paragraph row: o = original-language text, e = English ('' if none), marked = o with ⁅sN⁆ markers. */
