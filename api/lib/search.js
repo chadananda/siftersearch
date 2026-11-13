@@ -1332,7 +1332,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
   const _marks = {};   // elapsed ms at each phase boundary after the layers (timings.marks): where post-layer time goes
   const _stamp = {};
   const timed = (name, p) => p.then((r) => { _stamp[name] = Date.now() - _t0; return r; });
-  const qfilters = await resolveQdrantFilters(filters);   // a year range → doc ids (Qdrant points carry no year)
+  const qfilters = await timed('filters', resolveQdrantFilters(filters));   // a year range → doc ids (Qdrant points carry no year)
   // the query vector, stamped on its own (memoized: every vector layer awaits this same promise) — the trace then splits
   // a slow layer into embedding vs Qdrant (11-01: Gemini 0.1–0.2 s and cold Qdrant 0.1–0.2 s measured, layers p50 0.7–1.5 s)
   const embedBy = {};   // memo hit vs a real Gemini call (ms, hedged, twin won) → informational embed:<k> rows
