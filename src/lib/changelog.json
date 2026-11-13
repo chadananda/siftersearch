@@ -1,6 +1,34 @@
 {
-  "generated": "2026-11-13T14:59:03.411Z",
+  "generated": "2026-11-13T20:16:02.312Z",
   "entries": [
+    {
+      "hash": "711b802af",
+      "date": "2026-11-13",
+      "type": "Other",
+      "description": "GetPublicUrl answers in Cloudflare REST-API mode (tower) — it returned null, hiding the PDF share QR and every PDF cache hit",
+      "scope": null
+    },
+    {
+      "hash": "14558683f",
+      "date": "2026-11-13",
+      "type": "Other",
+      "description": "An aligned doc with the work's title by the same author (names folded: bahaullah = Bahá'u'lláh) is the work itself; SBS prefers it over a study paper",
+      "scope": null
+    },
+    {
+      "hash": "3c6d76253",
+      "date": "2026-11-13",
+      "type": "Other",
+      "description": "The same source file is always aligned, even when recorded links fill the slots (a study paper's links crowded out the Tablet of Ahmad's own -en file)",
+      "scope": null
+    },
+    {
+      "hash": "ee777b8f9",
+      "date": "2026-11-13",
+      "type": "Other",
+      "description": "The same source file ranks right after the recorded original, ahead of docs that merely hold alignment rows; SBS asks 3 translations per verse",
+      "scope": null
+    },
     {
       "hash": "670f4bbe8",
       "date": "2026-11-12",
@@ -682,6 +710,36 @@
     }
   ],
   "grouped": {
+    "2026-11-13": [
+      {
+        "hash": "711b802af",
+        "date": "2026-11-13",
+        "type": "Other",
+        "description": "GetPublicUrl answers in Cloudflare REST-API mode (tower) — it returned null, hiding the PDF share QR and every PDF cache hit",
+        "scope": null
+      },
+      {
+        "hash": "14558683f",
+        "date": "2026-11-13",
+        "type": "Other",
+        "description": "An aligned doc with the work's title by the same author (names folded: bahaullah = Bahá'u'lláh) is the work itself; SBS prefers it over a study paper",
+        "scope": null
+      },
+      {
+        "hash": "3c6d76253",
+        "date": "2026-11-13",
+        "type": "Other",
+        "description": "The same source file is always aligned, even when recorded links fill the slots (a study paper's links crowded out the Tablet of Ahmad's own -en file)",
+        "scope": null
+      },
+      {
+        "hash": "ee777b8f9",
+        "date": "2026-11-13",
+        "type": "Other",
+        "description": "The same source file ranks right after the recorded original, ahead of docs that merely hold alignment rows; SBS asks 3 translations per verse",
+        "scope": null
+      }
+    ],
     "2026-11-12": [
       {
         "hash": "670f4bbe8",
