@@ -33,11 +33,12 @@ export function drawSideBySide(doc, data, ctx, { layout = data.layout ?? 'tight'
   // header
   const head = () => {
     const hh = 18, y = doc.y; doc.rect(x, y, width, hh).fill(color.sea);
-    const lab = heads(data).map((h) => [h.title?.main, h.kicker].filter(Boolean).join(' — '));
-    lab.forEach((t, c) => ctx.inline(doc, [{ text: t.length > 60 ? `${t.slice(0, 57)}…` : t, style: 'b', color: '#ffffff' }], { x: colX(c - 1) + PAD, y: y + 5, width: (c ? tw : ow) - 2 * PAD, size: 8.5, align: c === 0 && rtl ? 'right' : 'left' }));
+    heads(data).forEach((hd, c) => { const t = String(hd.kicker || '').toUpperCase();
+      ctx.inline(doc, [{ text: t.length > 48 ? `${t.slice(0, 46)}…` : t, style: 's', color: '#ffffff' }], { x: colX(c - 1) + PAD, y: y + 5.5, width: (c ? tw : ow) - 2 * PAD, size: 7.5 }); });
     doc.y = y + hh;
   };
-  ctx.need(18 + (h[0] || 0)); head();
+  const start = (hh) => Math.min(hh, 6 * lh);   // a row taller than a page starts wherever a few lines fit, then continues
+  ctx.need(18 + start(h[0] || 0)); head();
   const qrUrl = data.work?.url || data.rows[0]?.original.url;
   if (qrUrl) ctx.drawQr(doc, qrUrl, x + width + 4, doc.y - 18, 44);
   // groups = rows tied together by a spanned translation cell; a group never splits across pages unless it is taller than the page
@@ -46,15 +47,21 @@ export function drawSideBySide(doc, data, ctx, { layout = data.layout ?? 'tight'
     for (let k = i; k < j; k++) for (const c of rows[k].translations) if (c?.span > 1) j = Math.max(j, k + c.span);
     j = Math.min(j, rows.length);
     const gh = h.slice(i, j).reduce((a, b) => a + b, 0);
-    if (doc.y + (gh < bottom - 120 ? gh : h[i]) > bottom) { ctx.addPage(); head(); }
+    if (doc.y + (gh < bottom - 120 ? gh : start(h[i])) > bottom) { ctx.addPage(); head(); }
     let y = doc.y;
     for (let k = i; k < j; k++) {
       const r = rows[k];
-      if (rtl) {
-        doc.font('a0').fontSize(AR).fillColor(color.ink);
-        oLines[k].forEach((l, m) => doc.text(l, x + PAD, y + PAD + m * lh, { width: ow - 2 * PAD, align: 'right', lineBreak: false, ...(r.original.url ? { link: r.original.url } : {}) }));
-      } else ctx.inline(doc, [{ text: r.original.text, style: 'r', ...(r.original.url ? { link: r.original.url } : {}) }], { x: x + PAD, y: y + PAD, width: ow - 2 * PAD, size: SIZE, gap: 1.5 });
+      // translations first (they stay on the row's first page); the original may continue across pages
       r.translations.forEach((c, m) => { if (c?.text) ctx.inline(doc, [{ text: c.text, style: 'r', ...(c.url ? { link: c.url } : {}) }], { x: colX(m) + PAD, y: y + PAD, width: tw - 2 * PAD, size: SIZE, gap: 1.5 }); });
+      if (rtl) {
+        let ly = y + PAD, broke = false;
+        for (const l of oLines[k]) {
+          if (ly + lh > bottom) { ctx.addPage(); head(); y = doc.y; ly = y + PAD; broke = true; }
+          doc.font('a0').fontSize(AR).fillColor(color.ink).text(l, x + PAD, ly, { width: ow - 2 * PAD, align: 'right', lineBreak: false, ...(r.original.url ? { link: r.original.url } : {}) });
+          ly += lh;
+        }
+        h[k] = broke ? ly + PAD - y : Math.max(h[k], ly + PAD - y);
+      } else ctx.inline(doc, [{ text: r.original.text, style: 'r', ...(r.original.url ? { link: r.original.url } : {}) }], { x: x + PAD, y: y + PAD, width: ow - 2 * PAD, size: SIZE, gap: 1.5 });
       y += h[k];
       // the rule under a row: full width at the end of the group, the original column only inside a spanned group
       if (!study) doc.moveTo(x, y).lineTo(k === j - 1 ? x + width : x + ow, y).lineWidth(0.5).strokeColor(color.rule).stroke();

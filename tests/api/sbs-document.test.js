@@ -50,3 +50,19 @@ describe('side_by_side_document tool', () => {
     expect(await bad.run.side_by_side_document({ ref: 'P1' })).toMatch(/no side-by-side document: too long/);
   });
 });
+
+describe('documents cache', () => {
+  it('a cacheKey reuses the stored document without rendering; no key always renders anew', async () => {
+    const { makeDocuments } = await import('../../api/lib/assistant/pdf/documents.js');
+    const stored = new Set(); let renders = 0;
+    const docs = makeDocuments({ render: async () => { renders++; return Buffer.from('%PDF'); }, upload: async (k) => { stored.add(k); return `https://r2/${k}`; },
+      exists: async (k) => (stored.has(k) ? `https://r2/${k}` : null), outbox: {}, store: {} });
+    const a = await docs.create({ title: 'Tablet', markdown: 'x', cacheKey: 'sbs|1|2' });
+    const b = await docs.create({ title: 'Tablet', markdown: 'x', cacheKey: 'sbs|1|2' });
+    expect(b).toMatchObject({ url: a.url, cached: true });
+    expect(renders).toBe(1);
+    const c = await docs.create({ title: 'Tablet', markdown: 'x' });
+    expect(c.url).not.toBe(a.url);
+    expect(renders).toBe(2);
+  });
+});

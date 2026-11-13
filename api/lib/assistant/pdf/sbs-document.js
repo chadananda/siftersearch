@@ -4,6 +4,7 @@
 import { buildSideBySide, toMarkdown } from '../widgets/side-by-side.js';
 
 export const SBS_MAX_ROWS = 150;   // a tablet, not a book: a longer work is refused, never a 1000-row PDF
+const clean = (t) => String(t ?? '').replace(/\\([\\`*_{}[\]()#+\-.!>|])/g, '$1');   // stored markdown escapes ("1\\.") → plain
 const OWN_SCRIPT = new Set(['ar', 'fa', 'he', 'ur', 'ota']);
 
 const defaults = async () => {
@@ -34,22 +35,25 @@ export async function sbsDocument({ paragraph_id: pid, document_id: did }, deps 
   if (rows.length > SBS_MAX_ROWS) return { error: `a long work (over ${SBS_MAX_ROWS} paragraphs): too long for one side-by-side document` };
   const lang = d.langCode(m.language);
   const urls = await d.withLinks(rows.map((r) => ({ id: r.id, doc_id: docId, paragraph_index: r.paragraph_index, text: r.text, title: m.title }))).catch(() => []);
-  const origs = rows.map((r, i) => ({ id: r.id, document_id: docId, paragraph_index: r.paragraph_index, text: r.text, title: m.title, author: m.author,
+  const origs = rows.map((r, i) => ({ id: r.id, document_id: docId, paragraph_index: r.paragraph_index, text: clean(r.text), title: m.title, author: m.author,
     language: lang, role: 'original', source_url: urls[i]?.url || null }));
   // each paragraph's aligned translation; ONE translation column: the edition most paragraphs align to
   const found = await pool(origs, 6, async (o) => (await d.editionsOf(o.id, { want: 'translations', limit: 2 }))?.passages?.filter((p) => p.role === 'translation') || []);
   const votes = new Map();
   for (const ps of found) for (const p of ps || []) votes.set(p.document_id, (votes.get(p.document_id) || 0) + 1);
-  const best = [...votes].sort((a, b) => b[1] - a[1])[0]?.[0];
+  // the author's own work in English (Bahá'u'lláh's tablet, not a commentary quoting it) wins; then the most aligned paragraphs
+  const auth = new Map(found.flat().filter(Boolean).map((p) => [p.document_id, p.author]));
+  const score = ([id, v]) => v + (m.author && auth.get(id) === m.author ? 1e6 : 0);
+  const best = [...votes].sort((a, b) => score(b) - score(a))[0]?.[0];
   if (best == null) return { error: 'no translation of this work is aligned with its original in the library' };
   const trs = new Map();
   found.forEach((ps, i) => { const p = (ps || []).find((x) => x.document_id === best); if (!p) return;
-    const t = trs.get(p.id) || { ...p, aligned_to: [] }; t.aligned_to.push(origs[i].id); trs.set(p.id, t); });
+    const t = trs.get(p.id) || { ...p, text: clean(p.text), aligned_to: [] }; t.aligned_to.push(origs[i].id); trs.set(p.id, t); });
   const data = buildSideBySide([...origs, ...trs.values()], { layout: 'tight' });
   if (!data) return { error: 'the stored original is not in its own script' };
   const name = m.title || 'Tablet', title = `${name}: ${data.original.label} and English`, tr = data.translations[0];
   const intro = `${m.author ? `${m.author}, ` : ''}*${name}*: the ${data.original.label} original beside ${tr?.translator || tr?.title || 'its English translation'}.`;
-  const doc = await d.documents.create({ title, markdown: `${intro}\n\n<!-- widget:${data.id} -->\n\n${toMarkdown(data)}`, widgets: [data] });
+  const doc = await d.documents.create({ title, markdown: `${intro}\n\n<!-- widget:${data.id} -->\n\n${toMarkdown(data)}`, widgets: [data], cacheKey: `sbs|${docId}|${best}` });
   if (!doc?.url) return { error: 'the document could not be stored just now' };
   return { url: doc.url, title, rows: data.rows.length, approximate: !!data.approximate, document_id: docId };
 }

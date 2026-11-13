@@ -27,10 +27,15 @@ const register = (doc) => Object.values(fonts()).flat().forEach((f) => doc.regis
 // split text into runs by the first font of the style's chain that has the glyph; uncovered chars are dropped
 export function runs(text, style) {
   const chain = fonts()[style], out = [];
-  for (const ch of String(text).normalize('NFC')) {
+  for (let ch of String(text).normalize('NFC')) {
     const cp = ch.codePointAt(0);
-    const f = /\s/.test(ch) ? chain[0] : chain.find((c) => c.font.hasGlyphForCodePoint(cp));
-    if (!f) continue;
+    let f = /\s/.test(ch) ? chain[0] : chain.find((c) => c.font.hasGlyphForCodePoint(cp));
+    if (!f) {   // no glyph (Gloock has no ḥ): the base letter, never a dropped one
+      const base = ch.normalize('NFD')[0];
+      f = base !== ch && chain.find((c) => c.font.hasGlyphForCodePoint(base.codePointAt(0)));
+      if (!f) continue;
+      ch = base;
+    }
     if (out.at(-1)?.name === f.name) out.at(-1).text += ch; else out.push({ name: f.name, text: ch });
   }
   return out;
