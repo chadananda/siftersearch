@@ -8,6 +8,7 @@ import { toNative, fromNative, chunksOf } from '../../api/lib/anthropic-native.j
 import { modelFor } from '../../api/lib/model-roles.js';
 import { thinkingParam } from '../../api/lib/model-registry.js';
 import { lookup, capture, logQuestion, saveTurn, embed, EMBED_MODEL, SAME_QUESTION } from './research-store.js';
+import { restate, underPriceBoundary } from './restate.js';
 import snapshot from './agent-tools.json';
 
 const HELD_IN_TURN = 0.75;
@@ -134,18 +135,29 @@ export async function chat(request, env, ctx, deps = {}) {
         },
         researchCapture: (q, ps) => { const p = capture(env, q, ps); ctx.waitUntil(p.catch(() => {})); return p; },
       };
-      // a first question close to held research (≥ HELD_IN_TURN: paraphrases 0.78–0.88 raw; the agent judges below SAME_QUESTION): looked up now and put in the turn, saving a round and letting the reply stream
+      // Haiku restates the message as the canonical standalone question (follow-ups resolved), then the research cache is looked up
+      // with it and the result put in the turn (≥ HELD_IN_TURN; the agent judges below SAME_QUESTION) — saving the research_lookup
+      // round and letting the reply stream. Haiku failing → the raw first question, as before; a follow-up then leaves it to the agent.
+      const tally = {}, guarded = (create, m) => async (p) => { if (!underPriceBoundary(m, p.messages || []).ok) throw new Error(`${m}: prompt over the price boundary`); return create(p); };
+      // A first question's own wording is looked up beside Haiku: already the same question (≥ SAME_QUESTION) → no wait for Haiku.
+      const rmodel = modelFor('anis-restate').model, tr = Date.now(), firstTurn = !messages.some((m) => m.role === 'assistant');
+      const canonP = restate(guarded(metered(deps.create || nativeFetchCreate(env, rmodel, fetchFn), rmodel, 'anis-restate-edge', tally), rmodel), rmodel, messages).catch(() => null);
+      const raw = firstTurn ? await lookup(env, question).catch(() => null) : null;
+      const rawSame = raw && raw.similarity >= SAME_QUESTION;
+      if (rawSame) ctx.waitUntil(canonP);
+      const canon = rawSame ? null : await canonP, restateMs = rawSame ? null : Date.now() - tr;
+      const lookQ = rawSame ? question : canon || (firstTurn ? question : null);
       let held = null;
-      if (!messages.some((m) => m.role === 'assistant')) {
-        const hit = await lookup(env, question).catch(() => null);
+      if (lookQ) {
+        const hit = firstTurn && lookQ === question ? raw : await lookup(env, lookQ).catch(() => null);
         if (hit && hit.similarity >= HELD_IN_TURN) {
           const same = hit.similarity >= SAME_QUESTION;
-          sim = hit.similarity; setId = hit.set.id; matchedQ = hit.set.question; if (same) researchQ = matchedQ;
-          held = { same, asked: question, status: hit.set.status, question: hit.set.question, passages: hit.set.passages };
-        }
+          sim = hit.similarity; setId = hit.set.id; matchedQ = hit.set.question; researchQ = same ? matchedQ : lookQ;
+          held = { same, asked: lookQ, status: hit.set.status, question: hit.set.question, passages: hit.set.passages };
+        } else if (canon) { researchQ = canon; held = { question: canon }; }
       }
       const { impl, stat } = remoteImpl(env, { turn, local, fetchFn });
-      const tally = {}, model = modelFor('anis-agent').model, create = metered(deps.create || nativeFetchCreate(env, model, fetchFn, body.trace ? trace : null), model, 'anis-agent-edge', tally);
+      const model = modelFor('anis-agent').model, create = metered(deps.create || nativeFetchCreate(env, model, fetchFn, body.trace ? trace : null), model, 'anis-agent-edge', tally);
       const A = await agentAnswer({ messages, onEvent: emit, frame, tools: impl, toolDefs: snapshot.tools, runner: runnerFor(impl), held,
         create: async (p) => { rounds++; const t = Date.now(), rec = [null, null]; roundMs.push(rec); const r = await create(p);
           if (!p.stream) { rec[0] = rec[1] = Date.now() - t; return r; }
@@ -155,7 +167,7 @@ export async function chat(request, env, ctx, deps = {}) {
       A.reply = formPass(A.reply, { sources: [...A.citations, ...A.retrieved].map((x) => ({ title: x?.title, url: x?.url ?? x?.source_url ?? null, text: x?.text ?? null })) }).text;
       emit({ type: 'stage', stage: 'craft' });
       // range links + follow-up pills together, off the critical path of each other; either failing leaves the plain reply / no pills
-      const fmodel = modelFor('anis-followups').model, fcreate = metered(deps.create || nativeFetchCreate(env, fmodel, fetchFn), fmodel, 'anis-followups-edge', tally);
+      const fmodel = modelFor('anis-followups').model, fcreate = guarded(metered(deps.create || nativeFetchCreate(env, fmodel, fetchFn), fmodel, 'anis-followups-edge', tally), fmodel);
       const [up, items] = await Promise.all([
         impl.upgradeLinks([A.reply, ...A.citations.map((c) => c.url || '')]).catch(() => null),
         followupsWith(async (msgs) => (await fcreate({ messages: msgs, max_tokens: 160, thinking: false })).choices[0].message, question, A.reply),
@@ -165,7 +177,7 @@ export async function chat(request, env, ctx, deps = {}) {
       const cites = citations.slice(0, 8).map((q) => ({ document_id: q.document_id, paragraph_index: q.paragraph_index, text: q.text, title: q.title, author: q.author, religion: q.religion, url: q.url }));
       if (cites.length) emit({ type: 'citations', citations: cites });
       if (items.length) emit({ type: 'followups', items });
-      const timings = { total_ms: Date.now() - t0, first_text_ms: firstText, tower_ms: stat.ms, tower_calls: stat.calls, tower_by: stat.by, rounds, round_ms: roundMs, ...(body.trace ? { trace } : {}), research: sim == null ? null : { similarity: +sim.toFixed(3), question: matchedQ }, asked: researchQ };
+      const timings = { total_ms: Date.now() - t0, first_text_ms: firstText, tower_ms: stat.ms, tower_calls: stat.calls, tower_by: stat.by, rounds, round_ms: roundMs, restate_ms: restateMs, restated: canon, ...(body.trace ? { trace } : {}), research: sim == null ? null : { similarity: +sim.toFixed(3), question: matchedQ }, asked: researchQ };
       emit({ type: 'complete', citations: cites, meta: { engine: 'anis-edge', retrieved_count: A.retrieved.length, gate_passed: true, conversation_id: conversationId, format: 'agent', timings } });
       // persistence never on the critical path
       const round = messages.filter((m) => m.role === 'user').length;

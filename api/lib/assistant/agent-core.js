@@ -185,6 +185,9 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     const head = held.same ? `RESEARCH HELD FOR THIS QUESTION (${held.status}): these passages answered it before — answer from them; search only for a point the reader raises that they do not cover.`
       : `RESEARCH HELD FOR AN EARLIER QUESTION ("${held.question}", ${held.status}) — you judge: if the reader asks about the same subject in other words (\"tell me about X\" = \"who was X?\"; a casual or misspelt form = the canonical one), it IS this question: answer from these passages with no searching. If it asks something narrower or different, start from them and search only for the rest; if unrelated, ignore them and research.`;
     heldText = `${head} research_lookup is already done this turn — do not call it.\n\n${show(give(held.passages))}`;
+  } else if (held?.question) {
+    researchQ = held.question;   // the canonical restatement: what this turn's research is saved under
+    heldText = 'NO RESEARCH HELD for this question yet — research_lookup is already done this turn; do not call it. Research it with the tools.';
   }
   run.work_notes_lookup = async ({ title }) => {
     const { work, notes } = await workNotes(title, impl.notes);

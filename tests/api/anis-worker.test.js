@@ -22,13 +22,14 @@ const say = (text) => sse([{ type: 'message_start', message: { usage: { input_to
   { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } }, { type: 'content_block_stop', index: 0 }, { type: 'message_delta', usage: { output_tokens: 5 } }, { type: 'message_stop' }]);
 const callTool = (id, name, input) => sse([{ type: 'message_start', message: { usage: { input_tokens: 10 } } }, { type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id, name, input: {} } },
   { type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: JSON.stringify(input) } }, { type: 'content_block_stop', index: 0 }, { type: 'message_delta', usage: { output_tokens: 5 } }, { type: 'message_stop' }]);
-const rig = (env, script, { towerStatus = 200 } = {}) => {
+const rig = (env, script, { towerStatus = 200, restated = 'NONE' } = {}) => {
   const seen = { anthropic: [], tower: [] }, pending = [];
   const fetch = async (url, init) => {
     const body = init?.body ? JSON.parse(init.body) : null;
     if (String(url).startsWith('https://api.anthropic.com')) {
       seen.anthropic.push(body);
-      if (!body.stream) return new Response(JSON.stringify({ content: [{ type: 'text', text: '["Who translated it?","Is there an original?"]' }], stop_reason: 'end_turn', usage: {} }));
+      const restating = JSON.stringify(body.system || '').includes('canonical form');
+      if (!body.stream) return new Response(JSON.stringify({ content: [{ type: 'text', text: restating ? restated : '["Who translated it?","Is there an original?"]' }], stop_reason: 'end_turn', usage: {} }));
       return script.shift()();
     }
     const fn = String(url).split('/tool/')[1];
@@ -68,6 +69,27 @@ describe('anis worker chat', () => {
     expect(env.db.prepare('SELECT role, content FROM anis_turns ORDER BY role').all().map((t) => t.role)).toEqual(['assistant', 'user']);
     expect(env.db.prepare('SELECT outcome FROM anis_question_log').get().outcome).toBe('hit');
   });
+  it('Haiku restates the message first: a hit on the canonical question is held in the turn (no research_lookup round), metered as anis-restate-edge', async () => {
+    const env = mkEnv();
+    await capture(env, 'Who was the Báb?', [P(1), P(2)]);
+    env.AI.run = async (_m, { text }) => ({ data: text.map((t) => (/báb/i.test(t) ? [1, 0, 0] : [0, 1, 0])) });
+    const { seen, post } = rig(env, [() => say('The Báb was the Herald [[P1]].')], { restated: 'Who was the Báb?' });
+    const { events } = await post([{ role: 'user', content: 'who is the bab in the bahai faith' }]);
+    const done = events.at(-1); expect(done.type).toBe('complete');
+    expect(done.meta.timings).toMatchObject({ rounds: 1, restated: 'Who was the Báb?', research: { similarity: 1, question: 'Who was the Báb?' } });
+    const agent = seen.anthropic.filter((b) => b.stream);
+    expect(JSON.stringify(agent[0].messages)).toContain('RESEARCH HELD FOR THIS QUESTION');
+    const usage = JSON.parse(JSON.stringify(seen.tower)); expect(usage).toContain('logUsage');
+  });
+  it('a restated miss tells the agent research_lookup is done; a follow-up is restated with its conversation', async () => {
+    const env = mkEnv();
+    const { seen, post } = rig(env, [() => say('His sons were…')], { restated: "Who were Bahá'u'lláh's sons?" });
+    await post([{ role: 'user', content: "who was baha'u'llah" }, { role: 'assistant', content: "Bahá'u'lláh was the Founder." }, { role: 'user', content: 'what about his sons?' }]);
+    const r = seen.anthropic.find((b) => !b.stream);
+    expect(r.model).toBe('claude-haiku-5-5'); expect(r.max_tokens).toBe(80);
+    expect(JSON.stringify(r.messages)).toContain("Bahá'u'lláh was the Founder."); expect(JSON.stringify(r.messages)).toContain('what about his sons?');
+    expect(JSON.stringify(seen.anthropic.find((b) => b.stream).messages)).toContain('NO RESEARCH HELD');
+  });
   it('the reply gets the tower form pass: unbalanced emphasis repaired before it streams', async () => {
     const env = mkEnv();
     const { post } = rig(env, [() => say('She was **utterly fearless* and calm.')]);
@@ -99,6 +121,22 @@ describe('anis worker chat', () => {
     expect((await chat(new Request('https://a/api/chat/stream', { method: 'POST', body: '{}' }), env, ctx)).status).toBe(400);
     expect((await worker.fetch(new Request('https://a/api/chat/stream', { method: 'OPTIONS', headers: { origin: 'https://s.org' } }), env, ctx)).status).toBe(204);
     expect(await (await worker.fetch(new Request('https://a/healthz'), env, ctx)).json()).toEqual({ ok: true, service: 'anis' });
+  });
+});
+
+describe('anis restatement', () => {
+  it('clips the history and keeps every Haiku prompt far under the long-context price boundary', async () => {
+    const { restateMessages, underPriceBoundary, restate } = await import('../../worker/anis/restate.js');
+    const long = Array.from({ length: 40 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', content: 'x'.repeat(50000) }));
+    const msgs = restateMessages([...long, { role: 'user', content: 'and then?' }]);
+    expect(msgs[1].content.length).toBeLessThan(8000);
+    expect(underPriceBoundary('claude-haiku-5-5', msgs).ok).toBe(true);
+    expect(underPriceBoundary('claude-haiku-5-5', [{ content: 'x'.repeat(200000) }]).ok).toBe(false);
+    const reply = (text) => async () => ({ choices: [{ message: { content: text } }] });
+    expect(await restate(reply('"Who was Táhirih?"\n'), 'claude-haiku-5-5', [{ role: 'user', content: 'tahirih' }])).toBe('Who was Táhirih?');
+    expect(await restate(reply('NONE'), 'claude-haiku-5-5', [{ role: 'user', content: 'thanks!' }])).toBeNull();
+    expect(await restate(async () => { throw new Error('x'); }, 'claude-haiku-5-5', [{ role: 'user', content: 'q' }])).toBeNull();
+    expect(await restate(() => new Promise(() => {}), 'claude-haiku-5-5', [{ role: 'user', content: 'q' }], { timeoutMs: 20 })).toBeNull();
   });
 });
 
