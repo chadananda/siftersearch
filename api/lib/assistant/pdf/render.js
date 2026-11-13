@@ -78,8 +78,8 @@ function inline(doc, spans, { x, y, width, size = 10.5, gap = 2.5, color = COLOR
   return doc.y;
 }
 
-/** Markdown → PDF Buffer. opts: { title, markdown, date, siteUrl, onlineUrl, widgets, qr: { url, label } (a QR beside the title), running: [line1, line2] (the header on every page, after "Anís ·") } */
-export async function renderPdf({ title = '', markdown = '', date = new Date(), siteUrl = SITE, onlineUrl = null, widgets = [], qr = null, running = null } = {}) {
+/** Markdown → PDF Buffer. opts: { title, markdown, date, siteUrl, onlineUrl, widgets, qr: { url, label } (a QR beside the title), running: [line1, line2] (the header on every page, after "Anís ·"), pdfUrl (this PDF's own link: a share QR at the end) } */
+export async function renderPdf({ title = '', markdown = '', date = new Date(), siteUrl = SITE, onlineUrl = null, widgets = [], qr = null, running = null, pdfUrl = null } = {}) {
   const doc = new PDFDocument({ size: [P.w, P.h], margins: { top: P.top, bottom: P.bottom, left: P.l, right: P.r }, bufferPages: true,
     info: { Title: String(title).slice(0, 200), Author: 'Anís, Ocean AI Research Assistant', Creator: 'Anís · OceanLibrary.com' } });
   const chunks = []; doc.on('data', (c) => chunks.push(c));
@@ -208,12 +208,17 @@ export async function renderPdf({ title = '', markdown = '', date = new Date(), 
 
   // closing: continue online
   const target = onlineUrl || siteUrl;
-  need(100); doc.y += 12;
+  need(pdfUrl ? 112 : 100); doc.y += 12;
   doc.moveTo(P.l, doc.y).lineTo(P.w - P.r, doc.y).lineWidth(0.6).strokeColor(COLOR.rule).stroke(); doc.y += 12;
-  const cy = doc.y; drawQr(doc, target, P.l, cy, 64);
-  inline(doc, [{ text: onlineUrl ? 'Continue this conversation online' : 'Ask Anís your own question', style: 'h' }], { x: P.l + 78, y: cy, width: W - 78, size: 12, color: COLOR.sea });
-  doc.y += 3; inline(doc, [{ text: `Anís is the Ocean AI Research Assistant of Ocean 2.0 (OceanLibrary.com). Scan the code or visit ${siteUrl.replace(/^https?:\/\//, '')}. This document is AI-assisted research: check each quotation against the source it cites.`, style: 'r' }], { x: P.l + 78, y: doc.y, width: W - 78, size: 9, color: COLOR.ink });
-  doc.y = Math.max(doc.y, cy + 64);
+  const cy = doc.y, sw = pdfUrl ? 64 + 18 : 0, tw = W - 78 - sw;   // pdfUrl: this PDF's own QR on the right, to share it (Chad 11-13)
+  drawQr(doc, target, P.l, cy, 64);
+  if (pdfUrl) {
+    drawQr(doc, pdfUrl, P.l + W - 64, cy, 64);
+    inline(doc, [{ text: 'Share this PDF', style: 's', link: pdfUrl }], { x: P.l + W - 64, y: cy + 66, width: 64, size: 7, color: COLOR.mist, align: 'center' });
+  }
+  inline(doc, [{ text: onlineUrl ? 'Continue this conversation online' : 'Ask Anís your own question', style: 'h' }], { x: P.l + 78, y: cy, width: tw, size: 12, color: COLOR.sea });
+  doc.y += 3; inline(doc, [{ text: `Anís is the Ocean AI Research Assistant of Ocean 2.0 (OceanLibrary.com). Scan the code or visit ${siteUrl.replace(/^https?:\/\//, '')}.${pdfUrl ? ' The code on the right opens this PDF, to share it.' : ''} This document is AI-assisted research: check each quotation against the source it cites.`, style: 'r' }], { x: P.l + 78, y: doc.y, width: tw, size: 9, color: COLOR.ink });
+  doc.y = Math.max(doc.y, cy + 64 + (pdfUrl ? 12 : 0));
 
   // footers (page n of N)
   const { count } = doc.bufferedPageRange();

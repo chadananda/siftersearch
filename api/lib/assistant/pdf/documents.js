@@ -17,8 +17,8 @@ const slug = (s) => String(s || 'research').normalize('NFKD').replace(/[^\w\s-]/
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** Documents service. Every dependency injectable; defaults = live R2 upload, report outbox, tower mail. */
-export const PDF_CACHE_VERSION = 4;   // bump when the print design changes: every cached document re-renders once
-export function makeDocuments({ render = renderPdf, upload, exists, outbox = reportOutbox(), sendMail, store = offerStore(), mode = process.env.ANIS_REPORT_SEND, siteUrl } = {}) {
+export const PDF_CACHE_VERSION = 5;   // bump when the print design changes: every cached document re-renders once
+export function makeDocuments({ render = renderPdf, upload, exists, publicUrl, outbox = reportOutbox(), sendMail, store = offerStore(), mode = process.env.ANIS_REPORT_SEND, siteUrl } = {}) {
   const put = async (key, body) => {
     if (upload) return upload(key, body);
     const s = await import('../../storage.js');
@@ -32,6 +32,13 @@ export function makeDocuments({ render = renderPdf, upload, exists, outbox = rep
     s.initStorage();
     return s.hasCloudStorage() && (await s.fileExists(key).catch(() => false)) ? s.getPublicUrl(key) : null;
   };
+  // the PDF's own address, known before it is stored (the share QR on its last page, Chad 11-13)
+  const urlOf = async (key) => {
+    if (publicUrl) return publicUrl(key);
+    const s = await import('../../storage.js');
+    s.initStorage();
+    return s.getPublicUrl(key);
+  };
   return {
     /** → { url, key, bytes, title, cached? } or null when it could not be stored. `cacheKey` (same work, same editions) → one stored
      *  document reused by every reader, re-rendered only when PDF_CACHE_VERSION changes. */
@@ -40,7 +47,8 @@ export function makeDocuments({ render = renderPdf, upload, exists, outbox = rep
         ? `anis/pdf/c/${createHash('sha256').update(`${PDF_CACHE_VERSION}|${cacheKey}`).digest('hex').slice(0, 32)}/anis-${slug(title)}.pdf`
         : `anis/pdf/${randomBytes(16).toString('hex')}/anis-${slug(title)}.pdf`;
       if (cacheKey) { const hit = await cached(key); if (hit) return { url: hit, key, title, cached: true }; }
-      const buf = await render({ title, markdown, onlineUrl, widgets, qr, running, ...(siteUrl ? { siteUrl } : {}) });
+      const pdfUrl = await urlOf(key).catch(() => null);
+      const buf = await render({ title, markdown, onlineUrl, widgets, qr, running, pdfUrl, ...(siteUrl ? { siteUrl } : {}) });
       const url = await put(key, buf);
       return url ? { url, key, bytes: buf.length, title } : null;
     },

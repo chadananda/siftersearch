@@ -73,6 +73,13 @@ describe('documents service', () => {
     expect(a.key).not.toBe(b.key);
     expect(up[0].b.subarray(0, 5).toString()).toBe('%PDF-');
   });
+  it('the PDF carries its own address (the share QR on its last page, 11-13): the URL it is stored under', async () => {
+    const seen = [];
+    const { d } = mk({ publicUrl: (k) => `https://files.example/${k}`, render: async (o) => { seen.push(o.pdfUrl); return Buffer.from('%PDF-x'); } });
+    const doc = await d.create({ title: 'T', markdown: 'x', cacheKey: 'k1' });
+    expect(seen[0]).toBe(doc.url);
+    expect((await renderPdf({ title: 'T', markdown: 'x', pdfUrl: doc.url })).subarray(0, 5).toString()).toBe('%PDF-');
+  });
   it('no storage → null (never a fake link)', async () => {
     expect(await mk({ upload: async () => null }).d.create({ title: 't', markdown: 'x' })).toBeNull();
   });
