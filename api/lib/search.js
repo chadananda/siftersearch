@@ -1335,13 +1335,25 @@ async function multiIndexSearchRun(query, options, qcalls) {
   // the query vector, stamped on its own (memoized: every vector layer awaits this same promise) — the trace then splits
   // a slow layer into embedding vs Qdrant (11-01: Gemini 0.1–0.2 s and cold Qdrant 0.1–0.2 s measured, layers p50 0.7–1.5 s)
   const embedBy = {};   // memo hit vs a real Gemini call (ms, hedged, twin won) → informational embed:<k> rows
-  if (!semanticOff || meiliOff) timed('embed', geminiQueryVector(query, embedBy)).catch(() => {});
+  const embedP = (!semanticOff || meiliOff) ? timed('embed', geminiQueryVector(query, embedBy)) : null;
+  embedP?.catch(() => {});
+  // the Qdrant BM25 layer needs no vector: started here so the embed deadline below can see what it holds
+  const qkwP = ((options.qdrantKeyword || meiliOff) && (!scope_config || scope_config.primary))
+    ? timed('qkeyword', searchKeywordQdrant(query, { limit: overFetch, filters: qfilters })).catch(err => {
+        logger.warn({ err: err.message }, 'multiIndexSearch: qdrant keyword failed');
+        return { hits: [], failed: true };
+      })
+    : Promise.resolve({ hits: [] });
+  // EMBED DEADLINE (opt-in, the agent, 11-12): Gemini's query embed runs 0.3–6 s on tower (Google-side — duplicate calls are slow
+  // together, so the hedge cannot rescue it) while Qdrant answers in ~40 ms. Past the deadline a vector layer still waiting gives
+  // way — only when the BM25 layer already holds EMBED_LATE_MIN hits; otherwise the search waits for the vector as before.
+  const gate = embedLateGate(embedP, qkwP, options.embedDeadlineMs, () => { _stamp.embed_late = 1; });
   // CANON + AUTHORITATIVE passes (described below) start WITH the first wave, not after it (11-01: canon p50 788 ms, of which
   // its own Qdrant query is 15–105 ms — the rest was waiting for the slowest first-wave layer). They count only when the
   // phrase layer itself did not fail, as before.
   const phraseRan = ((options.phraseLayer && !semanticOff) || meiliOff) && (!scope_config || scope_config.primary) && !filters.documentId;
   const bahaiScope = filters.religion === "Baha'i";
-  const canonP = !phraseRan ? null : (async () => {
+  const canonP = !phraseRan ? null : gate((async () => {
     const byRel = await getOlDocIdsByReligion();
     let ids = filters.religion ? (byRel[filters.religion] || []) : Object.values(byRel).flat();
     if (qfilters?.documentId != null) {   // a year range already arrived as doc ids → keep only canonical ones inside it
@@ -1350,8 +1362,8 @@ async function multiIndexSearchRun(query, options, qcalls) {
     }
     const r = ids.length ? await timed('canon', searchPhrases(query, { limit: 12, filters: { ...qfilters, documentId: ids }, timeoutMs: 1500 })) : { hits: [] };
     return { hits: await originalFirst(r.hits || []) };
-  })().catch((err) => { logger.warn({ err: err.message }, 'multiIndexSearch: canon layer failed'); return { hits: [] }; });
-  const doctrinalP = !(phraseRan && !filters.author && !filters.notAuthor?.length && bahaiScope) ? null : (async () => {
+  })().catch((err) => { logger.warn({ err: err.message }, 'multiIndexSearch: canon layer failed'); return { hits: [] }; }));
+  const doctrinalP = !(phraseRan && !filters.author && !filters.notAuthor?.length && bahaiScope) ? null : gate((async () => {
     const { DOCTRINAL_KEYS } = await import('./search/doctrinal-rank.js');
     // phrases AND the doctrinal HyPE questions (a question finds the passage that answers it), writer filter only
     const af = { ...qfilters, author: DOCTRINAL_KEYS, writerOnly: true, scope: 'primary' };
@@ -1360,7 +1372,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
       timed('doctrinal_hype', searchHypeQdrant(query, { limit: 15, filters: af, timeoutMs: 2500 })).catch(() => ({ hits: [] })),
     ]);
     return { hits: [...(dp.hits || []), ...(dh.hits || [])] };
-  })().catch((err) => { logger.warn({ err: err.message }, 'multiIndexSearch: authoritative pass failed'); return { hits: [] }; });
+  })().catch((err) => { logger.warn({ err: err.message }, 'multiIndexSearch: authoritative pass failed'); return { hits: [] }; }));
   let [mainResult, hypeResult, entityResult, keywordResult, phraseResult, qkeywordResult, qhypeResult, conceptResult, qconceptResult] = await Promise.all([
     meiliOff ? Promise.resolve({ hits: [] }) : timed('main', hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: mainSemanticRatio })).catch(err => {
       logger.warn({ err: err.message }, 'multiIndexSearch: main hybrid failed');
@@ -1392,22 +1404,17 @@ async function multiIndexSearchRun(query, options, qcalls) {
       : Promise.resolve({ hits: [] }),
     // Qdrant layers (P4, planning/phrase-index-plan.md) — opt-in until measured on both batteries.
     ((options.phraseLayer && !semanticOff) || meiliOff) && (!scope_config || scope_config.primary)
-      ? timed('phrase', searchPhrases(query, { limit: overFetch, filters: qfilters })).catch(err => {
+      ? gate(timed('phrase', searchPhrases(query, { limit: overFetch, filters: qfilters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: phrase layer failed');
           return { hits: [], failed: true };
-        })
+        }))
       : Promise.resolve({ hits: [] }),
-    ((options.qdrantKeyword || meiliOff) && (!scope_config || scope_config.primary))
-      ? timed('qkeyword', searchKeywordQdrant(query, { limit: overFetch, filters: qfilters })).catch(err => {
-          logger.warn({ err: err.message }, 'multiIndexSearch: qdrant keyword failed');
-          return { hits: [], failed: true };
-        })
-      : Promise.resolve({ hits: [] }),
+    qkwP,
     ((options.qdrantHype || meiliOff) && options.hype !== false && !semanticOff && (!scope_config || scope_config.primary))
-      ? timed('qhype', searchHypeQdrant(query, { limit: overFetch, filters: qfilters })).catch(err => {
+      ? gate(timed('qhype', searchHypeQdrant(query, { limit: overFetch, filters: qfilters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: qdrant hype failed');
           return { hits: [], failed: true };
-        })
+        }))
       : Promise.resolve({ hits: [] }),
     // Concept layer (Chad 10-12, "use all the indexes we create"): a symbol the question NAMES → the authoritative
     // interpretation's proof paragraph from the cited concept lexicon. Empty unless a symbol is named.
@@ -1422,10 +1429,10 @@ async function multiIndexSearchRun(query, options, qcalls) {
     // Concept CLAIMS in Qdrant (Chad 10-13: concepts into the Qdrant search): what a passage teaches, as extracted claims —
     // reaches a doctrinal passage by its idea even when the question names no symbol.
     (options.conceptLayer && !semanticOff && (!scope_config || scope_config.primary))
-      ? timed('qconcept', searchConceptsQdrant(query, { limit: overFetch, filters: qfilters })).catch(err => {
+      ? gate(timed('qconcept', searchConceptsQdrant(query, { limit: overFetch, filters: qfilters })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: qdrant concept layer failed');
           return { hits: [], failed: true };
-        })
+        }))
       : Promise.resolve({ hits: [] }),
   ]);
 
@@ -1769,6 +1776,22 @@ async function multiIndexSearchRun(query, options, qcalls) {
   };
 }
 
+export const EMBED_LATE_MIN = 5;
+/** p → p raced against "the embed missed its deadline and BM25 already answers" ({ hits: [], late: true }). No deadline → p as is. */
+export function embedLateGate(embedP, keywordP, deadlineMs, onLate = () => {}) {
+  if (!embedP || !(deadlineMs > 0)) return (p) => p;
+  let done = false;
+  embedP.then(() => { done = true; }, () => { done = true; });
+  const late = new Promise((resolve) => {
+    const t = setTimeout(async () => {
+      if (done) return;
+      const k = await keywordP.catch(() => ({ hits: [] }));
+      if (!done && (k?.hits?.length || 0) >= EMBED_LATE_MIN) { onLate(); resolve({ hits: [], late: true }); }
+    }, deadlineMs);
+    t.unref?.();
+  });
+  return (p) => (p ? Promise.race([p, late]) : p);
+}
 const _stampValues = (o) => { const v = Object.values(o).filter((x) => Number.isFinite(x)); return v.length ? v : [0]; };
 
 // ─── HyPE sidecar sync ────────────────────────────────────────────────────

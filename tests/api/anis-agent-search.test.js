@@ -1,6 +1,6 @@
 // agentSearch: direct multiIndexSearch + links, no planner/LLM; tradition → religion filter only when given.
 import { describe, it, expect, vi } from 'vitest';
-import { agentSearch } from '../../api/lib/assistant/agent-search.js';
+import { agentSearch, AGENT_EMBED_DEADLINE_MS } from '../../api/lib/assistant/agent-search.js';
 import { agentTools } from '../../api/lib/assistant/agent.js';
 
 const hit = (o = {}) => ({ id: 7, doc_id: 3, paragraph_index: 4, text: 'O Son of Spirit!', title: 'The Hidden Words', author: "Bahá'u'lláh", religion: "Baha'i", collection: 'Core', language: 'en', ...o });
@@ -10,7 +10,7 @@ describe('agentSearch', () => {
   it('passes the query as given, limit 8, no filter without tradition', async () => {
     const multi = vi.fn(async () => ({ hits: [hit()] }));
     const out = await agentSearch({ multiIndexSearch: multi, withLinks: links })('detachment', undefined);
-    expect(multi).toHaveBeenCalledWith('detachment', { limit: 8, filters: {} });
+    expect(multi).toHaveBeenCalledWith('detachment', { limit: 8, embedDeadlineMs: AGENT_EMBED_DEADLINE_MS, filters: {} });
     expect(out[0]).toMatchObject({ document_id: 3, paragraph_index: 4, source_url: 'https://oceanlibrary.com/d/3#p4', title: 'The Hidden Words' });
     expect(typeof out.ms).toBe('number');
   });
