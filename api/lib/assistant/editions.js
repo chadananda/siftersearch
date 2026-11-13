@@ -156,7 +156,9 @@ export async function editionsOf(paragraphId, { want = 'original', limit = 3 } =
       // translation came back as its "original" because it was simply another language)
       .filter((m) => want !== 'original' || m.basis === 'original_doc_id' || !ORIGINAL_LANGS[fam.self?.religion] || ORIGINAL_LANGS[fam.self?.religion].includes(langCode(m.language)));
     for (const m of members) {
-      if (out.length >= cap) break;
+      // the same work (its own source file in another language) is always tried: 11-13 a study paper's recorded links filled every slot
+      // and the tablet's own -en file never got a vote
+      if (out.length >= cap && !m.sameWork) break;
       const how = (await alignByReference(row, m, d).catch(() => null)) || (await alignByMeaning(row, m, d).catch(() => null))
         || (await alignByPlace(row, m, fam.self?.paragraph_count, d).catch(() => null));
       for (const r of how?.rows || []) { const p = asPassage(r, m, role, how); if (p?.text && !seen.has(p.id) && !out.some((x) => x.id === p.id)) { out.push(p); if (m.sameWork) sameWorkIds.add(p.id); } }

@@ -109,3 +109,20 @@ describe('editionsOf want original: exact-text twins', () => {
     expect(r.passages.some((p) => p.document_id === 431792 && p.language === 'ar')).toBe(true);
   });
 });
+
+describe('editionsOf: recorded links never crowd out the same source file (11-13)', () => {
+  it('three linked study-paper passages fill the slots; the tablet’s own -en file is still aligned', async () => {
+    const tr = (id) => ({ id, documentId: 30, text: `study ${id}`, title: 'Analysis of Figurative Language', author: 'skrenes', language: 'en' });
+    const deps = {
+      resolveLinks: async (ids) => new Map([[ids[0], { translations: [tr(301), tr(302), tr(303)] }]]), headingStarts: async () => [],
+      paragraphsByIds: async (ids) => ids.map((id) => ({ id, doc_id: 1, paragraph_index: 2, text: 'يا احمد', heading: null })),
+      paragraphsInRange: async (doc, from, to) => Array.from({ length: to - from + 1 }, (_, k) => ({ id: doc * 1000 + from + k, doc_id: doc, paragraph_index: from + k, text: `en ${from + k}`, blocktype: 'paragraph' })),
+      phrases: async () => ({ hits: [] }),
+      workFamily: async () => ({ self: { ...self, title: 'Lawh-i-Ahmad', paragraph_count: 10, source_url: 'https://oceanoflights.org/bahaullah-pm03-030-ar/' },
+        members: [{ ...other(40, 'bahaullah-pm03-030_en'), paragraph_count: 10, source_url: 'https://oceanoflights.org/bahaullah-pm03-030-en/' }] }),
+    };
+    const r = await editionsOf(5, { want: 'translations', limit: 3 }, deps);
+    expect(r.passages.some((p) => p.document_id === 30)).toBe(true);
+    expect(r.passages.some((p) => p.document_id === 40)).toBe(true);
+  });
+});
