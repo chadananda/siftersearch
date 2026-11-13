@@ -174,7 +174,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     if (!r?.passages?.length) return 'no research held for this question yet — research it with the tools';
     const same = r.similarity >= SAME_QUESTION;
     if (same && r.question) researchQ = r.question;   // a reworded question grows the set it matched, not a duplicate
-    return `${same ? 'research held for this question' : `research held for an EARLIER question ("${r.question}"; you judge: if it asks the same thing, treat it as this question's research; if only related, start from it and search for the rest; if unrelated, ignore it)`} (${r.status}): start from these; search further for what they do not cover\n\n${show(give(r.passages))}`;
+    return `${same ? `research held for this question (${r.status}): these passages answered it before — answer from them; search only for a point the reader raises that they do not cover` : `research held for an EARLIER question ("${r.question}"; you judge: if it asks the same thing, treat it as this question's research and answer from it; if only related, start from it and search for the rest; if unrelated, ignore it) (${r.status})`}\n\n${show(give(r.passages))}`;   // a hit answers from the held research (11-13: hits re-searched 9–15 tower calls, 15–20 s)
   };
   run.work_notes_lookup = async ({ title }) => {
     const { work, notes } = await workNotes(title, impl.notes);

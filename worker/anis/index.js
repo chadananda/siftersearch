@@ -3,6 +3,7 @@
 import { agentAnswer } from '../../api/lib/assistant/agent-core.js';
 import { toolRunner } from '../../api/lib/assistant/tool-runner.js';
 import { followupsWith } from '../../api/lib/assistant/followups-core.js';
+import { formPass } from '../../api/lib/assistant/lint.js';
 import { toNative, fromNative, chunksOf } from '../../api/lib/anthropic-native.js';
 import { modelFor } from '../../api/lib/model-roles.js';
 import { thinkingParam } from '../../api/lib/model-registry.js';
@@ -129,6 +130,8 @@ export async function chat(request, env, ctx, deps = {}) {
       const A = await agentAnswer({ messages, onEvent: emit, frame, tools: impl, toolDefs: snapshot.tools, runner: runnerFor(impl),
         create: (p) => { rounds++; return create(p); }, workNotes: (title) => impl.workNotes(title).catch(() => ({ work: null, notes: [] })) });
       if (!A.reply) { emit({ type: 'error', message: 'An error occurred. Please try again.' }); return; }
+      // the form pass every tower reply gets (turn.js): emphasis repaired, link labels checked, a closing search offer dropped
+      A.reply = formPass(A.reply, { sources: [...A.citations, ...A.retrieved].map((x) => ({ title: x?.title, url: x?.url ?? x?.source_url ?? null, text: x?.text ?? null })) }).text;
       emit({ type: 'stage', stage: 'craft' });
       // range links + follow-up pills together, off the critical path of each other; either failing leaves the plain reply / no pills
       const fmodel = modelFor('anis-followups').model, fcreate = metered(deps.create || nativeFetchCreate(env, fmodel, fetchFn), fmodel, 'anis-followups-edge', tally);

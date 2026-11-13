@@ -83,8 +83,8 @@ if (mode === 'ask') {
   console.log(JSON.stringify(out.summary, null, 1));
   for (const r of out.rows) for (const x of r.same) if (!(x.same && x.set === r.seed.q)) console.log(`MISS ${x.sim?.toFixed?.(3)} ${x.q}  → ${x.set}`);
 } else if (mode === 'chat') {
-  out.rows = await pool(seeds.slice(0, n), 3, async (s, i) => { const q = s.same[i % 3]; const r = await ask(q);
-    console.log(`${r.ms}ms first ${r.firstText} tower ${r.timings?.tower_ms}/${r.timings?.tower_calls} rounds ${r.timings?.rounds} ${r.error || ''} ${q}`); return r; });
+  out.rows = await pool(seeds.slice(0, n), 3, async (s, i) => { const q = s.same[(i + Number(process.env.OFFSET || 0)) % 3]; const r = await ask(q);
+    console.log(`${r.ms}ms tower ${r.timings?.tower_ms}/${r.timings?.tower_calls} r${r.timings?.rounds} sim ${r.timings?.research?.similarity ?? "-"} ${q} ⇒ ${r.timings?.asked} ⇒ ${r.timings?.research?.question ?? "-"} ${r.error || ""}`); return r; });
 }
 fs.mkdirSync('tmp/anis-edge', { recursive: true });
 const f = `tmp/anis-edge/${mode}-${Date.now()}.json`; fs.writeFileSync(f, JSON.stringify(out, null, 1)); console.log(f);

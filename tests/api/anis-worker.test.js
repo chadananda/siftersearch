@@ -68,6 +68,13 @@ describe('anis worker chat', () => {
     expect(env.db.prepare('SELECT role, content FROM anis_turns ORDER BY role').all().map((t) => t.role)).toEqual(['assistant', 'user']);
     expect(env.db.prepare('SELECT outcome FROM anis_question_log').get().outcome).toBe('hit');
   });
+  it('the reply gets the tower form pass: unbalanced emphasis repaired before it streams', async () => {
+    const env = mkEnv();
+    const { post } = rig(env, [() => say('She was **utterly fearless* and calm.')]);
+    const { events } = await post();
+    expect(events.at(-1).type).toBe('complete');
+    expect(events.filter((e) => e.type === 'chunk').map((e) => e.text).join('')).toContain('She was *utterly fearless* and calm.');
+  });
   it('a tower failure reaches the model as "tool failed" text, never a crash', async () => {
     const env = mkEnv();
     const { seen, post } = rig(env, [() => callTool('t1', 'fused_search', { query: 'prayer' }), () => say('The library did not answer.'), () => say('The library did not answer.')], { towerStatus: 500 });
