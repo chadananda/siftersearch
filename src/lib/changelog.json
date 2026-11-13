@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-13T13:37:36.780Z",
+  "generated": "2026-11-13T14:59:03.411Z",
   "entries": [
     {
       "hash": "670f4bbe8",
@@ -678,13 +678,6 @@
       "date": "2026-10-31",
       "type": "Other",
       "description": "A re-transcription off the worker never erases measured coverage, and a talk can be sent through the worker chain again (media-cloud-order mode 'whole', explicit ids only). 10-31: the tower-side transcribe redo of 1947 wrote asr.coverage null, the publish gate read \"not measured = no problem\" and published a 221-word transcript of a 58-min talk whose worker measurement had 259 holes. Now such a redo records coverage {unmeasured} and publishing blocks until a whole redo measures it in the worker. Tests cover both",
-      "scope": null
-    },
-    {
-      "hash": "7000d5573",
-      "date": "2026-10-31",
-      "type": "Other",
-      "description": "A talk missing only finish stages goes to cpu-finish, never back to gpu; gpu re-runs only when the pure remaster input is gone (have.pure false) or remaster never ran",
       "scope": null
     }
   ],
@@ -1389,13 +1382,6 @@
         "date": "2026-10-31",
         "type": "Other",
         "description": "A re-transcription off the worker never erases measured coverage, and a talk can be sent through the worker chain again (media-cloud-order mode 'whole', explicit ids only). 10-31: the tower-side transcribe redo of 1947 wrote asr.coverage null, the publish gate read \"not measured = no problem\" and published a 221-word transcript of a 58-min talk whose worker measurement had 259 holes. Now such a redo records coverage {unmeasured} and publishing blocks until a whole redo measures it in the worker. Tests cover both",
-        "scope": null
-      },
-      {
-        "hash": "7000d5573",
-        "date": "2026-10-31",
-        "type": "Other",
-        "description": "A talk missing only finish stages goes to cpu-finish, never back to gpu; gpu re-runs only when the pure remaster input is gone (have.pure false) or remaster never ran",
         "scope": null
       }
     ]
