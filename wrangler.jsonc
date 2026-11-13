@@ -15,7 +15,8 @@
   // (and redeploying) rolls the site back to Pages instantly.
   "routes": [
     { "pattern": "siftersearch.com/*", "zone_name": "siftersearch.com" },
-    { "pattern": "www.siftersearch.com/*", "zone_name": "siftersearch.com" }
+    { "pattern": "www.siftersearch.com/*", "zone_name": "siftersearch.com" },
+    { "pattern": "anis.oceanlibrary.com/*", "zone_name": "siftersearch.com" }   // PDF short links (custom hostname, worker/short-links.js)
   ],
   // Workers AI binding: Clef / Clef-flash (System-1 decision models, Jev-API compatible) run here with no API token;
   // tower's api/lib/systemone.js reaches them through POST /_s1/run (worker/index.js).

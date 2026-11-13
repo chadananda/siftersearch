@@ -1,7 +1,7 @@
 // PDF short links: documents.js writes anis/s/<code>.json; worker/short-links.js redirects /d/<code> to the stored file.
 import { describe, it, expect } from 'vitest';
 import { makeDocuments, shortCode } from '../../api/lib/assistant/pdf/documents.js';
-import { shortLink, SHORT_PATH } from '../../worker/short-links.js';
+import { shortLink, shortHost, SHORT_PATH } from '../../worker/short-links.js';
 
 const B = 'https://pub.example';
 const mk = () => { const up = new Map(), seen = []; const d = makeDocuments({ shortBase: 'https://s.example/d', publicUrl: (k) => `${B}/${k}`,
@@ -34,5 +34,15 @@ describe('PDF short links', () => {
     expect(r.status).toBe(302); expect(r.headers.get('location')).toBe(`${B}/anis/pdf/c/x/a.pdf`);
     expect((await shortLink('Ab3x9Kq2', { base: B, fetchFn: f(null) })).status).toBe(404);
     expect((await shortLink('Ab3x9Kq2', { base: B, fetchFn: f({ url: 'https://evil.example/x' }) })).status).toBe(404);
+  });
+  it('anis.oceanlibrary.com serves only /d/<code>; other paths go to oceanlibrary.com; other hosts pass', async () => {
+    expect(shortHost(new Request('https://siftersearch.com/d/AbCdEfGh'))).toBeNull();
+    const home = await shortHost(new Request('https://anis.oceanlibrary.com/anything'));
+    expect(home.status).toBe(301);
+    expect(home.headers.get('location')).toBe('https://oceanlibrary.com/');
+    const fetchFn = async () => new Response(JSON.stringify({ url: `${B}/anis/x.pdf` }));
+    const r = await shortHost(new Request('https://anis.oceanlibrary.com/d/AbCdEfGh'), { base: B, fetchFn });
+    expect(r.status).toBe(302);
+    expect(r.headers.get('location')).toBe(`${B}/anis/x.pdf`);
   });
 });

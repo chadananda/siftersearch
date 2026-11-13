@@ -17,7 +17,7 @@ import { mailRoute, mailCron } from './mail/index.js';
 import { deweyEmail } from './mail/dewey.js';
 import { deweyUploadRoute } from './dewey-upload.js';
 import { mediaFile, warmMedia, ensureMedia, MEDIA_FILE } from './media.js';
-import { shortLink, SHORT_PATH } from './short-links.js';
+import { shortLink, shortHost, SHORT_PATH } from './short-links.js';
 import { version as BUILD_VERSION } from '../package.json';
 import { als, evict, installFetchCache, policyFor, cacheKey, serveCached, apiProducer, API_ORIGIN } from './edge-cache.js';
 
@@ -109,6 +109,7 @@ export function createExports(manifest) {
     default: {
       async fetch(request, env, ctx) {
         const url = new URL(request.url);
+        { const s = shortHost(request, { base: env.DOCS_PUBLIC_URL || undefined }); if (s) return s; }   // anis.oceanlibrary.com: short links only
         if (url.pathname === '/_edge/warm') {
           if (!env.S1_KEY || request.headers.get('x-internal-key') !== env.S1_KEY) return Response.json({ error: 'unauthorized' }, { status: 401 });
           const t0 = Date.now();
