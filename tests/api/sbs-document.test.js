@@ -1,6 +1,6 @@
 // pdf/sbs-document.js: a whole tablet, original beside its aligned translation, as a PDF (Chad 11-13); and the runner tool that hands its link over.
 import { describe, it, expect } from 'vitest';
-import { sbsDocument, sentenceRows, SBS_MAX_ROWS } from '../../api/lib/assistant/pdf/sbs-document.js';
+import { sbsDocument, sentenceRows, meaningRows, SBS_MAX_ROWS } from '../../api/lib/assistant/pdf/sbs-document.js';
 import { toolRunner } from '../../api/lib/assistant/tool-runner.js';
 
 const AR = ['بسم الله الأمنع الأقدس', 'هذه ورقة الفردوس تغنّ على أفنان سدرة البقاء', 'قل يا قوم اتّقوا الله'];
@@ -116,5 +116,24 @@ describe('spansByAnchors (11-13: every paragraph of the work lands in a verse; a
     expect(spansByAnchors([1, 3, 6, 8, 11, 14, 4], 16)).toEqual([[0, 2], [3, 5], [6, 7], [8, 10], [11, 13], [14, 16], null]);
     expect(spansByAnchors([null, 2, null], 5)).toEqual([null, [0, 5], null]);
     expect(spansByAnchors([null, null], 5)).toEqual([null, null]);
+  });
+});
+
+describe('meaningRows', () => {
+  // topic vectors: a word picks its axis, so a sentence matches the translation sentence of the same topic
+  const AX = ['sun', 'moon', 'star', 'sea'];
+  const embed = async (texts) => texts.map((t) => AX.map((w) => (t.match(new RegExp(w, 'g')) || []).length + 0.01));
+  const row = (text) => ({ original: { text, url: 'u' }, translations: [{ text: 'old', url: 't', span: 2 }] });
+  it('splits each verse into sentence rows matched by meaning, numbering only the first', async () => {
+    const puts = [];
+    const out = await meaningRows([row('1. ar sun. ar moon.'), row('2. ar star * ar sea')], 'The sun. The moon. The star. The sea.',
+      { embed, cacheGet: async () => new Map(), cachePut: async (k, v) => puts.push(k) });
+    expect(out.map((r) => [r.verse, r.first, r.translations[0]?.text])).toEqual([['1', true, 'The sun.'], ['1', false, 'The moon.'], ['2', true, 'The star.'], ['2', false, 'The sea.']]);
+    expect(out.every((r) => !(r.translations[0]?.span > 1))).toBe(true);
+    expect(out[1].original.url).toBeNull();
+    expect(puts).toHaveLength(1);
+  });
+  it('an embedding failure → null (the caller keeps its rows)', async () => {
+    expect(await meaningRows([row('ar sun.')], 'The sun.', { embed: async () => { throw new Error('cap'); } })).toBeNull();
   });
 });

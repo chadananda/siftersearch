@@ -361,7 +361,7 @@ const ENTRIES = [
     purpose: 'Builds a printable PDF of a whole work in its original language beside its translation, one row per paragraph (the CTAI-style side-by-side).',
     description: 'Make a printable PDF of the whole tablet a found passage (its ref, original or translation) belongs to: the original in its own script beside the English, paragraph by paragraph. Only when the reader asks for the document.',
     input: { type: 'object', additionalProperties: false, required: ['document_id', 'paragraph_id'], properties: { document_id: { type: 'integer' }, paragraph_id: { type: 'integer' } } },
-    output: { type: 'object', properties: { url: { type: 'string' }, title: { type: 'string' }, rows: { type: 'integer' }, approximate: { type: 'boolean' }, document_id: { type: 'integer' },
+    output: { type: 'object', properties: { url: { type: 'string' }, title: { type: 'string' }, rows: { type: 'integer' }, approximate: { type: 'boolean' }, aligned: { type: 'string' }, document_id: { type: 'integer' },
       translation: { type: 'object', description: 'the English edition used (document_id) and the top vote tally per edition' },
       error: { type: 'string', description: 'why no document could be made (no original held, too long, no aligned translation)' } } },
     example: { input: { document_id: 12, paragraph_id: 3401 }, output: { url: 'https://r2.example/anis/pdf/x/anis-tablet.pdf', title: 'Lawḥ-i-Aḥmad: Arabic and English', rows: 14, approximate: false, document_id: 12 } },

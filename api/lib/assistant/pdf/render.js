@@ -95,10 +95,10 @@ export async function renderPdf({ title = '', markdown = '', date = new Date(), 
   const dateText = new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 
   const header = () => {
-    doc.save().translate(P.l - 2, 27).scale(26 / 512).path(logo).fill(COLOR.sea).restore();
+    doc.save().translate(16, 16).scale(40 / 512).path(logo).fill(COLOR.sea).restore();   // larger, in the page's corner (Chad 11-13)
     const fit = (t, n) => (t.length > n ? `${t.slice(0, n - 1)}…` : t);   // one line each, never wrapped into the rule
-    inline(doc, [{ text: running?.[0] ? `Anís · ${fit(running[0], 52)}` : 'Anís', style: 'h' }], { x: P.l + 30, y: 31, width: W - 130, size: 15, color: COLOR.sea });
-    inline(doc, [{ text: fit(running?.[1] || 'Ocean AI Research Assistant', 90), style: 's' }], { x: P.l + 30, y: 50, width: W - 130, size: 8, color: COLOR.mist });
+    inline(doc, [{ text: running?.[0] ? `Anís · ${fit(running[0], 52)}` : 'Anís', style: 'h' }], { x: P.l + 2, y: 31, width: W - 110, size: 15, color: COLOR.sea });
+    inline(doc, [{ text: fit(running?.[1] || 'Ocean AI Research Assistant', 90), style: 's' }], { x: P.l + 2, y: 50, width: W - 110, size: 8, color: COLOR.mist });
     doc.font('s0').fontSize(8).fillColor(COLOR.mist).text('OceanLibrary.com', P.l, 40, { width: W, align: 'right', lineBreak: false, link: siteUrl });
     doc.moveTo(P.l, 68).lineTo(P.w - P.r, 68).lineWidth(0.6).strokeColor(COLOR.rule).stroke();
     doc.x = P.l; doc.y = P.top;
