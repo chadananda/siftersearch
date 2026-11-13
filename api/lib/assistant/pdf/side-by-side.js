@@ -52,11 +52,14 @@ export function drawSideBySide(doc, data, ctx, { layout = data.layout ?? 'tight'
     if (need > have) h[Math.min(rows.length, i + c.span) - 1] += need - have;
   }));
   // header
+  const HEAD_H = 20;   // kicker line, rule at 13, 7 pt of air
   const head = () => {
-    const hh = 18, y = doc.y; doc.rect(x, y, width, hh).fill(color.sea);
+    // light: small sea-coloured kickers over a thin rule, with air below (Chad 11-13: the filled bar was too heavy, nothing under it)
+    const y = doc.y;
     heads(data).forEach((hd, c) => { const t = String(hd.kicker || '').toUpperCase();
-      ctx.inline(doc, [{ text: t.length > 48 ? `${t.slice(0, 46)}…` : t, style: 's', color: '#ffffff' }], { x: colX(c - 1) + PAD, y: y + 5.5, width: (c ? tw : ow) - 2 * PAD, size: 7.5 }); });
-    doc.y = y + hh;
+      ctx.inline(doc, [{ text: t.length > 48 ? `${t.slice(0, 46)}…` : t, style: 's', color: color.sea }], { x: colX(c - 1) + PAD, y: y + 2, width: (c ? tw : ow) - 2 * PAD, size: 7 }); });
+    doc.save().moveTo(x, y + 13).lineTo(x + width, y + 13).lineWidth(0.6).strokeColor(color.sea).stroke().restore();
+    doc.y = y + HEAD_H;
   };
   // the words of a cell that fit in `room` points → [now, rest] (a row taller than the page breaks both columns together, 11-13)
   const fitWords = (text, w, room) => {
@@ -67,9 +70,9 @@ export function drawSideBySide(doc, data, ctx, { layout = data.layout ?? 'tight'
     return [ws.slice(0, lo).join('').trimEnd(), ws.slice(lo).join('')];
   };
   const start = (hh) => Math.min(hh, 6 * lh);   // a row taller than a page starts wherever a few lines fit, then continues
-  ctx.need(18 + start(h[0] || 0)); head();
+  ctx.need(HEAD_H + start(h[0] || 0)); head();
   const qrUrl = data.work?.url || data.rows[0]?.original.url;
-  if (qrUrl && !ctx.topQr) ctx.drawQr(doc, qrUrl, x + width + 4, doc.y - 18, 44);
+  if (qrUrl && !ctx.topQr) ctx.drawQr(doc, qrUrl, x + width + 4, doc.y - HEAD_H, 44);
   // groups = rows tied together by a spanned translation cell; a group never splits across pages unless it is taller than the page
   for (let i = 0; i < rows.length;) {
     let j = i + 1;
