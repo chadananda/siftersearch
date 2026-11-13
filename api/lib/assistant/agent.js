@@ -119,10 +119,11 @@ const PREAMBLE = 200;
 export async function readRound(create, params, onText = null) {
   const r = await create(onText ? { ...params, stream: true } : params);
   if (!r?.[Symbol.asyncIterator]) return r;
-  let content = '', sent = 0, usage = null, tooled = false;
+  let content = '', sent = 0, usage = null, tooled = false, thinking = null;
   const tcs = [];
   for await (const c of r) {
     if (c?.usage) usage = c.usage;
+    if (c?._thinking) thinking = c._thinking;
     const d = c?.choices?.[0]?.delta || {};
     for (const t of d.tool_calls || []) {
       tooled = true;
@@ -134,7 +135,7 @@ export async function readRound(create, params, onText = null) {
     if (d.content) content += d.content;
     if (!tooled && content.length >= PREAMBLE) { onText(content.slice(sent)); sent = content.length; }
   }
-  return { choices: [{ message: { content, ...(tcs.length ? { tool_calls: tcs.filter(Boolean) } : {}) } }], usage, streamed: sent > 0 && !tooled, leaked: sent > 0 && tooled, unsent: content.slice(sent) };
+  return { choices: [{ message: { content, ...(tcs.length ? { tool_calls: tcs.filter(Boolean) } : {}), ...(thinking ? { _thinking: thinking } : {}) } }], usage, streamed: sent > 0 && !tooled, leaked: sent > 0 && tooled, unsent: content.slice(sent) };
 }
 
 export async function agentAnswer({ messages, create, tools: raw, onEvent = () => {}, maxRounds = 8, maxCalls = 24, subject = null, cache = null, cardDocs = undefined, frame = null }) {
@@ -224,7 +225,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     }
     let rebuilt = null;
     if (!anchored && hasSearch(tcs)) { anchored = true; ({ tcs, rebuilt } = anchorToolCalls(tcs, subj)); }
-    msgs.push({ role: 'assistant', content: m.content || '', tool_calls: tcs });
+    msgs.push({ role: 'assistant', content: m.content || '', tool_calls: tcs, ...(m._thinking ? { _thinking: m._thinking } : {}) });
     firstToolMs ??= Date.now() - t0;
     // research_lookup goes first: calls asked beside it wait for it, and when it holds research they are not run (the agent re-asks for what it lacks)
     const li = tcs.length > 1 ? tcs.findIndex((tc) => canonical(tc.function?.name) === 'research_lookup') : -1;

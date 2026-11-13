@@ -16,6 +16,11 @@ const KEY_ENV = { openai: 'OPENAI_API_KEY', groq: 'GROQ_API_KEY', deepseek: 'DEE
 const clients = {};
 export const clientFor = (provider) => (clients[provider] ||= new OpenAI({ apiKey: process.env[KEY_ENV[provider]], maxRetries: 1,
   ...(BASE_URL[provider] ? { baseURL: BASE_URL[provider] } : {}) }));
+// roles called through the native Anthropic API for prompt caching (anthropic-native.js; the compat layer caches nothing).
+// ANTHROPIC_NATIVE=0 sends them back through the compat layer.
+const NATIVE_ROLES = new Set(['anis-agent']);
+let nativeClient = null;
+const nativeFor = async () => (nativeClient ||= new (await import('@anthropic-ai/sdk')).default({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 1 }));
 
 /** Pure: the top-level `thinking` field for an OpenAI-compatible request (a top-level key — openai@6 for Node drops
  *  extra_body). DeepSeek: always disabled. Anthropic: the registry default (Haiku 5.5 → disabled unless `requested`,
@@ -47,11 +52,18 @@ export async function roleCreate(role, params, opts = {}) {
   await assertSpendCap(role, { provider });   // the daily cap (spend-caps.js), before the call
   if (provider === 'anthropic') assertAnthropicAllowed({ provider, model, stage: `interactive:${role}`, caller: role });
   guardLongContext({ model, messages: params.messages || [], caller: role });   // the cheap price tier, never silently past it
-  const shaped = shapeParams(params, { provider, model });
+  const log = (usage) => usage && logAIUsage({ provider: provider === 'gemini' ? 'google' : provider, model, serviceType: 'chat',
+    caller: role, promptTokens: usage.prompt_tokens ?? 0, completionTokens: usage.completion_tokens ?? 0, cachedTokens: usage.cached_tokens ?? 0, cacheWriteTokens: usage.cache_write_tokens ?? 0 });
+  if (provider === 'anthropic' && NATIVE_ROLES.has(role) && process.env.ANTHROPIC_NATIVE !== '0') {
+    const { nativeCreate } = await import('./anthropic-native.js');
+    const res = await nativeCreate(await nativeFor(), params, { model, thinking: thinkingFields(provider, model, params.thinking).thinking })
+      .catch((err) => { throw noteCreditOut(provider, err) || err; });
+    if (!params.stream) { log(res?.usage); return res; }
+    return logStreamUsage(res, log);
+  }
+  const shaped = shapeParams({ ...params, messages: (params.messages || []).map(({ _thinking, ...m }) => m) }, { provider, model });
   if (params.stream) shaped.stream_options = { include_usage: true, ...params.stream_options };
   const res = await clientFor(provider).chat.completions.create(shaped, opts).catch((err) => { throw noteCreditOut(provider, err) || err; });   // out of credit → wait, not fail
-  const log = (usage) => usage && logAIUsage({ provider: provider === 'gemini' ? 'google' : provider, model, serviceType: 'chat',
-    caller: role, promptTokens: usage.prompt_tokens ?? 0, completionTokens: usage.completion_tokens ?? 0 });
   if (!params.stream) { log(res?.usage); return res; }
   return logStreamUsage(res, log);
 }
