@@ -1329,6 +1329,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
   // PER-LAYER TIMINGS. "Where did the milliseconds go" is unanswerable from a single total, and search
   // quality work needs it per stage — see api/lib/search-trace.js.
   const _t0 = Date.now();
+  const _marks = {};   // elapsed ms at each phase boundary after the layers (timings.marks): where post-layer time goes
   const _stamp = {};
   const timed = (name, p) => p.then((r) => { _stamp[name] = Date.now() - _t0; return r; });
   const qfilters = await resolveQdrantFilters(filters);   // a year range → doc ids (Qdrant points carry no year)
@@ -1525,6 +1526,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
   // candidate list filled with QUOTING copies and the original never became a candidate — Qdrant-only lost the
   // exact_phrase cases Meili won (battery 10-10). Restricted to the ~600 canonical docs, the original always gets a slot;
   // authority + the OL multiplier then rank it. One extra filtered Qdrant query; the query vector is memoized.
+  _marks.layers = Date.now() - _t0;
   let canonResult = { hits: [] };
   let canonVerbatim = false;
   if (canonP && !phraseResult.failed) {
@@ -1580,6 +1582,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
   // SQLite does not return is a deleted / duplicate paragraph still in an index: it is dropped, never fetched back from
   // an engine (a Meili fallback here resurrected deleted rows). Stubs only come from main-library ids (Qdrant, HyPE).
   const stubIds = [...aggregate.values()].filter(e => e.paragraph?._stub).map(e => e.paragraph.id);
+  _marks.authority = Date.now() - _t0;
   const _tHydrate = Date.now();
   const hydrateBy = {};   // {ids, cached, read, wait} — the hydrate stage's split (digest #167)
   if (stubIds.length > 0) {
@@ -1610,6 +1613,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
   // their tradition/author diversity slots. HyPE adds secondary hits that otherwise undo
   // the per-author cap applied in hybridSearch.
   const needsAuthorityBlend = isCrossTraditionMIS || (filters.religion && !filters.collection && !filters.author);
+  _marks.hydrated = Date.now() - _t0;
   const allSorted = [...aggregate.values()]
     .filter(e => {
       if (!e.paragraph || e.paragraph._stub) return false;
@@ -1671,6 +1675,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
     return false;
   });
 
+  _marks.ranked = Date.now() - _t0;
   let finalEntries;
   if (isCrossTraditionMIS && options.diversify !== false) {
     const rrfHits = sortedDeduped.map(e => ({ ...e.paragraph, _rrfScore: e.score, _entry: e }));
@@ -1706,6 +1711,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
 
   tallySourceStats(finalEntries);   // win-share telemetry — see SOURCE_STATS above
   // no engine highlighted a hydrated hit (SQLite) → the query terms are marked, as Meili's _formatted did — top-k only
+  _marks.diverse = Date.now() - _t0;
   const { highlightDoc } = await import('./search/hydrate-thread.js');
   // implied questions that matched (HyPE items { q, implied, premise, implies, proof }, Chad 11-12): the question + the premise/implies behind it,
   // attached to the paragraph hit — read from the paragraph's own hyp_questions (paragraphs-repo; best effort)
@@ -1736,7 +1742,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
   for (const c of qcalls) if (c.server_ms != null) qdrantServerBy[c.collection] = Math.max(qdrantServerBy[c.collection] || 0, c.server_ms);
   // hydrate = SQLite paragraphsByIds (+ highlight); rank = the rest of merge (RRF, rerank, diversify); qdrant = slowest call
   const timings = { ...(_stamp), main_embed: mainResult?._ms?.embed, main_engine: mainResult?._ms?.engine, main_cross: mainResult?._ms?.cross || undefined,
-    hydrate: hydrateMs, ...(stubIds.length ? { hydrate_by: hydrateBy } : {}), ...(Object.keys(embedBy).length ? { embed_by: embedBy } : {}), rank: Math.max(0, merge - hydrateMs), merge, total: Date.now() - _t0,
+    hydrate: hydrateMs, ...(stubIds.length ? { hydrate_by: hydrateBy } : {}), ...(Object.keys(embedBy).length ? { embed_by: embedBy } : {}), rank: Math.max(0, merge - hydrateMs), merge, total: Date.now() - _t0, marks: _marks,
     ...(qcalls.length ? { qdrant: Math.max(...qcalls.map((c) => c.ms)), qdrant_calls: qcalls.length, qdrant_by: qdrantBy, qdrant_server_by: qdrantServerBy } : {}) };
   const layerCounts = {
     main: (mainResult.hits || []).length,

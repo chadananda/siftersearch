@@ -13,6 +13,7 @@ export function agentSearch(d = {}) {
     const r = await multi(String(query), { limit, embedDeadlineMs: AGENT_EMBED_DEADLINE_MS, filters: { ...(tradition ? { religion: tradition } : {}), ...extra } });
     part('search', Date.now() - t0);
     for (const [k, v] of Object.entries(r?._timings || r?.timings || {})) if (typeof v === 'number' && /^(embed|embed_late|qkeyword|phrase|qhype|qconcept|hydrate|rank|qdrant)$/.test(k)) part(`s.${k}`, v);
+    for (const [k, v] of Object.entries(r?._timings?.marks || {})) part(`m.${k}`, v);
     const t1 = Date.now();
     const hits = (r?.hits || []).filter((h) => String(h.text || '').length <= 8000).slice(0, limit);
     const linked = await link(hits.map((h) => ({ ...h, doc_id: h.doc_id ?? h.document_id }))).catch(() => hits);
