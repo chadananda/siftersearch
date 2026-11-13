@@ -286,6 +286,13 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     if (d.state && ex0?.conversationId) stateBefore = await d.state.load(ex0.conversationId).catch(() => emptyState());
     return timed('strategy', () => strategyFn(messages, { profile, onJev, conversationState: stateBefore, turn: ex0?.round ?? null }), (r) => (r ? { choice: r.strategy?.choice, sides: r.sides } : null)).catch(() => null);
   }) : null;
+  // THE AGENT STARTS WITH TRIAGE (11-12: triage + its Haiku backup held the agent 5.2 s): on the agent engine the research begins now,
+  // its events held until the gate opens; a canned, refused or offer turn never uses it. It needs nothing triage decides (it reads the history).
+  const startFn = d.agentStart ?? (deps ? null : async (a) => (await import('./respond.js')).agentStart(a));
+  const specOn = !!startFn && engine === 'agent' && research === undefined && !variants && !llm;
+  let gateOpen = false; const heldEvents = [];
+  const specP = specOn ? timed('agent', () => startFn({ messages, onEvent: (e) => (gateOpen ? onEvent(e) : heldEvents.push(e)),
+    direction: { channel, site, readerName: participant.name ?? null } })).catch((err) => { console.warn('anis agent (beside triage) failed', err?.message); return null; }) : null;
   let [ex, tri, strat] = await Promise.all([openP, timed('triage', () => d.triage(messages, { card: card?.text ?? null, channel: channel.id, onJev })).catch(() => null), stratP]);
   if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
   const focus = focusWork(stateBefore);
@@ -458,7 +465,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   }
   // a SHORT turn Jev read as a search ("more", "and the Báb?", "in Persian") gets its self-contained query from the history
   // and the card (short-turn.js) — respond.js searches those words, not the bare message
-  const resolved = route.action === 'research' && outcome === 'search' && tri?.features?.short && !tri.features.first && d.resolve
+  const resolved = !specP && route.action === 'research' && outcome === 'search' && tri?.features?.short && !tri.features.first && d.resolve
     ? await timed('resolve', () => d.resolve({ messages, card: card?.text ?? null })).catch(() => null) : null;
   const triageSummary = tri && { kind: tri.kind?.choice, stance: tri.stance?.choice, reaction: tri.reaction?.choice,
     follow_up: tri.follow_up ?? null, first: tri.features?.first ?? null, features: tri.features ?? null, outcome: tri.outcome?.choice ?? null, query: resolved?.query ?? null, card: !!card?.text,
@@ -562,8 +569,11 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       strat.units = { ...(strat.units || {}), named_work: focus.id };
       decisions.record('original:focus', { by: 'code', saw: { named_work: null, focus }, chosen: focus.id, reason: 'no work named this turn: the work the previous turn gave' });
     }
-    const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { scope, site, ...(unmatchedBook ? { book: unmatchedBook } : {}), turnId: ex?.conversationId != null ? `${ex.conversationId}:${ex.round}` : null, stance: triageSummary?.stance ?? null,
-      kind: route.kind, guarded: route.action === 'guarded', channel, readerName: participant.name ?? null, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, outcome: tri?.outcome ?? null, depth: triageSummary?.depth ?? null, query: (strat?.refersBack ? lastTopic(stateBefore, messages) : null) ?? resolved?.query ?? null, card: card?.text ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), ...(lkIntent ? { lookupIntent: lkIntent } : {}), strategy: strat, decisions, state: stateBefore, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
+    // the agent started beside triage: its held events go out now; it gave nothing → the routed pipeline (never the agent twice)
+    if (specP) { gateOpen = true; for (const e of heldEvents.splice(0)) onEvent(e); }
+    const spec = specP ? await specP : null;
+    const r = spec || await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { scope, site, ...(unmatchedBook ? { book: unmatchedBook } : {}), turnId: ex?.conversationId != null ? `${ex.conversationId}:${ex.round}` : null, stance: triageSummary?.stance ?? null,
+      kind: route.kind, guarded: route.action === 'guarded', channel, readerName: participant.name ?? null, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, outcome: tri?.outcome ?? null, depth: triageSummary?.depth ?? null, query: (strat?.refersBack ? lastTopic(stateBefore, messages) : null) ?? resolved?.query ?? null, card: card?.text ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), ...(lkIntent ? { lookupIntent: lkIntent } : {}), strategy: strat, decisions, state: stateBefore, ...(research !== undefined ? { research } : {}), ...(engine ? { engine: specP ? 'pipeline' : engine } : {}) } });
     streaming = false;
     const ho = r?.handoff?.kind === 'book' ? r.handoff.found : null;
     if (ho) return ho.kind === 'work' ? bookAnswer(ho.work, ex, { gate: 'unmatched', via: ho.via, decisions: decisions.list() }) : sectionCard(ho, ex, { gate: 'unmatched', via: ho.via, decisions: decisions.list() });

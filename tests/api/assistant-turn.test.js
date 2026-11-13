@@ -19,7 +19,7 @@ function harness({ triage = null, reply = 'The passage reads…', broken = 0.01,
   };
   const events = [];
   const run = (text = 'What is the Covenant?') => anisTurn({ messages: [{ role: 'user', content: text }], participant: { id: 'sess_1' }, clientKey: 'sess_1', onEvent: (e) => events.push(e), deps });
-  return { calls, events, run, strikes };
+  return { calls, events, run, strikes, deps };
 }
 const t = (o) => ({ malicious: 0.01, complete: 0.99, stop_request: 0, kind: { choice: 'research', confidence: 0.9 }, stance: { choice: 'curious' }, ...o });
 
@@ -123,5 +123,39 @@ describe('anisTurn', () => {
     const h = harness({ triage: t({ stop_request: 0.6 }) });
     await h.run('please stop emailing me, but what is the Kitáb-i-Aqdas?');
     expect(h.calls.close[0].path.stop).toBe(true);
+  });
+
+  describe('agent engine: the agent starts beside triage', () => {
+    const spec = ({ triage, reply = 'Agent answer', gap = 30 } = {}) => {
+      const h = harness({ triage });
+      const order = [];
+      h.calls.agent = 0;
+      Object.assign(h, { order });
+      const deps = { triage: async () => { await new Promise((r) => setTimeout(r, gap)); order.push('triage'); return triage; },
+        agentStart: async ({ onEvent }) => { h.calls.agent++; order.push('agent'); onEvent({ type: 'status', text: 'searching' }); return reply == null ? null : { reply, citations: [], retrieved: [], plan: { shape: 'agent' }, timings: {} }; } };
+      h.runAgent = (text = 'What is the Covenant?') => anisTurn({ messages: [{ role: 'user', content: text }], participant: { id: 'sess_1' }, clientKey: 'sess_1', engine: 'agent',
+        onEvent: (e) => h.events.push(e), deps: { ...h.deps, ...deps } });
+      return h;
+    };
+    it('runs before triage returns; its events wait for the gate; its answer is the reply (respond not called)', async () => {
+      const h = spec({ triage: t() });
+      const r = await h.runAgent();
+      expect(h.order).toEqual(['agent', 'triage']);
+      expect(r.reply).toContain('Agent answer');
+      expect(h.calls.respond).toHaveLength(0);
+      expect(h.events.findIndex((e) => e.type === 'status')).toBeGreaterThan(h.events.findIndex((e) => e.type === 'session'));
+    });
+    it('a canned turn drops it: its events never reach the reader', async () => {
+      const h = spec({ triage: t({ kind: { choice: 'thanks', confidence: 0.95 } }) });
+      const r = await h.runAgent('thank you!');
+      expect(r.status).toBe('canned');
+      expect(h.events.some((e) => e.type === 'status')).toBe(false);
+    });
+    it('no agent answer → the routed pipeline, never the agent twice', async () => {
+      const h = spec({ triage: t(), reply: null });
+      await h.runAgent();
+      expect(h.calls.agent).toBe(1);
+      expect(h.calls.respond[0].direction.engine).toBe('pipeline');
+    });
   });
 });

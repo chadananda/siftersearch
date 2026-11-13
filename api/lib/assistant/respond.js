@@ -521,6 +521,11 @@ export function conversationSummary(messages, persona) {
  *  passageText, researcher.js show); the quote gate checks the whole. */
 export const anisSearch = (executeSearch) => (args) => executeSearch({ ...args, textChars: Infinity });
 
+/** The agent alone, with the live deps (turn.js starts it beside triage on the agent engine). → the agent's answer, or null. */
+export async function agentStart({ messages, onEvent = () => {}, direction = {} }) {
+  return agentRespond({ messages, onEvent, d: await defaultDeps(), t0: Date.now(), subject: jevSubject(direction, null), direction });
+}
+
 async function defaultDeps() {
   const [{ executeSearch }, { stripUngroundedLinks }, companion, { anisCraft }, { planSearch }] = await Promise.all([
     import('../../routes/chat.js'), import('../chat-pipeline.js'), import('../companion/index.js'), import('./craft.js'),
