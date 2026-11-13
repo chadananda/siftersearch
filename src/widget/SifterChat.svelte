@@ -477,6 +477,24 @@
     </div>
   </figure>
 {/snippet}
+{#snippet sceneCard(s)}
+  <section class="scene">
+    <header class="scene-head">
+      {#if s.cover_url}
+        <a class="qcard-cover" href={s.passages[0].url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+          <img src={coverSrc(s.cover_url, 96)} srcset={[48, 96, 144].map((w) => `${coverSrc(s.cover_url, w)} ${w}w`).join(', ')} sizes="44px" alt="" loading="lazy" decoding="async" />
+        </a>
+      {/if}
+      <div><h4 class="scene-title">{s.title}</h4>{#if s.line}<p class="scene-line">{s.line}</p>{/if}</div>
+    </header>
+    {#each s.passages as p}
+      <figure class="scene-pass">
+        <div class="qcard-text">{@html renderRich(p.text)}</div>
+        <p class="qcard-cite">— <a href={p.url} target="_blank" rel="noopener">{#if p.author}{p.author}, {/if}<em>{p.title}</em>{#if p.place}, {p.place}{/if}</a></p>
+      </figure>
+    {/each}
+  </section>
+{/snippet}
 {#snippet bookCard(b)}
   <div class="book">
     {#if b.cover_url}
@@ -596,7 +614,7 @@
                         {/each}
                         {#if m.widgets?.length}
                           <!-- display widgets (side_by_side, quote, book — the writer's inline templates): the reply's marker + fallback swapped for the component; the text around it as usual -->
-                          {#each widgetSegments(m.pending ? settled(m.content) : m.content, m.widgets) as ws}{#if ws.kind === 'widget' && ws.widget.kind === 'side_by_side'}<SideBySide widget={ws.widget} />{:else if ws.kind === 'widget' && ws.widget.kind === 'quote'}{@render qcard(ws.widget, renderRich(ws.widget.text))}{:else if ws.kind === 'widget' && ws.widget.kind === 'book'}{@render bookCard(ws.widget)}{:else}{@html renderRich(ws.md)}{/if}{/each}
+                          {#each widgetSegments(m.pending ? settled(m.content) : m.content, m.widgets) as ws}{#if ws.kind === 'widget' && ws.widget.kind === 'side_by_side'}<SideBySide widget={ws.widget} />{:else if ws.kind === 'widget' && ws.widget.kind === 'quote'}{@render qcard(ws.widget, renderRich(ws.widget.text))}{:else if ws.kind === 'widget' && ws.widget.kind === 'book'}{@render bookCard(ws.widget)}{:else if ws.kind === 'widget' && ws.widget.kind === 'scene'}{@render sceneCard(ws.widget)}{:else}{@html renderRich(ws.md)}{/if}{/each}
                         {:else if m.quoteCards?.length && !m.pending}
                           {#each quoteSegments(m.content, m.quoteCards) as seg}
                             {#if seg.kind === 'quote'}
@@ -827,6 +845,15 @@
   .qcard .qcard-cite a { color: inherit; text-decoration: none; }
   .qcard .qcard-cite a:hover { color: var(--accent-deep); text-decoration: underline; }
   .qcard .qcard-cite em { font-family: var(--serif); color: #2a2620; }
+  /* scene card: one moment of a story with the words that record it (Chad 11-13) */
+  .scene { margin: .7em 0; padding: 12px; border: 1px solid #e7dfcf; border-top: 3px solid var(--gold); border-radius: 10px; background: #fffdf8; color: #2a2620; }
+  .scene-head { display: flex; gap: 10px; align-items: center; }
+  .scene-title { margin: 0; font-family: var(--serif); font-size: 1.08em; line-height: 1.25; }
+  .scene-line { margin: 2px 0 0; font-size: .86em; color: #6b6253; }
+  .scene-pass { margin: 10px 0 0; padding-left: 10px; border-left: 2.5px solid var(--gold); }
+  .scene .qcard-cite { margin: 4px 0 0; font-size: .85em; color: #6b6253; }
+  .scene .qcard-cite a { color: inherit; text-decoration: none; }
+  .scene .qcard-cite em { font-family: var(--serif); color: #2a2620; }
   .msg.user .bubblewrap { max-width: 78%; }
 
   .bubble {

@@ -9,6 +9,15 @@ const works = new Map([['B1', { title: 'Kitáb-i-Íqán', author: 'Bahá\'u\'ll�
 const books = new Map([['B1', { year: 1862, cover_url: '/c/iqan.jpg' }]]);
 
 describe('expandTemplates', () => {
+  it('scene: quoted title + line, its passages whole, the first cover; no title or no passage in hand → dropped', () => {
+    const { text, widgets } = expandTemplates('Lead.\n{{scene "Conference of Badasht" "1848: the old law set aside" P1 P9}}\n{{scene P1}}\nEnd.', { found });
+    expect(widgets).toHaveLength(1);
+    expect(widgets[0]).toMatchObject({ kind: 'scene', id: 'scene-1', title: 'Conference of Badasht', line: '1848: the old law set aside', cover_url: '/c/1.jpg' });
+    expect(widgets[0].passages.map((p) => p.url)).toEqual(['https://x/1']);
+    expect(text).toContain('**Conference of Badasht** — 1848: the old law set aside');
+    expect(text).toContain('> Line one.');
+    expect(text).not.toContain('{{');
+  });
   it('quote and book templates → marker + fallback + data; unknown kind or ref → line dropped', () => {
     const { text, widgets } = expandTemplates('Intro.\n{{quote P1}}\n{{book B1}}\n{{quote P7}}\n{{chart P1}}\nEnd.', { found, works, books });
     expect(widgets.map((w) => [w.kind, w.id])).toEqual([['quote', 'quote-1'], ['book', 'book-2']]);
