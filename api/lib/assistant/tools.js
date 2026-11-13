@@ -6,7 +6,7 @@
 // list()/llmTools() without a restart; a row's 'disabled' status refuses either kind. Store unreachable → the code tools alone.
 
 import Ajv from 'ajv';
-import { CANON } from './work-canon.js';
+import { canonWork, workNotes, makeLlmTools } from './tool-defs.js';
 import { canonicalTradition, RELIGIONS } from './tradition-name.js';
 import { DOCTRINAL_KEYS } from '../search/doctrinal-rank.js';
 import { currentAIContext, withAIContext } from '../ai-context.js';
@@ -14,6 +14,7 @@ import { FILTERS, PASSAGE, WORK, ERROR, SCHEMAS, PASSAGES, str, LIMIT, PID, nul,
 import { ToolError, toToolError } from './tool-error.js';
 import { catalog as toolCatalog } from '../repos/anis-tools-repo.js';
 import { runHttpTool } from './http-tool.js';
+export { canonWork };
 export { FILTERS, PASSAGE, WORK, ERROR, SCHEMAS, engineFilters, translationLabel, letterVariants, toPassage, dedupePassages };
 
 // another tradition than the Bahá'í: original_lookup / translation_lookup go to its work family (editions.js)
@@ -27,13 +28,6 @@ async function viaEditions(words, tradition, want, ctx) {
   return { passages: dedupePassages([toPassage(hit), ...(r.passages || []).map((x) => ({ ...toPassage(x), role: x.role }))]) };
 }
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘`ʻʼ]/g, "'").toLowerCase().replace(/[^a-z0-9']+/g, ' ').trim();
-/** The canon entry a reader's title names (any alias, accents and "the" ignored), or null. */
-export function canonWork(title, canon = CANON) {
-  const q = fold(title).replace(/^the /, '');
-  if (!q) return null;
-  return canon.find((w) => [w.title, ...(w.aliases || [])].some((a) => fold(a).replace(/^the /, '') === q))
-    || canon.find((w) => [w.title, ...(w.aliases || [])].some((a) => { const f = fold(a).replace(/^the /, ''); return f.length > 5 && (q.includes(f) || f.includes(q)); })) || null;
-}
 // folded token run: "Saint Augustine of Hippo" → ['saint','augustine','of','hippo'] (apostrophes dropped, so Bahá'u'lláh is one token)
 const toks = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\u2018\u2019\u02bc\u02bb`']/g, '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
 /** The library authors whose name CONTAINS the person's name as a whole token run (augustine ⊂ Augustine of Hippo; ali ⊄ Baha'ali), exact first, then by documents. Pure. */
@@ -549,9 +543,7 @@ const ENTRIES = [
       notes: { type: 'array', items: { type: 'object', additionalProperties: true, properties: { quote: { type: 'string' }, source_title: nul('string'), speaker: nul('string'), source_author: nul('string'), url: nul('string') } } } } },
     example: { input: { title: 'Book of Certitude' }, output: { work: 'The Kitáb-i-Íqán', notes: [{ quote: 'Foremost among the priceless treasures …', source_title: 'God Passes By', speaker: 'Shoghi Effendi', url: 'https://oceanlibrary.com/gpb#p1' }] } },
     async run({ title }, ctx = {}) {
-      const w = canonWork(title);
-      if (!w) return { work: null, notes: [] };
-      return { work: w.title, notes: ((await (ctx.notes || loadNotes)())?.works || []).find((x) => x.title === w.title)?.notes || [] };
+      return workNotes(title, ctx.notes || loadNotes);
     } },
   { name: 'author_lookup', label: 'Author Lookup', kind: 'tool', outputName: 'Authors', cost: C(false, 5),
     purpose: 'The library’s author strings for a person’s name (Augustine → Augustine of Hippo, Saint Augustine).',
@@ -806,17 +798,5 @@ export async function layerFn(name, ctx = {}) {
   return layerDep(ctx, e.layer);
 }
 
-/** OpenAI-style tool definitions for `names` (canonical), generated from the input schemas minus llmOmit. A tool on a known
- *  passage (refInput) takes the passage's ref (P#) from a model instead of its ids; the runner resolves the ref. */
-export function llmTools(names) {
-  return names.map((n) => {
-    const e = resolve(n);
-    if (!e?.input) throw new Error(`no LLM tool: ${n}`);
-    const props = Object.fromEntries(Object.entries(e.input.properties).filter(([k]) => !(e.llmOmit || []).includes(k))
-      .map(([k, v]) => [k, Object.fromEntries(Object.entries(v).filter(([kk]) => !['$id', 'minLength', 'maxLength', 'default', 'minimum', 'maximum', 'additionalProperties'].includes(kk)))]));
-    const parameters = e.refInput
-      ? { type: 'object', properties: { ref: { type: 'string', description: 'The passage ref, e.g. P3' }, ...(e.name === 'context_lookup' ? { before: { type: 'integer' }, after: { type: 'integer' } } : {}) }, required: ['ref'] }
-      : { type: 'object', properties: props, required: (e.input.required || []).filter((k) => k in props) };
-    return { type: 'function', function: { name: e.name, description: e.description || e.purpose, parameters } };
-  });
-}
+/** OpenAI-style tool definitions for `names` (canonical), generated from the registry's input schemas (tool-defs.js). */
+export const llmTools = (names) => makeLlmTools(resolve)(names);

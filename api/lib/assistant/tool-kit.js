@@ -1,6 +1,8 @@
 // Shared kit for the Anís tools (tools.js): JSON schemas (Filters, Passage, Work, Error), the Passage shape, dedup across layers/copies/editions,
 // dependency lookup. Pure except dep(). A tool takes typed JSON and returns typed JSON; none calls an LLM.
 import { canonicalTradition } from './tradition-name.js';
+import { translationLabel } from './tool-defs.js';
+export { translationLabel };
 import { sourceTier } from './source-tier.js';
 import { traditionKind } from './tradition-authority.js';
 import { placeOf } from '../refs/place.js';
@@ -60,15 +62,6 @@ export function engineFilters(f = {}) {
   if (f?.tradition) out.religion = canonicalTradition(f.tradition);
   for (const k of ['collection', 'author', 'writerOnly', 'language', 'documentId', 'yearFrom', 'yearTo']) if (f?.[k] != null && f[k] !== '' && f[k] !== false && !(Array.isArray(f[k]) && !f[k].length)) out[k] = f[k];
   return out;
-}
-/** What kind of translation a text is, for the brief and the reply's row markers. Pure. */
-export function translationLabel(by, authority) {
-  const s = `${by || ''} ${authority || ''}`;
-  if (/shoghi/i.test(s)) return 'authorized — Shoghi Effendi';
-  if (/universal house|world cent(re|er)|research department/i.test(s)) return 'authorized — Bahá’í World Centre';
-  if (/phelps/i.test(s)) return 'provisional — Stephen Phelps (public domain)';
-  if (/published|committee/i.test(s)) return by ? `published — ${by}` : 'published translation';
-  return by ? `translation by ${by}` : 'translation';
 }
 /** Persian and Arabic spell ی/ي and ک/ك differently; a reader's typing may not match the library's. Pure. */
 export const letterVariants = (s) => [...new Set([String(s), String(s).replace(/ي/g, 'ی').replace(/ك/g, 'ک'), String(s).replace(/ی/g, 'ي').replace(/ک/g, 'ك')])];

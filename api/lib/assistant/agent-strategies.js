@@ -3,11 +3,11 @@
 // Deps (injectable): book-pick bookFastPath, work-request findTitled, tools.run (quote_search), sow-links, work-extract, title-answer.
 import { sowIssue, sowIssueIds, sowWholeAsked, SOW_FOLDER } from '../sow-links.js';
 
+import { asPassage } from './tool-defs.js';
+export { asPassage };
+
 const uniq = (xs) => [...new Set(xs)];
 const key = (p) => p.para_id ?? p.id ?? p.url ?? p.text;
-// a passage the agent can cite: the link under source_url (renderRefs), the place beside the title
-export const asPassage = (p) => ({ ...p, source_url: p.source_url || p.url || p.citation_url || null, document_id: p.document_id ?? p.doc_id ?? null,
-  ...(p.place ? { note: `at ${p.place}` } : {}) });
 /** Star of the West volumes began in March of 1909 + volume: a year → its volume (1910 = vol 1). Pure. */
 export const sowVolumeOf = (year) => Number(year) - 1909;
 

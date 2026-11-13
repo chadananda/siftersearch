@@ -2,8 +2,8 @@
 // candidate at equal similarity. All deps injectable. Deps: answer-cache (normalize/hash), research-sets-repo, paragraphs-repo, ai (embed)
 import { normalizeQuestion, questionHash } from '../answer-cache.js';
 
-// Measured 11-12 (config embeddings): the same question reworded 0.91; a narrower/broader question on the topic 0.73–0.81; another topic < 0.5.
-export const SAME_QUESTION = 0.88;
+import { SAME_QUESTION } from './tool-defs.js';   // 0.88: the same question reworded 0.91; narrower/broader 0.73–0.81; another topic < 0.5 (measured 11-12)
+export { SAME_QUESTION };
 export const MAX_PASSAGES = 24;
 export const RESEARCH_THRESHOLD = 0.75;   // a related question's research is still a start (it is passages, not a reply); "How do Baha'is pray?" vs a longer form = 0.80
 const defaultRepo = async () => import('../repos/research-sets-repo.js');
