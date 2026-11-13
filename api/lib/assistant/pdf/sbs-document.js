@@ -17,6 +17,20 @@ const defaults = async () => {
     withLinks: links.withLinks, documents: pdf.makeDocuments(), align: { cacheGet: sbs.getAlignments, cachePut: sbs.putAlignment, llm: al.haikuAlign } };
 };
 
+/** Pure: each verse's anchor (the translation paragraph_index its match landed on, or null) → its [from, to] span of the translation, or null.
+ *  Only anchors in order count (the longest increasing run: an out-of-order match is a wrong match); a span runs to the next kept anchor,
+ *  the first starts at 0 and the last runs to the end — so every translation paragraph lands in some verse. */
+export function spansByAnchors(anchors, last) {
+  const idx = anchors.map((a, i) => [a, i]).filter(([a]) => Number.isFinite(a));
+  const len = idx.map(() => 1), prev = idx.map(() => -1);
+  for (let j = 0; j < idx.length; j++) for (let k = 0; k < j; k++) if (idx[k][0] < idx[j][0] && len[k] + 1 > len[j]) { len[j] = len[k] + 1; prev[j] = k; }
+  const keep = [];
+  for (let j = len.indexOf(Math.max(0, ...len)); j >= 0; j = prev[j]) keep.unshift(idx[j]);
+  const out = anchors.map(() => null);
+  keep.forEach(([a, i], k) => { out[i] = [k === 0 ? 0 : a, k + 1 < keep.length ? keep[k + 1][0] - 1 : last]; });
+  return out;
+}
+
 async function pool(items, k, fn) {
   const out = new Array(items.length); let next = 0;
   await Promise.all(Array.from({ length: k }, async () => { while (next < items.length) { const i = next++; out[i] = await fn(items[i], i).catch(() => null); } }));
@@ -91,8 +105,21 @@ export async function sbsDocument({ paragraph_id: pid, document_id: did }, deps 
   const tm = tmeta.get(Number(best)) || {}, md = (() => { try { return JSON.parse(tm.metadata || '{}') || {}; } catch { return {}; } })();
   const named = (t) => (/\s/.test(t || '') ? t : null);
   const trs = new Map();
-  found.forEach((ps, i) => { const p = (ps || []).find((x) => x.document_id === best); if (!p) return;
-    const t = trs.get(p.id) || { ...p, title: named(p.title), translator: p.translator || md.translator || md.translated_by || null, text: clean(p.text), aligned_to: [] }; t.aligned_to.push(origs[i].id); trs.set(p.id, t); });
+  const fill = (p, extra = {}) => ({ ...p, title: named(p.title), translator: p.translator || md.translator || md.translated_by || null, text: clean(p.text), aligned_to: [], ...extra });
+  // the work itself won (its author, a short file): EVERY paragraph of it goes to a verse, anchor to anchor (11-13: the Tablet of Aḥmad's
+  // 17 English paragraphs against 7 Arabic verses — one matched paragraph per verse left most of the tablet out)
+  const own = m.author && authorKey(auth.get(best)) === authorKey(m.author);
+  const whole = own ? (await d.paragraphsInRange(Number(best), 0, 1e9, { limit: SBS_MAX_ROWS * 4 + 1 }).catch(() => [])) || [] : [];
+  if (whole.length && whole.length <= SBS_MAX_ROWS * 4) {
+    const mine = found.map((ps) => (ps || []).filter((x) => x.document_id === best));
+    const spans = spansByAnchors(mine.map((ps) => (ps.length ? Math.min(...ps.map((x) => x.paragraph_index ?? Infinity)) : null)), Math.max(...whole.map((r) => r.paragraph_index)));
+    const tpl = mine.flat()[0];
+    spans.forEach((sp, i) => {
+      const ps = sp ? whole.filter((r) => r.paragraph_index >= sp[0] && r.paragraph_index <= sp[1] && clean(r.text).trim()) : [];
+      if (ps.length) trs.set(ps[0].id, fill(tpl, { id: ps[0].id, paragraph_index: ps[0].paragraph_index, text: ps.map((r) => clean(r.text).trim()).join(' '), aligned_to: [origs[i].id] }));
+    });
+  } else found.forEach((ps, i) => { const p = (ps || []).find((x) => x.document_id === best); if (!p) return;
+    const t = trs.get(p.id) || fill(p); t.aligned_to.push(origs[i].id); trs.set(p.id, t); });
   const data = buildSideBySide([...origs, ...trs.values()], { layout: 'tight' });
   if (!data) return { error: 'the stored original is not in its own script' };
   const verses = data.rows.length;

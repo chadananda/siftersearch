@@ -109,3 +109,12 @@ describe('sentenceRows', () => {
     expect(put).toHaveLength(0);
   });
 });
+
+describe('spansByAnchors (11-13: every paragraph of the work lands in a verse; an out-of-order match is dropped)', () => {
+  it('anchor to anchor; the first from 0, the last to the end; the stray last match (a postscript) gets nothing', async () => {
+    const { spansByAnchors } = await import('../../api/lib/assistant/pdf/sbs-document.js');
+    expect(spansByAnchors([1, 3, 6, 8, 11, 14, 4], 16)).toEqual([[0, 2], [3, 5], [6, 7], [8, 10], [11, 13], [14, 16], null]);
+    expect(spansByAnchors([null, 2, null], 5)).toEqual([null, [0, 5], null]);
+    expect(spansByAnchors([null, null], 5)).toEqual([null, null]);
+  });
+});
