@@ -58,7 +58,7 @@ async function hydrateHits(hits, { status, religion } = {}) {
       const it = imp.get(`${h.paragraph_id}:${h.k}`);
       if (it && (!status || String(status).split(',').includes(it.status)) && (!religion || it.doc.religion === religion)) out.push({ score: h.score, kind: 'implied', item: shapeItem(it) });
     } else if (!h.thesis) {
-      const r = raw.get(h.paragraph_id), s = r && parseStoredHypItems(r.hyp_questions).filter((i) => !i.implied)[h.k];
+      const r = raw.get(h.paragraph_id), s = r && parseStoredHypItems(r.hyp_questions, { slots: true }).filter((i) => !i.implied)[h.k];
       if (s) out.push({ score: h.score, kind: 'stated', stated: { q: s.q, paraId: h.paragraph_id, docId: h.doc_id, doc: { title: r.d_title, author: r.d_author, religion: r.d_religion, collection: r.d_collection },
         link: readerUrl({ doc_id: h.doc_id, slug: r.d_slug, religion: r.d_religion, collection: r.d_collection }, r.paragraph_index) } });
     }
@@ -120,7 +120,7 @@ export async function paragraphEditor(paraId, rater) {
   const pv = await repo.paragraphView(paraId);
   if (!pv) return null;
   const { splitHyp } = repo, h = splitHyp(pv.hypQuestions), mine = await scorer([{ paraId: pv.id, question: '' }], rater);
-  const stated = h.stated.map((x) => (typeof x === 'string' ? { q: x, a: '', deep: false, seeker: false } : { q: x.q ?? x.question ?? '', a: x.a ?? '', deep: !!x.deep, seeker: !!x.seeker })).map((x) => ({ ...x, myScore: mine(pv.id, x.q) }));
+  const stated = h.stated.map((x) => (typeof x === 'string' ? { q: x, a: '', deep: false, seeker: false } : { q: x.q ?? x.question ?? '', a: x.a ?? '', deep: !!x.deep, seeker: !!x.seeker })).filter((x) => x.q).map((x) => ({ ...x, myScore: mine(pv.id, x.q) }));
   const shape = (r) => ({ ...shapeItem({ ...r, doc: pv.doc, paragraphIndex: pv.index }), myScore: mine(pv.id, r.question) });
   return { paragraph: { id: pv.id, text: pv.text, index: pv.index, original: pv.original, prev: pv.prev, next: pv.next }, doc: pv.doc, stated, implied: pv.rows.map(shape), thesis: pv.thesis, hypeVersion: pv.hypeVersion };
 }

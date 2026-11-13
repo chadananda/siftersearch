@@ -210,6 +210,14 @@ export async function saveStated(paraId, { stated, thesis }, { editor = null } =
   return { reindex: true, docId: l.c.doc_id };
 }
 
+/** Compare-and-set rewrite of stated slots (hype-selfref-purge): updates [{ id, from, to }] (raw hyp_questions) → one transaction; a paragraph edited meanwhile
+ *  (hyp_questions no longer `from`) is skipped and the next run finds it. Marks enhanced_synced = 0 so the follow indexer drops the points. */
+export async function replaceHypIf(updates, { at = now() } = {}) {
+  if (!updates.length) return 0;
+  await transaction(updates.map((u) => ({ sql: 'UPDATE content SET hyp_questions = ?, enhanced_synced = 0, updated_at = ? WHERE id = ? AND hyp_questions = ?', args: [u.to, at, u.id, u.from] })), 'implied:hyp-replace');
+  return updates.length;
+}
+
 export const recentEdits = async (limit = 50) => (await queryAll(`SELECT e.*, p.question FROM implied_edits e LEFT JOIN premise_claims p ON p.id = e.claim_id ORDER BY e.id DESC LIMIT ?`, [Math.min(Number(limit) || 50, 200)], 'implied:edits'))
   .map((e) => ({ id: e.id, claimId: e.claim_id, paraId: e.para_id, action: e.action, before: e.before_json ? JSON.parse(e.before_json) : null, after: e.after_json ? JSON.parse(e.after_json) : null, note: e.note, editor: e.editor, at: e.at, question: e.question }));
 export const editsOf = async (claimId, limit = 50) => (await queryAll('SELECT * FROM implied_edits WHERE claim_id = ? ORDER BY id DESC LIMIT ?', [Number(claimId), limit], 'implied:edits-of'))

@@ -30,13 +30,14 @@ export const isImpliedK = (k) => Number.isInteger(k) && k >= IMPLIED_K0 && k < 9
 const itemOf = (x) => (x && typeof x === 'object' ? { ...x, q: String(x.q ?? x.question ?? '').trim() } : { q: String(x ?? '').trim() });
 
 /** Stored hyp_questions → full items [{ q, implied?, premise?, implies?, proof?, … }] (strings become { q }). Stated order kept. */
-export function parseStoredHypItems(raw) {
+export function parseStoredHypItems(raw, { slots = false } = {}) {
   if (!raw || typeof raw !== 'string') return [];
+  // slots: keep DROPPED markers ({ q: '', dropped, was }) so a stated item's position — its k — is stable (hype-selfref-purge)
   if (raw.startsWith('[')) {
     try {
       const arr = JSON.parse(raw);
       // v14+ may hold objects ({ q, a, deep?, seeker? } or implied items) — String() of one is "[object Object]" (10-19)
-      if (Array.isArray(arr)) return arr.map(itemOf).filter((i) => i.q);
+      if (Array.isArray(arr)) return arr.map(itemOf).filter((i) => i.q || (slots && i.dropped));
     } catch { /* fall through to newline split */ }
   }
   return raw.split('\n').map((s) => s.trim()).filter(Boolean).map((q) => ({ q }));
@@ -47,8 +48,9 @@ export const parseStoredHypQuestions = (raw) => parseStoredHypItems(raw).map((i)
 
 /** A paragraph's HyPE index units [{ k, text }]: stated questions k = 0.., IMPLIED ones k = IMPLIED_K0 + position, thesis k = 999. Pure (the phrase indexer's unit builder). */
 export function hypeUnitSpecs(rawQuestions, thesis = '') {
-  const items = parseStoredHypItems(rawQuestions), t = String(thesis || '').trim();
-  return [...items.filter((i) => !i.implied).slice(0, IMPLIED_K0).map((i, k) => ({ k, text: i.q })), ...items.filter((i) => i.implied).slice(0, 998 - IMPLIED_K0).map((i, j) => ({ k: IMPLIED_K0 + j, text: i.q })), ...(t ? [{ k: 999, text: t }] : [])];
+  const items = parseStoredHypItems(rawQuestions, { slots: true }), t = String(thesis || '').trim();
+  // a DROPPED stated slot ({ q: '', dropped }) keeps its k but has no point: the survivors never renumber
+  return [...items.filter((i) => !i.implied).slice(0, IMPLIED_K0).map((i, k) => ({ k, text: i.q })).filter((u) => u.text), ...items.filter((i) => i.implied && i.q).slice(0, 998 - IMPLIED_K0).map((i, j) => ({ k: IMPLIED_K0 + j, text: i.q })), ...(t ? [{ k: 999, text: t }] : [])];
 }
 
 /** Hit k → the implied item it stands for ({ question, premise, implies, proof }) or null. */
