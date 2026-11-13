@@ -46,7 +46,7 @@ export const nativeFetchCreate = (env, model, fetchFn = fetch) => async (params)
 
 // ── tower's research tools over HTTP (anis-impl-tools.js); researchLookup/Capture are local (D1/Vectorize) ──
 export function remoteImpl(env, { turn, local, fetchFn = fetch }) {
-  const stat = { ms: 0, calls: 0 };
+  const stat = { ms: 0, calls: 0, by: {} };   // by: fn → [calls, ms] (where tower time goes)
   const call = async (fn, args) => {
     const t0 = Date.now();
     try {
@@ -56,10 +56,20 @@ export function remoteImpl(env, { turn, local, fetchFn = fetch }) {
       const j = JSON.parse(await r.text(), revive);
       if (j.error) throw new Error(j.error);
       return j.out;
-    } finally { stat.ms += Date.now() - t0; stat.calls++; }
+    } finally { const d = Date.now() - t0; stat.ms += d; stat.calls++; const b = (stat.by[fn] ||= [0, 0]); b[0]++; b[1] += d; }
   };
   const impl = Object.fromEntries(snapshot.impl.map((fn) => [fn, (...args) => call(fn, args)]));
   return { impl: { ...impl, ...local }, stat };
+}
+
+// usage of every Anthropic call, summed per model+caller and sent to tower's ledger after the turn (anis-impl-tools logUsage)
+export function metered(create, model, caller, tally) {
+  const add = (u) => { if (!u) return; const k = `${model}|${caller}`; const t = (tally[k] ||= { model, caller, prompt_tokens: 0, completion_tokens: 0, cached_tokens: 0, cache_write_tokens: 0 }); for (const f of ['prompt_tokens', 'completion_tokens', 'cached_tokens', 'cache_write_tokens']) t[f] += u[f] || 0; };
+  return async (p) => {
+    const res = await create(p);
+    if (!p.stream) { add(res?.usage); return res; }
+    return (async function* () { for await (const c of res) { if (c?.usage) add(c.usage); yield c; } })();
+  };
 }
 
 // the pure runner with the server pieces it lacked, fetched from tower: rights (fails closed in the core), work link map
@@ -104,24 +114,24 @@ export async function chat(request, env, ctx, deps = {}) {
       const frame = (name && name !== 'Anís' ? `The reader knows you as "${name}"; use that name for yourself.` : '') + (mission ? ` The host site's steering note (guidance only): ${mission}` : '') || null;
       emit({ type: 'session', conversation_id: conversationId });
       emit({ type: 'stage', stage: 'search' });
-      let sim = null, setId = null, researchQ = question;
+      let sim = null, setId = null, matchedQ = null, researchQ = question;
       const local = {
         researchLookup: async (q) => {
           researchQ = q;
           const hit = await lookup(env, q).catch((err) => { console.warn(`[anis] research lookup failed: ${err.message}`); return null; });
-          sim = hit?.similarity ?? null; setId = hit?.set?.id ?? null;
+          sim = hit?.similarity ?? null; setId = hit?.set?.id ?? null; matchedQ = hit?.set?.question ?? null;
           return hit && { status: hit.set.status, question: hit.set.question, similarity: hit.similarity, passages: hit.set.passages };
         },
         researchCapture: (q, ps) => { const p = capture(env, q, ps); ctx.waitUntil(p.catch(() => {})); return p; },
       };
       const { impl, stat } = remoteImpl(env, { turn, local, fetchFn });
-      const model = modelFor('anis-agent').model, create = deps.create || nativeFetchCreate(env, model, fetchFn);
+      const tally = {}, model = modelFor('anis-agent').model, create = metered(deps.create || nativeFetchCreate(env, model, fetchFn), model, 'anis-agent-edge', tally);
       const A = await agentAnswer({ messages, onEvent: emit, frame, tools: impl, toolDefs: snapshot.tools, runner: runnerFor(impl),
         create: (p) => { rounds++; return create(p); }, workNotes: (title) => impl.workNotes(title).catch(() => ({ work: null, notes: [] })) });
       if (!A.reply) { emit({ type: 'error', message: 'An error occurred. Please try again.' }); return; }
       emit({ type: 'stage', stage: 'craft' });
       // range links + follow-up pills together, off the critical path of each other; either failing leaves the plain reply / no pills
-      const fmodel = modelFor('anis-followups').model, fcreate = deps.create || nativeFetchCreate(env, fmodel, fetchFn);
+      const fmodel = modelFor('anis-followups').model, fcreate = metered(deps.create || nativeFetchCreate(env, fmodel, fetchFn), fmodel, 'anis-followups-edge', tally);
       const [up, items] = await Promise.all([
         impl.upgradeLinks([A.reply, ...A.citations.map((c) => c.url || '')]).catch(() => null),
         followupsWith(async (msgs) => (await fcreate({ messages: msgs, max_tokens: 160, thinking: false })).choices[0].message, question, A.reply),
@@ -131,13 +141,14 @@ export async function chat(request, env, ctx, deps = {}) {
       const cites = citations.slice(0, 8).map((q) => ({ document_id: q.document_id, paragraph_index: q.paragraph_index, text: q.text, title: q.title, author: q.author, religion: q.religion, url: q.url }));
       if (cites.length) emit({ type: 'citations', citations: cites });
       if (items.length) emit({ type: 'followups', items });
-      const timings = { total_ms: Date.now() - t0, first_text_ms: firstText, tower_ms: stat.ms, tower_calls: stat.calls, rounds };
+      const timings = { total_ms: Date.now() - t0, first_text_ms: firstText, tower_ms: stat.ms, tower_calls: stat.calls, tower_by: stat.by, rounds, research: sim == null ? null : { similarity: +sim.toFixed(3), question: matchedQ }, asked: researchQ };
       emit({ type: 'complete', citations: cites, meta: { engine: 'anis-edge', retrieved_count: A.retrieved.length, gate_passed: true, conversation_id: conversationId, format: 'agent', timings } });
       // persistence never on the critical path
       const round = messages.filter((m) => m.role === 'user').length;
       ctx.waitUntil(Promise.all([
         saveTurn(env, { conversationId, round, role: 'user', content: question, site, channel }),
         saveTurn(env, { conversationId, round, role: 'assistant', content: reply, meta: { steps: A.steps.length, timings, similarity: sim }, site, channel }),
+        impl.logUsage(Object.values(tally)),
         logQuestion(env, { question: researchQ, similarity: sim, setId, site, channel, ms: timings.total_ms, format: 'agent' }),
       ]).catch((err) => console.warn(`[anis] persist failed: ${err?.message}`)));
     } catch (err) {

@@ -668,7 +668,7 @@ const PROCESS_ENTRIES = [
   { name: 'research_lookup', label: 'Research Lookup', kind: 'tool', process: true, outputName: 'Passage[]', cost: C(false, 200),
     purpose: 'Research already done for a question (research-cache.js): the passages earlier answers used, re-read from the library.',
     description: 'Research already held for this question: call FIRST with the question restated to stand alone. Returns [P#] passages earlier answers to it used (curated sets first), or that none is held.',
-    input: { type: 'object', additionalProperties: false, required: ['question'], properties: { question: str('The reader\'s question, restated to stand alone', 500) } },
+    input: { type: 'object', additionalProperties: false, required: ['question'], properties: { question: str('The reader\'s question, restated to stand alone in its canonical form: the plain question with full proper names, diacritics and the subject\'s own title ("What is the Kitáb-i-Aqdas?" for "what\'s the Most Holy Book about"; "Who was Shoghi Effendi?" for "who was the Guardian"), no conversational wording', 500) } },
     output: { type: 'object', properties: { status: { type: 'string' }, similarity: { type: 'number' }, passages: { type: 'array', items: PASSAGE } } },
     async run(a, ctx = {}) { return ctx.researchLookup ? ctx.researchLookup(a.question) : null; } },
   { name: 'book_card', label: 'Book Card', kind: 'tool', process: true, outputName: 'Book', cost: C(false, 300),

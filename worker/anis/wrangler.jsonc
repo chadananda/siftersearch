@@ -1,4 +1,4 @@
-// The Anís edge Worker (brief C). Secrets: ANTHROPIC_API_KEY, TOWER_KEY (wrangler secret put). Deploy by the lead only.
+// The Anís edge Worker (brief C). Secrets: ANTHROPIC_API_KEY, TOWER_KEY = tower DEPLOY_SECRET (requireInternal; wrangler secret put). Deploy by the lead only.
 {
   "name": "anis",
   "main": "index.js",

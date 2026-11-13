@@ -10,7 +10,7 @@
      "properties": {
       "question": {
        "type": "string",
-       "description": "The reader's question, restated to stand alone"
+       "description": "The reader's question, restated to stand alone in its canonical form: the plain question with full proper names, diacritics and the subject's own title (\"What is the Kitáb-i-Aqdas?\" for \"what's the Most Holy Book about\"; \"Who was Shoghi Effendi?\" for \"who was the Guardian\"), no conversational wording"
       }
      },
      "required": [
@@ -519,6 +519,7 @@
   "encumberedAmong",
   "extractFromWork",
   "findPassage",
+  "logUsage",
   "original",
   "originals",
   "ownSource",

@@ -166,8 +166,8 @@ describe('research cache as the agent\'s first tool', () => {
     const tools = (similarity) => ({ search: async () => [], researchLookup: async () => ({ status: 'candidate', question: 'How do Bahá\'ís pray?', similarity, passages: [P1] }) });
     const outOf = async (sim) => { const create = vi.fn(script([call('a', 'research_lookup', { question: 'Which prayer in the morning?' })], 'ok [[P1]]'));
       await agentAnswer({ ...base, create, tools: tools(sim) }); return JSON.stringify(create.mock.calls.at(-1)[0].messages); };
-    expect(await outOf(0.82)).toContain('RELATED question');
-    expect(await outOf(0.91)).not.toContain('RELATED');
+    expect(await outOf(0.82)).toContain('EARLIER question');
+    expect(await outOf(0.91)).not.toContain('EARLIER');
   });
   it('searches asked beside a lookup that holds research are not run (and do not count as searches); beside a miss they run', async () => {
     const search = vi.fn(async () => []);

@@ -63,7 +63,7 @@ describe('anis worker chat', () => {
     expect(events.find((e) => e.type === 'followups').items).toEqual(['Who translated it?', 'Is there an original?']);
     const done = events.at(-1); expect(done.meta.engine).toBe('anis-edge'); expect(done.meta.timings).toMatchObject({ rounds: 2, tower_calls: 1 });
     expect(done.meta.timings.first_text_ms).toBeGreaterThanOrEqual(0);
-    expect(seen.tower).toEqual(['upgradeLinks']);   // research_lookup never left the edge
+    expect(seen.tower).toEqual(['upgradeLinks', 'logUsage']);   // research_lookup never left the edge; usage goes to the ledger after the turn
     // persisted through waitUntil: both turns + the question log with a cache hit
     expect(env.db.prepare('SELECT role, content FROM anis_turns ORDER BY role').all().map((t) => t.role)).toEqual(['assistant', 'user']);
     expect(env.db.prepare('SELECT outcome FROM anis_question_log').get().outcome).toBe('hit');

@@ -3,7 +3,7 @@
 export const EMBED_MODEL = '@cf/baai/bge-m3';   // 1024-d, multilingual, cosine
 // bge-m3: calibrate (brief D2) — values carried over from the tower embedding model
 export const SAME_QUESTION = 0.88;
-export const RELATED = 0.75;
+export const RELATED = 0.62;   // bge-m3 question↔question (11-13 calibration, 36 seeds × 3 paraphrases): paraphrases 0.26–0.94, related up to 0.87, unrelated ≤ 0.68 — no line separates same from related, so the agent judges anything ≥ this
 export const MAX_PASSAGES = 24;
 
 export const normalizeQuestion = (q) => String(q || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[‘’ʻ]/g, "'").replace(/\s+/g, ' ').trim();

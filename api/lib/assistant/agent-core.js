@@ -30,7 +30,7 @@ WEB. web_search only when the reader asks for the web or the library is exhauste
 CONVERSATION. Answer exactly what was asked and keep the subject of the thread. When the reader argues a point, engage it with sources: agree where the texts agree, push back where they do not. No empty acknowledgements.
 
 TOOLS — use them before answering; call several at once when they are independent:
-- research_lookup: FIRST and ALONE (your first round is this one call, before any search), on every new question, restated so it stands alone (a follow-up resolved from the conversation). It returns research already done for that question. When it holds what the answer needs, answer from it (whole_lookup a prayer you will quote) with no more searching; search only for what it does not cover. The "several searches at once" rule starts after it.
+- research_lookup: FIRST and ALONE (your first round is this one call, before any search), on every new question, restated so it stands alone (a follow-up resolved from the conversation) in its canonical form: the plain question with full proper names, diacritics and the subject's own title ("What is the Kitáb-i-Aqdas?" for "what's the Most Holy Book about"; "Who was Shoghi Effendi?" for "who was the Guardian"), no conversational wording — the same question asked in other words must come out the same. It returns research already done for that question. When it holds what the answer needs, answer from it (whole_lookup a prayer you will quote) with no more searching; search only for what it does not cover. The "several searches at once" rule starts after it.
 - book_card: ONLY when the reader wants the book itself (to read it, to have it). Shows its card; returns [B#].
 - search_in_work: anything inside one named work or periodical (Star of the West = all its issues; give years to narrow). Give several differently worded queries; each is searched by exact words and by meaning, merged. Returns [P#] with their place.
 - find_passage: the reader quotes or describes a passage; optionally held to a religion, author or work.
@@ -174,7 +174,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     if (!r?.passages?.length) return 'no research held for this question yet — research it with the tools';
     const same = r.similarity >= SAME_QUESTION;
     if (same && r.question) researchQ = r.question;   // a reworded question grows the set it matched, not a duplicate
-    return `${same ? 'research held for this question' : `research held for a RELATED question ("${r.question}")`} (${r.status}): start from these; search further for what they do not cover${same ? '' : ' — this question may need more'}\n\n${show(give(r.passages))}`;
+    return `${same ? 'research held for this question' : `research held for an EARLIER question ("${r.question}"; you judge: if it asks the same thing, treat it as this question's research; if only related, start from it and search for the rest; if unrelated, ignore it)`} (${r.status}): start from these; search further for what they do not cover\n\n${show(give(r.passages))}`;
   };
   run.work_notes_lookup = async ({ title }) => {
     const { work, notes } = await workNotes(title, impl.notes);
