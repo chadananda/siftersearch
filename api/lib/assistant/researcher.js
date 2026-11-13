@@ -164,13 +164,15 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
   const searchLibrary = async ({ query, tradition: tr, filters }) => {
     const tradition = tr ?? filters?.tradition;
     const early = impl.originals && /bah/i.test(String(tradition || '')) ? impl.originals(query).catch(() => []) : null;
+    // a Bahá'í-scoped search starts the Writings pass beside it (11-12: run after it, the two searches took 2.5–4.8 s); used only when needed
+    const wEarly = impl.writings && /bah/i.test(String(tradition || '')) ? impl.writings(query).catch(() => []) : null;
     let hits = (await impl.search(query, tradition)).slice(0, 8);
     if (impl.writings && hits.length !== 0 && bahaiSearch(tradition, hits) && !hasAuthoritative(hits)) {
-      const extra = await impl.writings(query).catch(() => []);
+      const extra = await (wEarly || impl.writings(query)).catch(() => []);
       const seen = new Set(hits.map((p) => p.id).filter((x) => x != null));
       hits = [...(extra || []).filter((p) => p.id == null || !seen.has(p.id)).slice(0, 4), ...hits];
     } else if (impl.writings && !hits.length && /bah/i.test(String(tradition || ''))) {
-      hits = (await impl.writings(query).catch(() => [])).slice(0, 4);
+      hits = (await (wEarly || impl.writings(query)).catch(() => [])).slice(0, 4);
     }
     const orig = await originalsFor(query, hits, early);
     hits = byTier(hits).slice(0, 10 - orig.length);
