@@ -3,14 +3,19 @@ import { describe, it, expect } from 'vitest';
 import { expandTemplates } from '../../api/lib/assistant/widgets/templates.js';
 import { widgetSegments } from '../../api/lib/assistant/widgets/segments.js';
 import { templateFilter, finishLinks } from '../../worker/anis/links.js';
+import { dropUnverified } from '../../api/lib/assistant/quotes.js';
 
 const found = new Map([['P1', { text: 'Line one.\n\nLine two.', source_url: 'https://x/1', title: 'Gleanings', author: 'Bahá\'u\'lláh', cover_url: '/c/1.jpg' }]]);
 const works = new Map([['B1', { title: 'Kitáb-i-Íqán', author: 'Bahá\'u\'lláh', url: 'https://x/iqan' }]]);
 const books = new Map([['B1', { year: 1862, cover_url: '/c/iqan.jpg' }]]);
 
 describe('expandTemplates', () => {
+  it('the quotation gate never drops a template line for its quoted title and line', () => {
+    const md = 'Lead.\n\n{{scene "The Conference of Badasht" "the old law is set aside at last" P1}}';
+    expect(dropUnverified(md, [{ text: 'Line one.' }]).text).toContain('{{scene');
+  });
   it('scene: quoted title + line, its passages whole, the first cover; no title or no passage in hand → dropped', () => {
-    const { text, widgets } = expandTemplates('Lead.\n{{scene "Conference of Badasht" "1848: the old law set aside" P1 P9}}\n{{scene P1}}\nEnd.', { found });
+    const { text, widgets } = expandTemplates('Lead.\n{{scene “Conference of Badasht” "1848: the old law set aside" P1 P9}}\n{{scene P1}}\nEnd.', { found });
     expect(widgets).toHaveLength(1);
     expect(widgets[0]).toMatchObject({ kind: 'scene', id: 'scene-1', title: 'Conference of Badasht', line: '1848: the old law set aside', cover_url: '/c/1.jpg' });
     expect(widgets[0].passages.map((p) => p.url)).toEqual(['https://x/1']);

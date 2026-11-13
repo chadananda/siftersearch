@@ -20,7 +20,8 @@ export function unverifiedQuotes(text, passages, { asked = [] } = {}) {
   const reader = [asked].flat().filter(Boolean);
   // a quotation LINKED as a source's words must be in a passage, even when the reader typed it (a misquote asked about)
   const linked = (q) => new RegExp(`\\[[*_]*["\u201c]\\s*${escapeRe(q)}\\s*["\u201d][*_]*\\]\\(`).test(text);
-  return quoteSpans(text).filter((q) => {
+  // a template's strings ({{scene "Title" "line" P4}}) are the writer's labels, never quotations (11-13: every scene line was dropped)
+  return quoteSpans(String(text).replace(/\{\{[^{}\n]*\}\}/g, '')).filter((q) => {
     const pieces = String(q).split(/\.\.\.|\u2026/).filter((p) => p.trim().split(/\s+/).length >= 3);
     return pieces.length > 0 && !hays.some((h) => containsQuote(h, q)) && !(reader.some((h) => containsQuote(h, q)) && !linked(q));
   });
