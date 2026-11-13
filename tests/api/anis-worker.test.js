@@ -41,8 +41,9 @@ const rig = (env, script, { towerStatus = 200, restated = 'NONE' } = {}) => {
     return new Response(JSON.stringify({ out: null }));
   };
   const ctx = { waitUntil: (p) => pending.push(p) };
-  const post = async (messages = [{ role: 'user', content: 'what is prayer?' }], extra = {}) => {
-    const res = await chat(new Request('https://anis.test/api/chat/stream', { method: 'POST', headers: { origin: 'https://site.org' }, body: JSON.stringify({ messages, ...extra }) }), env, ctx, { fetch });
+  const post = async (messages = [{ role: 'user', content: 'what is prayer?' }], extra = {}, deps = {}) => {
+    const res = await chat(new Request('https://anis.test/api/chat/stream', { method: 'POST', headers: { origin: 'https://site.org' }, body: JSON.stringify({ messages, ...extra }) }), env, ctx, { fetch, ...deps });
+    if (res.headers.get('content-type') === 'application/json') { const out = await res.json(); await Promise.all(pending); return { res, out }; }
     const text = await res.text(); await Promise.all(pending);
     return { res, events: text.split('\n\n').filter((f) => f.startsWith('data: ')).map((f) => JSON.parse(f.slice(6))) };
   };
@@ -81,6 +82,37 @@ describe('anis worker chat', () => {
     expect(events.filter((e) => e.type === 'chunk').map((e) => e.text).join('')).toBe(streamed);
   });
 
+  it('mode email (internal callers only): the same turn, its letter frame, returned whole — card markers dropped, quotations kept, no pills', async () => {
+    const env = mkEnv();
+    await capture(env, 'what is prayer?', [P(1), P(2)]);
+    const { seen, post } = rig(env, [() => say('Dear Lal, prayer is communion with God [[P1]].\n\n{{quote P2}}\n\nWith love, Anís')]);
+    const msgs = [{ role: 'user', content: 'what is prayer?' }];
+    const { res, out } = await post(msgs, { mode: 'email', reader_name: 'Lal' }, { trusted: true });
+    expect(res.headers.get('content-type')).toBe('application/json');
+    expect(out).toMatchObject({ mode: 'email', status: 'answered', format: 'agent' });
+    expect(out.reply).toContain('> Passage 2 text.'); expect(out.reply).not.toContain('<!-- widget'); expect(out.reply).not.toContain('{{');
+    expect(out.widgets.map((w) => w.kind)).toEqual(['quote']);
+    const agentSys = JSON.stringify(seen.anthropic.find((b) => b.stream)?.system);
+    expect(agentSys).toContain('short letter'); expect(agentSys).toContain('\\"Lal\\"');
+    expect(seen.anthropic.some((b) => JSON.stringify(b.system || '').includes('read a letter'))).toBe(true);   // the triage call
+    expect(seen.anthropic.some((b) => /Who translated it/.test(JSON.stringify(b)) && !JSON.stringify(b.system || '').includes('canonical form'))).toBe(false);   // no pills
+    // a public caller cannot claim the letter mode: it gets chat (SSE)
+    const pub = rig(mkEnv(), [() => say('Prayer is communion.')]);
+    expect((await pub.post(msgs, { mode: 'email' })).res.headers.get('content-type')).toBe('text/event-stream');
+  });
+  it('mode audio: streamed, spoken — no cards, links or markdown, no pills', async () => {
+    const env = mkEnv();
+    await capture(env, 'what is prayer?', [P(1), P(2)]);
+    const { seen, post } = rig(env, [() => say('Prayer is *communion* with God [[P1]].\n\n{{quote P2}}')]);
+    const { res, events } = await post(undefined, { mode: 'audio' });
+    expect(res.headers.get('content-type')).toBe('text/event-stream');
+    const types = events.map((e) => e.type);
+    expect(types).not.toContain('widget'); expect(types).not.toContain('followups');
+    const reply = events.filter((e) => e.type === 'chunk').map((e) => e.text).join('');
+    expect(reply).toContain('Prayer is communion with God'); expect(reply).not.toMatch(/[*\[\]<>]/);
+    expect(JSON.stringify(seen.anthropic.find((b) => b.stream)?.system)).toContain('SPOKEN');
+    expect(events.at(-1).meta.mode).toBe('audio');
+  });
   it('pills: each offered pill is backed by a research set; a click resolves to its pinned question with no restatement', async () => {
     const env = mkEnv();
     await capture(env, 'what is prayer?', [P(1), P(2)]);
@@ -211,5 +243,19 @@ describe('site worker → Anís edge switch', () => {
     expect(w).toContain("if (env.ANIS_EDGE === '1' && env.ANIS && url.pathname === '/api/chat/stream' && request.method === 'POST') return env.ANIS.fetch(request);");
     expect(w.indexOf("env.ANIS_EDGE === '1'")).toBeLessThan(w.indexOf('if (isApiPath(url.pathname))'));
     expect(readFileSync(new URL('../../wrangler.jsonc', import.meta.url), 'utf8')).toMatch(/"services": \[\{ "binding": "ANIS", "service": "anis" \}\]/);
+  });
+});
+
+describe('anis modes', () => {
+  it('each mode names its channel and whether it streams; speakable strips what a voice cannot say; triage reads JSON', async () => {
+    const { CHANNELS, MODES, channelOfMode, speakable } = await import('../../api/lib/assistant/channels.js');
+    expect(Object.fromEntries(Object.entries(MODES).map(([m, c]) => [m, CHANNELS[c].stream]))).toEqual({ chat: true, audio: true, email: false, document: false });
+    expect(channelOfMode('chat', { widget: true })).toBe('widget-chat'); expect(channelOfMode('nope')).toBe('site-chat');
+    expect(speakable('## Hi\n> *He* is [God](http://x) [[P1]]\n\n<!-- widget:q-1 -->\n- one')).toBe('Hi\nHe is God\n\none');
+    const { triageLetter } = await import('../../worker/anis/triage.js');
+    const said = (t) => async () => ({ choices: [{ message: { content: t } }] });
+    expect(await triageLetter(said('{"stop": 1, "personal": false}'), 'please stop')).toEqual({ stop: 1, kind: 'question', stance: null });
+    expect(await triageLetter(said('```json\n{"stop":0,"personal":true}\n```'), 'my mother died')).toMatchObject({ stop: 0, kind: 'personal' });
+    expect(await triageLetter(said('no idea'), 'x')).toBeNull();
   });
 });

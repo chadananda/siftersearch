@@ -137,6 +137,17 @@ describe('reply drafts are tower JOBS (docs/architecture/continuous-deploy.md)',
     expect(calls).toEqual([['/draft/job/mail-702', null]]);
     expect(await draftJob({}, fakeDb(), m({ status: 'drafting' }), { call: call('done', { reply: 'Dear Lal' }) })).toEqual({ reply: 'Dear Lal' });
   });
+  it('an ordinary letter is one Anís Worker turn (mode email); a reading thread still goes to tower; ANIS_MAIL_EDGE=0 → tower', async () => {
+    const { draftJob } = await import('../../worker/mail/drafting.js');
+    const calls = [], edged = [];
+    const call = async (env, path, body) => { calls.push([path, body?.job ?? null]); return { status: 'unknown' }; };
+    const edge = async (env, msg, messages) => { edged.push(msg.id); return { reply: 'Dear Lal', status: 'answered' }; };
+    expect(await draftJob({ ANIS: {} }, fakeDb(), m(), { call, edge })).toEqual({ reply: 'Dear Lal', status: 'answered' });
+    expect(edged).toEqual([702]); expect(calls).toEqual([]);
+    expect(await draftJob({ ANIS: {}, ANIS_MAIL_EDGE: '0' }, fakeDb(), m(), { call, edge })).toBeNull();
+    expect(await draftJob({ ANIS: {} }, fakeDb(), m({ subject: 'Re: [Reading] Dawn-Breakers' }), { call, edge })).toBeNull();
+    expect(edged).toEqual([702]); expect(calls.map((c) => c[0])).toEqual(['/draft', '/draft']);
+  });
   it('unknown (never started) restarts without counting; failed counts, and after 3 the message is failed', async () => {
     const { draftJob } = await import('../../worker/mail/drafting.js');
     const call = (status) => async (env, path) => (path.startsWith('/draft/job/') ? { status, error: 'boom' } : { status: 'running' });

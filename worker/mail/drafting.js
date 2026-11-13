@@ -1,7 +1,8 @@
 // Anís's letters, end to end, on Cloudflare (cron in worker/index.js). Tower only researches and writes; every letter
 // to someone outside the invited list is a DRAFT Chad approves on a signed review page; every letter passes the
 // engagement rules (rules.js).
-//   draftReplies   every minute (≥3 min after Anís's last letter to that person): new inbound to anis@ → tower /anis/draft (one ordinary Anís turn) → sent at once to invited
+//   draftReplies   every minute (≥3 min after Anís's last letter to that person): new inbound to anis@ → the Anís Worker (/_anis/turn, mode email;
+//                  reading threads + attachments → tower /anis/draft) → sent at once to invited
 //                  people (auto_send_invited; anyone who writes joins the list — Chad 10-12), otherwise a draft + review notice to Chad
 //   planOutreach   hourly, only while outreach_enabled = on: welcome letters (template) for people added to the list with
 //                  no history; then who is due by the rules → tower /anis/outreach → draft
@@ -64,11 +65,20 @@ async function tower(env, path, body) {
   return res.json();
 }
 
+/** A letter answered by the Anís Worker (service binding ANIS, POST /_anis/turn): the same turn as chat, in mode 'email'
+ *  (channels.js: a letter, a little longer than chat, cards as quotations, not streamed). → the draft result. */
+export async function edgeTurn(env, m, messages) {
+  const res = await env.ANIS.fetch('https://anis/_anis/turn', { method: 'POST', headers: { 'content-type': 'application/json', 'x-internal-key': env.S1_KEY },
+    body: JSON.stringify({ mode: 'email', messages, reader_name: m.from_name || null, conversationId: `mail-${m.thread_key}`.slice(0, 64) }) });
+  if (!res.ok) throw new Error(`anis /_anis/turn ${res.status}`);
+  return res.json();
+}
+
 /** One reply draft as a JOB on tower (docs/architecture/continuous-deploy.md): a research answer takes 40–120 s; asked
  *  synchronously it died at Cloudflare's ~125 s limit (524) and the next tick recomputed it, every minute. The first tick
  *  starts the job (key mail-<id>, never run twice); later ticks poll it. → the finished result, or null while it runs.
  *  A failed or lost job is retried up to 3 times, then the message is marked failed (its error says why). */
-export async function draftJob(env, db, m, { call = tower } = {}) {
+export async function draftJob(env, db, m, { call = tower, edge = edgeTurn } = {}) {
   const key = `mail-${m.id}`;
   const attempts = Number(/attempt (\d+)/.exec(m.error || '')?.[1] || 0);
   const j = m.status === 'drafting' ? await call(env, `/draft/job/${key}`) : { status: 'unknown' };
@@ -89,6 +99,9 @@ export async function draftJob(env, db, m, { call = tower } = {}) {
   // commands (10-23: Chad's NEW question got the next Dawn-Breakers page)
   const inThread = READING_THREAD.test(m.subject || '') || !!(await db.prepare(`SELECT 1 x FROM mail_messages WHERE thread_key = ? AND direction = 'out'
     AND status = 'sent' AND subject LIKE '%Reading]%' LIMIT 1`).bind(m.thread_key).first());
+  // Chad 11-13 "move to worker and use the same flow": an ordinary letter is one Anís Worker turn (mode email). A reading
+  // thread or a letter with attachments still goes to tower (reading guide, photo reading) until those move. ANIS_MAIL_EDGE=0 → tower.
+  if (env.ANIS && env.ANIS_MAIL_EDGE !== '0' && !inThread && !attachments.length) return edge(env, m, await threadMessages(db, m.thread_key, m.id));
   await call(env, '/draft', { async: true, job: key, messages: await threadMessages(db, m.thread_key, m.id), email: m.from_addr, name: m.from_name || null,
     reading: { inThread }, ...(attachments.length ? { attachments } : {}) });
   return null;

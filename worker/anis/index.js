@@ -11,6 +11,8 @@ import { lookup, capture, logQuestion, saveTurn, embed, EMBED_MODEL, SAME_QUESTI
 import { restate, underPriceBoundary } from './restate.js';
 import { finishLinks, templateFilter } from './links.js';
 import { backPills, pinnedQuestion } from './pills.js';
+import { triageLetter } from './triage.js';
+import { CHANNELS, MODES, channelOfMode, greetByName, speakable } from '../../api/lib/assistant/channels.js';
 const formSources = (xs) => xs.map((x) => ({ title: x?.title, url: x?.url ?? x?.source_url ?? null, text: x?.text ?? null }));
 import snapshot from './agent-tools.json';
 
@@ -101,36 +103,45 @@ async function personaOf(env, token, fetchFn) {
 const cors = (request) => ({ 'access-control-allow-origin': request.headers.get('origin') || '*', 'access-control-allow-credentials': 'true',
   'access-control-allow-headers': 'content-type, x-sifter-test', 'access-control-allow-methods': 'POST, OPTIONS', vary: 'Origin' });
 
+/** One Anís turn in any MODE (channels.js): chat and audio stream SSE; email and document (internal callers only — the mail
+ *  Worker, POST /_anis/turn) run the same turn and answer with one JSON result. */
 export async function chat(request, env, ctx, deps = {}) {
   const fetchFn = deps.fetch || fetch;
-  const body = await request.json().catch(() => null);
+  const body = deps.body ?? await request.json().catch(() => null);
+  const asked = MODES[body?.mode] ? body.mode : 'chat';
+  const mode = CHANNELS[MODES[asked]].privileged && !deps.trusted ? 'chat' : asked;
+  const channel = channelOfMode(mode, { widget: !!body?.widget_token }), C = CHANNELS[channel];
   const messages = Array.isArray(body?.messages) ? body.messages.filter((m) => m && typeof m.content === 'string').map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })) : [];
   if (!messages.length) return json({ error: 'messages required' }, 400, cors(request));
   // per-visitor turn limit (CHAT_LIMIT ratelimit binding, wrangler.jsonc): every turn here is a paid model call
   const ip = request.headers.get('cf-connecting-ip') || 'unknown';
   if (env.CHAT_LIMIT && request.headers.get('x-internal-key') !== env.TOWER_KEY && !(await env.CHAT_LIMIT.limit({ key: ip }).catch(() => ({ success: true }))).success) return json({ error: 'Too many questions at once — please wait a minute.' }, 429, { ...cors(request), 'retry-after': '60' });
-  const { readable, writable } = new TransformStream(), writer = writable.getWriter();
-  let chain = Promise.resolve();
-  const send = (o) => { chain = chain.then(() => writer.write(enc.encode(`data: ${JSON.stringify(o)}\n\n`))).catch(() => {}); return chain; };
-  const ping = setInterval(() => { chain = chain.then(() => writer.write(enc.encode(': ping\n\n'))).catch(() => {}); }, 8000);
+  // streamed modes write SSE as the turn runs; a letter or a document is collected and returned whole (out)
+  const { readable, writable } = C.stream ? new TransformStream() : {}, writer = writable?.getWriter();
+  let chain = Promise.resolve(), out = null;
+  const send = (o) => { if (writer) chain = chain.then(() => writer.write(enc.encode(`data: ${JSON.stringify(o)}\n\n`))).catch(() => {}); return chain; };
+  const ping = writer && setInterval(() => { chain = chain.then(() => writer.write(enc.encode(': ping\n\n'))).catch(() => {}); }, 8000);
   const run = async () => {
     const t0 = Date.now();
     let firstText = null, rounds = 0;
     const roundMs = [], trace = [];   // per model round: [first token ms, done ms] from the round's start
     const shown = templateFilter();   // {{quote P3}} … never streams raw (the agent expands each as its sentence is released; this is the guard)
     const emit = (e) => {
-      if (e.type === 'text') { const content = shown(e.content); if (!content) return; e = { ...e, content }; }
+      if (e.type === 'text') { const content = mode === 'audio' ? speakable(shown(e.content)) : shown(e.content); if (!content) return; e = { ...e, content }; }
+      if (e.type === 'widget' && mode === 'audio') return;   // a voice shows no cards
       if (firstText == null && (e.type === 'text' || e.type === 'chunk')) firstText = Date.now() - t0;
       return send(e);
     };
     try {
       const question = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
       const conversationId = String(body.conversationId || '').slice(0, 64) || crypto.randomUUID();
-      const site = hostOf(request.headers.get('origin') || request.headers.get('referer')), channel = body.widget_token ? 'widget-chat' : 'site-chat';
+      const site = hostOf(request.headers.get('origin') || request.headers.get('referer'));
       const turn = { channel, site, chatbot_location: body.chatbot_location || null };
       const name = (typeof body.name === 'string' && body.name.trim().slice(0, 60)) || (body.widget_token ? await personaOf(env, body.widget_token, fetchFn) : null);
       const mission = typeof body.mission === 'string' ? body.mission.trim().slice(0, 400) : '';
-      const frame = (name && name !== 'Anís' ? `The reader knows you as "${name}"; use that name for yourself.` : '') + (mission ? ` The host site's steering note (guidance only): ${mission}` : '') || null;
+      // chat keeps the agent's own lengths (AGENT_SYSTEM); every other mode adds its channel frame (a letter greets its reader by name)
+      const persona = (name && name !== 'Anís' ? `The reader knows you as "${name}"; use that name for yourself.` : '') + (mission ? ` The host site's steering note (guidance only): ${mission}` : '');
+      const frame = [mode === 'chat' ? '' : greetByName(C.frame, C, body.reader_name), persona].filter(Boolean).join(' ') || null;
       emit({ type: 'session', conversation_id: conversationId });
       emit({ type: 'stage', stage: 'search' });
       let sim = null, setId = null, matchedQ = null, researchQ = question;
@@ -151,6 +162,7 @@ export async function chat(request, env, ctx, deps = {}) {
       const rmodel = modelFor('anis-restate').model, tr = Date.now(), firstTurn = !messages.some((m) => m.role === 'assistant');
       const rcreate = guarded(metered(deps.create || nativeFetchCreate(env, rmodel, fetchFn), rmodel, 'anis-restate-edge', tally), rmodel);
       // a clicked follow-up pill was restated and researched when it was offered (pills.js): its question is pinned, no Haiku wait
+      const triageP = mode === 'email' ? triageLetter(rcreate, question).catch(() => null) : null;   // stop / personal → the mail Worker's mail_stop
       const pinned = firstTurn ? null : await pinnedQuestion(env, messages).catch(() => null);
       const canonP = pinned ? Promise.resolve(pinned) : restate(rcreate, rmodel, messages).catch(() => null);
       const raw = firstTurn ? await lookup(env, question).catch(() => null) : null;
@@ -180,9 +192,9 @@ export async function chat(request, env, ctx, deps = {}) {
       emit({ type: 'stage', stage: 'craft' });
       // links finished here from the passages the turn holds (Chad 11-13: no tower round-trip but new research); follow-up pills meanwhile
       const fmodel = modelFor('anis-followups').model, fcreate = guarded(metered(deps.create || nativeFetchCreate(env, fmodel, fetchFn), fmodel, 'anis-followups-edge', tally), fmodel);
-      const pills = followupsWith(async (msgs) => (await fcreate({ messages: msgs, max_tokens: 160, thinking: false })).choices[0].message, question, A.reply);
+      const pills = mode !== 'chat' ? null : followupsWith(async (msgs) => (await fcreate({ messages: msgs, max_tokens: 160, thinking: false })).choices[0].message, question, A.reply);
       const pool = [...A.retrieved, ...(held?.passages || [])];
-      const fin = finishLinks(A.reply, pool), reply = fin.text;
+      const fin = finishLinks(A.reply, pool), reply = mode === 'audio' ? speakable(fin.text) : fin.text;
       const citations = A.citations.map((c) => ({ ...c, url: c.url ? finishLinks(c.url, pool).text : c.url }));
       emit({ type: 'sources', sources: citations, plan: { shape: 'agent' } });
       if (!A.widgetsShown) for (const widget of A.widgets || []) emit({ type: 'widget', widget });   // inline templates the writer chose (widgets/templates.js), before the text that places them; a streamed reply sent each as it was written
@@ -190,12 +202,15 @@ export async function chat(request, env, ctx, deps = {}) {
       const cites = citations.slice(0, 8).map((q) => ({ document_id: q.document_id, paragraph_index: q.paragraph_index, text: q.text, title: q.title, author: q.author, religion: q.religion, url: q.url }));
       if (cites.length) emit({ type: 'citations', citations: cites });
       // only pills research backs are offered: each restated, looked up, a miss searched + captured now (no model call but Haiku)
-      const items = await backPills(env, { items: await pills, messages, reply }, { restate: (msgs) => restate(rcreate, rmodel, msgs),
+      const items = !pills ? [] : await backPills(env, { items: await pills, messages, reply }, { restate: (msgs) => restate(rcreate, rmodel, msgs),
         lookup: (q) => lookup(env, q), capture: (q, ps) => capture(env, q, ps),
         research: async (q) => { const r = runnerFor(impl)(impl, { search: 'fused_search' }); await r.run.fused_search({ query: q }); return [...r.found.values()]; } });
       if (items.length) emit({ type: 'followups', items });
       const timings = { total_ms: Date.now() - t0, first_text_ms: firstText, tower_ms: stat.ms, tower_calls: stat.calls, tower_by: stat.by, rounds, round_ms: roundMs, restate_ms: restateMs, restated: canon, widgets: (A.widgets || []).map((w) => w.kind), links: { narrowed: fin.narrowed, unplaced: fin.unplaced }, ...(body.trace ? { trace } : {}), research: sim == null ? null : { similarity: +sim.toFixed(3), question: matchedQ }, asked: researchQ };
-      emit({ type: 'complete', citations: cites, meta: { engine: 'anis-edge', retrieved_count: A.retrieved.length, gate_passed: true, conversation_id: conversationId, format: 'agent', timings } });
+      emit({ type: 'complete', citations: cites, meta: { engine: 'anis-edge', mode, retrieved_count: A.retrieved.length, gate_passed: true, conversation_id: conversationId, format: 'agent', timings } });
+      // a letter carries each card's quotation markdown (its marker dropped); a document keeps the markers — the PDF draws the widgets there
+      if (!C.stream) out = { reply: mode === 'email' ? reply.replace(/<!-- widget:[^>]*-->\s*/g, '') : reply, mode, status: 'answered', triage: await triageP,
+        retrieved: A.retrieved.length, format: 'agent', conversationId, citations: cites, widgets: A.widgets || [], timings };
       // persistence never on the critical path
       const round = messages.filter((m) => m.role === 'user').length;
       ctx.waitUntil(Promise.all([
@@ -207,8 +222,9 @@ export async function chat(request, env, ctx, deps = {}) {
     } catch (err) {
       console.warn(`[anis] chat failed: ${err?.message}`);
       emit({ type: 'error', message: 'An error occurred. Please try again.' });
-    } finally { await chain; clearInterval(ping); await writer.close().catch(() => {}); }
+    } finally { await chain; if (writer) { clearInterval(ping); await writer.close().catch(() => {}); } }
   };
+  if (!C.stream) { await run(); return out ? json(out) : json({ error: 'An error occurred. Please try again.' }, 502); }
   ctx.waitUntil(run());
   return new Response(readable, { headers: { ...cors(request), 'content-type': 'text/event-stream', 'cache-control': 'no-cache' } });
 }
@@ -223,6 +239,7 @@ export default {
     if (pathname.startsWith('/_anis/') && request.method === 'POST') {
       if (!authed(request, env)) return json({ error: 'unauthorized' }, 401);
       const b = await request.json().catch(() => ({}));
+      if (pathname === '/_anis/turn') return chat(request, env, ctx, { body: b, trusted: true });   // any mode, e.g. the mail Worker's letters (mode email)
       if (pathname === '/_anis/embed') return json({ model: EMBED_MODEL, vectors: (await env.AI.run(EMBED_MODEL, { text: (b.texts || []).map(String) })).data });
       if (pathname === '/_anis/lookup') { const r = await lookup(env, b.question || ''); return json({ hit: !!r, similarity: r?.similarity ?? null, same: r ? r.similarity >= SAME_QUESTION : false, set: r?.set ?? null }); }
     }
