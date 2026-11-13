@@ -77,7 +77,7 @@ export async function sbsDocument({ paragraph_id: pid, document_id: did }, deps 
   const origs = rows.map((r, i) => ({ id: r.id, document_id: docId, paragraph_index: r.paragraph_index, text: clean(r.text), title: m.title, author: m.author,
     language: lang, role: 'original', source_url: urls[i]?.url || null }));
   // each paragraph's aligned translation; ONE translation column: the edition most paragraphs align to
-  const found = await pool(origs, 6, async (o) => (await d.editionsOf(o.id, { want: 'translations', limit: 2 }))?.passages?.filter((p) => p.role === 'translation') || []);
+  const found = await pool(origs, 6, async (o) => (await d.editionsOf(o.id, { want: 'translations', limit: 3 }))?.passages?.filter((p) => p.role === 'translation') || []);
   const votes = new Map();
   for (const ps of found) for (const p of ps || []) votes.set(p.document_id, (votes.get(p.document_id) || 0) + 1);
   // the same source file in English (oceanoflights …-ar ↔ …-en: the primary pair, 11-13) wins, then the author's own work in English

@@ -115,7 +115,10 @@ export function sameWorkFirst(self, members, min = 0.85) {
   const slug = sk ? cand.filter((x) => sourceKey(x.m.source_url) === sk).map((x) => x.m) : [];
   const same = cand.filter((x) => x.s >= min && !slug.includes(x.m)).sort((a, b) => b.s - a.s).map((x) => x.m);
   const pick = [...slug, ...same];
-  return [...fixed.map((m) => (m.basis === 'original_doc_id' ? { ...m, sameWork: true } : m)), ...(pick.length ? pick.map((m) => ({ ...m, sameWork: true })) : cand.slice(0, 12).map((x) => x.m))];
+  // the same file ranks right after the recorded original, ahead of docs that merely have alignment rows (11-13: a study paper quoting the
+  // Tablet of Aḥmad filled the translation slots before the tablet's own -en file)
+  const rec = fixed.filter((m) => m.basis === 'original_doc_id').map((m) => ({ ...m, sameWork: true })), rest = fixed.filter((m) => m.basis !== 'original_doc_id');
+  return [...rec, ...slug.map((m) => ({ ...m, sameWork: true })), ...rest, ...(pick.length ? same.map((m) => ({ ...m, sameWork: true })) : cand.slice(0, 12).map((x) => x.m))];
 }
 /** A source URL's file key: last path segment, lower-cased, extension and trailing language tag (_en, -ar …) stripped; '' when none. Pure. */
 export const sourceKey = (url) => {
