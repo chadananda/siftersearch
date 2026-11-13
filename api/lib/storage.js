@@ -258,10 +258,8 @@ export async function getSignedDownloadUrl(key, expiresIn = 3600) {
  * Get public URL for a key
  */
 export function getPublicUrl(key) {
-  if (!publicBaseUrl) {
-    return null;
-  }
-  return `${publicBaseUrl}/${key}`;
+  const base = publicBaseUrl || cfPublicUrl;   // REST-API mode (tower) has its own base: null here hid the PDF share QR + every PDF cache hit (11-13)
+  return base ? `${base}/${key}` : null;
 }
 
 /**
