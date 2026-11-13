@@ -1435,8 +1435,9 @@ export default async function publicApiRoutes(fastify) {
       // widget carries the signed account cookie. participant is the seeker (account → x-user-id → sifter_sid), never the key owner.
       if (!request.user && request.headers.authorization?.startsWith('Bearer ')) await optionalAuthenticate(request).catch(() => {});
       const participant_id = resolveParticipant(request);
+      const { siteOf } = await import('../lib/assistant/question-log.js');
       const r = await anisTurn(v1TurnArgs({
-        messages,
+        messages, site: siteOf(request.headers),
         participant: { id: participant_id, authed: !!(request.user?.sub || accountFromCookie(request)), userId: Number(request.user?.sub) || null, email: request.user?.email || null },
         clientKey: participant_id || request.ip,
         test: request.headers['x-sifter-test'] === '1',

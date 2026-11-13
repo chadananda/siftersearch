@@ -1181,6 +1181,7 @@ export default async function chatRoutes(fastify) {
     try {
       // One chat path: the Anís turn — log first → Jev triage gate → research answer → output check.
       const { anisTurn } = await import('../lib/assistant/turn.js');
+      const { siteOf } = await import('../lib/assistant/question-log.js');
       const { getScopeForLocation } = await import('../lib/search/scope.js');
       let scope_config;
       try { scope_config = chatbot_location ? getScopeForLocation(chatbot_location) : undefined; } catch { scope_config = undefined; }
@@ -1189,6 +1190,7 @@ export default async function chatRoutes(fastify) {
         test: request.headers['x-sifter-test'] === '1',
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
         channel: widget_token ? 'widget-chat' : 'site-chat',
+        site: siteOf(request.headers),   // the embedding page's host only (question-log.js)
         profile: { persona_name, default_tradition, mission: mission_prompt, scope_config },
         participant: { id: userId, authed: !!(request.user?.sub || accountFromCookie(request)), userId: Number(request.user?.sub) || null, email: request.user?.email || null },
         conversationId: request.body.conversationId || null,

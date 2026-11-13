@@ -2203,6 +2203,17 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_research_sets_status ON research_sets(status, hits)');
     logger.info('Migration 204 complete: research_sets');
   },
+  205: async () => {
+    // QUESTION LOG (Chad 11-12): one row per standalone question Anís researched — popularity over time and by embedding site (host only).
+    // outcome: hit (research set >= 0.88) | related (>= 0.75) | miss. research_set_id points at research_sets (migration 204).
+    await query(`CREATE TABLE IF NOT EXISTS anis_question_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT DEFAULT CURRENT_TIMESTAMP, question TEXT NOT NULL, question_hash TEXT NOT NULL, format TEXT,
+      research_set_id INTEGER, similarity REAL, outcome TEXT NOT NULL, channel TEXT, site TEXT, ms INTEGER)`);
+    await query('CREATE INDEX IF NOT EXISTS idx_anis_question_log_at ON anis_question_log(at)');
+    await query('CREATE INDEX IF NOT EXISTS idx_anis_question_log_hash ON anis_question_log(question_hash)');
+    await query('CREATE INDEX IF NOT EXISTS idx_anis_question_log_site ON anis_question_log(site, at)');
+    logger.info('Migration 205 complete: anis_question_log');
+  },
 };
 
 export const graphMigrations = {

@@ -124,7 +124,7 @@ export async function anisTurn(args) {
 }
 
 async function turnBody({ messages, channel: channelName = 'widget-chat', trusted = false, profile = {}, participant = {},
-  conversationId = null, clientKey = null, onEvent: rawEvent = () => {}, research = undefined, engine = undefined, llm = undefined, variants = undefined, deps, test = false, warm = false }, meter = [], timeline = []) {
+  conversationId = null, clientKey = null, onEvent: rawEvent = () => {}, research = undefined, engine = undefined, llm = undefined, variants = undefined, deps, test = false, warm = false, site = null }, meter = [], timeline = []) {
   const d = { ...(deps ? {} : await defaultDeps()), ...(deps || {}) };
   // every stage event also says, in words, what Anís is doing (the site chat shows it)
   const shown = [];   // the cards the reader saw (book, passage, quote_cards, books): a warmed answer replays them
@@ -562,7 +562,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       strat.units = { ...(strat.units || {}), named_work: focus.id };
       decisions.record('original:focus', { by: 'code', saw: { named_work: null, focus }, chosen: focus.id, reason: 'no work named this turn: the work the previous turn gave' });
     }
-    const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { scope, ...(unmatchedBook ? { book: unmatchedBook } : {}), turnId: ex?.conversationId != null ? `${ex.conversationId}:${ex.round}` : null, stance: triageSummary?.stance ?? null,
+    const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { scope, site, ...(unmatchedBook ? { book: unmatchedBook } : {}), turnId: ex?.conversationId != null ? `${ex.conversationId}:${ex.round}` : null, stance: triageSummary?.stance ?? null,
       kind: route.kind, guarded: route.action === 'guarded', channel, readerName: participant.name ?? null, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, outcome: tri?.outcome ?? null, depth: triageSummary?.depth ?? null, query: (strat?.refersBack ? lastTopic(stateBefore, messages) : null) ?? resolved?.query ?? null, card: card?.text ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), ...(lkIntent ? { lookupIntent: lkIntent } : {}), strategy: strat, decisions, state: stateBefore, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
     streaming = false;
     const ho = r?.handoff?.kind === 'book' ? r.handoff.found : null;

@@ -1,8 +1,8 @@
 // POST /api/v1/chat adapter over anisTurn (the one chat pipeline). v1 body → turn args; anisTurn events → v1 SSE types.
 // Pure; the route owns sessions/persistence. Deps: none.
-export const v1TurnArgs = ({ messages, participant, clientKey, test = false, onEvent }) => ({
+export const v1TurnArgs = ({ messages, participant, clientKey, test = false, onEvent, site = null }) => ({
   messages: messages.map((m) => ({ role: m.role, content: m.content })),
-  channel: 'site-chat', profile: {}, participant, clientKey, test, onEvent,
+  channel: 'site-chat', profile: {}, participant, clientKey, test, onEvent, site,
 });
 // → v1 event or null (dropped). text/stage/understood/progress/companion_offer pass through; status{text}→{message}; sources→citations; session is the route's own.
 export const v1Event = (ev) => {

@@ -597,7 +597,7 @@ export async function agentRespond({ messages, onEvent, d, t0, subject = null, d
   const frame = direction?.channel && !direction.channel.live ? greetByName(frameFor(direction.channel, direction.depth), direction.channel, direction.readerName) : null;
   const A = await agentAnswer({ messages, onEvent, subject, frame,
     create: d.agentCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-agent', params)),
-    tools: d.agentTools || agentTools({ search: d.search, fastSearch: d.fastSearch }),
+    tools: d.agentTools || agentTools({ search: d.search, fastSearch: d.fastSearch, turn: { channel: direction?.channel?.id ?? null, site: direction?.site ?? null } }),
     cache: d.agentCache !== undefined ? d.agentCache : (d.agentTools ? null : agentCache), cardDocs: d.cardDocs });   // live tools share the 6 h tool-result cache   // fused_search = the fast direct path; d.search only serves trace_source
   if (!A.reply) return null;
   onEvent({ type: 'sources', sources: A.citations, plan: { shape: 'agent' }, ms: Date.now() - t0 });

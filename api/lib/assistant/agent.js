@@ -244,7 +244,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
 }
 
 /** The live tools for the agent (the API process): the researcher's library tools + the strategies (agent-strategies.js). */
-export const agentTools = ({ search, fastSearch } = {}) => {
+export const agentTools = ({ search, fastSearch, turn = {} } = {}) => {
   const fast = fastSearch || agentSearch();
   // own source on every fused_search (11-12: the Aqdas verse came back credited to a compilation and a parallel-translation copy)
   const ownSource = async (hits) => {
@@ -253,7 +253,9 @@ export const agentTools = ({ search, fastSearch } = {}) => {
   };
   const researchLookup = async (q) => {
     const rc = await import('./research-cache.js');
-    const hit = await rc.lookupResearch(q);
+    const hit = await rc.lookupResearch(q).catch((err) => { console.warn(`[anis] research lookup failed: ${err.message}`); return null; });
+    // the question log (question-log.js): every researched question, with how the cache served it, where it was asked and on what channel
+    import('./question-log.js').then((m) => m.logTurnQuestion({ question: q, hit: hit && { similarity: hit.similarity, setId: hit.set.id }, channel: turn.channel ?? null, site: turn.site ?? null }));
     if (!hit) return null;
     // held passages get the same own-source pass as a search (11-12 decentralization: a held Uncompiled letter beat the compilation)
     const held = await rc.hydrate(hit.set);

@@ -13,6 +13,7 @@
 //   node scripts/ops/ops.mjs search-latency [--minutes 60] [--slow qsrv:concepts [--over ms]]   per-stage p50/p95 vs the search budget (search/latency-budget.js); --slow lists that stage's slowest trace ids
 //   node scripts/ops/ops.mjs anis-forensics [--days 7] [--stage rank] [--json]   stage × class defect queue (replies, searches) + Opus judge tally
 //   node scripts/ops/ops.mjs anis-research [--status candidate|curated] [--limit 30]   the research cache's newest sets
+//   node scripts/ops/ops.mjs anis-questions [--since 7d] [--site host] [--limit 30]   most-asked questions + which sites ask (question log)
 //   node scripts/ops/ops.mjs anis-improvements [--status open] | anis-improvement-status <id> <open|accepted|done|rejected> [note]
 //   node scripts/ops/ops.mjs anis-improve-digest [--since 24h|ISO] [--json]   DAILY for Claude Code: assessment + new/grown CODE recommendations + DATA changes
 //   node scripts/ops/ops.mjs anis-improve-report [--days 7] [--target code|data|<target>] [--stage S] [--status open] [--since ISO]   audits → conclusions → solutions (JSON)
@@ -97,6 +98,10 @@ else if (cmd === 'anis-forensics') {
   const j = await call('GET', `/anis/research-sets?limit=${val('--limit') || 30}${val('--status') ? `&status=${val('--status')}` : ''}`);
   if (flag('--json')) await out(j);
   else await new Promise((r) => process.stdout.write(`${(j.sets || []).map((x) => `#${x.id} [${x.status}] hits ${x.hits} v${x.version} ${x.passages} passages  ${x.question}`).join('\n')}\n`, r));
+} else if (cmd === 'anis-questions') {
+  const j = await call('GET', `/anis/question-log/top?since=${val('--since') || '7d'}&limit=${val('--limit') || 30}${val('--site') ? `&site=${encodeURIComponent(val('--site'))}` : ''}`);
+  if (flag('--json')) await out(j);
+  else await new Promise((r) => process.stdout.write(`${(j.questions || []).map((x) => `${String(x.n).padStart(4)}x  hit ${Math.round((x.hit_rate || 0) * 100)}%  ${x.sites} site${x.sites === 1 ? '' : 's'}  last ${x.last_at}  ${x.question}`).join('\n')}\n\nsites:\n${(j.sites || []).map((x) => `${String(x.n).padStart(4)}x  ${x.questions} distinct  ${x.site}`).join('\n')}\n`, r));
 } else if (cmd === 'anis-improvements') {
   const j = await call('GET', `/anis/improvements?status=${val('--status') || 'open'}&limit=${val('--limit') || 50}`);
   if (flag('--json')) await out(j);

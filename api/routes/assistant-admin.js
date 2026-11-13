@@ -145,6 +145,15 @@ export default async function anisAdminRoutes(fastify) {
     schema: { querystring: { type: 'object', properties: { status: { type: 'string' }, limit: { type: 'integer', minimum: 1, maximum: 1000, default: 50 } } } },
   }, async (request) => ({ sets: await listResearchSets({ limit: request.query.limit || 50, status: request.query.status || null }) }));
 
+  // The question log (question-log-repo.js): most-asked questions and the sites asking, by window. `ops.mjs anis-questions`.
+  fastify.get('/anis/question-log/top', { preHandler: requireInternal,
+    schema: { querystring: { type: 'object', properties: { since: { type: 'string' }, site: { type: 'string' }, limit: { type: 'integer', minimum: 1, maximum: 500, default: 50 } } } },
+  }, async (request) => {
+    const { topQuestions, topSites } = await import('../lib/repos/question-log-repo.js');
+    const { since = '7d', site = null, limit = 50 } = request.query;
+    return { since, site, questions: await topQuestions({ since, site, limit }), sites: await topSites({ since, limit: 20 }) };
+  });
+
   fastify.get('/anis/improvements', {
     preHandler: requireInternal,
     schema: { querystring: { type: 'object', properties: { status: { type: 'string', enum: IMPROVEMENT_STATUSES }, limit: { type: 'integer', minimum: 1, maximum: 1000, default: 100 } } } },
