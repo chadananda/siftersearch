@@ -1,9 +1,11 @@
 // Print renderer for the side_by_side widget (pdf/render.js calls it). The original is shaped right-to-left in Amiri (font 'a0': fontkit joins the letters; words are
-// wrapped here with NBSP so pdfkit cannot drop the word gaps); translations flow through render.js' inline(). A QR to the work floats on the right edge.
-// tight = one ruled row per verse (spans merged); study = sentence rows, no rules.
+// wrapped here with NBSP so pdfkit cannot drop the word gaps); translations flow through render.js' inline(). A QR to the work floats on the right edge unless the page already carries it at the top (ctx.topQr).
+// tight = one ruled row per verse (spans merged); study = sentence rows, no rules. The verse number sits in a narrow centre column.
 import { studyRows, heads } from '../widgets/side-by-side.js';
 
-const PAD = 4, SIZE = 9.5, AR = 15, NB = ' ';
+const PAD = 4, SIZE = 9.5, AR = 15, NB = ' ', NW = 22;
+const NUM = /^\s*[([]?([0-9\u0660-\u0669\u06f0-\u06f9]{1,4})[.)\]]\s+/;   // a leading verse number ("4. ", "(٤) ")
+const latin = (d) => d.replace(/[\u0660-\u0669]/g, (c) => c.charCodeAt(0) - 0x660).replace(/[\u06f0-\u06f9]/g, (c) => c.charCodeAt(0) - 0x6f0);
 // greedy wrap of Arabic-script text into lines (each NBSP-joined) that fit `width`
 export function rtlLines(doc, text, width, size = AR) {
   doc.font('a0').fontSize(size);
@@ -15,16 +17,34 @@ export function rtlLines(doc, text, width, size = AR) {
   if (line.length) out.push(line.join(NB));
   return out;
 }
-/** ctx: { x, width, bottom, need(h), addPage(), color, inline(doc, spans, o), measure(spans, o), drawQr(doc, url, x, y, size) } → draws the widget at doc.y. */
+/** ctx: { x, width, bottom, need(h), addPage(), color, inline(doc, spans, o), measure(spans, o), drawQr(doc, url, x, y, size), topQr } → draws the widget at doc.y.
+ *  Columns: original | verse number | translation(s). The original's width is chosen so both sides run about the same height (Chad 11-13). */
 export function drawSideBySide(doc, data, ctx, { layout = data.layout ?? 'tight' } = {}) {
-  const { x, width, bottom, color } = ctx, study = layout === 'study', rows = study ? studyRows(data) : data.rows, n = data.translations.length;
-  const ow = n ? width * 0.42 : width, tw = n ? (width - ow) / n : 0, rtl = data.original.dir === 'rtl';
-  const colX = (c) => x + (c < 0 ? 0 : ow + c * tw);
-  // measure: the original (RTL lines, or Latin for an LTR original) and each translation cell
+  const { x, width, bottom, color } = ctx, study = layout === 'study', n = data.translations.length, rtl = data.original.dir === 'rtl';
+  // the verse number leaves the text for the centre column: the translation's own number, else the original's
+  const nums = [];
+  const rows = (study ? studyRows(data) : data.rows).map((r, i) => {
+    const strip = (c) => { if (!c?.text) return c; const m = String(c.text).match(NUM); if (!m) return c; nums[i] ??= latin(m[1]); return { ...c, text: c.text.slice(m[0].length) }; };
+    const translations = r.translations.map(strip);
+    return { ...r, original: strip(r.original), translations };
+  });
+  const label = (i) => (nums.some(Boolean) ? nums[i] ?? '' : String(i + 1));
+  const nw = n ? NW : 0, avail = width - nw;
   const lh = (() => { doc.font('a0').fontSize(AR); return doc.currentLineHeight(true) + 2; })();
-  const oLines = rows.map((r) => (rtl ? rtlLines(doc, r.original.text, ow - 2 * PAD) : []));
   const txt = (c, w) => (c?.text ? ctx.measure([{ text: c.text, style: 'r' }], { width: w - 2 * PAD, size: SIZE, gap: 1.5 }) : 0);
-  const h = rows.map((r, i) => Math.max(rtl ? oLines[i].length * lh : txt(r.original, ow), ...r.translations.map((c) => (c?.span > 1 ? 0 : txt(c, tw)))) + 2 * PAD);
+  const layoutAt = (ow) => {
+    const tw = n ? (avail - ow) / n : 0;
+    const oLines = rows.map((r) => (rtl ? rtlLines(doc, r.original.text, ow - 2 * PAD) : []));
+    const oh = rows.map((r, i) => (rtl ? oLines[i].length * lh : txt(r.original, ow)));
+    const th = rows.map((r) => Math.max(0, ...r.translations.map((c) => (c?.span > 1 ? 0 : txt(c, tw)))));
+    return { ow, tw, oLines, oh, th, total: oh.reduce((a, v, i) => a + Math.max(v, th[i]), 0) };
+  };
+  // the split with the shortest table: both sides then fill their rows about equally
+  let L = layoutAt(n ? avail * 0.5 : width);
+  if (n) for (let f = 0.32; f <= 0.68; f += 0.04) { const c = layoutAt(avail * f); if (c.total < L.total - 0.5) L = c; }
+  const { ow, tw, oLines } = L;
+  const colX = (c) => x + (c < 0 ? 0 : ow + nw + c * tw);
+  const h = rows.map((r, i) => Math.max(L.oh[i], L.th[i]) + 2 * PAD);
   rows.forEach((r, i) => r.translations.forEach((c) => {   // a spanned cell needs its text height across its rows
     if (!(c?.span > 1)) return;
     const have = h.slice(i, i + c.span).reduce((a, b) => a + b, 0), need = txt(c, tw) + 2 * PAD;
@@ -40,7 +60,7 @@ export function drawSideBySide(doc, data, ctx, { layout = data.layout ?? 'tight'
   const start = (hh) => Math.min(hh, 6 * lh);   // a row taller than a page starts wherever a few lines fit, then continues
   ctx.need(18 + start(h[0] || 0)); head();
   const qrUrl = data.work?.url || data.rows[0]?.original.url;
-  if (qrUrl) ctx.drawQr(doc, qrUrl, x + width + 4, doc.y - 18, 44);
+  if (qrUrl && !ctx.topQr) ctx.drawQr(doc, qrUrl, x + width + 4, doc.y - 18, 44);
   // groups = rows tied together by a spanned translation cell; a group never splits across pages unless it is taller than the page
   for (let i = 0; i < rows.length;) {
     let j = i + 1;
@@ -51,6 +71,7 @@ export function drawSideBySide(doc, data, ctx, { layout = data.layout ?? 'tight'
     let y = doc.y;
     for (let k = i; k < j; k++) {
       const r = rows[k];
+      if (nw && label(k)) ctx.inline(doc, [{ text: label(k), style: 's', color: color.mist }], { x: x + ow, y: y + PAD + 2, width: nw, size: 7.5, align: 'center' });
       // translations first (they stay on the row's first page); the original may continue across pages
       r.translations.forEach((c, m) => { if (c?.text) ctx.inline(doc, [{ text: c.text, style: 'r', ...(c.url ? { link: c.url } : {}) }], { x: colX(m) + PAD, y: y + PAD, width: tw - 2 * PAD, size: SIZE, gap: 1.5 }); });
       if (rtl) {

@@ -17,7 +17,7 @@ const slug = (s) => String(s || 'research').normalize('NFKD').replace(/[^\w\s-]/
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** Documents service. Every dependency injectable; defaults = live R2 upload, report outbox, tower mail. */
-export const PDF_CACHE_VERSION = 2;   // bump when the print design changes: every cached document re-renders once
+export const PDF_CACHE_VERSION = 3;   // bump when the print design changes: every cached document re-renders once
 export function makeDocuments({ render = renderPdf, upload, exists, outbox = reportOutbox(), sendMail, store = offerStore(), mode = process.env.ANIS_REPORT_SEND, siteUrl } = {}) {
   const put = async (key, body) => {
     if (upload) return upload(key, body);
@@ -35,12 +35,12 @@ export function makeDocuments({ render = renderPdf, upload, exists, outbox = rep
   return {
     /** → { url, key, bytes, title, cached? } or null when it could not be stored. `cacheKey` (same work, same editions) → one stored
      *  document reused by every reader, re-rendered only when PDF_CACHE_VERSION changes. */
-    async create({ title, markdown, onlineUrl = null, widgets = [], cacheKey = null }) {
+    async create({ title, markdown, onlineUrl = null, widgets = [], cacheKey = null, qr = null }) {
       const key = cacheKey
         ? `anis/pdf/c/${createHash('sha256').update(`${PDF_CACHE_VERSION}|${cacheKey}`).digest('hex').slice(0, 32)}/anis-${slug(title)}.pdf`
         : `anis/pdf/${randomBytes(16).toString('hex')}/anis-${slug(title)}.pdf`;
       if (cacheKey) { const hit = await cached(key); if (hit) return { url: hit, key, title, cached: true }; }
-      const buf = await render({ title, markdown, onlineUrl, widgets, ...(siteUrl ? { siteUrl } : {}) });
+      const buf = await render({ title, markdown, onlineUrl, widgets, qr, ...(siteUrl ? { siteUrl } : {}) });
       const url = await put(key, buf);
       return url ? { url, key, bytes: buf.length, title } : null;
     },

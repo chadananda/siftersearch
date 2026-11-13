@@ -76,8 +76,8 @@ function inline(doc, spans, { x, y, width, size = 10.5, gap = 2.5, color = COLOR
   return doc.y;
 }
 
-/** Markdown → PDF Buffer. opts: { title, markdown, date, siteUrl, onlineUrl, lang } */
-export async function renderPdf({ title = '', markdown = '', date = new Date(), siteUrl = SITE, onlineUrl = null, widgets = [] } = {}) {
+/** Markdown → PDF Buffer. opts: { title, markdown, date, siteUrl, onlineUrl, widgets, qr: { url, label } (a QR beside the title) } */
+export async function renderPdf({ title = '', markdown = '', date = new Date(), siteUrl = SITE, onlineUrl = null, widgets = [], qr = null } = {}) {
   const doc = new PDFDocument({ size: [P.w, P.h], margins: { top: P.top, bottom: P.bottom, left: P.l, right: P.r }, bufferPages: true,
     info: { Title: String(title).slice(0, 200), Author: 'Anís, Ocean AI Research Assistant', Creator: 'Anís · OceanLibrary.com' } });
   const chunks = []; doc.on('data', (c) => chunks.push(c));
@@ -89,11 +89,11 @@ export async function renderPdf({ title = '', markdown = '', date = new Date(), 
   const reg = (href, label) => { const k = shortUrl(href); if (!links.has(k)) links.set(k, { n: links.size + 1, label, href }); return links.get(k).n; };
   const measure = (spans, o) => { mdoc.y = 0; return inline(mdoc, spans, { ...o, x: 0, y: 0 }); };
   const need = (h) => { if (doc.y + h > bottom) doc.addPage(); };
-  const logo = readFileSync(join(ROOT, 'public', 'pwa-192x192.png'));
+  const logo = readFileSync(join(ROOT, 'public', 'ocean-noback.svg'), 'utf8').match(/ d="([^"]+)"/)[1];   // the Ocean mark as a vector, inked in sea blue for print
   const dateText = new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 
   const header = () => {
-    doc.image(logo, P.l, 30, { width: 22 });
+    doc.save().translate(P.l - 2, 27).scale(26 / 512).path(logo).fill(COLOR.sea).restore();
     doc.font('h0').fontSize(15).fillColor(COLOR.sea).text('Anís', P.l + 30, 32, { lineBreak: false });
     doc.font('s0').fontSize(8).fillColor(COLOR.mist).text('Ocean AI Research Assistant', P.l + 30, 50, { lineBreak: false });
     doc.font('s0').fontSize(8).fillColor(COLOR.mist).text('OceanLibrary.com', P.l, 40, { width: W, align: 'right', lineBreak: false, link: siteUrl });
@@ -105,8 +105,15 @@ export async function renderPdf({ title = '', markdown = '', date = new Date(), 
 
   // title block
   const tsp = [{ text: String(title).replace(/\s+/g, ' ').trim() || 'Research', style: 'h' }];
-  inline(doc, tsp, { x: P.l, y: doc.y, width: W, size: 21, gap: 3, color: COLOR.sea });
-  doc.y += 4; inline(doc, [{ text: `Prepared ${dateText}`, style: 's' }], { x: P.l, y: doc.y, width: W, size: 8.5, color: COLOR.mist });
+  const QS = 58, ty = doc.y, tw0 = qr?.url ? W - QS - 14 : W;
+  if (qr?.url) {
+    drawQr(doc, qr.url, P.l + W - QS, ty - 4, QS);
+    if (qr.label) inline(doc, [{ text: qr.label, style: 's', link: qr.url }], { x: P.l + W - 160, y: ty + QS + 1, width: 160, size: 6.5, color: COLOR.mist, align: 'right' });
+    doc.y = ty;   // the title starts level with the code
+  }
+  inline(doc, tsp, { x: P.l, y: doc.y, width: tw0, size: 21, gap: 3, color: COLOR.sea });
+  doc.y += 4; inline(doc, [{ text: `Prepared ${dateText}`, style: 's' }], { x: P.l, y: doc.y, width: tw0, size: 8.5, color: COLOR.mist });
+  if (qr?.url) doc.y = Math.max(doc.y, ty + QS + (qr.label ? 12 : 0));
   doc.y += 8; doc.moveTo(P.l, doc.y).lineTo(P.w - P.r, doc.y).lineWidth(1.2).strokeColor(COLOR.sea).stroke(); doc.y += 14;
 
   const pageCount = () => doc.bufferedPageRange().count;
@@ -140,7 +147,7 @@ export async function renderPdf({ title = '', markdown = '', date = new Date(), 
   // display widgets: `<!-- widget:ID -->` before a table (+ the approximate note) → the widget drawn for print; no data for the id → the markdown table as is
   const wById = new Map((widgets || []).map((w) => [w?.id, w]));
   let pendingWidget = null;
-  const wctx = (cx, cw) => ({ x: cx, width: cw, bottom, color: COLOR, need, addPage: () => doc.addPage(), inline: (d, sp, o) => inline(d, sp, o), measure, drawQr });
+  const wctx = (cx, cw) => ({ x: cx, width: cw, bottom, color: COLOR, need, addPage: () => doc.addPage(), inline: (d, sp, o) => inline(d, sp, o), measure, drawQr, topQr: !!qr?.url });
   function blocks(tokens, cx, cw) {
     for (const t of tokens || []) {
       if (t.type === 'html') { const id = /^\s*<!--\s*widget:([\w-]+)\s*-->/.exec(t.raw || '')?.[1]; if (id && wById.has(id)) { pendingWidget = wById.get(id); continue; } }

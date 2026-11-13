@@ -53,7 +53,7 @@ export async function sbsDocument({ paragraph_id: pid, document_id: did }, deps 
   if (!data) return { error: 'the stored original is not in its own script' };
   const name = m.title || 'Tablet', title = `${name}: ${data.original.label} and English`, tr = data.translations[0];
   const intro = `${m.author ? `${m.author}, ` : ''}*${name}*: the ${data.original.label} original beside ${tr?.translator || tr?.title || 'its English translation'}.`;
-  const doc = await d.documents.create({ title, markdown: `${intro}\n\n<!-- widget:${data.id} -->\n\n${toMarkdown(data)}`, widgets: [data], cacheKey: `sbs|${docId}|${best}` });
+  const doc = await d.documents.create({ title, markdown: `${intro}\n\n<!-- widget:${data.id} -->\n\n${toMarkdown(data)}`, widgets: [data], qr: { url: data.work?.url || data.rows[0]?.original?.url, label: `${data.original.label} on Ocean of Lights` }, cacheKey: `sbs|${docId}|${best}` });
   if (!doc?.url) return { error: 'the document could not be stored just now' };
   return { url: doc.url, title, rows: data.rows.length, approximate: !!data.approximate, document_id: docId };
 }
