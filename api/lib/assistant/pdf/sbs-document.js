@@ -4,7 +4,7 @@
 // → { url, title, rows, approximate }. Deps injectable.
 import { buildSideBySide, toMarkdown, verseNumber } from '../widgets/side-by-side.js';
 import { alignKey, verifyLines, MIN_LLM_CHARS } from '../../sbs/align.js';
-import { sourceKey } from '../editions.js';
+import { sourceKey, authorKey } from '../editions.js';
 
 export const SBS_MAX_ROWS = 150;   // a tablet, not a book: a longer work is refused, never a 1000-row PDF
 const clean = (t) => String(t ?? '').replace(/\\([\\`*_{}[\]()#+\-.!>|])/g, '$1');   // stored markdown escapes ("1\\.") → plain
@@ -82,10 +82,9 @@ export async function sbsDocument({ paragraph_id: pid, document_id: did }, deps 
   for (const ps of found) for (const p of ps || []) votes.set(p.document_id, (votes.get(p.document_id) || 0) + 1);
   // the same source file in English (oceanoflights …-ar ↔ …-en: the primary pair, 11-13) wins, then the author's own work in English
   // (Bahá'u'lláh's tablet, not a commentary quoting it: 11-13 a study paper filled the column), then the most aligned paragraphs
-  const who = (a) => String(a || '').replace(/[‘’]/g, "'").normalize('NFC');
   const auth = new Map(found.flat().filter(Boolean).map((p) => [p.document_id, p.author]));
   const tmeta = await d.getLinkMeta([...votes.keys()]).catch(() => new Map()), sk = sourceKey(m.source_url);
-  const score = ([id, v]) => v + (sk && sourceKey(tmeta.get(Number(id))?.source_url) === sk ? 2e6 : 0) + (m.author && who(auth.get(id)) === who(m.author) ? 1e6 : 0);
+  const score = ([id, v]) => v + (sk && sourceKey(tmeta.get(Number(id))?.source_url) === sk ? 2e6 : 0) + (m.author && authorKey(auth.get(id)) === authorKey(m.author) ? 1e6 : 0);
   const best = [...votes].sort((a, b) => score(b) - score(a))[0]?.[0];
   if (best == null) return { error: 'no translation of this work is aligned with its original in the library' };
   // a translator by name, else the edition's title when it reads as one (never a file slug like "bahaullah-pm03-030_en")

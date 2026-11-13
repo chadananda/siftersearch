@@ -126,3 +126,13 @@ describe('editionsOf: recorded links never crowd out the same source file (11-13
     expect(r.passages.some((p) => p.document_id === 40)).toBe(true);
   });
 });
+
+describe('sameWorkFirst: an aligned doc of the same title by the same author is the work itself (11-13)', () => {
+  it('"bahaullah"\'s Tablet of Ahmad is promoted; skrenes\'s analysis of it is not', () => {
+    const me = { id: 1, title: 'Tablet of Aḥmad', author: "Bahá'u'lláh", language: 'ar' };
+    const out = sameWorkFirst(me, [
+      { id: 30, title: 'Tablet of Ahmad, Arabic (Lawh-i-Ahmad): Analysis of Figurative Language', author: 'skrenes', basis: 'alignment' },
+      { id: 28, title: 'Tablet of Ahmad (Arabic)', author: 'bahaullah', basis: 'alignment' }]);
+    expect(out.map((m) => [m.id, !!m.sameWork])).toEqual([[28, true], [30, false]]);
+  });
+});

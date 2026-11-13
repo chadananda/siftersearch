@@ -108,6 +108,8 @@ const asPassage = (row, m, role, how) => ({ id: row.id, document_id: row.doc_id 
 // ("Tafsír-i-Súriy-i-Kawthar" ↔ "Tafsir-i-Suratu'l-Kawthar (… provisional translation)") come first, and when any does, the
 // author's other works are dropped — aligning by meaning against a different book returns a wrong "translation" (11-12: the Báb's
 // English Kawthar sat past the 12-row cap behind his other works). A title in another script scores 0: then all stay, in order.
+/** An author's name folded for comparison: "bahaullah" = "Bahá'u'lláh" = "Bahá’u’lláh" (11-13: the English Tablet of Aḥmad is stored as "bahaullah"). Pure. */
+export const authorKey = (a) => String(a || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
 export function sameWorkFirst(self, members, min = 0.85) {
   const k = mainKey(self?.title), sc = (m) => (k ? titleScore(k, mainKey(m.title)) : 0), sk = sourceKey(self?.source_url);
   const fixed = members.filter((m) => m.basis !== 'author'), cand = members.filter((m) => m.basis === 'author').map((m) => ({ m, s: sc(m) }));
@@ -117,8 +119,11 @@ export function sameWorkFirst(self, members, min = 0.85) {
   const pick = [...slug, ...same];
   // the same file ranks right after the recorded original, ahead of docs that merely have alignment rows (11-13: a study paper quoting the
   // Tablet of Aḥmad filled the translation slots before the tablet's own -en file)
-  const rec = fixed.filter((m) => m.basis === 'original_doc_id').map((m) => ({ ...m, sameWork: true })), rest = fixed.filter((m) => m.basis !== 'original_doc_id');
-  return [...rec, ...slug.map((m) => ({ ...m, sameWork: true })), ...rest, ...(pick.length ? same.map((m) => ({ ...m, sameWork: true })) : cand.slice(0, 12).map((x) => x.m))];
+  const rec = fixed.filter((m) => m.basis === 'original_doc_id').map((m) => ({ ...m, sameWork: true }));
+  // an aligned doc with the same title BY THE SAME AUTHOR is the work itself (a study paper titled after the tablet is not: other author)
+  const ak = authorKey(self?.author), own = (m) => m.basis !== 'original_doc_id' && ak && authorKey(m.author) === ak && sc(m) >= min;
+  const titled = fixed.filter(own).map((m) => ({ ...m, sameWork: true })), rest = fixed.filter((m) => m.basis !== 'original_doc_id' && !own(m));
+  return [...rec, ...slug.map((m) => ({ ...m, sameWork: true })), ...titled, ...rest, ...(pick.length ? same.map((m) => ({ ...m, sameWork: true })) : cand.slice(0, 12).map((x) => x.m))];
 }
 /** A source URL's file key: last path segment, lower-cased, extension and trailing language tag (_en, -ar …) stripped; '' when none. Pure. */
 export const sourceKey = (url) => {
