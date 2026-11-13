@@ -1,2 +1,1 @@
-TTFs for the Anís PDF renderer (pdf/render.js), decompressed from public/fonts woff2 (fontkit cannot subset woff2 composites). Libre Caslon, IBM Plex Mono, Space Grotesk: SIL OFL 1.1.
- Amiri Regular (amiri-regular-arabic.ttf, from google/fonts): SIL OFL 1.1, Arabic/Persian original column of the side-by-side widget.
+TTFs for the Anís PDF renderer (pdf/render.js). Gentium Book Plus (text, headings) and Noto Sans (small text), from google/fonts and notofonts: they cover all of Bahá'í transliteration. IBM Plex Mono (code; decompressed from public/fonts). Amiri Regular: the Arabic/Persian original column of the side-by-side widget. All SIL OFL 1.1.

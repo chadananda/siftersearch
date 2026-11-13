@@ -183,3 +183,10 @@ describe('qr.js: cached vector QR', () => {
     expect(stats.encoded).toBe(40); expect(bytes).toBeLessThan(200000);
   });
 });
+
+describe('transliteration coverage', () => {
+  it("every text style draws all of Bahá'í transliteration as written, no letter dropped or replaced", () => {
+    const t = 'Bahá’u’lláh ‘Abdu’l-Bahá Ḥusayn Ṭáhirih Ṣádiq Ẓuhúr Ḍiyá’ K͟hán S͟hoghi Lawḥ-i-Aḥmad Kitáb-i-Íqán ÁÍÚ'.normalize('NFC');
+    for (const style of ['r', 'b', 'i', 'h', 's']) expect(runs(t, style).map((x) => x.text).join(''), style).toBe(t);
+  });
+});

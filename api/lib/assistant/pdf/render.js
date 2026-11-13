@@ -12,8 +12,10 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 const FONT_DIR = join(ROOT, 'api', 'assets', 'fonts', 'pdf');
-const FILES = { r: ['libre-caslon-normal-400-latin', 'libre-caslon-normal-400-latin-ext'], b: ['libre-caslon-normal-700-latin', 'libre-caslon-normal-700-latin-ext'],
-  i: ['libre-caslon-italic-400-latin', 'libre-caslon-italic-400-latin-ext'], m: ['ibm-plex-mono-400-latin'], h: ['../Gloock-Regular'], s: ['space-grotesk-400-latin'], a: ['amiri-regular-arabic'] };   // a = Arabic-script (side_by_side print only; the text chains above still drop it)
+// Gentium Book Plus + Noto Sans: every letter of Bahá'í transliteration (á í ú, ḥ ṭ ṣ ẓ ḍ, ‘ ’, K͟h S͟h) — Chad 11-13 "a universal font";
+// the site's Caslon / Gloock / Space Grotesk cuts lack the dots below or the acutes. Check a new font with the set in tests/api/anis-pdf.test.js.
+const FILES = { r: ['gentium-book-plus-regular'], b: ['gentium-book-plus-bold'], i: ['gentium-book-plus-italic'], m: ['ibm-plex-mono-400-latin', 'noto-sans-regular'],
+  h: ['gentium-book-plus-bold'], s: ['noto-sans-regular'], a: ['amiri-regular-arabic'] };   // a = Arabic-script (side_by_side print only; the text chains above still drop it)
 const COLOR = { ink: '#2b2621', sea: '#1f6f8b', mist: '#7a8890', rule: '#d6dde0', zebra: '#f3f7f8' };
 const P = { w: 612, h: 792, l: 60, r: 60, top: 84, bottom: 70 };
 const SITE = 'https://oceanlibrary.com';
@@ -30,7 +32,7 @@ export function runs(text, style) {
   for (let ch of String(text).normalize('NFC')) {
     const cp = ch.codePointAt(0);
     let f = /\s/.test(ch) ? chain[0] : chain.find((c) => c.font.hasGlyphForCodePoint(cp));
-    if (!f) {   // no glyph (Gloock has no ḥ): the base letter, never a dropped one
+    if (!f) {   // no glyph: the base letter, never a dropped one
       const base = ch.normalize('NFD')[0];
       f = base !== ch && chain.find((c) => c.font.hasGlyphForCodePoint(base.codePointAt(0)));
       if (!f) continue;
