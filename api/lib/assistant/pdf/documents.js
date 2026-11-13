@@ -17,10 +17,10 @@ const slug = (s) => String(s || 'research').normalize('NFKD').replace(/[^\w\s-]/
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** Documents service. Every dependency injectable; defaults = live R2 upload, report outbox, tower mail. */
-export const PDF_CACHE_VERSION = 9;   // bump when the print design changes: every cached document re-renders once
+export const PDF_CACHE_VERSION = 10;  // bump when the print design changes: every cached document re-renders once
 // permanent short links (Chad 11-13: "short URLs that work with QR codes"): <base>/<code> → the site Worker reads the map
 // anis/s/<code>.json and redirects (worker/short-links.js). A cached work's code comes from its cacheKey, so it outlives re-renders.
-export const SHORT_BASE = process.env.ANIS_SHORT_URL || 'https://siftersearch.com/d';
+export const SHORT_BASE = process.env.ANIS_SHORT_URL || 'https://anis.oceanlibrary.com/d';   // worker/short-links.js serves both hosts
 const B62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 export const shortCode = (bytes) => { let n = BigInt(`0x${Buffer.from(bytes).subarray(0, 8).toString('hex')}`), s = ''; for (let i = 0; i < 8; i++) { s += B62[Number(n % 62n)]; n /= 62n; } return s; };
 
