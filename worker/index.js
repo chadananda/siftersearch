@@ -109,7 +109,7 @@ export function createExports(manifest) {
     default: {
       async fetch(request, env, ctx) {
         const url = new URL(request.url);
-        { const s = shortHost(request, { base: env.DOCS_PUBLIC_URL || undefined }); if (s) return s; }   // anis.oceanlibrary.com: short links only
+        { const s = shortHost(request, { base: env.DOCS_PUBLIC_URL || undefined, pass: isApiPath }); if (s) return s; }   // anis.oceanlibrary.com: short links, the widget + API
         if (url.pathname === '/_edge/warm') {
           if (!env.S1_KEY || request.headers.get('x-internal-key') !== env.S1_KEY) return Response.json({ error: 'unauthorized' }, { status: 401 });
           const t0 = Date.now();

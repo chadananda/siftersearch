@@ -27,16 +27,18 @@ export const versionedLoader = (loader, hash) =>
   String(loader).replace("var BUNDLE = api + '/widget/sifter-chat.js';", `var BUNDLE = api + '/widget/sifter-chat.js?v=${hash}';`);
 // Hosts may embed /widget.js from any address of ours (Long Beach used the api tunnel), but Google sign-in only accepts the
 // registered public origin, so the widget always talks to `site` (the worker proxies /api + /widget). Local dev keeps its own.
-export const publicLoader = (loader, hash, site) =>
+// Our other public origins (anis.oceanlibrary.com, Chad 11-13) keep themselves: the worker serves /widget + /api there too.
+export const publicLoader = (loader, hash, site, alsoPublic = []) =>
   versionedLoader(loader, hash).replace('var api = new URL(script.src).origin;',
-    `var api = new URL(script.src).origin; if (!/^https?:\\/\\/(localhost|127\\.0\\.0\\.1)(:|$)/.test(api)) api = ${JSON.stringify(site)};`);
+    `var api = new URL(script.src).origin; if (!/^https?:\\/\\/(localhost|127\\.0\\.0\\.1)(:|$)/.test(api) && ${JSON.stringify(alsoPublic)}.indexOf(api) < 0) api = ${JSON.stringify(site)};`);
 // The loader is never kept by a browser: it is 2 KB and the only unversioned piece, so a deploy reaches every page load.
 export const LOADER_CACHE = 'public, no-cache, max-age=0, s-maxage=60';
 const BUNDLE = loadAsset('sifter-chat.js');
 const BUNDLE_HASH = bundleHash(BUNDLE);
 const LOADER = loadAsset('widget.js');
 const SITE_ORIGIN = (process.env.PUBLIC_WIDGET_ORIGIN || 'https://siftersearch.com').replace(/\/$/, '');
-const ASSETS = { 'widget.js': LOADER ? publicLoader(LOADER, BUNDLE_HASH, SITE_ORIGIN) : null, 'sifter-chat.js': BUNDLE };
+const ALSO_PUBLIC = (process.env.PUBLIC_WIDGET_ORIGINS || 'https://anis.oceanlibrary.com').split(',').map((s) => s.trim().replace(/\/$/, '')).filter(Boolean);
+const ASSETS = { 'widget.js': LOADER ? publicLoader(LOADER, BUNDLE_HASH, SITE_ORIGIN, ALSO_PUBLIC) : null, 'sifter-chat.js': BUNDLE };
 const DEMO_HTML = loadAsset('demo.html');
 const ADMIN_HTML = loadAsset('admin.html');
 

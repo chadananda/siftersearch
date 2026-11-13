@@ -6,10 +6,11 @@ export const DOCS_PUBLIC = 'https://pub-e57ab96621a24ba18bcce728b4c51de2.r2.dev'
 
 export const SHORT_HOST = 'anis.oceanlibrary.com';   // Cloudflare for SaaS custom hostname on the siftersearch.com zone
 
-/** The short-link host serves only /d/<code>; every other path goes home to oceanlibrary.com. null = not that host. */
-export function shortHost(request, opts) {
+/** The short-link host serves /d/<code>, plus whatever `pass` lets through to the normal handling (the widget and its API);
+ *  every other path goes home to oceanlibrary.com. null = handle normally. */
+export function shortHost(request, { pass = () => false, ...opts } = {}) {
   const url = new URL(request.url);
-  if (url.hostname !== SHORT_HOST) return null;
+  if (url.hostname !== SHORT_HOST || pass(url.pathname)) return null;
   const m = request.method === 'GET' && SHORT_PATH.exec(url.pathname);
   return m ? shortLink(m[1], opts) : Response.redirect('https://oceanlibrary.com/', 301);
 }

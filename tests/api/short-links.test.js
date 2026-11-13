@@ -44,5 +44,9 @@ describe('PDF short links', () => {
     const r = await shortHost(new Request('https://anis.oceanlibrary.com/d/AbCdEfGh'), { base: B, fetchFn });
     expect(r.status).toBe(302);
     expect(r.headers.get('location')).toBe(`${B}/anis/x.pdf`);
+    const pass = (p) => p.startsWith('/widget') || p.startsWith('/api/');
+    expect(shortHost(new Request('https://anis.oceanlibrary.com/widget.js'), { pass })).toBeNull();
+    expect(shortHost(new Request('https://anis.oceanlibrary.com/api/chat/stream', { method: 'POST' }), { pass })).toBeNull();
+    expect((await shortHost(new Request('https://anis.oceanlibrary.com/library'), { pass })).status).toBe(301);
   });
 });

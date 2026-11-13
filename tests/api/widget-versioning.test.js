@@ -28,6 +28,10 @@ describe('widget bundle versioning', () => {
     expect(run('https://api.siftersearch.com/widget.js')).toBe('https://siftersearch.com');
     expect(run('https://siftersearch.com/widget.js')).toBe('https://siftersearch.com');
     expect(run('http://localhost:7839/widget.js')).toBe('http://localhost:7839');
+    const two = publicLoader(loader, 'h1', 'https://siftersearch.com', ['https://anis.oceanlibrary.com']);
+    const run2 = (src) => new Function('script', two.split('\n')[0] + ' return api;')({ src });
+    expect(run2('https://anis.oceanlibrary.com/widget.js')).toBe('https://anis.oceanlibrary.com');
+    expect(run2('https://api.siftersearch.com/widget.js')).toBe('https://siftersearch.com');
   });
 
   it('the loader is revalidated on every page load (never browser-cached)', () => {
