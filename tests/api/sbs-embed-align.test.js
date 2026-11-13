@@ -29,4 +29,14 @@ describe('alignByMeaning', () => {
     verses.forEach((v, i) => expect(out[i].map((l) => l.o).join(' ').replace(/\s+/g, ' ')).toBe(v.replace(/\s+/g, ' ')));
     expect(out.flat().map((l) => l.t).filter(Boolean).join(' ')).toBe(tr);
   });
+  it('an untranslated postscript of many clauses never takes the last translated sentence (compressed similarities, 11-13)', async () => {
+    const AX = ['sun', 'moon', 'star', 'sea', 'praise', 'city'];
+    const embed = async (texts) => texts.map((t) => AX.map((w) => (t.match(new RegExp(w, 'g')) || []).length + 0.6));
+    const out = await alignByMeaning(['ar sun * ar moon * ar praise *', 'ar city * ar city sea * ar star city * ar city *'], 'The sun. The moon. Praise be.', embed);
+    expect(out[0].map((l) => l.t)).toEqual(['The sun.', 'The moon.', 'Praise be.']);
+    expect(out[1]).toEqual([{ o: 'ar city * ar city sea * ar star city * ar city *', t: '' }]);
+  });
+  it('a bare star is no clause of its own', () => {
+    expect(units('ar one * * ar two *')).toEqual(['ar one * * ', 'ar two *']);
+  });
 });

@@ -25,7 +25,7 @@ export async function meaningRows(rows, translationText, { embed, cacheGet, cach
   const cell = rows.find((r) => r.translations[0]?.text)?.translations[0];
   if (!cell || !embed) return null;
   const vs = rows.map((r) => verseNumber(r.original.text)), verses = vs.map((v) => v.rest.trim());
-  const key = `meaning:${alignKey(verses.join('\n'), translationText)}`;
+  const key = `meaning2:${alignKey(verses.join('\n'), translationText)}`;
   let lines = (await cacheGet?.([key]).catch(() => null))?.get(key);
   if (!lines) {
     try { lines = await alignByMeaning(verses, translationText, embed); } catch (err) { console.warn(`[sbs-document] meaning alignment failed: ${err?.message || err}`); return null; }

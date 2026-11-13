@@ -17,7 +17,7 @@ const slug = (s) => String(s || 'research').normalize('NFKD').replace(/[^\w\s-]/
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** Documents service. Every dependency injectable; defaults = live R2 upload, report outbox, tower mail. */
-export const PDF_CACHE_VERSION = 7;   // bump when the print design changes: every cached document re-renders once
+export const PDF_CACHE_VERSION = 8;   // bump when the print design changes: every cached document re-renders once
 // permanent short links (Chad 11-13: "short URLs that work with QR codes"): <base>/<code> → the site Worker reads the map
 // anis/s/<code>.json and redirects (worker/short-links.js). A cached work's code comes from its cacheKey, so it outlives re-renders.
 export const SHORT_BASE = process.env.ANIS_SHORT_URL || 'https://siftersearch.com/d';
