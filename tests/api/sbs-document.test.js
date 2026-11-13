@@ -9,7 +9,7 @@ const docs = { 10: { title: 'Lawḥ-i-Aḥmad', author: "Bahá'u'lláh", languag
 const deps = (over = {}) => {
   const made = [];
   return { made, langCode: (l) => String(l || '').toLowerCase().slice(0, 2) || null,
-    getLinkMeta: async ([id]) => new Map([[Number(id), docs[id]]]),
+    getLinkMeta: async (ids) => new Map(ids.map((id) => [Number(id), docs[id]])),
     paragraphsInRange: async (doc) => (doc === 10 ? AR.map((text, i) => ({ id: 100 + i, paragraph_index: i, text })) : []),
     withLinks: async (rows) => rows.map((r) => ({ ...r, url: `https://oceanoflights.org/bahaullah-tablet-ahmad-ar/#p${r.paragraph_index}` })),
     editionsOf: async (id, { want }) => (want === 'original' ? { passages: [{ id: 100, document_id: 10, role: 'original' }] }
@@ -27,6 +27,19 @@ describe('sbsDocument', () => {
     expect(doc.widgets[0].rows.map((x) => x.original.text)).toEqual(AR);
     expect(doc.widgets[0].rows.map((x) => x.translations[0].text)).toEqual(EN);
     expect(doc.markdown).toContain(`<!-- widget:${doc.widgets[0].id} -->`);
+  });
+  it('the same source file in English wins over a study paper aligned to more verses; a slug title is never the label (11-13)', async () => {
+    const meta = { 10: { title: 'Tablet of Aḥmad', author: "Bahá'u'lláh", language: 'ar', source_url: 'https://oceanoflights.org/bahaullah-pm03-030-ar/' },
+      30: { title: 'Tablet of Ahmad, Arabic (Lawh-i-Ahmad): Analysis of Figurative Language', author: 'skrenes', language: 'en', source_url: 'https://bahai-library.com/skrenes_ahmad' },
+      40: { title: 'bahaullah-pm03-030_en', author: 'Bahá’u’lláh', language: 'en', source_url: 'https://oceanoflights.org/bahaullah-pm03-030-en/' } };
+    const tr = (doc, i, text, title, author) => ({ id: doc * 10 + i, document_id: doc, paragraph_index: i, text, title, author, language: 'en', role: 'translation' });
+    const d = deps({ getLinkMeta: async (ids) => new Map(ids.map((id) => [Number(id), meta[id]])),
+      editionsOf: async (id) => { const i = id - 100; return { passages: [tr(30, i, `study ${i}`, meta[30].title, 'skrenes'), ...(i ? [tr(40, i, EN[i], meta[40].title, meta[40].author)] : [])] }; } });
+    await sbsDocument({ document_id: 10, paragraph_id: 100 }, d);
+    const [doc] = d.made;
+    expect(doc.widgets[0].rows.flatMap((x) => x.translations.map((t) => t.text)).filter(Boolean)).toEqual(EN.slice(1));
+    expect(doc.running[1]).toBe('Arabic original · English translation');
+    expect(doc.markdown).not.toMatch(/pm03|Figurative/);
   });
   it('refuses plainly: no original, a long work, a romanized "original"', async () => {
     expect((await sbsDocument({ document_id: 20, paragraph_id: 1 }, deps({ editionsOf: async () => ({ passages: [] }) }))).error).toMatch(/no original/);

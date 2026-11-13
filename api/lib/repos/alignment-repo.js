@@ -61,9 +61,11 @@ export async function workFamily(docId, { limit = 12, authors = limit } = {}) {
       SELECT orig_doc AS doc, COUNT(*) AS links FROM content_alignment WHERE trans_doc = ? AND retired_at IS NULL GROUP BY orig_doc
       UNION ALL SELECT trans_doc, COUNT(*) FROM content_alignment WHERE orig_doc = ? AND retired_at IS NULL GROUP BY trans_doc) x
     JOIN docs d ON d.id = x.doc AND d.deleted_at IS NULL ORDER BY x.links DESC LIMIT ?`, [id, id, n], 'alignment-repo:family-aligned');
+  // the author as stored in either apostrophe (11-13: the Arabic Tablet of Aḥmad's own English twin is "Bahá’u’lláh", the Arabic "Bahá'u'lláh")
+  const names = self.author ? [...new Set([self.author, self.author.replace(/[‘’]/g, "'"), self.author.replace(/'/g, '’')])] : [];
   const byAuthor = self.author ? await queryAll(`SELECT ${FAM_COLS}, 'author' AS basis FROM docs d WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
-      AND d.author = ? AND COALESCE(d.religion, '') = COALESCE(?, '') AND d.id != ? AND LOWER(COALESCE(d.language, '')) != LOWER(COALESCE(?, '')) LIMIT ?`,
-    [self.author, self.religion, id, self.language, na], 'alignment-repo:family-author') : [];
+      AND d.author IN (${names.map(() => '?').join(',')}) AND COALESCE(d.religion, '') = COALESCE(?, '') AND d.id != ? AND LOWER(COALESCE(d.language, '')) != LOWER(COALESCE(?, '')) LIMIT ?`,
+    [...names, self.religion, id, self.language, na], 'alignment-repo:family-author') : [];
   const seen = new Set(), members = [];
   for (const m of [...recorded, ...aligned, ...byAuthor]) if (!seen.has(m.id)) { seen.add(m.id); members.push(m); }
   return { self, members: members.slice(0, n + na) };

@@ -4,6 +4,7 @@
 // → { url, title, rows, approximate }. Deps injectable.
 import { buildSideBySide, toMarkdown, verseNumber } from '../widgets/side-by-side.js';
 import { alignKey, verifyLines, MIN_LLM_CHARS } from '../../sbs/align.js';
+import { sourceKey } from '../editions.js';
 
 export const SBS_MAX_ROWS = 150;   // a tablet, not a book: a longer work is refused, never a 1000-row PDF
 const clean = (t) => String(t ?? '').replace(/\\([\\`*_{}[\]()#+\-.!>|])/g, '$1');   // stored markdown escapes ("1\\.") → plain
@@ -79,22 +80,29 @@ export async function sbsDocument({ paragraph_id: pid, document_id: did }, deps 
   const found = await pool(origs, 6, async (o) => (await d.editionsOf(o.id, { want: 'translations', limit: 2 }))?.passages?.filter((p) => p.role === 'translation') || []);
   const votes = new Map();
   for (const ps of found) for (const p of ps || []) votes.set(p.document_id, (votes.get(p.document_id) || 0) + 1);
-  // the author's own work in English (Bahá'u'lláh's tablet, not a commentary quoting it) wins; then the most aligned paragraphs
+  // the same source file in English (oceanoflights …-ar ↔ …-en: the primary pair, 11-13) wins, then the author's own work in English
+  // (Bahá'u'lláh's tablet, not a commentary quoting it: 11-13 a study paper filled the column), then the most aligned paragraphs
+  const who = (a) => String(a || '').replace(/[‘’]/g, "'").normalize('NFC');
   const auth = new Map(found.flat().filter(Boolean).map((p) => [p.document_id, p.author]));
-  const score = ([id, v]) => v + (m.author && auth.get(id) === m.author ? 1e6 : 0);
+  const tmeta = await d.getLinkMeta([...votes.keys()]).catch(() => new Map()), sk = sourceKey(m.source_url);
+  const score = ([id, v]) => v + (sk && sourceKey(tmeta.get(Number(id))?.source_url) === sk ? 2e6 : 0) + (m.author && who(auth.get(id)) === who(m.author) ? 1e6 : 0);
   const best = [...votes].sort((a, b) => score(b) - score(a))[0]?.[0];
   if (best == null) return { error: 'no translation of this work is aligned with its original in the library' };
+  // a translator by name, else the edition's title when it reads as one (never a file slug like "bahaullah-pm03-030_en")
+  const tm = tmeta.get(Number(best)) || {}, md = (() => { try { return JSON.parse(tm.metadata || '{}') || {}; } catch { return {}; } })();
+  const named = (t) => (/\s/.test(t || '') ? t : null);
   const trs = new Map();
   found.forEach((ps, i) => { const p = (ps || []).find((x) => x.document_id === best); if (!p) return;
-    const t = trs.get(p.id) || { ...p, text: clean(p.text), aligned_to: [] }; t.aligned_to.push(origs[i].id); trs.set(p.id, t); });
+    const t = trs.get(p.id) || { ...p, title: named(p.title), translator: p.translator || md.translator || md.translated_by || null, text: clean(p.text), aligned_to: [] }; t.aligned_to.push(origs[i].id); trs.set(p.id, t); });
   const data = buildSideBySide([...origs, ...trs.values()], { layout: 'tight' });
   if (!data) return { error: 'the stored original is not in its own script' };
   const verses = data.rows.length;
   let failed = 0;
   if (d.align) ({ rows: data.rows, failed } = await sentenceRows(data.rows, { ...d.align, lang }));
   const name = m.title || 'Tablet', title = `${name}: ${data.original.label} and English`, tr = data.translations[0];
-  const by = tr?.translator ? `translation by ${tr.translator}` : tr?.title ? `English from ${tr.title}` : 'English translation';
-  const intro = `${m.author ? `${m.author}, ` : ''}*${name}*: the ${data.original.label} original beside ${tr?.translator || tr?.title || 'its English translation'}, sentence by sentence.`;
+  const translator = tr?.translator || null, ttitle = tr?.title || null;
+  const by = translator ? `translation by ${translator}` : ttitle ? `English from ${ttitle}` : 'English translation';
+  const intro = `${m.author ? `${m.author}, ` : ''}*${name}*: the ${data.original.label} original beside ${translator ? `the translation by ${translator}` : ttitle || 'its English translation'}, sentence by sentence.`;
   const doc = await d.documents.create({ title, markdown: `${intro}\n\n<!-- widget:${data.id} -->\n\n${toMarkdown(data)}`, widgets: [data],
     qr: { url: data.work?.url || data.rows[0]?.original?.url, label: `${data.original.label} on Ocean of Lights` },
     running: [`${name} Study`, `${data.original.label} original · ${by}`],
