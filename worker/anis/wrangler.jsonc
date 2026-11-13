@@ -1,0 +1,13 @@
+// The Anís edge Worker (brief C). Secrets: ANTHROPIC_API_KEY, TOWER_KEY (wrangler secret put). Deploy by the lead only.
+{
+  "name": "anis",
+  "main": "index.js",
+  "account_id": "b750d0f7242bbc76f115f72840453083",
+  "compatibility_date": "2025-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "vars": { "TOWER_URL": "https://api.siftersearch.com" },
+  "ai": { "binding": "AI" },
+  "d1_databases": [{ "binding": "ANIS_DB", "database_name": "anis", "database_id": "b7f3d052-7c71-4a0f-aa84-3532c2feb52d", "migrations_dir": "../d1/anis" }],
+  "vectorize": [{ "binding": "ANIS_VEC", "index_name": "anis-research" }]
+}

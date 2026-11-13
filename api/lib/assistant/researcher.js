@@ -16,7 +16,7 @@ import { toolRunner as coreToolRunner, TOOL_CHARS, clipText, fitLengths, pickRen
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 export { translationLabel, letterVariants, TOOL_CHARS, fitLengths, pickRendering, renderingNote, ORIGINALS_QUOTA, isOriginalLanguage };
 // toolRunner (tool-runner.js, pure) with this process's defaults: rights, the title finder, the link maps
-const serverFallback = {
+export const serverFallback = {
   encumberedAmong: async (ids) => (await import('../repos/rights-repo.js')).encumberedAmong(ids),
   work: async (t) => (await import('./work-request.js')).findTitled([t]),
   urlOf: async (all, hasWork) => {
