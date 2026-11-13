@@ -9,5 +9,7 @@
   "vars": { "TOWER_URL": "https://api.siftersearch.com" },
   "ai": { "binding": "AI" },
   "d1_databases": [{ "binding": "ANIS_DB", "database_name": "anis", "database_id": "b7f3d052-7c71-4a0f-aa84-3532c2feb52d", "migrations_dir": "../d1/anis" }],
-  "vectorize": [{ "binding": "ANIS_VEC", "index_name": "anis-research" }]
+  "vectorize": [{ "binding": "ANIS_VEC", "index_name": "anis-research" }],
+  // 10 turns a minute per visitor IP (each turn is a paid model call); over it → 429
+  "ratelimits": [{ "name": "CHAT_LIMIT", "namespace_id": "4801", "simple": { "limit": 10, "period": 60 } }]
 }

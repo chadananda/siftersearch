@@ -89,6 +89,11 @@ describe('anis worker chat', () => {
     const { events } = await post();
     expect(events.at(-1)).toEqual({ type: 'error', message: 'An error occurred. Please try again.' });
   });
+  it('over the per-visitor limit → 429 before any model call', async () => {
+    const env = { ...mkEnv(), CHAT_LIMIT: { limit: async ({ key }) => ({ success: key !== '9.9.9.9' }) } };
+    const res = await chat(new Request('https://anis.test/api/chat/stream', { method: 'POST', headers: { 'cf-connecting-ip': '9.9.9.9' }, body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] }) }), env, { waitUntil() {} }, { fetch: async () => { throw new Error('no call expected'); } });
+    expect(res.status).toBe(429); expect(res.headers.get('retry-after')).toBe('60');
+  });
   it('rejects an empty body, answers preflight and healthz', async () => {
     const env = mkEnv(), ctx = { waitUntil() {} };
     expect((await chat(new Request('https://a/api/chat/stream', { method: 'POST', body: '{}' }), env, ctx)).status).toBe(400);
@@ -113,5 +118,15 @@ describe('anis worker utilities', () => {
     expect(got).toEqual(['a', 'b']);
     const bad = new ReadableStream({ start(c) { c.enqueue(enc.encode('data: {"type":"error","error":{"message":"x"}}\n\n')); c.close(); } });
     await expect((async () => { for await (const e of sseEvents(bad)) void e; })()).rejects.toThrow('x');
+  });
+});
+
+describe('site worker → Anís edge switch', () => {
+  // the site worker imports the Astro bundle, so its routing is checked in source (as docs-edge-purge.test.js does)
+  it('chat turns go to the ANIS service only while the ANIS_EDGE secret is "1"; the binding is declared', () => {
+    const w = readFileSync(new URL('../../worker/index.js', import.meta.url), 'utf8');
+    expect(w).toContain("if (env.ANIS_EDGE === '1' && env.ANIS && url.pathname === '/api/chat/stream' && request.method === 'POST') return env.ANIS.fetch(request);");
+    expect(w.indexOf("env.ANIS_EDGE === '1'")).toBeLessThan(w.indexOf('if (isApiPath(url.pathname))'));
+    expect(readFileSync(new URL('../../wrangler.jsonc', import.meta.url), 'utf8')).toMatch(/"services": \[\{ "binding": "ANIS", "service": "anis" \}\]/);
   });
 });

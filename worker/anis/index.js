@@ -97,6 +97,9 @@ export async function chat(request, env, ctx, deps = {}) {
   const body = await request.json().catch(() => null);
   const messages = Array.isArray(body?.messages) ? body.messages.filter((m) => m && typeof m.content === 'string').map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })) : [];
   if (!messages.length) return json({ error: 'messages required' }, 400, cors(request));
+  // per-visitor turn limit (CHAT_LIMIT ratelimit binding, wrangler.jsonc): every turn here is a paid model call
+  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+  if (env.CHAT_LIMIT && !(await env.CHAT_LIMIT.limit({ key: ip }).catch(() => ({ success: true }))).success) return json({ error: 'Too many questions at once — please wait a minute.' }, 429, { ...cors(request), 'retry-after': '60' });
   const { readable, writable } = new TransformStream(), writer = writable.getWriter();
   let chain = Promise.resolve();
   const send = (o) => { chain = chain.then(() => writer.write(enc.encode(`data: ${JSON.stringify(o)}\n\n`))).catch(() => {}); return chain; };

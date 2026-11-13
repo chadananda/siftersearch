@@ -140,6 +140,9 @@ export function createExports(manifest) {
         }
         if (request.method === 'GET' && /^\/dewey\/item\/\d+$/.test(url.pathname)) return fetch(`${API_ORIGIN}/api/v1/dewey-mail/item/${url.pathname.split('/').pop()}${url.search}`, { headers: { accept: 'text/html' } });
         if (url.pathname.startsWith('/_work/')) return workRoute(request, env);
+        // Anís at the edge (worker/anis, service binding ANIS): chat turns go there only while the ANIS_EDGE secret is '1' —
+        // flip with `wrangler secret put ANIS_EDGE` (no build); delete it → tower again
+        if (env.ANIS_EDGE === '1' && env.ANIS && url.pathname === '/api/chat/stream' && request.method === 'POST') return env.ANIS.fetch(request);
         // media files: R2 at the edge (worker/media.js); falls through to the plain proxy when not cacheable
         if (MEDIA_FILE.test(url.pathname)) { const r = await mediaFile(request, env, ctx, API_ORIGIN); if (r) return r; }
         // public pages + public API reads: edge stale-while-revalidate (worker/edge-cache.js) — any cached copy answers at once
