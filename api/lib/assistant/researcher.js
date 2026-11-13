@@ -351,6 +351,7 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
       { ...ctx, meta: { title: p.title, author: p.author, religion: p.religion } })).passages,
     whole: (p) => runTool('whole_lookup', { document_id: p.document_id, paragraph_index: Number(p.paragraph_index) || 0 },
       { ...ctx, meta: { title: p.title, author: p.author, religion: p.religion } }),
+    sbsDocument: (p) => runTool('side_by_side_document', { document_id: Number(p.document_id), paragraph_id: Number(p.id) }, ctx),
     original: (english) => passages('original_lookup', { english }),
     translation: (original) => passages('translation_lookup', { original }),
     wordStudy: async (word) => {

@@ -177,6 +177,16 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
       const all = [w.doc, ...w.others], urlOf = await (fallback.urlOf ? fallback.urlOf(all, !!impl.work) : (x) => x.url);   // the online publisher wins, as for a passage
       return all.map((x, i) => `[${addWork({ ...x, url: urlOf(x), ...(i ? { other: true } : {}) })}] ${x.title}${x.author ? ` — ${x.author}` : ''}${x.encumbered === 1 ? ' (copyrighted: opening pages only)' : ''}\nlink: ${urlOf(x) || 'none (no public page: write the title unlinked)'}`).join('\n\n');
     },
+    // the whole tablet as a PDF, original beside translation — its link a [B#] the reply gives (Chad 11-13)
+    side_by_side_document: async ({ ref }) => {
+      const p = found.get(String(ref).toUpperCase());
+      if (!p?.document_id) return 'unknown ref';
+      if (!impl.sbsDocument) return 'documents cannot be made here';
+      const r = await impl.sbsDocument(p).catch((e) => ({ error: e.message }));
+      if (!r?.url) return `no side-by-side document: ${r?.error || 'it could not be made'} — say so in one line`;
+      const b = addWork({ id: `sbs-${r.document_id}`, title: `${r.title} (PDF)`, url: r.url, pdf: true });
+      return `[${b}] ${r.title}: a printable PDF, ${r.rows} rows${r.approximate ? ', aligned approximately' : ''}. Give it to the reader as [[${b}]].`;
+    },
     original_lookup: async ({ english }) => show((await impl.original(english)).map((x) => add(x))),
     translation_lookup: async ({ original }) => {
       const found = impl.translation ? await impl.translation(original) : [];

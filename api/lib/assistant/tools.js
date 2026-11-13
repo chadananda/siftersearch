@@ -356,6 +356,15 @@ const ENTRIES = [
       return { passages: got.rows.map((r, i) => toPassage({ ...r, title: meta.title, author: meta.author, religion: meta.religion, collection: meta.collection, year: meta.year, document_id: docId, source_url: linked[i]?.url || null })),
         copyright: got.bound === 'copyright', bound: got.bound };
     } },
+  // a whole tablet, original beside translation, as a PDF (Chad 11-13: "offer a SBS translation document"); pdf/sbs-document.js
+  { name: 'side_by_side_document', label: 'Side-by-Side Document', kind: 'tool', refInput: true, outputName: 'PDF link', cost: C(false, 300),
+    purpose: 'Builds a printable PDF of a whole work in its original language beside its translation, one row per paragraph (the CTAI-style side-by-side).',
+    description: 'Make a printable PDF of the whole tablet a found passage (its ref, original or translation) belongs to: the original in its own script beside the English, paragraph by paragraph. Only when the reader asks for the document.',
+    input: { type: 'object', additionalProperties: false, required: ['document_id', 'paragraph_id'], properties: { document_id: { type: 'integer' }, paragraph_id: { type: 'integer' } } },
+    output: { type: 'object', properties: { url: { type: 'string' }, title: { type: 'string' }, rows: { type: 'integer' }, approximate: { type: 'boolean' }, document_id: { type: 'integer' },
+      error: { type: 'string', description: 'why no document could be made (no original held, too long, no aligned translation)' } } },
+    example: { input: { document_id: 12, paragraph_id: 3401 }, output: { url: 'https://r2.example/anis/pdf/x/anis-tablet.pdf', title: 'Lawḥ-i-Aḥmad: Arabic and English', rows: 14, approximate: false, document_id: 12 } },
+    async run(a) { return (await import('./pdf/sbs-document.js')).sbsDocument({ document_id: a.document_id, paragraph_id: a.paragraph_id }); } },
   // the Writings in their ORIGINAL languages (11-04, measured: an English query's fused ranking puts no Persian/Arabic Writing in
   // its top 8 — English-English phrase matches fill it — while the same query held to the ar-fa group returns 22-29 originals of 30)
   { name: 'originals_search', label: 'Originals Search', kind: 'tool', outputName: 'Passage[]', cost: C(true, 250),

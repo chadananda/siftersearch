@@ -390,6 +390,25 @@
   {
    "type": "function",
    "function": {
+    "name": "side_by_side_document",
+    "description": "Make a printable PDF of the whole tablet a found passage (its ref, original or translation) belongs to: the original in its own script beside the English, paragraph by paragraph. Only when the reader asks for the document.",
+    "parameters": {
+     "type": "object",
+     "properties": {
+      "ref": {
+       "type": "string",
+       "description": "The passage ref, e.g. P3"
+      }
+     },
+     "required": [
+      "ref"
+     ]
+    }
+   }
+  },
+  {
+   "type": "function",
+   "function": {
     "name": "rendering_lookup",
     "description": "How Shoghi Effendi rendered an Arabic/Persian word or root across the Writings (the CTAI concordance): his English renderings with counts, and passages pairing the original with his English. Give the word in ARABIC SCRIPT.",
     "parameters": {
@@ -524,6 +543,7 @@
   "originals",
   "ownSource",
   "probe",
+  "sbsDocument",
   "search",
   "searchBy",
   "searchIn",
