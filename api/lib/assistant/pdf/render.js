@@ -76,8 +76,8 @@ function inline(doc, spans, { x, y, width, size = 10.5, gap = 2.5, color = COLOR
   return doc.y;
 }
 
-/** Markdown → PDF Buffer. opts: { title, markdown, date, siteUrl, onlineUrl, widgets, qr: { url, label } (a QR beside the title) } */
-export async function renderPdf({ title = '', markdown = '', date = new Date(), siteUrl = SITE, onlineUrl = null, widgets = [], qr = null } = {}) {
+/** Markdown → PDF Buffer. opts: { title, markdown, date, siteUrl, onlineUrl, widgets, qr: { url, label } (a QR beside the title), running: [line1, line2] (the header on every page, after "Anís ·") } */
+export async function renderPdf({ title = '', markdown = '', date = new Date(), siteUrl = SITE, onlineUrl = null, widgets = [], qr = null, running = null } = {}) {
   const doc = new PDFDocument({ size: [P.w, P.h], margins: { top: P.top, bottom: P.bottom, left: P.l, right: P.r }, bufferPages: true,
     info: { Title: String(title).slice(0, 200), Author: 'Anís, Ocean AI Research Assistant', Creator: 'Anís · OceanLibrary.com' } });
   const chunks = []; doc.on('data', (c) => chunks.push(c));
@@ -94,8 +94,9 @@ export async function renderPdf({ title = '', markdown = '', date = new Date(), 
 
   const header = () => {
     doc.save().translate(P.l - 2, 27).scale(26 / 512).path(logo).fill(COLOR.sea).restore();
-    doc.font('h0').fontSize(15).fillColor(COLOR.sea).text('Anís', P.l + 30, 32, { lineBreak: false });
-    doc.font('s0').fontSize(8).fillColor(COLOR.mist).text('Ocean AI Research Assistant', P.l + 30, 50, { lineBreak: false });
+    const fit = (t, n) => (t.length > n ? `${t.slice(0, n - 1)}…` : t);   // one line each, never wrapped into the rule
+    inline(doc, [{ text: running?.[0] ? `Anís · ${fit(running[0], 52)}` : 'Anís', style: 'h' }], { x: P.l + 30, y: 31, width: W - 130, size: 15, color: COLOR.sea });
+    inline(doc, [{ text: fit(running?.[1] || 'Ocean AI Research Assistant', 90), style: 's' }], { x: P.l + 30, y: 50, width: W - 130, size: 8, color: COLOR.mist });
     doc.font('s0').fontSize(8).fillColor(COLOR.mist).text('OceanLibrary.com', P.l, 40, { width: W, align: 'right', lineBreak: false, link: siteUrl });
     doc.moveTo(P.l, 68).lineTo(P.w - P.r, 68).lineWidth(0.6).strokeColor(COLOR.rule).stroke();
     doc.x = P.l; doc.y = P.top;

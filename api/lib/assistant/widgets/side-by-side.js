@@ -100,6 +100,14 @@ const fit = (list, n) => (list.length > n ? [...list.slice(0, n - 1), { text: li
 const sents = (cells) => cells.flatMap((c) => sentences(c.text).map((text, i) => ({ text, url: i === 0 ? c.url : null })));
 /** data → sentence rows [{ original: {text,url}, translations: [{text,url}] }]. Each unit (tight rows tied by spans) is split into sentences; the original and each
  *  translation pair in order; when counts differ the surplus sentences share the last row with the nearest one (rows = the smallest non-empty count). */
+const NUM = /^\s*[([]?([0-9\u0660-\u0669\u06f0-\u06f9]{1,4})[.)\]]\s+/;   // a leading verse number ("4. ", "(٤) ")
+const latin = (d) => d.replace(/[\u0660-\u0669]/g, (c) => c.charCodeAt(0) - 0x660).replace(/[\u06f0-\u06f9]/g, (c) => c.charCodeAt(0) - 0x6f0);
+/** "4. O Ahmad!" → { num: '4', rest: 'O Ahmad!' }; no number → { num: null, rest } */
+export function verseNumber(text) {
+  const t = String(text ?? ''), m = t.match(NUM);
+  return m ? { num: latin(m[1]), rest: t.slice(m[0].length) } : { num: null, rest: t };
+}
+
 export function studyRows(data) {
   const out = [], rows = data.rows, nT = data.translations.length;
   for (let i = 0; i < rows.length;) {

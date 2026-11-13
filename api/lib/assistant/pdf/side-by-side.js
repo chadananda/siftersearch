@@ -1,11 +1,9 @@
 // Print renderer for the side_by_side widget (pdf/render.js calls it). The original is shaped right-to-left in Amiri (font 'a0': fontkit joins the letters; words are
 // wrapped here with NBSP so pdfkit cannot drop the word gaps); translations flow through render.js' inline(). A QR to the work floats on the right edge unless the page already carries it at the top (ctx.topQr).
 // tight = one ruled row per verse (spans merged); study = sentence rows, no rules. The verse number sits in a narrow centre column.
-import { studyRows, heads } from '../widgets/side-by-side.js';
+import { studyRows, heads, verseNumber } from '../widgets/side-by-side.js';
 
 const PAD = 4, SIZE = 9.5, AR = 15, NB = ' ', NW = 22;
-const NUM = /^\s*[([]?([0-9\u0660-\u0669\u06f0-\u06f9]{1,4})[.)\]]\s+/;   // a leading verse number ("4. ", "(٤) ")
-const latin = (d) => d.replace(/[\u0660-\u0669]/g, (c) => c.charCodeAt(0) - 0x660).replace(/[\u06f0-\u06f9]/g, (c) => c.charCodeAt(0) - 0x6f0);
 // greedy wrap of Arabic-script text into lines (each NBSP-joined) that fit `width`
 export function rtlLines(doc, text, width, size = AR) {
   doc.font('a0').fontSize(size);
@@ -24,11 +22,14 @@ export function drawSideBySide(doc, data, ctx, { layout = data.layout ?? 'tight'
   // the verse number leaves the text for the centre column: the translation's own number, else the original's
   const nums = [];
   const rows = (study ? studyRows(data) : data.rows).map((r, i) => {
-    const strip = (c) => { if (!c?.text) return c; const m = String(c.text).match(NUM); if (!m) return c; nums[i] ??= latin(m[1]); return { ...c, text: c.text.slice(m[0].length) }; };
+    const strip = (c) => { if (!c?.text) return c; const v = verseNumber(c.text); if (!v.num) return c; nums[i] ??= v.num; return { ...c, text: v.rest }; };
     const translations = r.translations.map(strip);
     return { ...r, original: strip(r.original), translations };
   });
-  const label = (i) => (nums.some(Boolean) ? nums[i] ?? '' : String(i + 1));
+  // sentence rows (r.verse set) number only a verse's first sentence and rule only between verses
+  const sentences = rows.some((r) => r.verse != null);
+  const label = (i) => (sentences ? (rows[i].first ? String(rows[i].verse) : '') : nums.some(Boolean) ? nums[i] ?? '' : String(i + 1));
+  const ends = (k) => !sentences || k === rows.length - 1 || rows[k + 1].first;
   const nw = n ? NW : 0, avail = width - nw;
   const lh = (() => { doc.font('a0').fontSize(AR); return doc.currentLineHeight(true) + 2; })();
   const txt = (c, w) => (c?.text ? ctx.measure([{ text: c.text, style: 'r' }], { width: w - 2 * PAD, size: SIZE, gap: 1.5 }) : 0);
@@ -85,7 +86,7 @@ export function drawSideBySide(doc, data, ctx, { layout = data.layout ?? 'tight'
       } else ctx.inline(doc, [{ text: r.original.text, style: 'r', ...(r.original.url ? { link: r.original.url } : {}) }], { x: x + PAD, y: y + PAD, width: ow - 2 * PAD, size: SIZE, gap: 1.5 });
       y += h[k];
       // the rule under a row: full width at the end of the group, the original column only inside a spanned group
-      if (!study) doc.moveTo(x, y).lineTo(k === j - 1 ? x + width : x + ow, y).lineWidth(0.5).strokeColor(color.rule).stroke();
+      if (!study && ends(k)) doc.moveTo(x, y).lineTo(k === j - 1 ? x + width : x + ow, y).lineWidth(0.5).strokeColor(color.rule).stroke();
     }
     doc.y = y; i = j;
   }

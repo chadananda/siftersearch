@@ -1,6 +1,6 @@
 // pdf/sbs-document.js: a whole tablet, original beside its aligned translation, as a PDF (Chad 11-13); and the runner tool that hands its link over.
 import { describe, it, expect } from 'vitest';
-import { sbsDocument, SBS_MAX_ROWS } from '../../api/lib/assistant/pdf/sbs-document.js';
+import { sbsDocument, sentenceRows, SBS_MAX_ROWS } from '../../api/lib/assistant/pdf/sbs-document.js';
 import { toolRunner } from '../../api/lib/assistant/tool-runner.js';
 
 const AR = ['بسم الله الأمنع الأقدس', 'هذه ورقة الفردوس تغنّ على أفنان سدرة البقاء', 'قل يا قوم اتّقوا الله'];
@@ -64,5 +64,35 @@ describe('documents cache', () => {
     const c = await docs.create({ title: 'Tablet', markdown: 'x' });
     expect(c.url).not.toBe(a.url);
     expect(renders).toBe(2);
+  });
+});
+
+describe('sentenceRows', () => {
+  const ar = 'قل إنه لسلطان الرسل وكتابه لأم الكتاب إن أنتم من العارفين. كذلك يذكركم الورقاء في هذا السجن.';
+  const en = 'Say: He is the King of the Messengers and His Book is the Mother Book. Thus doth the Nightingale utter His call in this prison.';
+  const rows = [
+    { original: { text: ar, url: 'o1' }, translations: [{ text: `1. ${en}`, url: 't1' }] },
+    { original: { text: 'قصير' }, translations: [{ text: '2. Short.' }] },
+  ];
+  const split = (t) => t.replace(/\. /g, '.\n');
+  it('splits a verse at matching sentences, numbers only its first row, caches the pair; a short verse stays whole', async () => {
+    const put = []; let calls = 0;
+    const { rows: out, failed } = await sentenceRows(rows, { lang: 'ar', cacheGet: async () => new Map(), cachePut: async (k, v) => put.push(k),
+      llm: async (o, e) => { calls++; return { source: split(o), translation: split(e) }; } });
+    expect(failed).toBe(0);
+    expect(calls).toBe(1);
+    expect(put).toHaveLength(1);
+    expect(out.map((r) => [r.verse, r.first])).toEqual([['1', true], ['1', false], ['2', true]]);
+    expect(out[0].translations[0].text).toBe('Say: He is the King of the Messengers and His Book is the Mother Book.');
+    expect(out[1].original.url).toBeNull();
+    expect(out[2].translations[0].text).toBe('Short.');
+  });
+  it('an aligner that changes words → the verse stays one row; an error → failed, nothing cached', async () => {
+    const bad = await sentenceRows(rows, { lang: 'ar', cacheGet: async () => new Map(), cachePut: async () => {}, llm: async () => ({ source: 'x\ny', translation: 'a\nb' }) });
+    expect(bad.rows).toHaveLength(2);
+    const put = [];
+    const err = await sentenceRows(rows, { lang: 'ar', cacheGet: async () => new Map(), cachePut: async (k) => put.push(k), llm: async () => { throw new Error('busy'); } });
+    expect(err.failed).toBe(1);
+    expect(put).toHaveLength(0);
   });
 });
