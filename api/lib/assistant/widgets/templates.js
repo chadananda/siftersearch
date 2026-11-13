@@ -6,12 +6,12 @@ import { WIDGETS, widgetBlock } from './index.js';
 const LINE = /^[ \t]*\{\{\s*([a-z_]+)((?:[\s,]+[PB]\d+)+)\s*\}\}[ \t]*$/gm;
 export const TEMPLATE_KINDS = Object.keys(WIDGETS);
 
-export function expandTemplates(text, refs) {
+export function expandTemplates(text, refs, { start = 0 } = {}) {
   const widgets = [];
   const out = String(text || '').replace(LINE, (m, kind, list) => {
     const data = WIDGETS[kind]?.fromRefs?.(list.trim().split(/[\s,]+/), refs);
     if (!data) return '';
-    data.id = `${kind}-${widgets.length + 1}`;
+    data.id = `${kind}-${start + widgets.length + 1}`;
     widgets.push(data);
     return `\n${widgetBlock(data)}\n`;
   }).replace(/\{\{[^{}\n]*\}\}/g, '').replace(/\n{3,}/g, '\n\n').trim();

@@ -426,6 +426,7 @@ export function checkLinks(text, sources = []) {
       return `${ws}[${s ? `*${s.title}*` : host || 'link'}](${url})`;
     }
     if (/^[*_\s]*["“]/.test(label)) return m;
+    if (foldT(byUrl.get(url)?.title || '') === foldT(label.replace(/[*_]/g, ''))) return m;   // already its own source's link (two books of one title)
     const s = byTitle.get(foldT(label.replace(/[*_]/g, '')));
     if (!s) return m;
     const good = !!s.url && slugAgrees(s.url, s.title);

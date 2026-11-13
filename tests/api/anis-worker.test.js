@@ -65,6 +65,21 @@ describe('anis worker chat', () => {
     expect(seen.tower).toEqual(['logUsage']);
   });
 
+  it('formatting is live: a template becomes its widget the moment its line streams, and the reply is exactly what streamed', async () => {
+    const env = mkEnv();
+    await capture(env, 'what is prayer?', [P(1), P(2)]);
+    const { post } = rig(env, [() => callTool('t1', 'research_lookup', { question: 'what is prayer?' }),
+      () => say('Prayer is communion with God, the essence of worship for every soul who turns to Him in the morning and the evening, in joy and in sorrow, alone or gathered with friends, with words revealed for that purpose [[P1]].\n\n{{quote P2}}\n\nSo pray each day.')]);
+    const { events } = await post();
+    const iw = events.findIndex((e) => e.type === 'widget'), it = events.findIndex((e) => e.type === 'text' && e.content.includes('<!-- widget:quote-1 -->'));
+    expect(iw).toBeGreaterThan(-1); expect(it).toBeGreaterThan(iw);
+    expect(events.findIndex((e) => e.type === 'text' && e.content.includes('So pray'))).toBeGreaterThan(it);   // the card shows before the next sentence streams
+    expect(events.filter((e) => e.type === 'widget')).toHaveLength(1);
+    const streamed = events.filter((e) => e.type === 'text').map((e) => e.content).join('').trim();
+    expect(streamed).toContain('](https://x/1)');
+    expect(events.filter((e) => e.type === 'chunk').map((e) => e.text).join('')).toBe(streamed);
+  });
+
   it('cache hit: research_lookup is local (no tower call), events arrive in protocol order, turn is persisted', async () => {
     const env = mkEnv();
     await capture(env, 'what is prayer?', [P(1), P(2)]);

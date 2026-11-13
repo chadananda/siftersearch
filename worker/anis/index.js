@@ -10,6 +10,7 @@ import { thinkingParam } from '../../api/lib/model-registry.js';
 import { lookup, capture, logQuestion, saveTurn, embed, EMBED_MODEL, SAME_QUESTION } from './research-store.js';
 import { restate, underPriceBoundary } from './restate.js';
 import { finishLinks, templateFilter } from './links.js';
+const formSources = (xs) => xs.map((x) => ({ title: x?.title, url: x?.url ?? x?.source_url ?? null, text: x?.text ?? null }));
 import snapshot from './agent-tools.json';
 
 const HELD_IN_TURN = 0.75;
@@ -115,7 +116,7 @@ export async function chat(request, env, ctx, deps = {}) {
     const t0 = Date.now();
     let firstText = null, rounds = 0;
     const roundMs = [], trace = [];   // per model round: [first token ms, done ms] from the round's start
-    const shown = templateFilter();   // {{quote P3}} … never streams raw; the widget arrives with the finished reply
+    const shown = templateFilter();   // {{quote P3}} … never streams raw (the agent expands each as its sentence is released; this is the guard)
     const emit = (e) => {
       if (e.type === 'text') { const content = shown(e.content); if (!content) return; e = { ...e, content }; }
       if (firstText == null && (e.type === 'text' || e.type === 'chunk')) firstText = Date.now() - t0;
@@ -164,13 +165,14 @@ export async function chat(request, env, ctx, deps = {}) {
       }
       const { impl, stat } = remoteImpl(env, { turn, local, fetchFn });
       const model = modelFor('anis-agent').model, create = metered(deps.create || nativeFetchCreate(env, model, fetchFn, body.trace ? trace : null), model, 'anis-agent-edge', tally);
-      const A = await agentAnswer({ messages, onEvent: emit, frame, tools: impl, toolDefs: snapshot.tools, runner: runnerFor(impl), held,
+      const A = await agentAnswer({ messages, onEvent: emit, frame, tools: impl, toolDefs: snapshot.tools, runner: runnerFor(impl), held, links: (t, ps) => finishLinks(formPass(t, { sources: formSources(ps) }).text, [...ps, ...(held?.passages || [])]).text,
         create: async (p) => { rounds++; const t = Date.now(), rec = [null, null]; roundMs.push(rec); const r = await create(p);
           if (!p.stream) { rec[0] = rec[1] = Date.now() - t; return r; }
           return (async function* () { for await (const c of r) { rec[0] ??= Date.now() - t; yield c; } rec[1] = Date.now() - t; })(); }, workNotes: (title) => impl.workNotes(title).catch(() => ({ work: null, notes: [] })) });
       if (!A.reply) { emit({ type: 'error', message: 'An error occurred. Please try again.' }); return; }
       // the form pass every tower reply gets (turn.js): emphasis repaired, link labels checked, a closing search offer dropped
-      A.reply = formPass(A.reply, { sources: [...A.citations, ...A.retrieved].map((x) => ({ title: x?.title, url: x?.url ?? x?.source_url ?? null, text: x?.text ?? null })) }).text;
+      // (a streamed reply had it sentence by sentence, through `links`: what the reader saw is the reply, never re-formed after)
+      if (!A.widgetsShown) A.reply = formPass(A.reply, { sources: formSources([...A.citations, ...A.retrieved]) }).text;
       emit({ type: 'stage', stage: 'craft' });
       // links finished here from the passages the turn holds (Chad 11-13: no tower round-trip but new research); follow-up pills meanwhile
       const fmodel = modelFor('anis-followups').model, fcreate = guarded(metered(deps.create || nativeFetchCreate(env, fmodel, fetchFn), fmodel, 'anis-followups-edge', tally), fmodel);
@@ -179,7 +181,7 @@ export async function chat(request, env, ctx, deps = {}) {
       const fin = finishLinks(A.reply, pool), reply = fin.text;
       const citations = A.citations.map((c) => ({ ...c, url: c.url ? finishLinks(c.url, pool).text : c.url }));
       emit({ type: 'sources', sources: citations, plan: { shape: 'agent' } });
-      for (const widget of A.widgets || []) emit({ type: 'widget', widget });   // inline templates the writer chose (widgets/templates.js), before the text that places them
+      if (!A.widgetsShown) for (const widget of A.widgets || []) emit({ type: 'widget', widget });   // inline templates the writer chose (widgets/templates.js), before the text that places them; a streamed reply sent each as it was written
       for (const w of reply.split(/(\s+)/)) if (w) emit({ type: 'chunk', text: w });
       const cites = citations.slice(0, 8).map((q) => ({ document_id: q.document_id, paragraph_index: q.paragraph_index, text: q.text, title: q.title, author: q.author, religion: q.religion, url: q.url }));
       if (cites.length) emit({ type: 'citations', citations: cites });

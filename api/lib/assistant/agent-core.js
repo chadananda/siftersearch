@@ -133,7 +133,7 @@ export async function readRound(create, params, onText = null) {
 // The server pieces are injected (agent.js): toolDefs (the LLM tool schemas), canonical (tool name resolver), workNotes(title, notes) → { work, notes },
 // post.dropPreamble, runner (toolRunner with the server fallbacks: rights, title finder, link maps), cards(args, opts) → refCards, maxTokens (reply ceiling). Each defaults to a pure no-op so the core runs in a Worker.
 export async function agentAnswer({ messages, create, tools: raw, onEvent = () => {}, maxRounds = 8, maxCalls = 24, subject = null, cache = null, cardDocs = undefined, frame = null,
-  toolDefs = [], canonical = (n) => n, held = null, workNotes = (title, notes) => workNotesLookup(title, notes || (async () => ({ works: [] }))), post = {}, cards: cardsFn = null, maxTokens = 16000, runner = toolRunner }) {
+  toolDefs = [], canonical = (n) => n, held = null, links = (t) => t, workNotes = (title, notes) => workNotesLookup(title, notes || (async () => ({ works: [] }))), post = {}, cards: cardsFn = null, maxTokens = 16000, runner = toolRunner }) {
   const dropPreamble = post.dropPreamble || ((t) => t);
   const impl = cache ? cachedImpl(raw, cache) : raw;   // data-level cache: refs are per turn, so what is stored is the passages, never the rendered text
   // spec #5 (11-06): the first round's library search must carry Jev's subject (query-anchor.js) — code checks, never intent
@@ -208,10 +208,23 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   // the answering round streams a sentence at a time; only sentences whose quotations are in a passage held are shown
   const asked0 = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const held0 = () => [...found.values()].map((p) => ({ ...p, source_title: p.title }));
-  let gate = null;
+  let gate = null, live = '';
+  const liveWidgets = [];
+  const heldNowAll = () => [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
+  // each released sentence is finished as the final reply is (Chad 11-13 "formatting live"): refs → links, quotations restored,
+  // credited, linked and styled, links narrowed, a template → its widget at once (event first, then the text holding its marker)
+  const finishLive = (s) => {
+    const [, lead, core, trail] = String(s).match(/^(\s*)([\s\S]*?)(\s*)$/);
+    if (!core) return s;
+    const ret = heldNowAll();
+    const t = linkQuotes(fixQuoteSpeakers(restoreElisions(renderRefs(core, { found, works }), ret, { asked: asked0 }).text, ret).text, ret).text;
+    const x = expandTemplates(markQuotes(t, ret).text, { found, works, books: bookCards }, { start: liveWidgets.length });
+    for (const w of x.widgets) { liveWidgets.push(w); onEvent({ type: 'widget', widget: w }); }
+    return lead + links(x.text, ret) + trail;
+  };
   const onText = (t) => {
     if (t.includes(NOT_FOUND)) { gate = false; return; }   // a not-found draft may be nudged into another round: never shown
-    gate ??= createSentenceGate(held0(), (s) => onEvent({ type: 'text', content: renderRefs(s, { found, works }) }), { asked: asked0 });
+    gate ??= createSentenceGate(held0(), (s) => { const c = finishLive(s); live += c; onEvent({ type: 'text', content: c }); }, { asked: asked0 });
     if (gate) gate.push(t);
   };
   for (let round = 0; round < maxRounds; round++) {
@@ -269,9 +282,12 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const guarded = dropUnverified(whole.text, retrieved, { asked });
   const speakers = fixQuoteSpeakers(guarded.text, retrieved);
   const linked = linkQuotes(speakers.text, retrieved);
-  const offerless = dropSearchOffer(dropPreamble(linked.text).trim());   // the research is his to run, never an offer (11-04 #163)
+  // streamed: the reply IS what the reader watched arrive, finished sentence by sentence (finishLive) — nothing snaps at the end
+  const shown = streamed && live.trim() ? live : null;
+  const offerless = dropSearchOffer(dropPreamble(shown ?? linked.text).trim());   // the research is his to run, never an offer (11-04 #163)
   // inline templates ({{quote P3}} …) → widget marker + fallback + data, last: the words are the passage's own, never re-grounded (widgets/templates.js)
-  const { text: reply, widgets } = expandTemplates(markQuotes(offerless.text, retrieved).text, { found, works, books: bookCards });   // quoted words styled apart (Chad 11-04)
+  const { text: reply, widgets } = shown != null ? { text: offerless.text, widgets: liveWidgets }
+    : ((x) => ({ ...x, text: links(x.text, retrieved) }))(expandTemplates(markQuotes(offerless.text, retrieved).text, { found, works, books: bookCards }));   // quoted words styled apart (Chad 11-04)
   const citations = [...[...works.values()].map((w) => ({ title: w.title, author: w.author, url: w.url, religion: w.religion, document_id: w.id, paragraph_index: null, text: '' })),
     ...retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url, religion: q.religion, document_id: q.doc_id, paragraph_index: q.paragraph_index ?? null, text: String(q.text).slice(0, 300) }))]
     .filter((c) => c.url && reply.includes(c.url));
@@ -285,7 +301,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   if (reply && cardsFn) cards = await Promise.resolve().then(() => cardsFn({ reply, passages: cited.filter((q) => fromStrategy.has(q.ref)),
     books: [...bookCards].filter(([ref]) => works.get(ref)?.url && reply.includes(works.get(ref).url)).map(([, b]) => b) }, cardDocs ? { docs: cardDocs } : {})).catch(() => cards);
   const tally = steps.reduce((t, x) => ({ ...t, [x.cache]: (t[x.cache] || 0) + 1 }), {});
-  return { reply, raw: final, retrieved: cited, citations, steps, usage, cards, widgets, streamed,
+  return { reply, raw: final, retrieved: cited, citations, steps, usage, cards, widgets, streamed, widgetsShown: shown != null,
     agent: { steps, searches: librarySearches(steps, canonical), nudged, cache: tally, ...(cache ? { store: cache.stats() } : {}) },
     quotes_removed: guarded.removed, quotes_recredited: speakers.fixed || 0, quotes_linked: linked.linked || 0,
     quotes_restored: whole.restored, offers_dropped: offerless.dropped,

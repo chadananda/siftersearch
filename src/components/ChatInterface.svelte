@@ -12,6 +12,7 @@
   import { quoteSegments } from '../../api/lib/quote-blocks.js';
   import SideBySide from './widgets/SideBySide.svelte';
   import { widgetSegments } from '../../api/lib/assistant/widgets/segments.js';
+  import { settled } from '../widget/stream-tail.js';   // unclosed markdown held back while streaming: formatted as it arrives, never raw
   // the passage card shows the quote + citation: drop the reply's leading blockquote, keep anything else
   // the passage card shows the quote: every quoted block leaves the text (the light writer may open with a sentence before it)
   const withoutQuote = (text) => String(text || '').replace(/^(?:>.*(?:\n|$))+/gm, '').replace(/\n{3,}/g, '\n\n').trim();
@@ -2075,12 +2076,12 @@
                     <span class="research-typing"><span></span><span></span><span></span></span>
                   {:else}
                     {#if msg.widgets?.length}<!-- the widget renders the moment it arrives, streaming or not (Chad 11-12) -->
-                      <div class="research-msg-text prose">{#each widgetSegments(msg.content, msg.widgets) as ws}{#if ws.kind === 'widget' && ws.widget.kind === 'side_by_side'}<SideBySide widget={ws.widget} />{:else if ws.kind === 'widget' && ws.widget.kind === 'quote'}<QuoteCard card={ws.widget} html={formatResearchText(ws.widget.text)} />{:else if ws.kind === 'widget' && ws.widget.kind === 'book'}<BookCard book={ws.widget} />{:else if ws.kind === 'widget'}{@html formatResearchText(ws.md)}{:else}{#each (msg.quoteCards?.length ? quoteSegments(ws.md, msg.quoteCards) : [{ kind: 'text', md: ws.md }]) as seg}{#if seg.kind === 'quote'}<QuoteCard card={seg.card} html={formatResearchText(seg.body)} />{:else}{@html formatResearchText(seg.md)}{/if}{/each}{/if}{/each}</div>
+                      <div class="research-msg-text prose">{#each widgetSegments(msg.isStreaming ? settled(msg.content) : msg.content, msg.widgets) as ws}{#if ws.kind === 'widget' && ws.widget.kind === 'side_by_side'}<SideBySide widget={ws.widget} />{:else if ws.kind === 'widget' && ws.widget.kind === 'quote'}<QuoteCard card={ws.widget} html={formatResearchText(ws.widget.text)} />{:else if ws.kind === 'widget' && ws.widget.kind === 'book'}<BookCard book={ws.widget} />{:else if ws.kind === 'widget'}{@html formatResearchText(ws.md)}{:else}{#each (msg.quoteCards?.length ? quoteSegments(ws.md, msg.quoteCards) : [{ kind: 'text', md: ws.md }]) as seg}{#if seg.kind === 'quote'}<QuoteCard card={seg.card} html={formatResearchText(seg.body)} />{:else}{@html formatResearchText(seg.md)}{/if}{/each}{/if}{/each}</div>
                     {:else if msg.quoteCards?.length && !msg.isStreaming}
                       <!-- quoted passages as cards (the reply's own blockquotes, swapped in once it is complete) -->
                       <div class="research-msg-text prose">{#each quoteSegments(msg.content, msg.quoteCards) as seg}{#if seg.kind === 'quote'}<QuoteCard card={seg.card} html={formatResearchText(seg.body)} />{:else}{@html formatResearchText(seg.md)}{/if}{/each}</div>
                     {:else}
-                    <div class="research-msg-text prose">{@html formatResearchText(msg.book ? withoutBookLead(msg.content, msg.book) : msg.passages?.length ? withoutQuote(msg.content) : msg.content)}{#if msg.isStreaming}<span class="streaming-cursor"></span>{/if}</div>
+                    <div class="research-msg-text prose">{@html formatResearchText(msg.isStreaming ? settled(msg.content) : msg.book ? withoutBookLead(msg.content, msg.book) : msg.passages?.length ? withoutQuote(msg.content) : msg.content)}{#if msg.isStreaming}<span class="streaming-cursor"></span>{/if}</div>
                     {/if}
                     {#if !msg.isStreaming && msg.content && !msg.error}
                       <button class="copy-btn" title="Copy response" onclick={(e) => {
