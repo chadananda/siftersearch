@@ -610,7 +610,7 @@ export async function agentRespond({ messages, onEvent, d, t0, subject = null, d
   // cards for what the reply cites by ref (quote-cards.js refCards), before the text like every other card
   if (A.cards?.passage) onEvent({ type: 'passage', passage: A.cards.passage });
   for (const book of A.cards?.books || []) onEvent({ type: 'book', book });
-  onEvent({ type: 'text', content: A.reply });
+  if (!A.streamed) onEvent({ type: 'text', content: A.reply });   // streamed: the sentences went out as written; the route's final replay replaces them
   return { reply: A.reply, agent: A.agent, quotes_removed: A.quotes_removed, quotes_recredited: A.quotes_recredited, quotes_linked: A.quotes_linked,
     citations: A.citations, retrieved: A.retrieved, evidence: evidenceOf(A.retrieved),
     plan: { shape: 'agent', steps: A.steps, usage: A.usage }, search_query: A.steps.find((s) => s.tool === 'fused_search')?.args?.query ?? null,

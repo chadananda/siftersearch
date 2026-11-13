@@ -176,3 +176,39 @@ describe('dropPlainCiteRun', () => {
     expect(dropPlainCiteRun('A *"x"* ([Will](https://o/w?p=1)) B *"y"* ([Will](https://o/w?p=1))', []).text).toBe('A *"x"* B *"y"* ([Will](https://o/w?p=1))');
   });
 });
+
+// the answering round streams a sentence at a time (11-12: the reply appeared only after the whole 5–9 s final round)
+describe('agent: the answer streams, verified sentences only', () => {
+  const chunks = (parts, tc = null) => ({ async *[Symbol.asyncIterator]() {
+    for (const p of parts) yield { choices: [{ delta: { content: p } }] };
+    if (tc) yield { choices: [{ delta: { tool_calls: [{ index: 0, id: 'x', function: { name: tc, arguments: '{"query":"Iqan"}' } }] } }] };
+    yield { choices: [], usage: { prompt_tokens: 5, completion_tokens: 7 } };
+  } });
+  const longOk = 'Shoghi Effendi ranks the Íqán above every other work of its Author, a book he calls the foremost treasure of the Revelation and the key to its scripture. ';
+  const streaming = (finalParts, first = null) => { let n = 0;
+    return async (p) => { expect(p.stream).toBe(true); return n++ === 0 ? chunks(first || ['Let me search.'], 'fused_search') : chunks(finalParts); }; };
+  it('sentences go out as written, refs rendered; an invented quotation never shows', async () => {
+    const ev = [];
+    const r = await agentAnswer({ messages: [{ role: 'user', content: 'What is the Iqan?' }], tools, onEvent: (e) => ev.push(e),
+      create: streaming([longOk, 'He writes it is "Foremost among the priceless treasures" [[P1]]. ', 'It was "revealed in two nights in Baghdad as an answer" [[P1]]. ', 'That is all.']) });
+    const text = ev.filter((e) => e.type === 'text').map((e) => e.content).join('');
+    expect(r.streamed).toBe(true);
+    expect(text).toContain('Shoghi Effendi ranks');
+    expect(text).toContain('(https://oceanlibrary.com/gpb#p1)');
+    expect(text).not.toContain('two nights');
+    expect(text).not.toContain('Let me search');
+    expect(r.usage.out).toBe(14);
+  });
+  it('a short preamble before a tool call is never shown', async () => {
+    const ev = [];
+    const r = await agentAnswer({ messages: [{ role: 'user', content: 'What is the Iqan?' }], tools, onEvent: (e) => ev.push(e),
+      create: streaming(['Short answer.']) });
+    expect(ev.some((e) => e.type === 'text')).toBe(false);
+    expect(r.streamed).toBe(false);
+    expect(r.reply).toBe('Short answer.');
+  });
+  it('a non-streaming create still answers (nothing streams)', async () => {
+    const r = await agentAnswer({ messages: [{ role: 'user', content: 'Where can I read the Iqan?' }], tools, create: scripted('Here is [[B1]].') });
+    expect(r.streamed).toBe(false);
+  });
+});

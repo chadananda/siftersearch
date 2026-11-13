@@ -5,7 +5,7 @@
 // drops any it was not given, and the quote gate removes a sentence quoting words no passage holds. Deps injectable (tests).
 import { toolRunner, libraryTools, TOOL_CHARS } from './researcher.js';
 import { llmTools, canonical, canonWork, run as runTool, toPassage } from './tools.js';
-import { dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
+import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
 import { dropSearchOffer } from './lint.js';
 import { dropPreamble } from './work-request.js';
 import { agentSearch } from './agent-search.js';
@@ -112,6 +112,31 @@ const SEARCHES = { fused_search: () => 1, originals_search: () => 1, find_passag
   search_in_work: (a) => Math.max(1, (a?.queries || []).length) };
 const librarySearches = (steps) => steps.reduce((n, s) => n + (s.deferred ? 0 : SEARCHES[canonical(s.tool)]?.(s.args) || 0), 0);
 
+// One model round, streamed when the provider streams (11-12: the reply was seen only after the whole final round, 5–9 s).
+// Text reaches onText only once the round has written PREAMBLE chars with no tool call (a short "let me search" before a
+// call is never shown); a fake/non-streaming create returns a whole response and nothing streams. Returns the response shape.
+const PREAMBLE = 200;
+export async function readRound(create, params, onText = null) {
+  const r = await create(onText ? { ...params, stream: true } : params);
+  if (!r?.[Symbol.asyncIterator]) return r;
+  let content = '', sent = 0, usage = null, tooled = false;
+  const tcs = [];
+  for await (const c of r) {
+    if (c?.usage) usage = c.usage;
+    const d = c?.choices?.[0]?.delta || {};
+    for (const t of d.tool_calls || []) {
+      tooled = true;
+      const x = (tcs[t.index ?? tcs.length] ??= { id: '', type: 'function', function: { name: '', arguments: '' } });
+      if (t.id) x.id = t.id;
+      if (t.function?.name) x.function.name += t.function.name;
+      if (t.function?.arguments) x.function.arguments += t.function.arguments;
+    }
+    if (d.content) content += d.content;
+    if (!tooled && content.length >= PREAMBLE) { onText(content.slice(sent)); sent = content.length; }
+  }
+  return { choices: [{ message: { content, ...(tcs.length ? { tool_calls: tcs.filter(Boolean) } : {}) } }], usage, streamed: sent > 0 && !tooled, leaked: sent > 0 && tooled, unsent: content.slice(sent) };
+}
+
 export async function agentAnswer({ messages, create, tools: raw, onEvent = () => {}, maxRounds = 8, maxCalls = 24, subject = null, cache = null, cardDocs = undefined, frame = null }) {
   const impl = cache ? cachedImpl(raw, cache) : raw;   // data-level cache: refs are per turn, so what is stored is the passages, never the rendered text
   // spec #5 (11-06): the first round's library search must carry Jev's subject (query-anchor.js) — code checks, never intent
@@ -168,15 +193,26 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const followUp = convo.some((m) => m.role === 'assistant') ? `\n\nTHIS TURN CONTINUES A CONVERSATION. The reader has read your earlier replies: answer only the new point, in about 150–250 words — a direct answer, then the 2–3 passages that settle it. Do not repeat or re-survey what earlier replies covered; more is offered under the reply. Never say an earlier reply was cut off, incomplete or wrong unless a passage you hold now shows it.` : '';
   const msgs = [{ role: 'system', content: frame ? `${AGENT_SYSTEM}${followUp}\n\nTHIS CHANNEL'S REPLY FRAME (it governs length and tone; it overrides the lengths above): ${frame}` : `${AGENT_SYSTEM}${followUp}` }, ...convo];
   const steps = [], usage = { in: 0, out: 0 };
-  let calls = 0, final = '', firstToolMs = null, nudged = false;
+  let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false;
+  // the answering round streams a sentence at a time; only sentences whose quotations are in a passage held are shown
+  const asked0 = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
+  const held0 = () => [...found.values()].map((p) => ({ ...p, source_title: p.title }));
+  let gate = null;
+  const onText = (t) => {
+    if (t.includes(NOT_FOUND)) { gate = false; return; }   // a not-found draft may be nudged into another round: never shown
+    gate ??= createSentenceGate(held0(), (s) => onEvent({ type: 'text', content: renderRefs(s, { found, works }) }), { asked: asked0 });
+    if (gate) gate.push(t);
+  };
   for (let round = 0; round < maxRounds; round++) {
     const last = round === maxRounds - 1 || calls >= maxCalls;
-    const r = await create({ messages: msgs, ...(last ? {} : { tools: AGENT_TOOLS, tool_choice: 'auto' }), max_tokens: roleReplyCap('anis-agent') });   // the reply's safety ceiling, never a length cut (11-04)
+    const r = await readRound(create, { messages: msgs, ...(last ? {} : { tools: AGENT_TOOLS, tool_choice: 'auto' }), max_tokens: roleReplyCap('anis-agent') }, streamed || gate === false ? null : onText);   // the reply's safety ceiling, never a length cut (11-04)
     usage.in += r?.usage?.prompt_tokens || 0; usage.out += r?.usage?.completion_tokens || 0;
     const m = r?.choices?.[0]?.message || {};
+    if (r?.leaked) gate = false;   // text shown before a tool call: the final replay replaces it; nothing more streams
     let tcs = (m.tool_calls || []).slice(0, Math.max(0, maxCalls - calls));
     if (!tcs.length) {
       final = String(m.content || '');
+      if (r?.streamed && gate) { if (!final.includes(NOT_FOUND)) gate.push(r.unsent || ''); gate.flush(); streamed = !final.includes(NOT_FOUND); }
       // earned not-found: the library "lacks it" (the agent's marker, or searches that found nothing at all) on fewer than MIN_SEARCHES → one more round
       const n = librarySearches(steps);
       if ((final.includes(NOT_FOUND) || (n > 0 && !found.size && !works.size)) && n < MIN_SEARCHES && !nudged && round < maxRounds - 1 && calls < maxCalls) {
@@ -236,7 +272,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   if (reply) cards = await import('./quote-cards.js').then((m) => m.refCards({ reply, passages: cited.filter((q) => fromStrategy.has(q.ref)),
     books: [...bookCards].filter(([ref]) => works.get(ref)?.url && reply.includes(works.get(ref).url)).map(([, b]) => b) }, cardDocs ? { docs: cardDocs } : {})).catch(() => cards);
   const tally = steps.reduce((t, x) => ({ ...t, [x.cache]: (t[x.cache] || 0) + 1 }), {});
-  return { reply, raw: final, retrieved: cited, citations, steps, usage, cards,
+  return { reply, raw: final, retrieved: cited, citations, steps, usage, cards, streamed,
     agent: { steps, searches: librarySearches(steps), nudged, cache: tally, ...(cache ? { store: cache.stats() } : {}) },
     quotes_removed: guarded.removed, quotes_recredited: speakers.fixed || 0, quotes_linked: linked.linked || 0,
     quotes_restored: whole.restored, offers_dropped: offerless.dropped,
