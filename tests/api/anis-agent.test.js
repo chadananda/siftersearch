@@ -170,6 +170,9 @@ describe('dropPlainCiteRun', () => {
     expect(dropPlainCiteRun('He wrote x (Light of the World) (Light of the World)', src).text).toBe('He wrote x (Light of the World)');
     expect(dropPlainCiteRun('He wrote: (Light of the World)\n\n> "I treat"\n> — Light of the World', src).text).toBe('He wrote:\n\n> "I treat"\n> — Light of the World');
     expect(dropPlainCiteRun('He said (an aside) here. (Light of the World)', src).text).toBe('He said (an aside) here. (Light of the World)');
+    const lf = [{ title: 'Lights of Fortitude: Glimpses into the Lives of the Hands of the Cause of God' }];
+    expect(dropPlainCiteRun('A (Lights of Fortitude: Glimpses into the Lives of the Hands of the Cause of God, #924), b. (Lights of Fortitude: Glimpses into the Lives of the Hands of the Cause…)', lf).text).toBe('A, b. (Lights of Fortitude: Glimpses into the Lives of the Hands of the Cause…)');
+    expect(dropPlainCiteRun('- one (Light of the World)\n- two (Light of the World)', src).text).toBe('- one (Light of the World)\n- two (Light of the World)');
     expect(dropPlainCiteRun('A *"x"* ([Will](https://o/w?p=1)) B *"y"* ([Will](https://o/w?p=1))', []).text).toBe('A *"x"* B *"y"* ([Will](https://o/w?p=1))');
   });
 });

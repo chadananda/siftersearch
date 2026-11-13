@@ -266,20 +266,21 @@ const placeIn = (label, tail) => {
 const CITE_RUN = /[ \t]*\((?:\[([^\]\n]{3,200})\]\(([^)\s]+)\)|([^()\n]{3,160}))\)/g;
 export function dropPlainCiteRun(text, sources = []) {
   const titles = [...new Set(sources.map((x) => foldT(x?.title)).filter((t) => t.length > 3))];
-  const isCite = (inner) => { const t = foldT(inner); return t.length > 3 && titles.some((x) => t === x || t.startsWith(`${x} `) || x.startsWith(`${t} `)); };
+  const citeOf = (inner) => { const t = foldT(inner); return t.length > 3 ? titles.find((x) => t === x || t.startsWith(`${x} `) || x.startsWith(`${t} `)) : undefined; };
   let fixed = 0;
-  const paras = String(text ?? '').split(/\n{2,}/);
+  const paras = String(text ?? '').split('\n');   // a line: a paragraph or one list item (each bullet keeps its own citation)
   const out = paras.map((para, i) => {
-    if (/^\s*>/.test(para)) return para;
-    const hits = [...para.matchAll(CITE_RUN)].filter((m) => m[2] || isCite(m[3])).map((m) => Object.assign(m, { key: m[2] ? `u:${m[2]}` : foldT(m[3]) }));
-    const next = paras[i + 1] || '';
+    if (/^\s*>/.test(para) || !para.trim()) return para;
+    const hits = [...para.matchAll(CITE_RUN)].map((m) => Object.assign(m, { key: m[2] ? `u:${m[2]}` : citeOf(m[3]) })).filter((m) => m.key);
+    const rest = paras.slice(i + 1), at = rest.findIndex((l) => l.trim()), quote = at < 0 ? [] : rest.slice(at);
+    const next = quote.slice(0, (quote.findIndex((l) => !/^\s*>/.test(l)) + 1 || quote.length + 1) - 1).join(' ');
     const drop = new Set(hits.filter((m, k) => (hits[k + 1] ? hits[k + 1].key === m.key
-      : /^\s*>/.test(next) && /:$/.test(para.slice(0, m.index).trimEnd()) && para.slice(m.index + m[0].length).trim() === '' && !m[2] && foldT(next).includes(foldT(m[3])))).map((m) => m.index));
+      : /^\s*>/.test(next) && /:$/.test(para.slice(0, m.index).trimEnd()) && para.slice(m.index + m[0].length).trim() === '' && !m[2] && foldT(next).includes(m.key))).map((m) => m.index));
     if (!drop.size) return para;
     fixed += drop.size;
     return para.replace(CITE_RUN, (m, label, url, plain, off) => (drop.has(off) ? '' : m));
   });
-  return fixed ? { text: out.join('\n\n'), fixed } : { text: String(text ?? ''), fixed: 0 };
+  return fixed ? { text: out.join('\n'), fixed } : { text: String(text ?? ''), fixed: 0 };
 }
 export function dropRepeatedCite(text) {
   let fixed = 0;
