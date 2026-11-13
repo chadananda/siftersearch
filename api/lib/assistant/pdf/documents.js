@@ -17,7 +17,7 @@ const slug = (s) => String(s || 'research').normalize('NFKD').replace(/[^\w\s-]/
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** Documents service. Every dependency injectable; defaults = live R2 upload, report outbox, tower mail. */
-export const PDF_CACHE_VERSION = 5;   // bump when the print design changes: every cached document re-renders once
+export const PDF_CACHE_VERSION = 6;   // bump when the print design changes: every cached document re-renders once
 export function makeDocuments({ render = renderPdf, upload, exists, publicUrl, outbox = reportOutbox(), sendMail, store = offerStore(), mode = process.env.ANIS_REPORT_SEND, siteUrl } = {}) {
   const put = async (key, body) => {
     if (upload) return upload(key, body);

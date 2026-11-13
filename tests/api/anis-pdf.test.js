@@ -197,3 +197,23 @@ describe('transliteration coverage', () => {
     for (const style of ['r', 'b', 'i', 'h', 's']) expect(runs(t, style).map((x) => x.text).join(''), style).toBe(t);
   });
 });
+
+describe('side-by-side: a row taller than the page (11-13: the Tablet of Aḥmad verse 6 started its English a page before its Arabic)', () => {
+  it('both columns break together: each page holds the start of both, and the end of both', async () => {
+    const { buildSideBySide, toMarkdown } = await import('../../api/lib/assistant/widgets/side-by-side.js');
+    const long = (tag, w) => `${tag}START ${Array.from({ length: 900 }, (_, i) => `${w}${i}`).join(' ')} ${tag}END`;
+    const data = buildSideBySide([
+      { id: 1, role: 'original', language: 'de', document_id: 5, paragraph_index: 0, text: 'Kurzer Vers am Anfang.' },
+      { id: 2, role: 'original', language: 'de', document_id: 5, paragraph_index: 1, text: long('ORIG', 'wort') },
+      { id: 11, role: 'translation', language: 'en', document_id: 6, paragraph_index: 0, aligned_to: [1], text: 'A short verse first.' },
+      { id: 12, role: 'translation', language: 'en', document_id: 6, paragraph_index: 1, aligned_to: [2], text: long('ENG', 'word') },
+    ]);
+    const buf = await renderPdf({ title: 'Tall row', markdown: `<!-- widget:${data.id} -->\n\n${toMarkdown(data)}`, widgets: [data] });
+    const { text } = await extractText(await getDocumentProxy(new Uint8Array(buf)), { mergePages: false });
+    const page = (s) => text.findIndex((t) => t.includes(s));
+    expect(page('ORIGSTART')).toBeGreaterThanOrEqual(0);
+    expect(page('ENGSTART')).toBe(page('ORIGSTART'));
+    expect(page('ENGEND')).toBe(page('ORIGEND'));
+    expect(page('ORIGEND')).toBeGreaterThan(page('ORIGSTART'));
+  });
+});

@@ -58,6 +58,14 @@ export function drawSideBySide(doc, data, ctx, { layout = data.layout ?? 'tight'
       ctx.inline(doc, [{ text: t.length > 48 ? `${t.slice(0, 46)}…` : t, style: 's', color: '#ffffff' }], { x: colX(c - 1) + PAD, y: y + 5.5, width: (c ? tw : ow) - 2 * PAD, size: 7.5 }); });
     doc.y = y + hh;
   };
+  // the words of a cell that fit in `room` points → [now, rest] (a row taller than the page breaks both columns together, 11-13)
+  const fitWords = (text, w, room) => {
+    if (txt({ text }, w) <= room) return [text, ''];
+    const ws = String(text).split(/(?<=\s)/);
+    let lo = 0, hi = ws.length;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (txt({ text: ws.slice(0, mid).join('') }, w) <= room) lo = mid; else hi = mid - 1; }
+    return [ws.slice(0, lo).join('').trimEnd(), ws.slice(lo).join('')];
+  };
   const start = (hh) => Math.min(hh, 6 * lh);   // a row taller than a page starts wherever a few lines fit, then continues
   ctx.need(18 + start(h[0] || 0)); head();
   const qrUrl = data.work?.url || data.rows[0]?.original.url;
@@ -73,17 +81,32 @@ export function drawSideBySide(doc, data, ctx, { layout = data.layout ?? 'tight'
     for (let k = i; k < j; k++) {
       const r = rows[k];
       if (nw && label(k)) ctx.inline(doc, [{ text: label(k), style: 's', color: color.mist }], { x: x + ow, y: y + PAD + 2, width: nw, size: 7.5, align: 'center' });
-      // translations first (they stay on the row's first page); the original may continue across pages
-      r.translations.forEach((c, m) => { if (c?.text) ctx.inline(doc, [{ text: c.text, style: 'r', ...(c.url ? { link: c.url } : {}) }], { x: colX(m) + PAD, y: y + PAD, width: tw - 2 * PAD, size: SIZE, gap: 1.5 }); });
-      if (rtl) {
-        let ly = y + PAD, broke = false;
-        for (const l of oLines[k]) {
-          if (ly + lh > bottom) { ctx.addPage(); head(); y = doc.y; ly = y + PAD; broke = true; }
-          doc.font('a0').fontSize(AR).fillColor(color.ink).text(l, x + PAD, ly, { width: ow - 2 * PAD, align: 'right', lineBreak: false, ...(r.original.url ? { link: r.original.url } : {}) });
-          ly += lh;
+      // a spanned cell is drawn whole on its first page; every other cell and the original break page by page TOGETHER, so a
+      // row taller than the page never starts its translation a page before its original (11-13: Tablet of Aḥmad verse 6)
+      r.translations.forEach((c, m) => { if (c?.text && c.span > 1) ctx.inline(doc, [{ text: c.text, style: 'r', ...(c.url ? { link: c.url } : {}) }], { x: colX(m) + PAD, y: y + PAD, width: tw - 2 * PAD, size: SIZE, gap: 1.5 }); });
+      const parts = r.translations.map((c) => (c?.text && !(c.span > 1) ? c.text : null));
+      let oRest = rtl ? oLines[k].slice() : r.original.text || '', broke = false;
+      for (;;) {
+        const room = bottom - y - 2 * PAD;
+        let used = 0, drew = false;
+        parts.forEach((t, m) => {
+          if (!t) return;
+          const [now, rest] = fitWords(t, tw, room), c = r.translations[m];
+          if (now) { ctx.inline(doc, [{ text: now, style: 'r', ...(c.url ? { link: c.url } : {}) }], { x: colX(m) + PAD, y: y + PAD, width: tw - 2 * PAD, size: SIZE, gap: 1.5 }); used = Math.max(used, txt({ text: now }, tw)); drew = true; }
+          parts[m] = rest || null;
+        });
+        if (rtl) {
+          const now = oRest.splice(0, Math.max(0, Math.floor(room / lh)));
+          now.forEach((l, q) => doc.font('a0').fontSize(AR).fillColor(color.ink).text(l, x + PAD, y + PAD + q * lh, { width: ow - 2 * PAD, align: 'right', lineBreak: false, ...(r.original.url ? { link: r.original.url } : {}) }));
+          if (now.length) { used = Math.max(used, now.length * lh); drew = true; }
+        } else if (oRest) {
+          const [now, rest] = fitWords(oRest, ow, room);
+          if (now) { ctx.inline(doc, [{ text: now, style: 'r', ...(r.original.url ? { link: r.original.url } : {}) }], { x: x + PAD, y: y + PAD, width: ow - 2 * PAD, size: SIZE, gap: 1.5 }); used = Math.max(used, txt({ text: now }, ow)); drew = true; }
+          oRest = rest;
         }
-        h[k] = broke ? ly + PAD - y : Math.max(h[k], ly + PAD - y);
-      } else ctx.inline(doc, [{ text: r.original.text, style: 'r', ...(r.original.url ? { link: r.original.url } : {}) }], { x: x + PAD, y: y + PAD, width: ow - 2 * PAD, size: SIZE, gap: 1.5 });
+        if (!(parts.some(Boolean) || oRest.length) || (!drew && broke)) { if (broke) h[k] = used + 2 * PAD; break; }
+        ctx.addPage(); head(); y = doc.y; broke = true;
+      }
       y += h[k];
       // the rule under a row: full width at the end of the group, the original column only inside a spanned group
       if (!study && ends(k)) doc.moveTo(x, y).lineTo(k === j - 1 ? x + width : x + ow, y).lineWidth(0.5).strokeColor(color.rule).stroke();
