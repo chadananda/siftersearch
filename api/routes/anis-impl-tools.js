@@ -17,7 +17,35 @@ export const edgeExtras = {
 // Map/Set results (translationsOf, encumberedAmong) cross the wire as {__map}/{__set}; the Worker revives them.
 export const encode = (v) => (v === undefined ? null : JSON.parse(JSON.stringify(v, (k, x) => (x instanceof Map ? { __map: [...x] } : x instanceof Set ? { __set: [...x] } : x))));
 
+/** Every passage / work in a research result made complete for display, so the Worker draws links and widgets from the research
+ *  itself and the display never calls back (Chad 11-13): its book's cover_url + year (one docs read by ids), and an OceanLibrary
+ *  book-level link → the passage's own paragraph range (located by its opening words). In place on the encoded JSON. */
+const BOOK_LEVEL = /^https:\/\/(?:www\.)?oceanlibrary\.com\/[^/?#\s]+\/?$/;
+const opening = (x) => { const t = String(x || '').replace(/⁅\/?[sp]\d+⁆/g, '').replace(/\s+/g, ' ').trim();
+  return t.length <= 90 ? t : t.slice(0, 90).replace(/\s+\S*$/, ''); };
+export async function finishResearch(out, { docsOf, rangeOf }) {
+  const items = [];
+  const walk = (v, d) => { if (!v || typeof v !== 'object' || d > 4) return; if (Array.isArray(v)) { v.forEach((x) => walk(x, d + 1)); return; }
+    if (Number(v.document_id ?? v.doc_id)) items.push(v); for (const x of Object.values(v)) walk(x, d + 1); };
+  walk(out, 0);
+  if (!items.length) return out;
+  const need = [...new Set(items.filter((v) => !('cover_url' in v)).map((v) => Number(v.document_id ?? v.doc_id)))];
+  const by = new Map((need.length ? await docsOf(need).catch(() => []) : []).map((d) => [Number(d.id), d]));
+  await Promise.all(items.map(async (v) => {
+    const d = by.get(Number(v.document_id ?? v.doc_id));
+    if (d && !('cover_url' in v)) { v.cover_url = d.cover_url ?? null; if (v.year == null && d.year != null) v.year = d.year; }
+    for (const k of ['source_url', 'url', 'citation_url']) {
+      if (!BOOK_LEVEL.test(v[k] || '') || !v.text) continue;
+      const r = await rangeOf(v[k], opening(v.text)).catch(() => null);
+      if (r && r.includes('paraId=')) v[k] = r;
+    }
+  }));
+  return out;
+}
+
 export default async function anisToolsRoutes(fastify, opts = {}) {
+  const rangeOf = opts.rangeOf ?? (async (url, words) => (await import('../lib/ocean-links.js')).oceanQuoteUrl(url, words));
+  const docsOf = opts.docs ?? (async (ids) => (await (await import('../lib/docs-repo.js')).listDocs({ ids, fields: ['id', 'cover_url', 'year'], count: false, limit: ids.length })).docs || []);
   let built = null;   // impl built once per process, lazily
   const get = async (turn) => {
     if (opts.impl) return (built ??= buildImpl(opts.impl, toolCache()));
@@ -34,7 +62,7 @@ export default async function anisToolsRoutes(fastify, opts = {}) {
   const one = async (impl, fn, args) => {
     const t0 = Date.now();
     if (typeof impl[fn] !== 'function') return { error: `unknown tool: ${fn}`, unknown: true };
-    try { const r = await callScope(() => impl[fn](...(Array.isArray(args) ? args : []))); return { out: encode(r.out), cache: r.cache, parts: r.parts, ms: Date.now() - t0 }; }
+    try { const r = await callScope(() => impl[fn](...(Array.isArray(args) ? args : []))); return { out: await finishResearch(encode(r.out), { docsOf, rangeOf }), cache: r.cache, parts: r.parts, ms: Date.now() - t0 }; }
     catch (err) { return { error: err.message }; }
   };
   fastify.post('/tool/:fn', { preHandler: requireInternal }, async (request, reply) => {

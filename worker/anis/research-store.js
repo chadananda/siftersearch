@@ -41,7 +41,7 @@ export async function lookup(env, question, { threshold = RELATED } = {}) {
 }
 
 const snap = (p) => ({ id: p.id, document_id: p.document_id ?? p.doc_id ?? null, paragraph_index: p.paragraph_index ?? null, text: p.text ?? null,
-  title: p.title ?? null, author: p.author ?? null, source_url: p.source_url || p.url || null, religion: p.religion ?? null,
+  title: p.title ?? null, author: p.author ?? null, source_url: p.source_url || p.url || null, religion: p.religion ?? null, cover_url: p.cover_url ?? null, year: p.year ?? null,
   ...(p.role ? { role: p.role } : {}), ...(p.note ? { note: p.note } : {}) });
 
 /** Record passages as a candidate set (curated sets never overwritten, only hits grow). `question` may be a matched set's question to grow it. */

@@ -14,7 +14,7 @@ export function widgetSegments(md, widgets) {
     let j = i + 1;
     while (j < lines.length && !lines[j].trim()) j++;
     const t0 = j;
-    while (j < lines.length && lines[j].trim().startsWith('|')) j++;
+    while (j < lines.length && lines[j].trim()) j++;   // the fallback block: a table, a quotation, a card line
     if (j === t0 && t0 < lines.length) continue;   // a marker at the end of the text so far (still streaming) is already the widget
     let k = j;
     while (k < lines.length && !lines[k].trim()) k++;

@@ -50,6 +50,21 @@ const rig = (env, script, { towerStatus = 200, restated = 'NONE' } = {}) => {
 const P = (id) => ({ id, document_id: 1, paragraph_index: id, text: `Passage ${id} text.`, title: 'Book', author: 'A', source_url: `https://x/${id}`, religion: 'bahai' });
 
 describe('anis worker chat', () => {
+  it('an inline template the writer chose → a widget event before the text, its marker in place, never streamed raw, no tower call', async () => {
+    const env = mkEnv();
+    await capture(env, 'what is prayer?', [P(1), P(2)]);
+    const { seen, post } = rig(env, [() => callTool('t1', 'research_lookup', { question: 'what is prayer?' }), () => say('Prayer is communion with God [[P1]].\n\n{{quote P2}}\n\n{{quote P9}}')]);
+    const { events } = await post();
+    const types = events.map((e) => e.type), w = events.find((e) => e.type === 'widget')?.widget;
+    expect(w).toMatchObject({ kind: 'quote', id: 'quote-1', text: 'Passage 2 text.', url: 'https://x/2', title: 'Book', author: 'A' });
+    expect(types.indexOf('widget')).toBeLessThan(types.indexOf('chunk'));
+    const reply = events.filter((e) => e.type === 'chunk').map((e) => e.text).join('');
+    expect(reply).toContain('<!-- widget:quote-1 -->'); expect(reply).toContain('> Passage 2 text.'); expect(reply).not.toContain('{{');
+    expect(events.filter((e) => e.type === 'text').map((e) => e.content).join('')).not.toContain('{{');
+    expect(events.at(-1).meta.timings.widgets).toEqual(['quote']);
+    expect(seen.tower).toEqual(['logUsage']);
+  });
+
   it('cache hit: research_lookup is local (no tower call), events arrive in protocol order, turn is persisted', async () => {
     const env = mkEnv();
     await capture(env, 'what is prayer?', [P(1), P(2)]);
@@ -62,9 +77,9 @@ describe('anis worker chat', () => {
     expect(types.indexOf('chunk')).toBeLessThan(types.indexOf('followups')); expect(types.indexOf('followups')).toBeLessThan(types.indexOf('complete')); expect(types.at(-1)).toBe('complete');
     expect(events.filter((e) => e.type === 'chunk').map((e) => e.text).join('')).toContain('Prayer is communion with God');
     expect(events.find((e) => e.type === 'followups').items).toEqual(['Who translated it?', 'Is there an original?']);
-    const done = events.at(-1); expect(done.meta.engine).toBe('anis-edge'); expect(done.meta.timings).toMatchObject({ rounds: 2, tower_calls: 1 });
+    const done = events.at(-1); expect(done.meta.engine).toBe('anis-edge'); expect(done.meta.timings).toMatchObject({ rounds: 2, tower_calls: 0 });
     expect(done.meta.timings.first_text_ms).toBeGreaterThanOrEqual(0);
-    expect(seen.tower).toEqual(['upgradeLinks', 'logUsage']);   // research_lookup never left the edge; usage goes to the ledger after the turn
+    expect(seen.tower).toEqual(['logUsage']);   // research_lookup and the display never left the edge; usage goes to the ledger after the turn
     // persisted through waitUntil: both turns + the question log with a cache hit
     expect(env.db.prepare('SELECT role, content FROM anis_turns ORDER BY role').all().map((t) => t.role)).toEqual(['assistant', 'user']);
     expect(env.db.prepare('SELECT outcome FROM anis_question_log').get().outcome).toBe('hit');

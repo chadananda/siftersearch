@@ -464,6 +464,19 @@
   });
 </script>
 
+{#snippet qcard(card, body)}
+  <figure class="qcard">
+    {#if card.cover_url}
+      <a class="qcard-cover" href={card.url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+        <img src={coverSrc(card.cover_url, 96)} srcset={[48, 96, 144].map((w) => `${coverSrc(card.cover_url, w)} ${w}w`).join(', ')} sizes="44px" alt="" loading="lazy" decoding="async" />
+      </a>
+    {/if}
+    <div class="qcard-body">
+      <div class="qcard-text">{@html body}</div>
+      <p class="qcard-cite">— <a href={card.url} target="_blank" rel="noopener">{#if card.author}{card.author}, {/if}<em>{card.title}</em>{#if card.place}, {card.place}{/if}</a></p>
+    </div>
+  </figure>
+{/snippet}
 {#snippet bookCard(b)}
   <div class="book">
     {#if b.cover_url}
@@ -582,22 +595,12 @@
                           </figure>
                         {/each}
                         {#if m.widgets?.length}
-                          <!-- a display widget (side_by_side): the reply's marker + table swapped for the component; the text around it as usual -->
-                          {#each widgetSegments(m.pending ? settled(m.content) : m.content, m.widgets) as ws}{#if ws.kind === 'widget'}<SideBySide widget={ws.widget} />{:else}{@html renderRich(ws.md)}{/if}{/each}
+                          <!-- display widgets (side_by_side, quote, book — the writer's inline templates): the reply's marker + fallback swapped for the component; the text around it as usual -->
+                          {#each widgetSegments(m.pending ? settled(m.content) : m.content, m.widgets) as ws}{#if ws.kind === 'widget' && ws.widget.kind === 'side_by_side'}<SideBySide widget={ws.widget} />{:else if ws.kind === 'widget' && ws.widget.kind === 'quote'}{@render qcard(ws.widget, renderRich(ws.widget.text))}{:else if ws.kind === 'widget' && ws.widget.kind === 'book'}{@render bookCard(ws.widget)}{:else}{@html renderRich(ws.md)}{/if}{/each}
                         {:else if m.quoteCards?.length && !m.pending}
                           {#each quoteSegments(m.content, m.quoteCards) as seg}
                             {#if seg.kind === 'quote'}
-                              <figure class="qcard">
-                                {#if seg.card.cover_url}
-                                  <a class="qcard-cover" href={seg.card.url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
-                                    <img src={coverSrc(seg.card.cover_url, 96)} srcset={[48, 96, 144].map((w) => `${coverSrc(seg.card.cover_url, w)} ${w}w`).join(', ')} sizes="44px" alt="" loading="lazy" decoding="async" />
-                                  </a>
-                                {/if}
-                                <div class="qcard-body">
-                                  <div class="qcard-text">{@html renderRich(seg.body)}</div>
-                                  <p class="qcard-cite">— <a href={seg.card.url} target="_blank" rel="noopener">{#if seg.card.author}{seg.card.author}, {/if}<em>{seg.card.title}</em>{#if seg.card.place}, {seg.card.place}{/if}</a></p>
-                                </div>
-                              </figure>
+                              {@render qcard(seg.card, renderRich(seg.body))}
                             {:else}{@html renderRich(seg.md)}{/if}
                           {/each}
                         {:else}

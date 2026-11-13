@@ -151,7 +151,7 @@ export const oceanQuoteUrl = (url, quote) => upgradeOceanLinks(oceanQuoteMarker(
 
 // The last line of defence: a private marker never reaches a reader, whatever shape the link took (10-12: a
 // "…selectionString=…#~q=…" link leaked and OceanLibrary's router echoed it into "?~q=").
-const dropMarkers = (s) => String(s).replace(/#~(?:[a-z]=\d+~)*(?:q=|[a-z]=\d+)[^\s"'<>)\]]*/g, '');
+export const dropMarkers = (s) => String(s).replace(/#~(?:[a-z]=\d+~)*(?:q=|[a-z]=\d+)[^\s"'<>)\]]*/g, '');
 
 /** Does this payload carry a link the upgrade rewrites? (cheap gate for every response) */
 export const needsUpgrade = (s) => (s.includes('oceanlibrary.com') && (s.includes('paraId=') || s.includes('~q='))) || (s.includes('oceanoflights.org') && s.includes('~q='))

@@ -6,6 +6,7 @@ import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQ
 import { dropSearchOffer } from './lint.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
+import { expandTemplates } from './widgets/templates.js';
 
 const clip = (t, n) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? `${s.slice(0, n)}…` : s; };
 
@@ -50,6 +51,7 @@ WRITING:
 - Documents and email: when the reader asks for something printed, saved or emailed, write the content itself — the system turns your reply into a PDF and emails it (asking for the address if it has none). Never say you cannot send email or make a document, and never describe the delivery yourself. A heading or label over a passage names what that passage itself says — a passage on fasting is never labelled as one on prayer.
 - Speak about the texts, never about your tools: no "the excerpt I can see", "the library does not link", "my search returned". If something was not found, say once, plainly, that you found no such text. Capitalise He/His/Him for Bahá'u'lláh, the Báb and 'Abdu'l-Bahá.
 - Cite with refs: put [[P3]] right after the words that come from passage P3; write a book's name as [[B1]] (code turns it into the linked title). Never write a URL. Never use a ref you were not given.
+- Display templates, when they help the reader: a line holding only {{quote P3}} shows passage P3 whole as a card (the key passage of an answer; do not also type its words); {{book B1}} shows the book's card where you recommend a work; {{side_by_side P1 P4}} sets an original beside its translation. Optional — plain prose with refs is always fine.
 - A prayer, verse or short tablet the reader will read or recite is quoted WHOLE: call whole_lookup on its ref first (it returns the whole prayer, every paragraph) and quote that. Never add a line you did not read in a passage.
 - References for a paper: give the standard reference a scholar would use (DN 16.6.1, Qur'án 2:255, John 3:16, Kitáb-i-Aqdas ¶18) and name the translation/edition when you recognise it from its wording (e.g. "mendicants", "Realized One" = Bhikkhu Sujato, SuttaCentral) — from what you know, said plainly, to be checked against the edition. The library's own locators and missing metadata ("#1.1616", "translator Unknown") are never shown as section numbers or as facts about the work.
 - Cite each quotation once, from the edition you quoted. The original-language text (Arabic, Persian) is cited only when the reader asks for the original.
@@ -268,7 +270,8 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const speakers = fixQuoteSpeakers(guarded.text, retrieved);
   const linked = linkQuotes(speakers.text, retrieved);
   const offerless = dropSearchOffer(dropPreamble(linked.text).trim());   // the research is his to run, never an offer (11-04 #163)
-  const reply = markQuotes(offerless.text, retrieved).text;   // quoted words styled apart (Chad 11-04)
+  // inline templates ({{quote P3}} …) → widget marker + fallback + data, last: the words are the passage's own, never re-grounded (widgets/templates.js)
+  const { text: reply, widgets } = expandTemplates(markQuotes(offerless.text, retrieved).text, { found, works, books: bookCards });   // quoted words styled apart (Chad 11-04)
   const citations = [...[...works.values()].map((w) => ({ title: w.title, author: w.author, url: w.url, religion: w.religion, document_id: w.id, paragraph_index: null, text: '' })),
     ...retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url, religion: q.religion, document_id: q.doc_id, paragraph_index: q.paragraph_index ?? null, text: String(q.text).slice(0, 300) }))]
     .filter((c) => c.url && reply.includes(c.url));
@@ -282,7 +285,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   if (reply && cardsFn) cards = await Promise.resolve().then(() => cardsFn({ reply, passages: cited.filter((q) => fromStrategy.has(q.ref)),
     books: [...bookCards].filter(([ref]) => works.get(ref)?.url && reply.includes(works.get(ref).url)).map(([, b]) => b) }, cardDocs ? { docs: cardDocs } : {})).catch(() => cards);
   const tally = steps.reduce((t, x) => ({ ...t, [x.cache]: (t[x.cache] || 0) + 1 }), {});
-  return { reply, raw: final, retrieved: cited, citations, steps, usage, cards, streamed,
+  return { reply, raw: final, retrieved: cited, citations, steps, usage, cards, widgets, streamed,
     agent: { steps, searches: librarySearches(steps, canonical), nudged, cache: tally, ...(cache ? { store: cache.stats() } : {}) },
     quotes_removed: guarded.removed, quotes_recredited: speakers.fixed || 0, quotes_linked: linked.linked || 0,
     quotes_restored: whole.restored, offers_dropped: offerless.dropped,
