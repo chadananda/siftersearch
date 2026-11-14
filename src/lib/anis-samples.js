@@ -38,3 +38,11 @@ export const ANIS_STARTERS = [
   "Compare the Golden Rule across the world's religions",
 ];
 export const pickStarters = (n = 3, list = ANIS_STARTERS) => [...list].sort(() => Math.random() - 0.5).slice(0, n);
+
+// The fullscreen welcome (P4): four example questions, one per kind of answer — fixed, so the first view never shifts.
+export const ANIS_WELCOME = [
+  { kind: 'Passage', icon: 'quote', q: 'Where does "Let your vision be world-embracing" come from?' },
+  { kind: 'Book', icon: 'book', q: 'Do you have the Dhammapada?' },
+  { kind: 'Talk', icon: 'talk', q: 'Is there a talk about The Dawn-Breakers?' },
+  { kind: 'Comparison', icon: 'compare', q: "How do the Bible and the Qur'an teach forgiveness?" },
+];

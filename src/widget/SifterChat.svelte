@@ -9,7 +9,10 @@
   // Transcript persists in localStorage per token. Soft WebAudio feedback (synthesized, muteable).
   // token/api from the loader; accent/name/mission are optional per-page overrides (data-* attrs)
   // that tune the widget without touching the DB profile. ONE public domain; the edge worker proxies /api.
-  import { ANIS_SAMPLES, pickStarters } from '../lib/anis-samples.js';
+  import { ANIS_SAMPLES, ANIS_WELCOME, pickStarters } from '../lib/anis-samples.js';
+  import { headingOf, olItem } from './rich-line.js';
+  import { thinkDepth } from './think.js';
+  import { sky } from './think-sky.js';
   import { richLinks } from './rich-link.js';
   import { tableAt } from './rich-table.js';
   import { settled } from './stream-tail.js';
@@ -67,6 +70,10 @@
     up: ['M7 10v11', 'M15 5.9 14 10h5.8a2 2 0 0 1 1.9 2.6l-2.3 7A2 2 0 0 1 17.5 21H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h2.8a2 2 0 0 0 1.8-1.1L12 2a3.1 3.1 0 0 1 3 3.9z'],
     down: ['M17 14V3', 'M9 18.1 10 14H4.2a2 2 0 0 1-1.9-2.6l2.3-7A2 2 0 0 1 6.5 3H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-2.8a2 2 0 0 0-1.8 1.1L12 22a3.1 3.1 0 0 1-3-3.9z'],
     retry: ['M3 12a9 9 0 1 0 9-9 9.8 9.8 0 0 0-6.7 2.7L3 8', 'M3 3v5h5'],
+    quote: ['M4 11h5v6H4z', 'M4 11c0-3 1.5-5 4-6', 'M14 11h5v6h-5z', 'M14 11c0-3 1.5-5 4-6'],
+    book: ['M4 19.5V5a2 2 0 0 1 2-2h14v15H6.5a2.5 2.5 0 0 0 0 5H20', 'M8 7h8'],
+    talk: ['M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z', 'M19 11a7 7 0 0 1-14 0', 'M12 18v3'],
+    compare: ['M4 4h7v16H4z', 'M13 4h7v16h-7z', 'M6.5 8h2', 'M15.5 8h2', 'M6.5 12h2', 'M15.5 12h2'],
   };
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '');
   const reveal = (node) => { queueMicrotask(() => node.scrollIntoView?.({ block: 'nearest' })); };
@@ -89,6 +96,15 @@
   const WAITING = ['Gathering the passages…', 'Weighing what the texts say…', 'Putting it into words…'];
   let statusTimer = null;
   function stopStatus() { if (statusTimer) { clearInterval(statusTimer); statusTimer = null; } }
+  // the thinking sky: on from send to the first words, and again while a later research round runs (a status after text)
+  let thinkSteps = $state(0), rethink = $state(false);
+  const thinking = $derived(busy && (phase !== 'streaming' || rethink));
+  const depth = $derived(thinkDepth(thinkSteps));
+  const statusLine = $derived(statusText ? statusText
+    : phase === 'craft' ? 'Composing…'
+    : phase === 'deepening' ? 'Looking deeper into the library…'
+    : phase === 'deepening-more' ? 'Still searching — combing the historical records…'
+    : 'Searching the ocean of texts…');
   let muted = $state(false);
   try { muted = localStorage.getItem('sifter-chat-mute') === '1'; } catch { /* private mode */ }
 
@@ -248,7 +264,7 @@
     return `${abs}${abs.includes('?') ? '&' : '?'}tr=w-${w},h-${w},fo-face,q-80,e-sharpen`;
   }
   const noCover = (e) => e.currentTarget.closest('a')?.classList.add('nocover');   // a 404 cover → the drawn one
-  const initial = (t) => (String(t || '').replace(/^(?:the|a|an)\s+/i, '').match(/\p{L}/u)?.[0] || '·').toUpperCase();
+  const initial = (t) => (String(t || '').replace(/^(?:the|a|an)\s+/i, '').match(/[\p{Lu}\p{Ll}\p{Lt}\p{Lo}]/u)?.[0] || '·').toUpperCase();
   const mins = (s) => (s ? `${Math.max(1, Math.round(s / 60))} min` : null);
   const clock = (s) => { s = Math.max(0, Math.round(s || 0)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
   // the talk card's own small player: one talk plays at a time; the track seeks; the time counts down
@@ -445,7 +461,7 @@
     input = '';
     errorMsg = '';
     pendBuf = ''; replay = ''; gotLive = false; streamDone = false; pendCites = null;
-    statusText = ''; serverStatus = false; stopStatus();
+    statusText = ''; serverStatus = false; stopStatus(); thinkSteps = 0; rethink = false;
     { let i = 0; statusTimer = setInterval(() => { if (!serverStatus && Date.now() - t0 > 3500) statusText = WAITING[i++ % WAITING.length]; }, 2200); }
     messages = [...messages, { role: 'user', content: text }, { role: 'assistant', content: '', citations: [], pending: true }];
     persist();   // the question is kept (and the thread listed) even if the answer never comes
@@ -481,10 +497,10 @@
           const line = frame.split('\n').find((l) => l.startsWith('data: '));
           if (!line) continue;
           let ev; try { ev = JSON.parse(line.slice(6)); } catch { continue; }
-          if (ev.type === 'stage' && ev.stage) { if (phase !== 'streaming') phase = ev.stage; }
-          else if (ev.type === 'status' && typeof ev.text === 'string') { statusText = ev.text; serverStatus = true; }
-          else if (ev.type === 'text' && typeof ev.content === 'string') { gotLive = true; stopStatus(); pendBuf += ev.content; }
-          else if (ev.type === 'chunk' && typeof ev.text === 'string') { stopStatus(); if (gotLive) replay += ev.text; else pendBuf += ev.text; }
+          if (ev.type === 'stage' && ev.stage) { thinkSteps++; if (phase !== 'streaming') phase = ev.stage; else rethink = true; }
+          else if (ev.type === 'status' && typeof ev.text === 'string') { statusText = ev.text; serverStatus = true; thinkSteps++; if (phase === 'streaming') rethink = true; }
+          else if (ev.type === 'text' && typeof ev.content === 'string') { gotLive = true; rethink = false; stopStatus(); pendBuf += ev.content; }
+          else if (ev.type === 'chunk' && typeof ev.text === 'string') { rethink = false; stopStatus(); if (gotLive) replay += ev.text; else pendBuf += ev.text; }
           else if (ev.type === 'book' && ev.book?.title) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.book = ev.book; messages = [...messages]; } }
           // the reply's quoted blockquotes → passage cards; the book(s) the answer is about (both drawn once the reply is complete)
           // one found passage (in_work / find_passage, code-built reply) → its card: cover (a Star of the West issue's own scan), the
@@ -507,7 +523,7 @@
       stopTicker(); stopStatus();
       messages = messages.slice(0, -1);
       messages = [...messages];
-      errorMsg = 'Something went wrong reaching the assistant. Please try again.';
+      errorMsg = 'The library could not be reached just now.';
       busy = false;
       phase = 'idle';
       scroll();
@@ -547,12 +563,13 @@
         if (/^\s*[—–]\s/.test(lines[j] || '')) { quoteRun[quoteRun.length - 1] += ' <span class="qref">' + inline(lines[j].trim()) + '</span>'; i = j; continue; }
       }
       flushQuote();
-      const li = line.match(/^\s*[-•]\s+(.*)$/);
-      if (li) { listRun.push('<span class="li">• ' + inline(li[1]) + '</span>'); continue; }
+      const li = line.match(/^\s*[-•*]\s+(.*)$/), ol = !li && olItem(line);
+      if (li) { listRun.push('<span class="li"><span class="b" aria-hidden="true">•</span>' + inline(li[1]) + '</span>'); continue; }
+      if (ol) { listRun.push('<span class="li ol"><span class="b">' + ol.n + '.</span>' + inline(ol.text) + '</span>'); continue; }
       if (listRun.length && !line.trim()) continue;   // a blank line between items (a "loose" list) is no gap (Chad 11-13)
       flushList();
-      const h = line.match(/^\s*\*\*([^*\n]{1,120})\*\*:?\s*$/);   // a bold line alone is a heading: space above, tight to its text (Chad 11-03)
-      out.push(h ? '<span class="h">' + inline(h[1]) + '</span>' : inline(line));
+      const h = headingOf(line);   // "## Title" or a bold line alone is a heading: space above, tight to its text (Chad 11-03)
+      out.push(h != null ? '<span class="h">' + inline(h) + '</span>' : inline(line));
     }
     flushQuote(); flushList();
     // never waste space (Chad 11-12): one blank line at most, none around a quote or a table (they carry their own margin)
@@ -786,14 +803,14 @@
 {/snippet}
 {#snippet sceneCard(s)}
   <section class="scene">
-    <header class="scene-head">
+    <div class="scene-head">
       {#if s.cover_url}
         <a class="qcard-cover" href={s.passages[0].url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
           <img src={coverSrc(s.cover_url, 96)} srcset={[48, 96, 144].map((w) => `${coverSrc(s.cover_url, w)} ${w}w`).join(', ')} sizes="44px" alt="" loading="lazy" decoding="async" onerror={noCover} />
         </a>
       {/if}
       <div><h4 class="scene-title">{s.title}</h4>{#if s.line}<p class="scene-line">{s.line}</p>{/if}</div>
-    </header>
+    </div>
     {#each s.passages as p}
       <figure class="scene-pass">
         <div class="qcard-text">{@html renderRich(p.text)}</div>
@@ -956,6 +973,9 @@
         <div class="rule" aria-hidden="true"></div>
         <div class="bodywrap">
           <svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" d={OCEAN_D}/></svg>
+          <!-- the thinking sky: a faint constellation behind the conversation while Anís researches (think-sky.js); a still glow under reduced motion -->
+          <div class="sky-glow" class:on={thinking} style="--depth:{depth.toFixed(2)}" aria-hidden="true"></div>
+          <canvas class="sky" class:on={thinking} use:sky={{ on: thinking, depth }} aria-hidden="true"></canvas>
           {#if histOpen && !isFull}
             <div class="hist" role="dialog" aria-label="Conversations">
               <div class="hist-top">
@@ -967,6 +987,21 @@
             </div>
           {/if}
           <div class="body" bind:this={bodyEl} role="log" aria-live="polite">
+            {#if isFull && !messages.some((m) => m.role === 'user')}
+              <section class="welcome" aria-labelledby="wl-h">
+                <span class="wl-mark" aria-hidden="true"><svg viewBox="0 0 512 512"><path fill="currentColor" d={OCEAN_D}/></svg></span>
+                <h2 class="wl-h" id="wl-h">What shall we look into?</h2>
+                <p class="wl-sub">Ask about scripture, history or a talk. {cfg.name} searches the library and answers with the passages themselves.</p>
+                <div class="wl-grid">
+                  {#each ANIS_WELCOME as c (c.kind)}
+                    <button type="button" class="wl-card" disabled={busy} onclick={() => { input = c.q; send(); }}>
+                      <span class="wl-k">{@render ic(c.icon)}{c.kind}</span>
+                      <span class="wl-q">{c.q}</span>
+                    </button>
+                  {/each}
+                </div>
+              </section>
+            {:else}
             {#each messages as m, mi}
               <div class="msg {m.role}" class:done={m.done}>
                 {#if m.role === 'assistant'}
@@ -978,15 +1013,10 @@
                     <div class="bubble follow">{m.book.follow_up}</div>
                   {/if}
                   {#if !(m.book?.sufficient && m.role === 'assistant')}
-                  <div class="bubble" class:lit={m.lit}>
+                  <div class="bubble" class:lit={m.lit} class:waiting={m.pending && !m.content}>
                     {#if m.role === 'assistant'}
                       {#if m.pending && !m.content}
-                        <span class="stage">{
-                          statusText ? statusText
-                          : phase === 'craft' ? 'Composing…'
-                          : phase === 'deepening' ? 'Looking deeper into the library…'
-                          : phase === 'deepening-more' ? 'Still searching — combing the historical records…'
-                          : 'Searching the ocean of texts…'}</span>
+                        <span class="think" role="status"><span class="think-dot" aria-hidden="true"></span>{#key statusLine}<span class="stage">{statusLine}</span>{/key}</span>
                       {:else}
                         {#each m.passages || [] as pc}
                           <figure class="qcard">
@@ -1000,10 +1030,7 @@
                               <p class="qcard-cite">— {#if pc.url}<a href={pc.url} target="_blank" rel="noopener">{#if pc.author}{`${pc.author}, `}{/if}<em>{pc.title}</em>{#if pc.place}, {pc.place}{/if}</a>{:else}{#if pc.author}{`${pc.author}, `}{/if}<em>{pc.title}</em>{#if pc.place}, {pc.place}{/if}{/if}</p>
                             </div>
                           </figure>
-                        {/each}
-                        {#if m.widgets?.length}
-                          <!-- display widgets (side_by_side, quote, book — the writer's inline templates): the reply's marker + fallback swapped for the component; the text around it as usual -->
-                          {#each widgetSegments(m.pending ? settled(m.content) : m.content, m.widgets) as ws}{#if ws.kind === 'widget' && ws.widget.kind === 'side_by_side'}<SideBySide widget={ws.widget} />{:else if ws.kind === 'widget' && ws.widget.kind === 'quote'}{@render qcard(ws.widget, renderRich(ws.widget.text))}{:else if ws.kind === 'widget' && ws.widget.kind === 'book'}{@render bookCard(ws.widget)}{:else if ws.kind === 'widget' && ws.widget.kind === 'scene'}{@render sceneCard(ws.widget)}{:else}{@html renderRich(ws.md)}{/if}{/each}
+                        {/each}<!-- display widgets (side_by_side, quote, book, scene — the writer's inline templates): the reply's marker + fallback swapped for the component -->{#if m.widgets?.length}{#each widgetSegments(m.pending ? settled(m.content) : m.content, m.widgets) as ws}{#if ws.kind === 'widget' && ws.widget.kind === 'side_by_side'}<SideBySide widget={ws.widget} />{:else if ws.kind === 'widget' && ws.widget.kind === 'quote'}{@render qcard(ws.widget, renderRich(ws.widget.text))}{:else if ws.kind === 'widget' && ws.widget.kind === 'book'}{@render bookCard(ws.widget)}{:else if ws.kind === 'widget' && ws.widget.kind === 'scene'}{@render sceneCard(ws.widget)}{:else if ws.md?.trim()}{@html renderRich(ws.md.trim())}{/if}{/each}
                         {:else if m.quoteCards?.length && !m.pending}
                           {#each quoteSegments(m.content, m.quoteCards) as seg}
                             {#if seg.kind === 'quote'}
@@ -1018,6 +1045,7 @@
                     {:else}{m.content}{/if}
                   </div>
                   {/if}
+                  {#if m.pending && m.content && rethink}<span class="think again" role="status"><span class="think-dot" aria-hidden="true"></span>{#key statusLine}<span class="stage">{statusLine}</span>{/key}</span>{/if}
                   {#each m.talks || [] as t (t.slug)}{@render talkCard(t)}{/each}
                   {#each m.books || [] as b (b.id)}{@render bookCard(b)}{/each}
                   <!-- no source pills (Chad 11-12): the reply's citations are its links; the cards show the books -->
@@ -1043,7 +1071,8 @@
                 </div>
               </div>
             {/each}
-            {#if errorMsg}<div class="error" role="alert">{errorMsg}</div>{/if}
+            {/if}
+            {#if errorMsg}<div class="error" role="alert"><span>{errorMsg}</span>{#if messages.at(-1)?.role === 'user'}<button type="button" class="err-retry" onclick={() => reask(messages.length - 1)}>{@render ic('retry')}Try again</button>{/if}</div>{/if}
             {#if onetap !== 'hidden'}
               <div class="onetap" role="region" aria-label="Email research summaries">
                 {#if onetap === 'offer'}
@@ -1252,6 +1281,7 @@
     color: #23324a; opacity: .05; pointer-events: none;
   }
   .body {
+    position: relative; z-index: 1;
     flex: 1; overflow-y: auto; padding: 18px 18px 10px;
     overscroll-behavior: contain;   /* reaching the end of the conversation never scrolls the page behind */
     display: flex; flex-direction: column; gap: 14px;
@@ -1273,6 +1303,8 @@
   .bubble.follow { margin-top: 8px; }
   /* ── Cards (Chad 11-13): one rhythm for every widget — set in from the prose, clear air above and below, compact inside;
      each kind its own character: the book a volume on a desk, the talk a listening card, the quote the words themselves. ── */
+  .book, .talk, .qcard, .scene, .bubble :global(.sbs-wrap) { white-space: normal; }   /* inside a pre-wrap bubble: template whitespace is never a blank line */
+  .qcard-text { white-space: pre-wrap; }
   .book, .talk, .qcard, .scene { clear: both; box-sizing: border-box; margin: 16px 0 16px 14px; max-width: min(500px, calc(100% - 14px)); }
   .kicker { font: 600 10px/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif; letter-spacing: .14em; text-transform: uppercase; }
   .ext { width: 12px; height: 12px; margin-left: 4px; vertical-align: -1.5px; transition: transform .2s; }
@@ -1281,7 +1313,7 @@
   .book { display: flex; gap: 14px; align-items: flex-start; padding: 12px 16px 12px 12px; color: #2a2620;
     background: linear-gradient(180deg, #fffdf8, #f9f3e4); border: 1px solid #ebe2cd; border-radius: 3px 10px 10px 3px;
     box-shadow: inset 3px 0 0 color-mix(in srgb, var(--gold) 80%, transparent), 0 10px 22px -16px rgba(60, 40, 10, .45); }
-  .book-cover { flex: 0 0 auto; display: block; line-height: 0; }
+  .book-cover { flex: 0 0 auto; display: block; line-height: 0; text-decoration: none; }
   .book-cover img, .book-blank { width: 64px; border-radius: 2px 4px 4px 2px; transform: rotate(-2deg); transition: transform .3s cubic-bezier(.2, .8, .2, 1);
     box-shadow: -2px 0 0 rgba(0, 0, 0, .06), 0 7px 14px -6px rgba(40, 25, 5, .5); }
   .book-cover img { height: auto; }
@@ -1309,7 +1341,7 @@
     box-shadow: inset 0 0 0 1px rgba(232, 217, 181, .09), 0 12px 26px -16px rgba(10, 20, 40, .7); }
   .talk::after { content: ''; position: absolute; right: -34px; top: -34px; width: 110px; height: 110px; border-radius: 50%; pointer-events: none;
     border: 1px solid rgba(232, 217, 181, .1); box-shadow: 0 0 0 16px rgba(232, 217, 181, .035), 0 0 0 32px rgba(232, 217, 181, .02); }
-  .talk-photo { display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; overflow: hidden; line-height: 0; background: #23324a;
+  .talk-photo { text-decoration: none; display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; overflow: hidden; line-height: 0; background: #23324a;
     box-shadow: 0 0 0 2px #18243a, 0 0 0 3.5px var(--gold), 0 6px 16px -4px rgba(0, 0, 0, .55); }
   .talk-photo img { width: 100%; height: 100%; object-fit: cover; filter: sepia(.12) contrast(1.04); }
   .talk-photo-i { font-family: var(--serif); font-size: 26px; color: var(--gold); line-height: 1; }
@@ -1350,10 +1382,11 @@
   /* scene card: one moment of a story with the words that record it */
   .scene { padding: 12px 14px; border: 1px solid #ebe2cd; border-top: 2.5px solid var(--gold); border-radius: 4px 4px 10px 10px; background: #fffdf8; color: #2a2620;
     box-shadow: 0 10px 22px -16px rgba(60, 40, 10, .4); }
-  .scene-head { display: flex; gap: 10px; align-items: center; }
-  .scene-title { margin: 0; font-family: var(--serif); font-size: 1.06em; line-height: 1.25; }
-  .scene-line { margin: 2px 0 0; font-size: .84em; color: #6b6253; }
-  .scene-pass { margin: 10px 0 0; padding-left: 10px; border-left: 2px solid var(--gold); }
+  .scene-head { display: flex; gap: 10px; align-items: center; padding-bottom: 8px; border-bottom: 1px solid color-mix(in srgb, var(--gold) 22%, transparent); }
+  .scene-title { margin: 0; font-family: var(--serif); font-size: 1.08em; font-weight: 600; line-height: 1.25; text-wrap: balance; }
+  .scene-line { margin: 3px 0 0; font: italic .84em/1.35 var(--serif); color: #6b6253; }
+  .scene-pass { margin: 12px 0 0; padding-left: 11px; border-left: 2px solid var(--gold); }
+  .scene-pass .qcard-text { line-height: 1.55; }
   .msg.user .bubblewrap { max-width: 78%; }
 
   .bubble {
@@ -1396,8 +1429,11 @@
   .bubble :global(em.quote[dir="rtl"]) { font-style: normal; unicode-bidi: isolate; }
   .bubble :global(blockquote.quote) { color: var(--quote); font-style: normal; }
   .bubble :global(.quote a) { color: inherit; }
-  .bubble :global(table) { border-collapse: collapse; margin: .5em 0; width: 100%; font-size: .9em; display: block; overflow-x: auto; }
-  .bubble :global(th), .bubble :global(td) { border: 1px solid color-mix(in srgb, currentColor 20%, transparent); padding: .3em .5em; vertical-align: top; text-align: start; }
+  .bubble :global(table) { border-collapse: collapse; margin: .7em 0; max-width: 100%; font-size: .9em; line-height: 1.4; display: block; overflow-x: auto; white-space: normal; }
+  .bubble :global(th), .bubble :global(td) { border: 0; border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent); padding: .42em .9em .42em 0; vertical-align: top; text-align: start; }
+  .bubble :global(th) { font: 600 .74em/1.3 system-ui, -apple-system, 'Segoe UI', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-ink);
+    border-bottom: 1.5px solid color-mix(in srgb, var(--gold) 55%, transparent); padding-bottom: .5em; }
+  .bubble :global(tr:last-child td) { border-bottom: 0; }
   /* tables: the full table when there is room; on a phone each row folds (rich-table.js) */
   .bubble :global(.rt-rows) { display: none; }
   .bubble :global(.rt-rows details), .bubble :global(.rt-one) { border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent); padding: .35em 0; }
@@ -1411,9 +1447,12 @@
   .bubble :global(.qref) { font-style: normal; font-size: .86em; opacity: .85;  }
   .bubble :global(.ul) { display: block; margin: .3em 0 .4em 1.1em; }   /* indent organizes, not blank lines (Chad 11-13) */
   .bubble :global(.pg) { display: block; height: .55em; }   /* a paragraph break: half a line, never a full blank one */
-  .bubble :global(.h) { display: block; font-weight: 700; margin: 1em 0 .3em; }
+  .bubble :global(.h) { display: block; font-weight: 650; font-size: 1.06em; line-height: 1.3; letter-spacing: .005em; margin: 1.05em 0 .25em; color: color-mix(in srgb, currentColor 86%, var(--accent-deep)); text-wrap: balance; }
   .bubble :global(.h:first-child) { margin-top: 0; }
-  .bubble :global(.li) { display: block; padding-left: .95em; text-indent: -0.95em; }
+  .bubble :global(.li) { display: block; position: relative; padding-left: 1.15em; }
+  .bubble :global(.li .b) { position: absolute; left: 0; color: var(--gold-ink); }
+  .bubble :global(.li.ol) { padding-left: 1.6em; }
+  .bubble :global(.li.ol .b) { width: 1.25em; text-align: right; font-variant-numeric: tabular-nums; font-size: .92em; }
   .bubble :global(.li + .li) { margin-top: .12em; }
 
   /* Streaming caret — a breathing quill of accent-to-gold light. */
@@ -1424,7 +1463,15 @@
   }
   @keyframes breathe { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
 
-  /* Honest progress, poetically: pipeline stages with a light shimmer sweeping through. */
+  /* Honest progress, poetically: the research line — a gold pulse, the current step in italic serif, each new step fading in. */
+  .msg.assistant .bubble.waiting { background: transparent; border-color: transparent; box-shadow: none; padding-left: 4px; }
+  .think { display: inline-flex; align-items: center; gap: 10px; min-height: 1.6em; }
+  .think.again { display: flex; margin: 8px 0 0 4px; }
+  .think-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--gold);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 55%, transparent); animation: pulse 1.8s ease-out infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 50%, transparent); } 70%, 100% { box-shadow: 0 0 0 9px transparent; } }
+  .think .stage { animation: shimmer 1.7s linear infinite, stagein .5s ease both; }
+  @keyframes stagein { from { opacity: 0; } }
   .stage {
     display: inline-block; font-family: var(--serif); font-style: italic; font-size: 15px;
     color: transparent;
@@ -1440,7 +1487,50 @@
   .nextq button:hover:not(:disabled) { background: color-mix(in srgb, var(--gold) 12%, transparent); }
   .nextq button:disabled { opacity: .5; cursor: default; }
 
-  .error { color: #a33; font-size: 13px; padding: 4px 2px; }
+  .error { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; margin-left: 36px; padding: 9px 12px 9px 14px; border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent); background: color-mix(in srgb, var(--danger) 6%, transparent);
+    color: #8a2f25; font: 14px/1.4 var(--serif); }
+  .error span { flex: 1 1 12em; }
+  .err-retry { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; cursor: pointer;
+    border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent); background: none; color: inherit; font: 500 13px/1 system-ui, -apple-system, sans-serif; }
+  .err-retry .ic { width: 14px; height: 14px; }
+  .err-retry:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+
+  /* ── The thinking sky: a faint gold constellation (one canvas, think-sky.js) and a slow glow behind the conversation while
+     Anís researches; it deepens with each research step and fades as the answer arrives. Opacity/transform only. ── */
+  .sky, .sky-glow { position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0; transition: opacity 1.2s ease; }
+  .sky { width: 100%; height: 100%; display: block; }
+  .sky.on { opacity: 1; }
+  .sky-glow { inset: -20% -10%; background: radial-gradient(42% 36% at 40% 46%, color-mix(in srgb, var(--gold) 16%, transparent), transparent 70%);
+    will-change: transform, opacity; }
+  .sky-glow.on { opacity: calc(.45 + .55 * var(--depth, 0)); animation: drift 14s ease-in-out infinite alternate; }
+  @keyframes drift { from { transform: translate3d(-6%, -3%, 0) scale(1); } to { transform: translate3d(8%, 5%, 0) scale(1.12); } }
+
+  /* ── Welcome (fullscreen, before the first question): calm, typographic, four example questions by kind ── */
+  .welcome { margin: auto; padding: 24px 4px 12px; text-align: center; animation: arrive .5s cubic-bezier(.22,1,.36,1) both; }
+  .wl-mark { display: block; width: 44px; height: 44px; margin: 0 auto 14px; color: var(--gold-ink); }
+  .wl-mark svg { width: 100%; height: 100%; display: block; }
+  .wl-h { margin: 0; font: 600 clamp(26px, 3.4vw, 34px)/1.15 var(--serif); letter-spacing: -.005em; color: #22201b; text-wrap: balance; }
+  .wl-sub { margin: 10px auto 0; max-width: 34em; font: 16px/1.5 var(--serif); color: #5f5747; text-wrap: balance; }
+  .wl-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 28px auto 0; max-width: 680px; text-align: left; }
+  .wl-card { display: flex; flex-direction: column; gap: 7px; min-height: 92px; padding: 14px 16px 15px; border-radius: 12px; cursor: pointer;
+    border: 1px solid #e7dfcd; background: #fffdf8; color: #2a2620; text-align: left; font: inherit;
+    box-shadow: 0 1px 2px rgba(90, 75, 45, .05); transition: border-color .2s, box-shadow .2s, transform .2s; }
+  .wl-card:hover:not(:disabled) { border-color: color-mix(in srgb, var(--gold) 60%, #e7dfcd); transform: translateY(-1px);
+    box-shadow: inset 2.5px 0 0 var(--gold), 0 10px 22px -16px rgba(60, 40, 10, .5); }
+  .wl-card:focus-visible { outline: 2px solid color-mix(in srgb, var(--gold) 80%, transparent); outline-offset: 2px; }
+  .wl-card:disabled { opacity: .6; cursor: default; }
+  .wl-k { display: inline-flex; align-items: center; gap: 7px; font: 600 10.5px/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #8a6a22; }
+  .wl-k .ic { width: 15px; height: 15px; }
+  .wl-q { font: 16px/1.4 var(--serif); color: #2a2620; }
+  @media (max-width: 560px) {
+    .welcome { padding-top: 8px; }
+    .wl-mark { width: 36px; height: 36px; margin-bottom: 10px; }
+    .wl-sub { font-size: 15px; }
+    .wl-grid { grid-template-columns: 1fr; gap: 8px; margin-top: 20px; }
+    .wl-card { min-height: 0; padding: 11px 14px 12px; gap: 5px; }
+    .wl-q { font-size: 15px; }
+  }
 
   /* reply actions: quiet icons under a reply; shown on hover/focus, always on the last reply and on touch */
   .acts { display: flex; align-items: center; gap: 2px; margin: 4px 0 0 2px; opacity: 0; transition: opacity .18s; }
@@ -1642,6 +1732,17 @@
       opacity: 0; pointer-events: none; transition: opacity .25s; }
     .root.full .scrim.on { opacity: 1; pointer-events: auto; }
     .h-menu { margin-left: -6px; }
+    .root.full .hide-railed { display: none; }   /* account and sound live in the drawer's foot */
+  }
+  /* a phone: the title keeps its room — no subtitle or version, a smaller mark, tighter icons (P3 open item) */
+  @media (max-width: 420px) {
+    .main > header { gap: 8px; padding: 10px 10px 10px 12px; }
+    .roundel { width: 32px; height: 32px; padding: 6px; }
+    .subtitle, .ver { display: none; }
+    .title { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+    .hbtns { gap: 0; }
+    .icon { width: 36px; height: 36px; padding: 8px; }
+    .h-menu { margin-left: -4px; }
   }
 
   /* ── Dark: deep ink, warm text, lifted links, same gold. ── */
@@ -1679,6 +1780,15 @@
     .sb { border-color: #3a4352; }
     .sb.go { background: var(--gold); border-color: var(--gold); color: #14181e; }
     .nextq button:hover:not(:disabled) { color: #eef1f6; border-color: rgba(196, 205, 219, .55); }
+    .wl-h { color: #f1ede3; }
+    .wl-sub { color: #a9afb9; }
+    .wl-card { background: #1a2029; border-color: #2b3442; color: #e9e6dd; box-shadow: none; }
+    .wl-card:hover:not(:disabled) { border-color: color-mix(in srgb, var(--gold) 45%, #2b3442); box-shadow: inset 2.5px 0 0 var(--gold); }
+    .wl-q { color: #e9e6dd; }
+    .wl-k, .wl-mark { color: var(--gold); }
+    .sky-glow { background: radial-gradient(42% 36% at 40% 46%, color-mix(in srgb, var(--gold) 10%, transparent), transparent 70%); }
+    .error { color: #f0a59a; }
+    .bubble :global(.h) { color: #f1ede3; }
     .stage { background-image: linear-gradient(90deg, #6d7789 0%, color-mix(in srgb, var(--accent) 40%, #cfe1ff) 45%, var(--gold-soft) 55%, #6d7789 100%); }
     footer { border-top: 1px solid #232a35; }
     textarea { background: #171c23; color: #e9e6dd; border-color: #313a48; }
@@ -1705,7 +1815,12 @@
     .bubble-btn, .panel, .msg, .rule, .hist, .tr-menu, .toast, .share-scrim { animation: none; }
     .acts { transition: none; }
     .root.full .rail { transition: none; }
-    .stage { animation: none; color: #9a8f7a; background: none; }
+    .stage, .think .stage { animation: none; color: #7a705f; background: none; }
+    .think-dot, .welcome, .wl-card { animation: none; transition: none; }
+    .sky { display: none; }
+    .sky-glow { transition: none; }
+    .sky-glow.on { animation: none; transform: none; }
+    @media (prefers-color-scheme: dark) { .stage, .think .stage { color: #a9afb9; } }
     .caret { animation: none; opacity: .75; }
   }
 </style>
