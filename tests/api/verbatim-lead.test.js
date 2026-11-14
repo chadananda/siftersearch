@@ -39,3 +39,12 @@ describe('exact lead: talks (Chad 11-13 — transcripts are fully searchable)', 
     expect(exactLead([{ id: 2, f: 0.4, coll: 'Media', text: 'is the future of the African continent bright' }], 'Is the future of the African continent bright?', opts)).toEqual([]);
   });
 });
+
+describe('quotation recall (11-13)', () => {
+  it('a quotation query searches phrases at the exact-recall setting, wider than the everyday one', async () => {
+    const { SEARCH_PARAMS } = await import('../../api/lib/search/qdrant-layers.js');
+    expect(SEARCH_PARAMS.phraseExact.rescore).toBe(true);
+    expect(SEARCH_PARAMS.phraseExact.oversampling).toBeGreaterThan(SEARCH_PARAMS.phrase.oversampling);
+    expect(SEARCH_PARAMS.phraseExact.hnsw_ef).toBeGreaterThan(SEARCH_PARAMS.phrase.hnsw_ef);
+  });
+});

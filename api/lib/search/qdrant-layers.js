@@ -202,6 +202,10 @@ export const SEARCH_PARAMS = Object.freeze({
   phrase: Object.freeze({ rescore: true, oversampling: 1, hnsw_ef: 64 }),
   hype: Object.freeze({ rescore: true, oversampling: 1, hnsw_ef: 64 }),
   concept: Object.freeze({ rescore: true, oversampling: 2, hnsw_ef: null }),
+  // a QUOTATION (search/verbatim.js isVerbatimQuery): the reader typed a passage's own words, so the one exact paragraph must
+  // be found, not 98% of a top 30 (11-13: talk sentences fell out of the os1/ef64 list library-wide, phrase rank 0 inside their doc).
+  // The 11-04 reference setting; only quotation-shaped queries pay it.
+  phraseExact: Object.freeze({ rescore: true, oversampling: 4, hnsw_ef: 512 }),
 });
 const searchParams = (p) => ({ quantization: { rescore: p.rescore, oversampling: p.oversampling }, ...(p.hnsw_ef ? { hnsw_ef: p.hnsw_ef } : {}) });
 
@@ -356,7 +360,7 @@ export async function bestPerParagraphQuery(plain, grouped, limit) {
  *  0.6–1.1 s for the plain one (same ranking: best phrase per paragraph). N = limit×2 (11-03: limit 60 held 27–52 distinct
  *  paragraphs for limit 30, ≥30 in 97% of 40 fresh vectors, at half the cost of ×4); a FULL page short of paragraphs
  *  escalates to ×4, and only a full ×4 page still short falls back to the grouped query. */
-export async function searchPhrases(query, { limit = 30, filters, timeoutMs, params = SEARCH_PARAMS.phrase } = {}) {
+export async function searchPhrases(query, { limit = 30, filters, timeoutMs, exact = false, params = exact ? SEARCH_PARAMS.phraseExact : SEARCH_PARAMS.phrase } = {}) {
   const vector = await geminiQueryVector(query);
   const payload = ['paragraph_id', 'doc_id', 'start', 'end', ...RANK_PAYLOAD];
   const filter = toQdrantFilter(filters);

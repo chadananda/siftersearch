@@ -5,7 +5,7 @@
  */
 
 import { copyKey, publisherRank } from './search/copy-key.js';
-import { exactLead } from './search/verbatim.js';
+import { exactLead, isVerbatimQuery, isQuestion } from './search/verbatim.js';
 import { MeiliSearch } from 'meilisearch';
 import { config } from './config.js';
 import { logger } from './logger.js';
@@ -1352,6 +1352,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
   // CANON + AUTHORITATIVE passes (described below) start WITH the first wave, not after it (11-01: canon p50 788 ms, of which
   // its own Qdrant query is 15–105 ms — the rest was waiting for the slowest first-wave layer). They count only when the
   // phrase layer itself did not fail, as before.
+  const quotation = isVerbatimQuery(query) && !isQuestion(query);   // the reader typed a passage's own words → the phrase layer's exact-recall setting
   const phraseRan = ((options.phraseLayer && !semanticOff) || meiliOff) && (!scope_config || scope_config.primary) && !filters.documentId;
   const bahaiScope = filters.religion === "Baha'i";
   const canonP = !phraseRan ? null : gate((async () => {
@@ -1405,7 +1406,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
       : Promise.resolve({ hits: [] }),
     // Qdrant layers (P4, planning/phrase-index-plan.md) — opt-in until measured on both batteries.
     ((options.phraseLayer && !semanticOff) || meiliOff) && (!scope_config || scope_config.primary)
-      ? gate(timed('phrase', searchPhrases(query, { limit: overFetch, filters: qfilters })).catch(err => {
+      ? gate(timed('phrase', searchPhrases(query, { limit: overFetch, filters: qfilters, ...(quotation ? { exact: true } : {}) })).catch(err => {
           logger.warn({ err: err.message }, 'multiIndexSearch: phrase layer failed');
           return { hits: [], failed: true };
         }))
