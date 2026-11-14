@@ -18,6 +18,7 @@ import { deweyEmail } from './mail/dewey.js';
 import { deweyUploadRoute } from './dewey-upload.js';
 import { mediaFile, warmMedia, ensureMedia, MEDIA_FILE } from './media.js';
 import { shortLink, shortHost, SHORT_PATH } from './short-links.js';
+import { d1Dump } from './d1-dump.js';
 import { version as BUILD_VERSION } from '../package.json';
 import { als, evict, installFetchCache, policyFor, cacheKey, serveCached, apiProducer, API_ORIGIN } from './edge-cache.js';
 
@@ -133,6 +134,7 @@ export function createExports(manifest) {
           return ensureMedia(url, env, API_ORIGIN);
         }
         if (url.pathname === '/_s1/run' && request.method === 'POST') return systemOneRun(request, env);
+        if (url.pathname === '/_d1/dump' && request.method === 'POST') return d1Dump(request, env);   // tower's nightly copy of D1 (worker/d1-dump.js)
         { const up = await deweyUploadRoute(request, env); if (up) return up; }   // Dewey's browser-direct R2 multipart uploads (worker/dewey-upload.js)
         if (url.pathname.startsWith('/_mail/')) return (await mailRoute(request, env)) ?? new Response('not found', { status: 404 });
         // a contributor's item page from Dewey's receipts (signed link, rendered on tower; never cached)

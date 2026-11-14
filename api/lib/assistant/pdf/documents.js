@@ -24,8 +24,22 @@ export const SHORT_BASE = process.env.ANIS_SHORT_URL || 'https://anis.oceanlibra
 const B62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 export const shortCode = (bytes) => { let n = BigInt(`0x${Buffer.from(bytes).subarray(0, 8).toString('hex')}`), s = ''; for (let i = 0; i < 8; i++) { s += B62[Number(n % 62n)]; n /= 62n; } return s; };
 
-export function makeDocuments({ render = renderPdf, upload, exists, publicUrl, outbox = reportOutbox(), sendMail, store = offerStore(), mode = process.env.ANIS_REPORT_SEND, siteUrl, shortBase = SHORT_BASE } = {}) {
+// Tower is the master copy (Chad 11-13): every stored file is written under DOCS_LOCAL_DIR first (default /tank/documents,
+// only where that directory exists — not on a dev machine), then to R2 for serving.
+const LOCAL_DIR = process.env.DOCS_LOCAL_DIR || '/tank/documents';
+export async function keepLocal(key, body, dir = LOCAL_DIR) {
+  const fs = await import('node:fs/promises'), path = await import('node:path');
+  if (!(await fs.stat(dir).then((s) => s.isDirectory(), () => false))) return null;
+  const file = path.join(dir, key);
+  if (!file.startsWith(path.resolve(dir) + path.sep)) return null;
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  await fs.writeFile(file, body);
+  return file;
+}
+
+export function makeDocuments({ render = renderPdf, upload, exists, publicUrl, keep = keepLocal, outbox = reportOutbox(), sendMail, store = offerStore(), mode = process.env.ANIS_REPORT_SEND, siteUrl, shortBase = SHORT_BASE } = {}) {
   const put = async (key, body, contentType = 'application/pdf') => {
+    if (keep) await keep(key, body).catch((e) => console.warn(`[documents] local copy of ${key} failed: ${e.message}`));
     if (upload) return upload(key, body, contentType);
     const s = await import('../../storage.js');
     s.initStorage();
