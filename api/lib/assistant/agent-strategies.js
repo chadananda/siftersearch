@@ -40,6 +40,8 @@ export function strategyImpl({ search, fastSearch, deps = {} } = {}) {
     return { doc: f.doc, ids, series: 'Star of the West', years: years.length ? years : null };
   };
   return {
+    /** A published talk by speaker / topic / title (talk-search.js). → { talks } */
+    talkSearch: async (a) => (await import('./talk-search.js')).talkSearch(a, deps.talk || {}),
     /** The book itself: the finder + Jev's one pick, then the card the book answer builds. → { kind, doc|sec, book } | null */
     async bookCard({ title: name, author = null }) {
       const find = deps.bookFastPath || (await import('./book-pick.js')).bookFastPath;

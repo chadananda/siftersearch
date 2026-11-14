@@ -590,3 +590,7 @@ export const mediaPublishedSince = async (since) => (await queryOne(`SELECT COUN
 export const itemsNearDuration = async (duration_s, pct = 0.03) => queryAll(
   `SELECT id, slug, title, speaker, dir, duration_s FROM media_items WHERE duration_s BETWEEN ? AND ? AND state NOT IN ('duplicate', 'excluded') AND dir IS NOT NULL`,
   [duration_s * (1 - pct), duration_s * (1 + pct)], 'media:preview-candidates');
+
+/** Every published talk, the columns a talk finder needs (anis talk_search; finder ranks them in memory). */
+export const publishedTalkRows = async () => queryAll(`SELECT id, slug, title, speaker, speaker_key, year, date, duration_s, playback, doc_id, thumb, has_video
+  FROM media_items WHERE state = 'done' AND restored = 1 AND slug IS NOT NULL`, [], 'media:published-talks');

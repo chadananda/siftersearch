@@ -496,6 +496,31 @@
   {
    "type": "function",
    "function": {
+    "name": "talk_search",
+    "description": "A TALK, lecture or recording in the media library, found by its speaker, its topic or its title (any spelling; a typo still matches). Give what the reader gave: speaker \"Hooper Dunbar\" + topic \"consciousness\". Fast: no search of the texts unless the title says nothing. When the reader asks for a talk, answer with the talk (the reader sees its card) — no passages unless they ask.",
+    "parameters": {
+     "type": "object",
+     "properties": {
+      "speaker": {
+       "type": "string",
+       "description": "The speaker's name, as given"
+      },
+      "topic": {
+       "type": "string",
+       "description": "What the talk is about, in the reader's words"
+      },
+      "title": {
+       "type": "string",
+       "description": "The talk's title, when known"
+      }
+     },
+     "required": []
+    }
+   }
+  },
+  {
+   "type": "function",
+   "function": {
     "name": "work_notes_lookup",
     "description": "What the sources say about a CORE work's significance, purpose, station or impression (the Aqdas, the Íqán, the Hidden Words, God Passes By, The Dawn-Breakers…): verified quotations, best authority first. Call it beside document_search when a reader asks for or about a book.",
     "parameters": {
@@ -549,6 +574,7 @@
   "searchIn",
   "searchInWork",
   "sourceOf",
+  "talkSearch",
   "trace",
   "translation",
   "translationsOf",

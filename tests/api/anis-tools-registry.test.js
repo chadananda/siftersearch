@@ -24,6 +24,7 @@ describe('registry', () => {
   it('naming rule: _search tools take words (query), _lookup tools take one known item', () => {
     for (const n of tools.publicNames()) {
       const e = tools.REGISTRY[n];
+      if (n === 'talk_search') { expect(Object.keys(e.input.properties), n).toEqual(['speaker', 'topic', 'title']); continue; }   // named fields, at least one (checked in run)
       if (n.endsWith('_search')) expect(['query', 'title'], n).toContain(e.input.required[0]);
       if (n.endsWith('_lookup')) expect(e.input.required, n).not.toContain('query');
     }

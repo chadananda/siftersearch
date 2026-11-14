@@ -246,6 +246,8 @@
           else if (ev.type === 'widget' && ev.widget?.id) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.widgets = [...(last.widgets || []), ev.widget]; messages = [...messages]; } }
           // follow-up questions as pills under the last reply (Chad 11-12); a tap sends it
           else if (ev.type === 'followups' && Array.isArray(ev.items)) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.followups = ev.items; messages = [...messages]; } }
+          // a talk found in the media library (talk_search): its card with a player
+          else if (ev.type === 'talks' && Array.isArray(ev.talks)) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.talks = ev.talks; messages = [...messages]; } }
           else if (ev.type === 'books' && Array.isArray(ev.books)) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.books = ev.books; messages = [...messages]; } }
           else if (ev.type === 'citations' && Array.isArray(ev.citations)) { pendCites = ev.citations; }
           else if (ev.type === 'complete') { if (Array.isArray(ev.citations) && ev.citations.length) pendCites = ev.citations; streamDone = true; }
@@ -495,6 +497,22 @@
     {/each}
   </section>
 {/snippet}
+{#snippet talkCard(t)}
+  <div class="book talk">
+    {#if t.thumb_url}
+      <a class="book-cover" href={t.url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+        <img src={coverSrc(t.thumb_url, 240)} srcset={[160, 240, 320, 480].map((w) => `${coverSrc(t.thumb_url, w)} ${w}w`).join(', ')}
+          sizes="(min-width: 480px) 112px, 88px" alt="{t.speaker || 'Speaker'}" loading="lazy" decoding="async" />
+      </a>
+    {/if}
+    <div class="book-meta">
+      <a class="book-read" href={t.url} target="_blank" rel="noopener" title="Opens in a new tab">Open talk<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11C5 7 7.5 5 11.5 5M9 2.5 11.5 5 9 7.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <a class="book-title" href={t.url} target="_blank" rel="noopener">{t.title}</a>
+      <div class="book-by">{[t.speaker, t.year, t.duration_s ? `${Math.max(1, Math.round(t.duration_s / 60))} min` : null].filter(Boolean).join(' · ')}</div>
+      {#if t.audio_url}<audio class="talk-audio" controls preload="none" src={t.audio_url}></audio>{/if}
+    </div>
+  </div>
+{/snippet}
 {#snippet bookCard(b)}
   <div class="book">
     {#if b.cover_url}
@@ -628,6 +646,7 @@
                     {:else}{m.content}{/if}
                   </div>
                   {/if}
+                  {#each m.talks || [] as t (t.slug)}{@render talkCard(t)}{/each}
                   {#each m.books || [] as b (b.id)}{@render bookCard(b)}{/each}
                   <!-- no source pills (Chad 11-12): the reply's citations are its links; the cards show the books -->
                   {#if m.followups?.length && !m.pending && mi === messages.length - 1}
@@ -826,6 +845,7 @@
   .book-title { font-family: var(--serif); font-style: italic; font-size: 1.12em; line-height: 1.25; color: #2a2620; text-decoration: none; }
   .book-title:hover { color: var(--accent-deep); text-decoration: underline; }
   .book-by { font-size: .85em; color: #6b6253; }
+  .talk-audio { display: block; width: 100%; max-width: 320px; margin-top: 8px; height: 36px; }
   .book-desc { margin: 6px 0 0; font-size: .9em; line-height: 1.45; display: -webkit-box; color: #3d372d; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
   .book-read .ext { width: 12px; height: 12px; margin-left: 4px; vertical-align: -1px; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

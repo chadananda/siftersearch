@@ -412,6 +412,13 @@ const ENTRIES = [
       const links = ctx?.deps?.workUrl ? null : await (await import('../hit-links.js')).workLinks(all).catch(() => null);
       return { works: all.map((x) => ({ ...x, match: w?.doc ? 'title' : 'close', url: links?.get(x.id) ?? workUrl(x) })) };
     } },
+  { name: 'talk_search', label: 'Talk Search', kind: 'tool', process: true, outputName: 'Talk[]', cost: C(false, 20),
+    purpose: 'A recorded talk in the media library by speaker, topic or title: published talks only, best first, each with its page and card data.',
+    description: 'A TALK, lecture or recording in the media library, found by its speaker, its topic or its title (any spelling; a typo still matches). Give what the reader gave: speaker "Hooper Dunbar" + topic "consciousness". Fast: no search of the texts unless the title says nothing. When the reader asks for a talk, answer with the talk (the reader sees its card) — no passages unless they ask.',
+    input: { type: 'object', additionalProperties: false, properties: { speaker: str('The speaker\'s name, as given', 200), topic: str('What the talk is about, in the reader\'s words', 300), title: str('The talk\'s title, when known', 300) } },
+    output: { type: 'object', required: ['talks'], properties: { talks: { type: 'array', items: { type: 'object', additionalProperties: true } } } },
+    example: { input: { speaker: 'Hooper Dunbar', topic: 'consciousness' }, output: { talks: [{ doc_id: 2210357, slug: 'dunbar-consciousness-creation-and-the-soul', title: 'Consciousness, Creation and the Soul', speaker: 'Hooper Dunbar', year: 1988, url: 'https://siftersearch.com/media/dunbar-consciousness-creation-and-the-soul', matched: true }] } },
+    async run(a, ctx) { return (await import('./talk-search.js')).talkSearch(a, ctx?.deps?.talk || {}); } },
   { name: 'original_lookup', label: 'Original Lookup', kind: 'tool', outputName: 'Passage[]', cost: C(true, 300),
     purpose: 'The Arabic/Persian original of an English passage, then the authorised translations linked to it.',
     description: 'The original-language (Arabic/Persian) text of an English passage, and the authorised translations linked to that original. Give the English words (a sentence or two).',

@@ -197,6 +197,7 @@ export async function chat(request, env, ctx, deps = {}) {
       const fin = finishLinks(A.reply, pool), reply = mode === 'audio' ? speakable(fin.text) : fin.text;
       const citations = A.citations.map((c) => ({ ...c, url: c.url ? finishLinks(c.url, pool).text : c.url }));
       emit({ type: 'sources', sources: citations, plan: { shape: 'agent' } });
+      if (A.talks?.length) emit({ type: 'talks', talks: A.talks });   // talk_search found the talk: its card(s), before the text
       if (!A.widgetsShown) for (const widget of A.widgets || []) emit({ type: 'widget', widget });   // inline templates the writer chose (widgets/templates.js), before the text that places them; a streamed reply sent each as it was written
       for (const w of reply.split(/(\s+)/)) if (w) emit({ type: 'chunk', text: w });
       const cites = citations.slice(0, 8).map((q) => ({ document_id: q.document_id, paragraph_index: q.paragraph_index, text: q.text, title: q.title, author: q.author, religion: q.religion, url: q.url }));
@@ -207,7 +208,7 @@ export async function chat(request, env, ctx, deps = {}) {
         research: async (q) => { const r = runnerFor(impl)(impl, { search: 'fused_search' }); await r.run.fused_search({ query: q }); return [...r.found.values()]; } });
       if (items.length) emit({ type: 'followups', items });
       const timings = { total_ms: Date.now() - t0, first_text_ms: firstText, tower_ms: stat.ms, tower_calls: stat.calls, tower_by: stat.by, rounds, round_ms: roundMs, restate_ms: restateMs, restated: canon, widgets: (A.widgets || []).map((w) => w.kind), links: { narrowed: fin.narrowed, unplaced: fin.unplaced }, ...(body.trace ? { trace } : {}), research: sim == null ? null : { similarity: +sim.toFixed(3), question: matchedQ }, asked: researchQ };
-      emit({ type: 'complete', citations: cites, meta: { engine: 'anis-edge', mode, retrieved_count: A.retrieved.length, gate_passed: true, conversation_id: conversationId, format: 'agent', timings } });
+      emit({ type: 'complete', citations: cites, ...(A.talks?.length ? { talks: A.talks } : {}), meta: { engine: 'anis-edge', mode, retrieved_count: A.retrieved.length, gate_passed: true, conversation_id: conversationId, format: 'agent', timings } });
       // a letter carries each card's quotation markdown (its marker dropped); a document keeps the markers — the PDF draws the widgets there
       if (!C.stream) out = { reply: mode === 'email' ? reply.replace(/<!-- widget:[^>]*-->\s*/g, '') : reply, mode, status: 'answered', triage: await triageP,
         retrieved: A.retrieved.length, format: 'agent', conversationId, citations: cites, widgets: A.widgets || [], timings };

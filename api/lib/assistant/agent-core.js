@@ -12,7 +12,7 @@ const clip = (t, n) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); 
 
 // the agent's tools, by canonical name (tools.js registry): its search is fused_search (no planner), never combined_search under another name
 // the strategies first (Chad 11-12: strategies are the agent's tools, never a front door); the primitives stay beside them for exploration
-export const AGENT_TOOL_NAMES = ['research_lookup', 'book_card', 'search_in_work', 'find_passage', 'extract_from_work', 'fused_search', 'originals_search', 'context_lookup', 'whole_lookup', 'original_lookup', 'translation_lookup', 'side_by_side_document', 'rendering_lookup', 'source_trace', 'quotation_candidates', 'document_search', 'work_notes_lookup', 'web_search'];
+export const AGENT_TOOL_NAMES = ['research_lookup', 'book_card', 'search_in_work', 'find_passage', 'extract_from_work', 'fused_search', 'originals_search', 'context_lookup', 'whole_lookup', 'original_lookup', 'translation_lookup', 'side_by_side_document', 'rendering_lookup', 'source_trace', 'quotation_candidates', 'document_search', 'talk_search', 'work_notes_lookup', 'web_search'];
 
 // the agent's marker for "the library does not hold it" (code strips it; language-free); a lacking verdict reached on < MIN_SEARCHES library searches gets one more round
 export const NOT_FOUND = '[[NOT_IN_LIBRARY]]', MIN_SEARCHES = 3;
@@ -38,6 +38,7 @@ TOOLS — use them before answering; call several at once when they are independ
 - whole_lookup: the WHOLE prayer (or devotional unit) a found passage belongs to — before quoting any prayer for the reader to say.
 - extract_from_work: a selection from one whole work ("the prayers in it"). Slow; for selections, not searches.
 - document_search: whenever a book, tablet or work is named. It returns [B#] — the library's own copy. Always give it.
+- talk_search: a TALK, lecture or recording in the media library, by speaker, topic or title (any spelling). When the reader asks for a talk, answer with the talk — the reader sees its card; write its title in italics (never in quotation marks) and its speaker, no [[ref]], no URL — and no passages unless they ask. Talks are library documents: use this, never document_search, for a recording.
 - work_notes_lookup: sourced lines on a core work's importance — use beside document_search when the reader asks for or about a book.
 - fused_search: passages. Phrase the query in the words the texts would use. When the reader wants one writer's words ("where does 'Abdu'l-Bahá say…"), set author to that writer and leave the name out of the query. Try another wording before concluding anything is missing.
 - SOURCE QUESTIONS (a reader gives a quotation, or asks where words come from, who said them, whether they are authentic): call quotation_candidates first, with fused_search on the distinctive phrase in parallel. EXACT quotation (or the reader asks for the original/tablet/Persian/Arabic): answer with the source linked, the original when found, and works that quote it. INEXACT ask (keywords, a paraphrase, "the X quote"): give the MAIN source quoted and linked plus 1–2 similar passages from fused_search, and NO original-language text, Phelps Inventory or tablet detail unless asked; if no published source holds the words, say so plainly — never attribute from memory. Quote the located sentence and its surrounding sentences verbatim, with no "…" inside a quotation (keep the source's own spelling, even a typo); wording variants between copies go in a separate line, never stitched into the quote.
@@ -94,7 +95,7 @@ export function renderRefs(text, { found, works }) {
 }
 
 export const STATUS = { research_lookup: () => 'Checking earlier research', book_card: (a) => `Finding ${clip(a.title, 60)}`, search_in_work: (a) => `Searching ${clip(a.work, 40)}`, find_passage: (a) => `Finding the passage: ${clip(a.query, 50)}`,
-  extract_from_work: (a) => `Reading ${clip(a.work, 40)} for ${clip(a.select, 40)}`, fused_search: (a) => `Searching the library: ${clip(a.query, 60)}`, combined_search: (a) => `Searching the library: ${clip(a.query, 60)}`, document_search: (a) => `Finding ${clip(a.title, 60)}`,
+  extract_from_work: (a) => `Reading ${clip(a.work, 40)} for ${clip(a.select, 40)}`, fused_search: (a) => `Searching the library: ${clip(a.query, 60)}`, combined_search: (a) => `Searching the library: ${clip(a.query, 60)}`, document_search: (a) => `Finding ${clip(a.title, 60)}`, talk_search: (a) => `Finding the talk: ${clip([a.speaker, a.topic, a.title].filter(Boolean).join(' — '), 60)}`,
   work_notes_lookup: (a) => `What the sources say about ${clip(a.title, 50)}`, context_lookup: () => 'Reading around a passage', whole_lookup: () => 'Reading the whole prayer', quotation_candidates: () => 'Tracing a quotation',
   original_lookup: () => 'Finding the original', side_by_side_document: () => 'Preparing the side-by-side document', translation_lookup: () => 'Finding a translation', rendering_lookup: (a) => `Word study: ${clip(a.term_arabic ?? a.word, 40)}`,
   source_trace: () => 'Tracing to the primary texts', web_search: () => 'Searching the web' };
@@ -104,7 +105,7 @@ export const STATUS = { research_lookup: () => 'Checking earlier research', book
  * impl = libraryTools({ search }) (+ notes for work_notes_lookup, tests).
  */
 // library searches a tool call made (the earned-not-found rule counts them): search_in_work counts each wording
-const SEARCHES = { fused_search: () => 1, originals_search: () => 1, find_passage: () => 1, document_search: () => 1, quotation_candidates: () => 1, book_card: () => 1,
+const SEARCHES = { fused_search: () => 1, originals_search: () => 1, find_passage: () => 1, document_search: () => 1, talk_search: () => 1, quotation_candidates: () => 1, book_card: () => 1,
   search_in_work: (a) => Math.max(1, (a?.queries || []).length) };
 export const librarySearches = (steps, canonical = (n) => n) => steps.reduce((n, s) => n + (s.deferred ? 0 : SEARCHES[canonical(s.tool)]?.(s.args) || 0), 0);
 
@@ -154,6 +155,15 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     const b = r.book, ref = addWork({ id: r.kind === 'section' ? `${b.id}:${r.sec?.start_index}` : b.id, title: b.title, author: b.author, url: b.url, religion: r.doc?.religion ?? null });
     bookCards.set(ref, b);
     return `[${ref}] ${b.title}${b.author ? ` — ${b.author}` : ''}${r.kind === 'section' ? ` (a section of ${b.section?.of})` : ''}${b.description ? `\n${clip(b.description, 400)}` : ''}\nThe reader sees its card; write [[${ref}]] where you name it.`;
+  };
+  // a talk (media library): its card is shown to the reader (the turn's `talks`); the agent gets the facts, never a ref or a URL to write
+  const talks = new Map();
+  if (impl.talkSearch) run.talk_search = async (a) => {
+    const r = await impl.talkSearch(a);
+    const hit = (r?.talks || []).filter((t) => t.matched);
+    if (!hit.length) return `no published talk found for ${[a.speaker, a.topic, a.title].filter(Boolean).map((x) => `"${x}"`).join(' / ')}${r?.talks?.length ? `; ${a.speaker} has these talks: ${r.talks.map((t) => `"${t.title}"${t.year ? ` (${t.year})` : ''}`).join('; ')}` : ' — try another wording, or fused_search the transcripts'}`;
+    for (const t of hit) talks.set(t.slug, t);
+    return `${hit.length} talk${hit.length === 1 ? '' : 's'}, best first (the reader sees ${hit.length === 1 ? 'its card' : 'their cards'} with a player; name the talk in italics and its speaker, write no ref, no link, no quotation marks; no passages unless asked):\n${hit.map((t) => `- *${t.title}* — ${t.speaker || 'speaker unknown'}${t.year ? `, ${t.year}` : ''}${t.duration_s ? `, ${Math.round(t.duration_s / 60)} min` : ''}`).join('\n')}`;
   };
   if (impl.searchInWork) run.search_in_work = async (a) => {
     const r = await impl.searchInWork(a);
@@ -305,7 +315,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   if (reply && cardsFn) cards = await Promise.resolve().then(() => cardsFn({ reply, passages: cited.filter((q) => fromStrategy.has(q.ref)),
     books: [...bookCards].filter(([ref]) => works.get(ref)?.url && reply.includes(works.get(ref).url)).map(([, b]) => b) }, cardDocs ? { docs: cardDocs } : {})).catch(() => cards);
   const tally = steps.reduce((t, x) => ({ ...t, [x.cache]: (t[x.cache] || 0) + 1 }), {});
-  return { reply, raw: final, retrieved: cited, citations, steps, usage, cards, widgets, streamed, widgetsShown: shown != null,
+  return { reply, raw: final, talks: [...talks.values()].slice(0, 3), retrieved: cited, citations, steps, usage, cards, widgets, streamed, widgetsShown: shown != null,
     agent: { steps, searches: librarySearches(steps, canonical), nudged, cache: tally, ...(cache ? { store: cache.stats() } : {}) },
     quotes_removed: guarded.removed, quotes_recredited: speakers.fixed || 0, quotes_linked: linked.linked || 0,
     quotes_restored: whole.restored, offers_dropped: offerless.dropped,
