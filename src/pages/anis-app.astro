@@ -16,6 +16,8 @@ const mount = `window.__sifterChatLoader=true;function anisMount(){if(document.q
   + `function anisFail(){var s=document.querySelector('[data-anis-shell]');if(s)s.remove();document.documentElement.classList.remove('js')}`;
 // before the bundle: match the shell to this reader (rail hidden, a conversation open) and keep a question tapped meanwhile
 const prep = `(function(){try{var r=document.querySelector('[data-anis-shell]').shadowRoot;if(!r)return;var t='${TOKEN}',L=localStorage;`
+  + `var th=L.getItem('anis-theme'),dk=th==='dark'||(th!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);`   // prefs.js: the reader's theme, before first paint
+  + `r.querySelector('.root').classList.toggle('dark',dk);if(!dk){var h=document.documentElement;h.style.background=document.body.style.background='#f7f3ec';h.style.colorScheme='light';document.querySelector('meta[name=theme-color]').content='#f7f3ec'}`
   + `if(L.getItem('anis-rail')==='0'){var p=r.querySelector('.panel');if(p)p.classList.remove('railed')}`
   + `var a=L.getItem('anis-thread-active:'+t);if(!a){var ix=JSON.parse(L.getItem('anis-threads:'+t)||'[]');a=ix[0]&&ix[0].id}`
   + `if(L.getItem('sifter-chat-seen:'+t)||JSON.parse(L.getItem('anis-threads:'+t)||'[]').length){r.querySelectorAll('.wl-mark,.wl-sub').forEach(function(x){x.remove()})}`   // introduce once (threads.js isFirstVisit)

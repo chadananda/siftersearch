@@ -23,6 +23,7 @@
   import SideBySide from '../components/widgets/SideBySide.svelte';
   import { widgetSegments } from '../../api/lib/assistant/widgets/segments.js';
   import { BUILD, tagFor } from './version.js';
+  import { loadTheme, saveTheme, nextTheme, isDark, bioRows } from './prefs.js';
   import { loadConfig, saveConfig, bootConfig } from './boot.js';
   import { plainReply, replyHtml, replySources, referenceList, questionIndex, roundOf, answerTurns, rewind, shareTurns, fromShared } from './reply-actions.js';
   import { openStore, loadMessages, saveMessages, saveIndex, upsertThread, removeThread, pruneThreads, dropThreadData, groupThreads,
@@ -67,6 +68,10 @@
     open: ['M15 3h6v6', 'M10 14 21 3', 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'],
     unshare: ['M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7', 'M12 15V9', 'm3 3 18 18'],
     user: ['M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2', 'M12 3a4 4 0 1 0 0 8a4 4 0 1 0 0-8z'],
+    // theme icons, keyed by prefs.js THEMES
+    light: ['M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8z', 'M12 2v2', 'M12 20v2', 'm4.9 4.9 1.4 1.4', 'm17.7 17.7 1.4 1.4', 'M2 12h2', 'M20 12h2', 'm6.3 17.7-1.4 1.4', 'm19.1 4.9-1.4 1.4'],
+    dark: ['M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.6 6.6 0 0 0 10.7 10.7z'],
+    system: ['M4 4h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z', 'M8 20h8', 'M12 16v4'],
     copy: ['M10 8h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z', 'M5 16H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'],
     check: ['M20 6 9 17l-5-5'],
     cite: ['M4 6h11', 'M4 12h16', 'M4 18h9', 'M19 4v4', 'M17 6h4'],
@@ -665,8 +670,7 @@
     try { localStorage.setItem(snoozeKey(), String(Date.now())); } catch { /* ok */ }
     track('onetap_snoozed');
   }
-  // Header profile button: connected → avatar + popover (email, disconnect); not connected → an
-  // always-available way in (no waiting for the 3rd-exchange invite).
+  // Sign in: the One Tap offer, any time (no waiting for the 3rd-exchange invite); connected, it toggles the user menu.
   function profileClick() {
     if (connectedEmail) { profileOpen = !profileOpen; return; }
     profileOpen = false;
@@ -677,6 +681,43 @@
     connectedEmail = ''; connectedPic = ''; profileOpen = false; onetap = 'hidden';
     try { localStorage.removeItem(`sifter-onetap:${token}`); localStorage.removeItem(`sifter-onetap-pic:${token}`); } catch { /* ok */ }
   }
+  // ── The user menu (Chad 11-14): who you are, appearance, what Anís has noted about you. Full screen it opens from the rail's
+  // foot (a popover; a bottom sheet on narrow screens, where the drawer closes first); the floating widget, from its header.
+  let menuFrom = $state('rail');
+  let bio = $state(null), bioErr = $state(false);   // bio: null = not loaded, [] = nothing noted (prefs.js bioRows)
+  const bioUrl = () => `${api}/api/chat/bio?reader=${encodeURIComponent(sid)}`;
+  async function loadBio() {
+    bioErr = false;
+    try { const r = await fetch(bioUrl()); if (!r.ok) throw new Error(String(r.status)); bio = bioRows(await r.json()); }
+    catch { bio = null; bioErr = true; }
+  }
+  async function forgetBio() {
+    try { const r = await fetch(bioUrl(), { method: 'DELETE' }); if (!r.ok) throw new Error(String(r.status)); bio = []; toast('Forgotten'); }
+    catch { toast('Could not forget just now'); }
+  }
+  function userMenu(from) {
+    menuFrom = from; profileOpen = !profileOpen; drawerOpen = false;
+    if (profileOpen) loadBio();
+  }
+  function signIn() { profileOpen = false; profileClick(); }
+  // theme: system (the OS decides) until the reader picks; the app shell applies the stored choice before first paint
+  let theme = $state(loadTheme(LS()));
+  const darkMq = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null;
+  let sysDark = $state(!!darkMq?.matches);
+  const dark = $derived(isDark(theme, sysDark));
+  function setTheme(t) { theme = t; saveTheme(LS(), t); }
+  $effect(() => {
+    if (!darkMq?.addEventListener) return;
+    const on = (e) => (sysDark = e.matches);
+    darkMq.addEventListener('change', on);
+    return () => darkMq.removeEventListener('change', on);
+  });
+  $effect(() => {   // full screen the widget is the page: the page behind it (overscroll, browser bar) follows the theme
+    if (!isFull) return;
+    const bg = dark ? '#0a162a' : '#f7f3ec', d = document.documentElement;
+    d.style.colorScheme = dark ? 'dark' : 'light'; d.style.background = document.body.style.background = bg;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
+  });
   $effect(() => {
     const onMsg = (e) => {
       if (e.origin !== api || e.data?.type !== 'sifter-onetap') return;
@@ -997,7 +1038,7 @@
 {/snippet}
 
 {#if cfg && !denied}
-  <div class="root {cfg.position === 'bottom-left' ? 'left' : 'right'}" class:calm class:full={!!fullscreen && fullscreen !== '0'} style="--accent:{cfg.accent}">
+  <div class="root {cfg.position === 'bottom-left' ? 'left' : 'right'}" class:calm class:dark class:full={!!fullscreen && fullscreen !== '0'} style="--accent:{cfg.accent}">
     {#if open}
       <section class="panel" class:railed={isFull && railOpen} aria-label="{cfg.name} chat" onkeydown={isolateKey} onkeyup={isolate} onkeypress={isolate} use:contain>
         {#if isFull}
@@ -1012,22 +1053,10 @@
             </div>
             {@render threadList()}
             <div class="rail-foot">
-              {#if connectedEmail}
-                <button type="button" class="who" onclick={() => (profileOpen = !profileOpen)} aria-expanded={profileOpen} title={connectedEmail}>
-                  {#if connectedPic}<img class="who-pic" src={connectedPic} alt="" referrerpolicy="no-referrer" />{:else}<span class="who-pic">{initial(connectedEmail)}</span>{/if}
-                  <span class="who-t">{connectedEmail}</span>
-                </button>
-                {#if profileOpen}
-                  <div class="who-menu" role="menu">
-                    <div class="who-note">Receiving research summaries</div>
-                    <button type="button" role="menuitem" onclick={disconnectOnetap}>Disconnect</button>
-                  </div>
-                {/if}
-              {:else}
-                <button type="button" class="who quiet" onclick={() => { drawerOpen = false; profileClick(); }} title="Get research summaries by email">
-                  <span class="who-pic">{@render ic('user')}</span><span class="who-t">Connect</span>
-                </button>
-              {/if}
+              <button type="button" class="who" class:quiet={!connectedEmail} onclick={() => userMenu('rail')} aria-haspopup="dialog" aria-expanded={profileOpen} title="You and your preferences">
+                {#if connectedEmail && connectedPic}<img class="who-pic" src={connectedPic} alt="" referrerpolicy="no-referrer" width="28" height="28" />{:else if connectedEmail}<span class="who-pic">{initial(connectedEmail)}</span>{:else}<span class="who-pic">{@render ic('user')}</span>{/if}
+                <span class="who-t">{connectedEmail || 'You'}</span>
+              </button>
               <button type="button" class="ricon" aria-label={muted ? 'Unmute sounds' : 'Mute sounds'} aria-pressed={muted} onclick={toggleMute} title={muted ? 'Unmute' : 'Mute'}>
                 <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M4 9.5v5h3.5L13 19V5L7.5 9.5H4z" />
@@ -1067,7 +1096,9 @@
                 </div>
               {/if}
             {/if}
-            <button class="icon profile hide-railed" aria-label={connectedEmail ? `Account: ${connectedEmail}` : 'Connect for email summaries'} aria-expanded={profileOpen} onclick={profileClick} title={connectedEmail ? connectedEmail : 'Connect'}>
+            <button type="button" class="icon theme" aria-label="Theme: {theme} (change to {nextTheme(theme)})" title="Theme: {theme}" onclick={() => setTheme(nextTheme(theme))}>{@render ic(theme)}</button>
+            {#if !isFull}<!-- full screen: the user menu opens from the rail's foot (Chad 11-14) -->
+            <button class="icon profile" aria-label="You and your preferences" aria-haspopup="dialog" aria-expanded={profileOpen} onclick={() => userMenu('head')} title={connectedEmail || 'You and your preferences'}>
               {#if connectedEmail && connectedPic}
                 <img class="pavatar" src={connectedPic} alt="" referrerpolicy="no-referrer" />
               {:else}
@@ -1076,13 +1107,6 @@
                 </svg>
               {/if}
             </button>
-            {#if profileOpen && connectedEmail}
-              <div class="pmenu" role="menu">
-                <div class="pmail">{connectedEmail}</div>
-                <div class="pnote">Receiving research summaries</div>
-                <button class="pdisc" role="menuitem" onclick={disconnectOnetap}>Disconnect</button>
-              </div>
-            {/if}
             <button class="icon" aria-label="New conversation" aria-haspopup="menu" aria-expanded={resetOpen} onclick={() => (resetOpen = !resetOpen)} title="New conversation">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
             </button>
@@ -1092,12 +1116,7 @@
                 <button class="pdisc" role="menuitem" onclick={startOver} title="Forget what this companion has learned about you, then start fresh">Start over (forget me)</button>
               </div>
             {/if}
-            <button class="icon hide-railed" aria-label={muted ? 'Unmute sounds' : 'Mute sounds'} aria-pressed={muted} onclick={toggleMute} title={muted ? 'Unmute' : 'Mute'}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 9.5v5h3.5L13 19V5L7.5 9.5H4z" fill="currentColor" stroke="none"/>
-                {#if muted}<path d="M16 8.5 21 15M21 8.5 16 15"/>{:else}<path d="M16.5 9a4.2 4.2 0 0 1 0 6M18.8 6.8a7.5 7.5 0 0 1 0 10.4"/>{/if}
-              </svg>
-            </button>
+            {/if}
             {#if !isFull}<!-- full screen is the app itself: nothing to minimise to (Chad 11-14) -->
             <button class="icon close" aria-label="Close chat" onclick={togglePanel}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -1305,6 +1324,47 @@
             </div>
           </div>
         {/if}
+        {#if profileOpen}
+          <div class="um-scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) profileOpen = false; }}>
+            <div class="um {menuFrom === 'head' ? 'from-head' : 'from-rail'}" role="dialog" aria-modal="true" aria-labelledby="um-h" tabindex="-1" use:focusIn
+              onkeydown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); profileOpen = false; } }}>
+              <h2 id="um-h" class="um-title">You</h2>
+              <div class="um-who">
+                {#if connectedEmail && connectedPic}<img class="who-pic" src={connectedPic} alt="" referrerpolicy="no-referrer" width="28" height="28" />{:else if connectedEmail}<span class="who-pic">{initial(connectedEmail)}</span>{:else}<span class="who-pic quiet">{@render ic('user')}</span>{/if}
+                <span class="um-id">
+                  <span class="um-name">{connectedEmail || 'Not signed in'}</span>
+                  <span class="um-note">{connectedEmail ? 'Receiving research summaries by email' : 'Sign in to receive research summaries by email'}</span>
+                </span>
+                {#if connectedEmail}<button type="button" class="um-btn" onclick={disconnectOnetap}>Sign out</button>{:else}<button type="button" class="um-btn go" onclick={signIn}>Sign in</button>{/if}
+              </div>
+              <div class="um-sec">
+                <h3 class="um-h" id="um-ap">Appearance</h3>
+                <div class="um-seg" role="radiogroup" aria-labelledby="um-ap">
+                  {#each ['system', 'light', 'dark'] as t (t)}
+                    <button type="button" role="radio" aria-checked={theme === t} class:on={theme === t} onclick={() => setTheme(t)}>{@render ic(t)}{t[0].toUpperCase() + t.slice(1)}</button>
+                  {/each}
+                </div>
+                <button type="button" class="um-row" role="switch" aria-checked={!muted} onclick={toggleMute}>Sounds<span class="um-sw" class:on={!muted} aria-hidden="true"></span></button>
+              </div>
+              <div class="um-sec">
+                <h3 class="um-h">What {cfg.name} knows about me</h3>
+                {#if bio === null}
+                  <p class="um-note">{bioErr ? 'Could not load this just now.' : 'Loading…'}</p>
+                {:else if !bio.length}
+                  <p class="um-note">Nothing yet. When you mention your tradition, your interests or how deeply you read, {cfg.name} notes it here so answers fit you.</p>
+                {:else}
+                  <ul class="um-bio">
+                    {#each bio as b, i (i)}<li><span class="um-k">{b.label}</span> {b.value}{#if b.evidence}<q>{b.evidence}</q>{/if}</li>{/each}
+                  </ul>
+                  <button type="button" class="um-btn danger" onclick={forgetBio}>Forget this</button>
+                {/if}
+              </div>
+              <div class="um-sec um-foot">
+                <button type="button" class="um-link" onclick={() => { profileOpen = false; startOver(); }} title="Forget what {cfg.name} has learned about you, then start fresh">Start over (forget me)</button>
+              </div>
+            </div>
+          </div>
+        {/if}
       </section>
     {:else}
       <button class="bubble-btn" aria-label="Open {cfg.name} chat" aria-expanded="false" onclick={togglePanel}>
@@ -1369,8 +1429,6 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
     animation: fadeup .25s ease both;
   }
-  .pmail { font-size: 13px; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; }
-  .pnote { font-size: 11.5px; opacity: .65; color: #fff; margin: 2px 0 8px; }
   .pdisc {
     border: 1px solid color-mix(in srgb, #fff 25%, transparent); background: none; color: #fff;
     border-radius: 999px; padding: 4px 12px; font-size: 12px; cursor: pointer; opacity: .85;
@@ -1910,11 +1968,57 @@
   .who.quiet .who-pic { background: none; color: inherit; box-shadow: inset 0 0 0 1px var(--rail-line); }
   .who.quiet .who-pic .ic { width: 15px; height: 15px; }
   .who-t { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-  .who-menu { position: absolute; left: 10px; right: 10px; bottom: calc(100% + 6px); z-index: 10; padding: 11px 12px; border-radius: 11px;
-    background: var(--rail-card); border: 1px solid var(--rail-line); box-shadow: var(--menu-shadow); animation: fadeup .16s ease both; }
-  .who-note { font: 12px/1.3 system-ui, sans-serif; color: var(--rail-muted); margin-bottom: 8px; }
-  .who-menu button { border: 1px solid var(--rail-line); background: none; color: var(--rail-ink); border-radius: 999px; padding: 5px 12px; font: 12px/1 system-ui, sans-serif; cursor: pointer; }
-  .who-menu button:hover { border-color: var(--danger); color: var(--danger); }
+  /* the user menu: a popover over the rail's foot (or under the floating header); a bottom sheet on narrow screens */
+  .um-scrim { position: absolute; inset: 0; z-index: 30; }
+  .um { position: absolute; z-index: 31; width: 300px; max-height: min(560px, calc(100% - 80px)); overflow-y: auto; padding: 14px 16px 10px;
+    border-radius: 13px; background: var(--rail-card); color: var(--rail-ink); border: 1px solid var(--rail-line); box-shadow: var(--menu-shadow);
+    font: 13px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; --um-muted: color-mix(in srgb, var(--rail-ink) 70%, var(--rail-card));
+    animation: fadeup .16s ease both; }
+  .um.from-rail { left: calc(10px + env(safe-area-inset-left, 0px)); bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
+  .um.from-head { right: 12px; top: 58px; }
+  .um-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); margin: 0; }
+  .um-who { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; }
+  .who-pic.quiet { background: none; color: var(--um-muted); box-shadow: inset 0 0 0 1px var(--rail-line); }
+  .who-pic.quiet .ic { width: 15px; height: 15px; }
+  .um-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .um-name { font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .um-note { color: var(--um-muted); font-size: 12px; margin: 0; }
+  .um-sec { border-top: 1px solid var(--rail-line); padding: 11px 0; }
+  .um-h { margin: 0 0 8px; font: 600 11px/1.2 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--um-muted); }
+  .um-btn { flex: none; border: 1px solid var(--rail-line); background: none; color: var(--rail-ink); border-radius: 999px; padding: 6px 13px;
+    font: 12.5px/1 system-ui, sans-serif; cursor: pointer; }
+  .um-btn:hover { background: var(--rail-hover); }
+  .um-btn.go { background: var(--gold); border-color: var(--gold); color: #1a1712; }
+  .um-btn.danger:hover { border-color: var(--danger); color: var(--danger); background: none; }
+  .um-seg { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--rail-hover); }
+  .um-seg button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 4px; border: 0; border-radius: 8px;
+    background: none; color: var(--um-muted); font: 12.5px/1 system-ui, sans-serif; cursor: pointer; }
+  .um-seg button .ic { width: 15px; height: 15px; }
+  .um-seg button.on { background: var(--rail-card); color: var(--rail-ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .14), 0 0 0 1px var(--rail-line); }
+  .um-row { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 10px; padding: 4px 0; border: 0; background: none;
+    color: var(--rail-ink); font: inherit; cursor: pointer; }
+  .um-sw { width: 30px; height: 18px; border-radius: 9px; background: var(--rail-line); position: relative; transition: background .15s; }
+  .um-sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform .15s;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .25); }
+  .um-sw.on { background: var(--gold); }
+  .um-sw.on::after { transform: translateX(12px); }
+  .um-bio { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 8px; }
+  .um-k { font-weight: 600; }
+  .um-bio q { display: block; margin-top: 2px; color: var(--um-muted); font-style: italic; font-size: 12px; }
+  .um-foot { padding-bottom: 2px; }
+  .um-link { border: 0; background: none; padding: 2px 0; color: var(--um-muted); font: 12.5px/1.3 system-ui, sans-serif; cursor: pointer; }
+  .um-link:hover { color: var(--danger); }
+  @media (max-width: 899px) {   /* the rail is a drawer here: the menu rises from the bottom instead */
+    .root.full .um-scrim { position: fixed; background: rgba(0, 0, 0, .35); }
+    .root.full .um.from-rail { position: fixed; left: 0; right: 0; bottom: 0; width: auto; max-height: 85dvh; border-radius: 16px 16px 0 0;
+      border-width: 1px 0 0; padding: 16px 20px calc(14px + env(safe-area-inset-bottom, 0px)); animation: umsheet .24s cubic-bezier(.22, 1, .36, 1) both; }
+  }
+  @media (max-width: 640px) {
+    .um-scrim { position: fixed; background: rgba(0, 0, 0, .35); }
+    .um.from-rail, .um.from-head { position: fixed; left: 0; right: 0; top: auto; bottom: 0; width: auto; max-height: 85dvh; border-radius: 16px 16px 0 0;
+      border-width: 1px 0 0; padding: 16px 20px calc(14px + env(safe-area-inset-bottom, 0px)); animation: umsheet .24s cubic-bezier(.22, 1, .36, 1) both; }
+  }
+  @keyframes umsheet { from { transform: translateY(100%); } }
   /* the floating widget: the same list as a sheet over the conversation */
   .hist { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; background: var(--rail-bg); color: var(--rail-ink);
     animation: histin .24s cubic-bezier(.22, 1, .36, 1) both; }
@@ -1929,7 +2033,6 @@
   .hist .tl-search { margin: 0 14px 4px; }
   @media (min-width: 900px) {
     .root.full .panel:not(.railed) .rail, .h-menu { display: none; }
-    .root.full .panel.railed .hide-railed { display: none; }
     /* the reading column: centred, a comfortable measure, beside the rail */
     .root.full .body > *, .root.full footer { width: 100%; max-width: 960px; margin-inline: auto; }
   }
@@ -1945,7 +2048,6 @@
       opacity: 0; pointer-events: none; transition: opacity .25s; }
     .root.full .scrim.on { opacity: 1; pointer-events: auto; }
     .h-menu { margin-left: -6px; }
-    .root.full .hide-railed { display: none; }   /* account and sound live in the drawer's foot */
   }
   /* a phone: the title keeps its room — no subtitle or version, a smaller mark, tighter icons (P3 open item) */
   @media (max-width: 420px) {
@@ -1959,59 +2061,58 @@
   }
 
   /* ── Dark: deep ink, warm text, lifted links, same gold. ── */
-  @media (prefers-color-scheme: dark) {
-    .sample-list { background: #1e293b; color: #e2e8f0; }
-    .root { --quote: #dcc4a0; --panel-bg: #11151a;
-      --rail-bg: #0c1014; --rail-card: #1a2029; --rail-ink: #e6e2d8; --rail-muted: #858d9b; --rail-line: #232a35;
-      --rail-hover: rgba(255, 255, 255, .045); --rail-hover2: rgba(255, 255, 255, .085); --gold-ink: var(--gold); --danger: #e0786b;
-      --menu-shadow: 0 16px 40px -10px rgba(0, 0, 0, .6), 0 2px 6px rgba(0, 0, 0, .3);
-      --voice-bg: radial-gradient(120% 90% at 50% 36%, #1a2028, #0b0f13 72%); --voice-ink: #e9e6dd;
-      --mic-bg: #171c23; --mic-line: #313a48; --mic-ink: #b9b3a6; }
-    .tl-new, .tr.on { box-shadow: none; }
-    .tr.on { box-shadow: inset 2px 0 0 var(--gold), 0 0 0 1px var(--rail-line); }
-    .panel { background: linear-gradient(178deg, #14181e, #0e1217); color: #e9e6dd; }
-    .watermark { color: #b9c8dd; opacity: .045; }
-    .msg.assistant .bubble { background: #1b212a; border-color: #2b3442; color: #e9e6dd; box-shadow: none; }
-    .book, .scene { background: linear-gradient(180deg, #1e242d, #1a1f27); border-color: #2b3442; color: #e9e6dd; box-shadow: inset 3px 0 0 color-mix(in srgb, var(--gold) 70%, transparent); }
-    .scene { box-shadow: none; }
-    .book .book-title { color: #f1ede3; }
-    .book-by, .scene-line { color: #a59d8c; }
-    .book-desc { color: #d3cec2; }
-    .book .book-read { color: color-mix(in srgb, var(--accent) 35%, #cfe1ff); }
-    .talk { background: radial-gradient(130% 150% at 0% 0%, #26344c 0%, #161f30 55%, #10161f 100%); }
-    .qcard-cite, .qcard .qcard-cite, .scene .qcard-cite { color: #a59d8c; }
-    .qcard-cite em { color: #f1ede3; }
-    .bubble.lit::first-letter { color: color-mix(in srgb, var(--accent) 45%, #cfe1ff); }
-    .bubble :global(a) { color: color-mix(in srgb, var(--accent) 30%, #cfe1ff); }
-    .nextq button { color: #c4cddb; border-color: rgba(196, 205, 219, .3); }   /* subtle, never unreadable (Chad 11-12) */
-    .act { color: #7d8697; }
-    .act:hover:not(:disabled) { color: #e6e2d8; }
-    .toast { background: #e9e4d6; color: #1a1712; box-shadow: 0 10px 28px -8px rgba(0, 0, 0, .6); }
-    .toast .ic { color: #8a6a22; }
-    .share-scrim { background: rgba(0, 0, 0, .55); }
-    .share { background: #14181e; color: #e9e6dd; box-shadow: 0 24px 60px -18px rgba(0, 0, 0, .8), 0 0 0 1px #2b3442; }
-    .share-title, .share-prev, .share-link { background: #1b212a; border-color: #2b3442; }
-    .share-label, .share-note, .share-sum { color: #a9afb9; }
-    .sb { border-color: #3a4352; }
-    .sb.go { background: var(--gold); border-color: var(--gold); color: #14181e; }
-    .nextq button:hover:not(:disabled) { color: #eef1f6; border-color: rgba(196, 205, 219, .55); }
-    .wl-h { color: #f1ede3; }
-    .wl-sub { color: #a9afb9; }
-    .wl-card { background: #1a2029; border-color: #2b3442; color: #e9e6dd; box-shadow: none; }
-    .wl-card:hover:not(:disabled) { border-color: color-mix(in srgb, var(--gold) 45%, #2b3442); box-shadow: inset 2.5px 0 0 var(--gold); }
-    .wl-q { color: #e9e6dd; }
-    .wl-k, .wl-mark { color: var(--gold); }
-    .sky-glow { background: radial-gradient(42% 36% at 40% 46%, color-mix(in srgb, var(--gold) 10%, transparent), transparent 70%); }
-    .error { color: #f0a59a; }
-    .bubble :global(.h) { color: #f1ede3; }
-    .stage { background-image: linear-gradient(90deg, #6d7789 0%, color-mix(in srgb, var(--accent) 40%, #cfe1ff) 45%, var(--gold-soft) 55%, #6d7789 100%); }
-    footer { border-top: 1px solid #232a35; }
-    textarea { background: #171c23; color: #e9e6dd; border-color: #313a48; }
-    .orb-core { box-shadow: 0 22px 70px -18px color-mix(in srgb, var(--gold) 55%, transparent), inset 0 -12px 30px rgba(0, 0, 0, .3); }
-    textarea::placeholder { color: #6c7686; }
-    .body { scrollbar-color: rgba(140,150,170,.35) transparent; }
-    .body::-webkit-scrollbar-thumb { background: rgba(140,150,170,.3); }
-    }
+  /* applied as a class (.root.dark), not a media query: the reader may pick a theme (prefs.js), the shell applies it pre-paint */
+  .root.dark .sample-list { background: #1e293b; color: #e2e8f0; }
+  .root.dark { --quote: #dcc4a0; --panel-bg: #11151a;
+    --rail-bg: #0c1014; --rail-card: #1a2029; --rail-ink: #e6e2d8; --rail-muted: #858d9b; --rail-line: #232a35;
+    --rail-hover: rgba(255, 255, 255, .045); --rail-hover2: rgba(255, 255, 255, .085); --gold-ink: var(--gold); --danger: #e0786b;
+    --menu-shadow: 0 16px 40px -10px rgba(0, 0, 0, .6), 0 2px 6px rgba(0, 0, 0, .3);
+    --voice-bg: radial-gradient(120% 90% at 50% 36%, #1a2028, #0b0f13 72%); --voice-ink: #e9e6dd;
+    --mic-bg: #171c23; --mic-line: #313a48; --mic-ink: #b9b3a6; }
+  .root.dark .tl-new, .root.dark .tr.on { box-shadow: none; }
+  .root.dark .tr.on { box-shadow: inset 2px 0 0 var(--gold), 0 0 0 1px var(--rail-line); }
+  .root.dark .panel { background: linear-gradient(178deg, #14181e, #0e1217); color: #e9e6dd; }
+  .root.dark .watermark { color: #b9c8dd; opacity: .045; }
+  .root.dark .msg.assistant .bubble { background: #1b212a; border-color: #2b3442; color: #e9e6dd; box-shadow: none; }
+  .root.dark .book, .root.dark .scene { background: linear-gradient(180deg, #1e242d, #1a1f27); border-color: #2b3442; color: #e9e6dd; box-shadow: inset 3px 0 0 color-mix(in srgb, var(--gold) 70%, transparent); }
+  .root.dark .scene { box-shadow: none; }
+  .root.dark .book .book-title { color: #f1ede3; }
+  .root.dark .book-by, .root.dark .scene-line { color: #a59d8c; }
+  .root.dark .book-desc { color: #d3cec2; }
+  .root.dark .book .book-read { color: color-mix(in srgb, var(--accent) 35%, #cfe1ff); }
+  .root.dark .talk { background: radial-gradient(130% 150% at 0% 0%, #26344c 0%, #161f30 55%, #10161f 100%); }
+  .root.dark .qcard-cite, .root.dark .qcard .qcard-cite, .root.dark .scene .qcard-cite { color: #a59d8c; }
+  .root.dark .qcard-cite em { color: #f1ede3; }
+  .root.dark .bubble.lit::first-letter { color: color-mix(in srgb, var(--accent) 45%, #cfe1ff); }
+  .root.dark .bubble :global(a) { color: color-mix(in srgb, var(--accent) 30%, #cfe1ff); }
+  .root.dark .nextq button { color: #c4cddb; border-color: rgba(196, 205, 219, .3); }   /* subtle, never unreadable (Chad 11-12) */
+  .root.dark .act { color: #7d8697; }
+  .root.dark .act:hover:not(:disabled) { color: #e6e2d8; }
+  .root.dark .toast { background: #e9e4d6; color: #1a1712; box-shadow: 0 10px 28px -8px rgba(0, 0, 0, .6); }
+  .root.dark .toast .ic { color: #8a6a22; }
+  .root.dark .share-scrim { background: rgba(0, 0, 0, .55); }
+  .root.dark .share { background: #14181e; color: #e9e6dd; box-shadow: 0 24px 60px -18px rgba(0, 0, 0, .8), 0 0 0 1px #2b3442; }
+  .root.dark .share-title, .root.dark .share-prev, .root.dark .share-link { background: #1b212a; border-color: #2b3442; }
+  .root.dark .share-label, .root.dark .share-note, .root.dark .share-sum { color: #a9afb9; }
+  .root.dark .sb { border-color: #3a4352; }
+  .root.dark .sb.go { background: var(--gold); border-color: var(--gold); color: #14181e; }
+  .root.dark .nextq button:hover:not(:disabled) { color: #eef1f6; border-color: rgba(196, 205, 219, .55); }
+  .root.dark .wl-h { color: #f1ede3; }
+  .root.dark .wl-sub { color: #a9afb9; }
+  .root.dark .wl-card { background: #1a2029; border-color: #2b3442; color: #e9e6dd; box-shadow: none; }
+  .root.dark .wl-card:hover:not(:disabled) { border-color: color-mix(in srgb, var(--gold) 45%, #2b3442); box-shadow: inset 2.5px 0 0 var(--gold); }
+  .root.dark .wl-q { color: #e9e6dd; }
+  .root.dark .wl-k, .root.dark .wl-mark { color: var(--gold); }
+  .root.dark .sky-glow { background: radial-gradient(42% 36% at 40% 46%, color-mix(in srgb, var(--gold) 10%, transparent), transparent 70%); }
+  .root.dark .error { color: #f0a59a; }
+  .root.dark .bubble :global(.h) { color: #f1ede3; }
+  .root.dark .stage { background-image: linear-gradient(90deg, #6d7789 0%, color-mix(in srgb, var(--accent) 40%, #cfe1ff) 45%, var(--gold-soft) 55%, #6d7789 100%); }
+  .root.dark footer { border-top: 1px solid #232a35; }
+  .root.dark textarea { background: #171c23; color: #e9e6dd; border-color: #313a48; }
+  .root.dark .orb-core { box-shadow: 0 22px 70px -18px color-mix(in srgb, var(--gold) 55%, transparent), inset 0 -12px 30px rgba(0, 0, 0, .3); }
+  .root.dark textarea::placeholder { color: #6c7686; }
+  .root.dark .body { scrollbar-color: rgba(140,150,170,.35) transparent; }
+  .root.dark .body::-webkit-scrollbar-thumb { background: rgba(140,150,170,.3); }
 
   /* ── fullscreen host (siftersearch.com/anis): the panel is the page at every size ── */
   .root.full .panel { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; border-radius: 0; }
@@ -2030,7 +2131,7 @@
   @media (prefers-reduced-motion: reduce) {
     .voice, .v-a, .mic.on, .voice .orb-core, .voice .orb-halo { animation: none; }
     .orb-core, .orb-halo { transition: none; }
-    .bubble-btn, .panel, .msg, .rule, .hist, .tr-menu, .toast, .share-scrim { animation: none; }
+    .bubble-btn, .panel, .msg, .rule, .hist, .tr-menu, .toast, .share-scrim, .root .um.from-rail, .root .um.from-head, .root.full .um.from-rail { animation: none; }
     .acts { transition: none; }
     .root.full .rail { transition: none; }
     .stage, .think .stage { animation: none; color: #7a705f; background: none; }
@@ -2038,7 +2139,7 @@
     .sky { display: none; }
     .sky-glow { transition: none; }
     .sky-glow.on { animation: none; transform: none; }
-    @media (prefers-color-scheme: dark) { .stage, .think .stage { color: #a9afb9; } }
+    .root.dark .stage, .root.dark .think .stage { color: #a9afb9; }
     .caret { animation: none; opacity: .75; }
   }
 </style>

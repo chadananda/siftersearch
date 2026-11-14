@@ -7,7 +7,7 @@ export function sky(canvas, params) {
   const ctx = canvas.getContext?.('2d');
   const mq = (q) => (typeof matchMedia === 'function' ? matchMedia(q) : { matches: false });
   const still = () => mq('(prefers-reduced-motion: reduce)').matches;
-  const ink = () => (mq('(prefers-color-scheme: dark)').matches ? '231,213,164' : '176,138,52');
+  const ink = () => (canvas.closest?.('.root')?.classList.contains('dark') ? '231,213,164' : '176,138,52');   // the widget's theme (prefs.js), not the OS
   const size = () => {
     const dpr = Math.min(1.5, globalThis.devicePixelRatio || 1);
     w = canvas.clientWidth; h = canvas.clientHeight;
