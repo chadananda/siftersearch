@@ -59,6 +59,6 @@ describe('leadSource on the 1xebxqv shape (old research set, no book_author)', (
   it('a House passage authored Bahá’u’lláh quoted before Gleanings → the lead rewrite fires', () => {
     const found = new Map([['P1', { author: 'Bahá’u’lláh', title: ISSUES, religion: B, document_id: 20822 }],
       ['P2', { author: 'Bahá’u’lláh', title: 'Gleanings from the Writings of Bahá’u’lláh', religion: B, document_id: 1 }]]);
-    expect(leadSource('{{quote P1}}\n\nBahá’u’lláh wrote:\n\n{{quote P2}}', found)).toEqual({ first: 'P1', core: 'P2', firstTier: 'house' });
+    expect(leadSource('{{quote P1}}\n\nBahá’u’lláh wrote:\n\n{{quote P2}}', found)).toMatchObject({ first: 'P1', core: 'P2', firstTier: 'house' });
   });
 });

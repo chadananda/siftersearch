@@ -63,8 +63,8 @@ export const isNarrative = (p = {}) => !!p && !p.web && (NARRATIVE_DOCS.includes
 export const REPORTED_DOCS = [9495];
 export const HOUSE_DOCS = [20822];
 const REPORTED_TITLE = /\bpilgrims?['’]?s?\s+notes?\b|^(?:(?:an?|my|the)\s+)?(?:early\s+)?pilgrimage\b|\bhaifa notes\b/i;
-const ADMIN = /universalhouseofjustice|researchdepartment|spiritualassembly|internationalteachingcent(?:re|er)|continentalboard|boardofcounsell?ors|auxiliaryboard|teachingcommittee|departmentofthesecretariat/;
-const adminBody = (k) => ADMIN.test(k) && !EDITED.test(k);
+const ADMIN_CONTAINER = /universalhouseofjustice|researchdepartment|spiritualassembly|internationalteachingcent(?:re|er)|continentalboard|boardofcounsell?ors|auxiliaryboard|teachingcommittee|departmentofthesecretariat/;
+const adminBody = (k) => ADMIN_CONTAINER.test(k) && !EDITED.test(k);
 // a title naming the paragraph's own writer is theirs, whoever it is addressed to ("Letters of Shoghi Effendi to the National Spiritual Assembly…")
 const containerTier = (p, title, author) => {
   const id = Number(p.document_id ?? p.doc_id), t = keyOf(title), own = t.includes(author);
