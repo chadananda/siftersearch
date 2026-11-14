@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-14T16:37:51.285Z",
+  "generated": "2026-11-14T16:40:08.910Z",
   "entries": [
+    {
+      "hash": "fe06caec1",
+      "date": "2026-11-14",
+      "type": "Other",
+      "description": "Anís bio and quote links resolve library paths to /doc or collaborators",
+      "scope": null
+    },
     {
       "hash": "ceb2d4759",
       "date": "2026-11-14",
@@ -746,6 +753,13 @@
   ],
   "grouped": {
     "2026-11-14": [
+      {
+        "hash": "fe06caec1",
+        "date": "2026-11-14",
+        "type": "Other",
+        "description": "Anís bio and quote links resolve library paths to /doc or collaborators",
+        "scope": null
+      },
       {
         "hash": "ceb2d4759",
         "date": "2026-11-14",
