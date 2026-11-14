@@ -3,13 +3,15 @@
 //   after the Guardian, never dropped by core-first; a history search looks inside the work. 2 Clean cards: no [pg N]/[^N], no PDF page,
 //   no file-name title. 3 Layout: no lead-in without its card, no cut-off sentence, one card per passage. 4 Length is judgement, not a cap.
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { createSentenceGate, linkQuotes, dropUnverified, rowWithout } from '../../api/lib/assistant/quotes.js';
 import { sourceTier, coreFirst, byTier, isNarrative, TIER_ORDER } from '../../api/lib/assistant/source-tier.js';
 import { toolRunner } from '../../api/lib/assistant/researcher.js';
-import { cleanCardText, isPdfDump, readableTitle, isSiteRoot } from '../../api/lib/assistant/widgets/card-text.js';
+import { cleanCardText, isPdfDump, readableTitle, isSiteRoot, holdsPhrase } from '../../api/lib/assistant/widgets/card-text.js';
 import { fromRefs as quoteFrom } from '../../api/lib/assistant/widgets/quote.js';
 import { fromRefs as sceneFrom } from '../../api/lib/assistant/widgets/scene.js';
-import { expandTemplates } from '../../api/lib/assistant/widgets/templates.js';
-import { dropDanglingLeadIn, dropCutOff, unholdTexts, dropNarration, unbackedAbsence, absenceClaims, unappliedCorrection, correctedRows, dropUncheckedDisclaimer } from '../../api/lib/assistant/lint.js';
+import { expandTemplates, blockquoteCards } from '../../api/lib/assistant/widgets/templates.js';
+import { dropDanglingLeadIn, dropCutOff, unholdTexts, dropNarration, unbackedAbsence, absenceClaims, unappliedCorrection, correctedRows, dropUncheckedDisclaimer, dropSearchedNote, numberedRows, rebuildsTable, dropRebuildPreamble } from '../../api/lib/assistant/lint.js';
 import { HISTORY_WORKS, nameVariants } from '../../api/lib/assistant/history-sweep.js';
 import { agentAnswer, AGENT_SYSTEM, renderRefs } from '../../api/lib/assistant/agent-core.js';
 
@@ -249,5 +251,110 @@ describe('6 · round-6 live evidence', () => {
     expect(out).not.toMatch(/memory|CXXXII|I believe/);
     expect(out).toMatch(/It speaks of the Day of God/);
     expect(AGENT_SYSTEM).toMatch(/never from memory/);
+  });
+});
+
+// Round-7 live replay (11-14, tower f538aa830): srcr7 / evilr7 / iqanr7 SSE and the 4-turn Íqán chain (tests/fixtures/anis/iqan-r7/t1..t4.md,
+// the real replies) — the real excerpts.
+const GLEAN_261 = { id: 261, document_id: 7, title: 'Gleanings from the Writings of Bahá’u’lláh', author: "Bahá'u'lláh", religion: B, source_url: 'https://oceanlibrary.com/gleanings-from-the-writings-of-bahaullah/?paraId=para_261',
+  text: 'Watch over yourselves, for the Evil One is lying in wait, ready to entrap you. Gird yourselves against his wicked devices, and, led by the light of the name of the All-Seeing God, make your escape from the darkness that surroundeth you. Let your thought be fixed upon that which will rehabilitate the fortunes of mankind and sanctify the hearts and souls of men. Let your vision be world-embracing, rather than confined to your own self. The Evil One is he that hindereth the rise and obstructeth the spiritual progress of the children of men.' };
+const SAQ_921 = { id: 921, document_id: 8, title: 'Some Answered Questions', author: '‘Abdu’l-Bahá', religion: B, source_url: 'https://oceanlibrary.com/some-answered-questions/?paraId=para_921',
+  text: 'As for sensible realities, these are also purely good, and evil is merely their non-existence; that is, blindness is the want of sight, deafness is the want of hearing, poverty is the want of wealth, illness is the want of health, death is the want of life, and weakness is the want of strength.' };
+const fx = (t) => readFileSync(new URL(`../fixtures/anis/iqan-r7/${t}.md`, import.meta.url), 'utf8');
+describe('7 · round-7 live replay (7d)', () => {
+  it('srcr7: the source card holds the asked words, checked in code; the passage without them is not the source', () => {
+    expect(holdsPhrase(GLEAN_261.text, 'Let your vision be world-embracing')).toBe(true);
+    expect(holdsPhrase(SAQ_921.text, 'Let your vision be world-embracing')).toBe(false);
+    expect(holdsPhrase(GLEAN_261.text, 'Watch over yourselves… ready to entrap you')).toBe(true);   // an elided quotation: every part
+    expect(holdsPhrase(GLEAN_261.text, '')).toBe(false);
+  });
+  it('srcr7: the title typed beside its ref is one linked title, straight apostrophes against the record\'s curly ones', () => {
+    const works = new Map([['B1', { title: 'Gleanings from the Writings of Bahá’u’lláh' }]]);
+    const out = renderRefs("The line comes from Bahá'u'lláh, in *Gleanings from the Writings of Bahá'u'lláh* [[B1]].", { found: new Map(), works });
+    expect(out.match(/Gleanings from the Writings/g)).toHaveLength(1);   // one title, never "in *Gleanings…* [*Gleanings…*](…)"
+    expect(out).toMatch(/^The line comes from Bahá'u'lláh, in \*Gleanings from the Writings of Bahá’u’lláh\*\.$/);
+  });
+  const EVIL = '> Watch over yourselves, for the Evil One is lying in wait, ready to entrap you. Gird yourselves against his wicked devices... The Evil One is he that hindereth the rise and obstructeth the spiritual progress of the children of men. [[P1]]\n\n'
+    + 'In ‘Abdu’l-Bahá\'s words, evil is an absence:\n\n> As for sensible realities, these are also purely good, and evil is merely their non-existence; that is, blindness is the want of sight, … weakness is the want of strength. [[P2]]\n\nSo evil has no existence of its own.';
+  it('evilr7: the stream releases a blockquote whole — its attribution never runs into the next sentence', () => {
+    const pieces = [];
+    const gate = createSentenceGate([GLEAN_261, SAQ_921], (s) => pieces.push(s));
+    for (const c of EVIL.match(/[\s\S]{1,7}/g)) gate.push(c);
+    gate.flush();
+    expect(pieces.join('')).toBe(EVIL);
+    expect(pieces.some((p) => p.startsWith('> Watch over yourselves') && p.includes('children of men. [[P1]]'))).toBe(true);
+    const linked = pieces.map((p) => linkQuotes(p, [GLEAN_261, SAQ_921].map((x) => ({ ...x, citation_url: x.source_url, source_title: x.title }))).text).join('');
+    expect(linked).not.toMatch(/\]\([^)]*\) Gird yourselves/);
+    expect(linked).not.toMatch(/\[Some Answered Questions\]\([^)]*\)\)? \(\[Some Answered Questions\]/);
+  });
+  it('evilr7: a typed quotation of a held passage becomes its card, with the words quoted; one not held stays as typed', () => {
+    const found = new Map([['P1', GLEAN_261], ['P2', SAQ_921]]);
+    const t = blockquoteCards(EVIL, found, new Set());
+    expect(t).toMatch(/^\{\{quote "Watch over yourselves[^"]*children of men\." P1\}\}$/m);
+    expect(t).toMatch(/^\{\{quote "As for sensible realities[^"]*want of strength\." P2\}\}$/m);
+    expect(t).not.toMatch(/^>/m);
+    const x = expandTemplates(t, { found, works: new Map(), carded: new Set() });
+    expect(x.widgets.map((w) => w.kind)).toEqual(['quote', 'quote']);
+    expect(x.widgets[0].text).toMatch(/^Watch over yourselves/);
+    expect(x.widgets[0].text).not.toMatch(/Let your thought be fixed/);   // the words quoted, not the whole passage
+    const invented = '> The Evil One whispers in the hearts of men and leads them astray from the path. [[P1]]';
+    expect(blockquoteCards(invented, found, new Set())).toBe(invented);
+  });
+  const IQAN_OPEN = "Searching inside the histories (Nabíl, Balyuzi, Momen, Ẓuhúru'l-Ḥaqq) turns up no account of Mullá Sa'íd-i-Bárfurúshí. I searched *\"Mullá Sa'íd-i-Bárfurúshí\"*, *\"Mulla Said-i-Barfurushi\"*, \"Mulla Said-i-Barfurushiy\" and \"Mullá Sa'íd-i-Zirih-Kinárí Bárfurúsh\". Bahá'u'lláh names thirteen divines, then twelve others, and every other row rests on a ";
+  it('iqanr7: no search narration, no cut-off lead, the searched-names note leaves the row', () => {
+    const d = dropCutOff(dropNarration(IQAN_OPEN).text).text;
+    expect(d).not.toMatch(/Searching inside|I searched|turns up no/);
+    expect(d).not.toMatch(/rests on a\s*$/);
+    const row5 = "| 5 | Mullá Sa'íd-i-Bárfurúshí | Not identified in the library (searched: Mullá Sa'íd-i-Bárfurúshí, Mulla Said-i-Barfurushi, Mulla Said-i-Barfurushiy, Mullá Sa'íd-i-Zirih-Kinárí Bárfurúsh) | none |";
+    expect(dropSearchedNote(row5)).toBe("| 5 | Mullá Sa'íd-i-Bárfurúshí | Not identified in the library | none |");
+  });
+  it('iqanr7: a file-name title ("Bkw26") reads as the writer\'s tablet', () => {
+    expect(readableTitle('abdul-baha-bkw26-en')).toBe('A Tablet of ‘Abdu’l-Bahá');
+    expect(readableTitle('abdul-baha-bkw26-en')).not.toMatch(/bkw/i);
+  });
+
+  // The 4-turn Íqán chain: list → research → reader's #11 correction → "email me the final table" (t4 lost rows 4, 7, 9, 10, cut rows 2–3,
+  // said "I have no email address for you yet…" and opened with talk about the previous turn).
+  const t2 = fx('t2'), t3 = fx('t3'), t4 = fx('t4');
+  const tableOf = (s) => s.split('\n').filter((l) => /^\|/.test(l));
+  const row11 = tableOf(t3).find((l) => /^\| 11 \|/.test(l));
+  const fullTable = tableOf(t2).map((l) => (/^\| 11 \|/.test(l) ? row11 : l)).join('\n');
+  const t4Preamble = t4.split('\n# ')[0];   // the real opening: editing talk + the address line
+  const draft = `${t4Preamble}\n# The *"Illumined Divines"* of the Kitáb-i-Íqán: Final Table\n\nIn the Kitáb-i-Íqán, Bahá'u'lláh names some of the learned who attained His Court.\n\n${fullTable}\n\nBahá'u'lláh adds that there were others, well nigh four hundred in number.`;
+  const convo = [{ role: 'user', content: 'Who were the illumined divines named in the Iqan?' }, { role: 'assistant', content: fx('t1') },
+    { role: 'user', content: 'Please search the histories for each of them.' }, { role: 'assistant', content: t2 },
+    { role: 'user', content: CORRECTION }, { role: 'assistant', content: t3 }, { role: 'user', content: 'Email me the final table.' }];
+  it('the email turn carries all 13 rows through the correction — no new searches, quotations verified in earlier turns', async () => {
+    expect(numberedRows(t2).map((r) => r.n)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+    const parts = draft.match(/[\s\S]{1,11}/g);
+    let n = 0;
+    const create = async () => (n++ === 0
+      ? { async *[Symbol.asyncIterator]() { for (const c of parts) yield { choices: [{ delta: { content: c } }] }; yield { choices: [], usage: {} }; } }
+      : { choices: [{ message: { content: draft } }] });
+    const ev = [];
+    const r = await agentAnswer({ messages: convo, create, onEvent: (e) => ev.push(e),
+      tools: { search: async () => [], writings: async () => [], translationsOf: async () => new Map(), searchIn: async () => [] } });
+    for (const out of [r.reply, ev.filter((e) => e.type === 'text').map((e) => e.content).join('')].filter((x) => x.trim())) {
+      expect(numberedRows(out).map((x) => x.n)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+      const rows = numberedRows(out);
+      expect(rows.find((x) => x.n === 11).text).toMatch(/brother of Mullá Mihdíy-i-Kandí/);
+      expect(rows.find((x) => x.n === 2).text).toMatch(/The Sháh sent him/);   // row 2 whole, its quotation kept
+      expect(rows.find((x) => x.n === 4).text).toMatch(/first to leave the House of God/);
+      for (const l of tableOf(out)) expect(l.trim()).toMatch(/\|$/);   // every row keeps its cells
+      expect(out).not.toMatch(/no email address|send the one you would like/);
+      expect(out).not.toMatch(/Here is the whole table again|This restores|The searches added/);
+      expect(out.trimStart()).toMatch(/^#/);   // it opens with the table's heading
+    }
+  });
+  it('a one-row revision (turn 3) keeps its acknowledgement — only a rebuilt table drops the editing talk', () => {
+    expect(rebuildsTable(convo.slice(0, 5), t3)).toBe(false);
+    expect(dropRebuildPreamble(t4).text).not.toMatch(/Here is the whole table again/);
+    expect(dropRebuildPreamble(t4).text).toMatch(/^# The \*"Illumined Divines"\*/);
+  });
+  it('a quotation no passage or earlier reply holds still leaves its row cell, never the row', () => {
+    const row = '| 4 | Mullá ‘Alíy-i-Basṭámí | A Letter of the Living. He said *"the stars themselves bowed before the gate of Shíráz in that hour"* ([God Passes By](https://x.org/gpb)). He died in prison. | GPB |';
+    expect(rowWithout(row, ['the stars themselves bowed before the gate of Shíráz in that hour'])).toBe('| 4 | Mullá ‘Alíy-i-Basṭámí | A Letter of the Living. He died in prison. | GPB |');
+    const d = dropUnverified(`Intro line here.\n\n| # | Name | Who | Src |\n|---|---|---|---|\n${row}\n| 5 | X | Y. | Z |`, []);
+    expect(numberedRows(d.text).map((x) => x.n)).toEqual([4, 5]);
   });
 });

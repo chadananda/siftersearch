@@ -35,8 +35,18 @@ export const readableTitle = (title) => {
   if (canon) return canon.title;
   const rest = t.replace(/\.[a-z]{2,4}$/i, '').replace(WRITER_PREFIX, '').replace(/[-_](?:en|fa|ar)(?=$|[-_])/gi, '')
     .replace(/[-_]notes$/i, ' (notes)').replace(/^\d+[-_]/, '').replace(/[-_]+/g, ' ').trim();
-  return rest && /\p{L}{3}/u.test(rest) ? rest.charAt(0).toUpperCase() + rest.slice(1) : null;
+  if (rest && /\p{L}{4,}/u.test(rest.replace(/\b(?=\S*\d)\S+/g, ''))) return rest.charAt(0).toUpperCase() + rest.slice(1);   // "bkw26" is a code, not a title (iqanr7)
+  const w = t.match(WRITER_PREFIX)?.[0]?.toLowerCase() || '';
+  return /shoghi/.test(w) ? 'A letter of Shoghi Effendi' : /abdu/.test(w) ? 'A Tablet of ‘Abdu’l-Bahá' : /baha/.test(w) ? 'A Tablet of Bahá’u’lláh' : /bab/.test(w) ? 'A Tablet of the Báb' : null;
 };
 
 /** A site's bare root ("https://oceanoflights.org/") is no place in a work: never a citation's link (Íqán r6 t2/t4 Ẓuhúru'l-Ḥaqq). Pure. */
 export const isSiteRoot = (u) => { try { const x = new URL(String(u)); return x.pathname.replace(/\/+$/, '') === '' && !x.search && !x.hash; } catch { return false; } };
+
+const foldW = (s) => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[’'‘ʼ`]/g, '').match(/[\p{L}\p{N}]+/gu) || [];
+/** The passage holds the asked words, in order (punctuation, accents and case aside; an elision "…" splits the quotation). Pure. */
+export const holdsPhrase = (text, phrase) => {
+  const hay = ` ${foldW(text).join(' ')} `;
+  const parts = String(phrase || '').split(/\.\.\.|…/).map((x) => foldW(x).join(' ')).filter((x) => x.split(' ').length >= 2);
+  return parts.length > 0 && parts.every((x) => hay.includes(` ${x} `));
+};

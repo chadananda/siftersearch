@@ -3,11 +3,11 @@
 import { toolRunner, TOOL_CHARS } from './tool-runner.js';
 import { workNotes as workNotesLookup, asPassage, SAME_QUESTION } from './tool-defs.js';
 import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
-import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence, unappliedCorrection } from './lint.js';
+import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence, unappliedCorrection, dropSearchedNote, dropRebuildPreamble, rebuildsTable, isRebuildMeta } from './lint.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
-import { expandTemplates } from './widgets/templates.js';
-import { isSiteRoot, readableTitle } from './widgets/card-text.js';
+import { expandTemplates, blockquoteCards } from './widgets/templates.js';
+import { isSiteRoot, readableTitle, holdsPhrase } from './widgets/card-text.js';
 import { byTier, coreFirst } from './source-tier.js';
 import { keepHeldLinks } from './held-links.js';
 
@@ -39,7 +39,7 @@ export function rebuiltDrift(messages = [], final = '') {
   return out.length >= Math.max(2, Math.ceil(src.length / 2)) ? tableDrift(prior.content, final) : null;   // a one-row correction is not a rebuild
 }
 /** The re-ask for an absence claim no search inside the histories backs (lint.js unbackedAbsence; history-sweep.js). */
-export const absenceAsk = (claims) => `(note from the library, not the reader) You wrote that the library has nothing on someone — ${claims.map((c) => `"${c.slice(0, 160)}"`).join('; ')} — without searching inside the histories for that name. Run fused_search with about: "history" on each such name alone (it searches inside Nabíl's The Dawn-Breakers, Balyuzi, Momen and Ẓuhúru'l-Ḥaqq with spelling variants), then write the answer again: say the library has no account only for a name that search came back empty on, naming the spellings searched.`;
+export const absenceAsk = (claims) => `(note from the library, not the reader) You wrote that the library has nothing on someone — ${claims.map((c) => `"${c.slice(0, 160)}"`).join('; ')} — without searching inside the histories for that name. Run fused_search with about: "history" on each such name alone (it searches inside Nabíl's The Dawn-Breakers, Balyuzi, Momen and Ẓuhúru'l-Ḥaqq with spelling variants), then write the answer again: the library has no account only of a name that search came back empty on — say so in ONE short line after the table (or in the row: "not identified in the library"), never describing the search or the spellings tried.`;
 /** The re-ask for a reader's correction left open (lint.js unappliedCorrection). */
 export const correctionAsk = (rows, readerText) => `(note from the library, not the reader) The reader corrected ${rows.map((n) => `row ${n}`).join(', ')}: "${String(readerText).slice(0, 240)}". Your table still offers two readings there. Check the reader's words against the passages you hold: where a passage supports the correction (Shoghi Effendi's notes to The Dawn-Breakers first), apply it — the row names that person, in the reader's sense, with the other reading as one short note at most. Do not restate the reader's correction in other words. Write the whole table again with every other row unchanged.`;
 /** The re-ask for circular identification rows (lint.js circularRows). */
@@ -145,7 +145,8 @@ export function renderRefs(text, { found, works }) {
   for (let prev = null; prev !== t;) { prev = t; t = t.replace(new RegExp(`${G}\\s*[,;]?\\s*${G}`, 'g'), '[[$1, $2]]'); }
   // "*Selections…* [[B1]]": the title written out AND its ref → the ref alone (one linked title, never twice; 11-12 Arabic student)
   const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  for (const [r, w] of works || []) if (w?.title) t = t.replace(new RegExp(`(\\*{1,2}|_)?${esc(w.title)}\\1?\\s*\\(?\\s*\\[\\[?${r}\\]\\]?\\s*\\)?(?!\\()`, 'g'), `[[${r}]]`);
+  const loose = (x) => esc(x).replace(/[’'‘ʼ]/g, "[’'‘ʼ]");   // "Bahá'u'lláh" typed, "Bahá’u’lláh" in the record (round 7d, srcr7)
+  for (const [r, w] of works || []) if (w?.title) t = t.replace(new RegExp(`(\\*{1,2}|_)?${loose(w.title)}\\1?\\s*\\(?\\s*\\[\\[?${r}\\]\\]?\\s*\\)?(?!\\()`, 'g'), `[[${r}]]`);
   return t
     .replace(/\(\s*(\[\[?[PW]\d+(?:\s*[,;]\s*[PW]\d+)*\]\]?)\s*\)/g, '$1')   // "([[P1]])" → one pair of parens
     .replace(/\*{0,2}\[\[?(B\d+)\]\]?\*{0,2}(?!\()/g, (m, r) => { const w = works.get(r), t = readableTitle(w?.title) || w?.title; return w && t ? (w.url ? `[*${t}*](${w.url})` : `*${t}*`) : ''; })
@@ -248,7 +249,9 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   let source = null;   // { ref, doc } of the source passage the trace found this turn (sourceOnly below)
   if (qc) run.quotation_candidates = async (a) => {
     const before = new Set(found.keys()), out = await qc(a);
-    const hit = [...found].find(([ref, p]) => !before.has(ref) && p.role === 'source'), src = hit?.[1];
+    // the source card must hold the words asked (round 7d, srcr7): of the new 'source' passages, the one containing the quotation; none → no source card
+    const fresh = [...found].filter(([ref, p]) => !before.has(ref) && p.role === 'source');
+    const hit = fresh.find(([, p]) => holdsPhrase(p.text, a?.quotation)) || (String(a?.quotation || '').trim() ? null : fresh[0]), src = hit?.[1];
     if (hit && !source) source = { ref: hit[0], doc: Number(src.document_id) || null };
     if (!src || !(Number(src.document_id) > 0) || [...bookCards.values()].some((b) => Number(b.id) === Number(src.document_id))) return out;
     let line = null;
@@ -343,6 +346,24 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   // the answering round streams a sentence at a time; only sentences whose quotations are in a passage held are shown
   const asked0 = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const held0 = () => [...found.values()].map((p) => ({ ...p, source_title: p.title }));
+  // EARLIER REPLIES WERE VERIFIED WHEN WRITTEN (round 7d, Íqán turn 4 "email me the final table": rows 4, 7, 9 and 10 quoted passages found in
+  // turns 2–3, not re-fetched — the gate dropped them, and rows 2–3 lost all after their first sentence). Their words stay verified when carried.
+  const carried = messages.filter((m) => m.role === 'assistant' && typeof m.content === 'string' && m.content.trim()).map((m) => ({ text: m.content }));
+  // A REBUILT TABLE OPENS WITH THE TABLE (lint dropRebuildPreamble): in a conversation that already has a table, an editing sentence ahead of the
+  // first heading/table waits — with what follows it — until the table shows whether this reply rewrites it (≥2 numbered rows: the editing talk
+  // goes) or not (a one-row revision, no table: shown as written)
+  const priorTable = messages.some((m) => m.role === 'assistant' && numberedRows(typeof m.content === 'string' ? m.content : '').length >= 2);
+  let pre = null;   // null: before the first heading/table; string: held pieces; false: decided
+  const say = (c) => { live += c; onEvent({ type: 'text', content: c }); };
+  const sayLive = (c) => {
+    if (!priorTable || pre === false) return say(c);
+    const tabled = /^\s*(?:#{1,6}\s|\|)/m.test(c);
+    if (pre === null) { if (!isRebuildMeta(c)) { if (tabled) pre = false; return say(c); } pre = ''; }
+    pre += c;
+    if (numberedRows(pre).length >= 2) { const t = dropRebuildPreamble(pre).text; pre = false; return t && say(t); }
+    if (/^\s*\|/m.test(pre) && c.trim() && !/^\s*\|/.test(c)) { const t = pre; pre = false; say(t); }   // the table closed short
+  };
+  const sayHeld = () => { if (pre) { const t = pre; pre = false; say(t); } };
   let gate = null, live = '';
   const liveWidgets = [];
   const carded = new Set();   // passages already shown in a card this turn (widgets/templates.js: one card per passage)
@@ -427,7 +448,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const finishLive = (s) => {
     const [, lead, core0, trail] = String(s).match(/^(\s*)([\s\S]*?)(\s*)$/);
     if (!core0) return s;
-    const c1 = dropNarration(sourceOnly(core0)).text, d = dropUncheckedDisclaimer(c1);
+    const c1 = dropSearchedNote(dropNarration(blockquoteCards(sourceOnly(core0), found, carded)).text), d = dropUncheckedDisclaimer(c1);
     const core = (d.dropped ? d.text : isUncheckedDisclaimer(c1) ? '' : c1).trim();   // a released piece that is only the disclaimer (lint never empties a text)
     if (!core) return '';
     citedWorkCards(core);
@@ -439,7 +460,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   };
   const onText = (t) => {
     if (t.includes(NOT_FOUND)) { gate = false; return; }   // a not-found draft may be nudged into another round: never shown
-    gate ??= createSentenceGate(held0(), (s) => { const c = finishLive(s); if (!c) return; live += c; onEvent({ type: 'text', content: c }); }, { asked: asked0 });
+    gate ??= createSentenceGate([...held0(), ...carried], (s) => { const c = finishLive(s); if (c) sayLive(c); }, { asked: asked0 });
     if (gate) gate.push(t);
   };
   for (let round = 0; round < maxRounds; round++) {
@@ -452,7 +473,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     let tcs = (m.tool_calls || []).slice(0, Math.max(0, maxCalls - calls));
     if (!tcs.length) {
       final = String(m.content || '');
-      if (r?.streamed && gate) { if (!final.includes(NOT_FOUND)) gate.push(r.unsent || ''); gate.flush(); streamed = !final.includes(NOT_FOUND); }
+      if (r?.streamed && gate) { if (!final.includes(NOT_FOUND)) gate.push(r.unsent || ''); gate.flush(); sayHeld(); streamed = !final.includes(NOT_FOUND); }
       // earned not-found: the library "lacks it" (the agent's marker, or searches that found nothing at all) on fewer than MIN_SEARCHES → one more round
       const n = librarySearches(steps, canonical);
       if ((final.includes(NOT_FOUND) || (n > 0 && !found.size && !works.size)) && n < MIN_SEARCHES && !nudged && round < maxRounds - 1 && calls < maxCalls) {
@@ -532,10 +553,11 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   // code does the grounding: refs → links, unverifiable quotations out, speakers fixed, quotations linked, no preamble
   const retrieved = [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
   sourceCarded = false; skipped = false;   // the whole reply is one text again (a non-streamed or replayed reply carries its own card)
-  const rendered = renderRefs(dropUncheckedDisclaimer(dropNarration(sourceOnly(final)).text).text, { found, works });
+  const opened = rebuildsTable(messages, final) ? dropRebuildPreamble(final).text : final;   // a rebuilt table opens with the table (round 7d)
+  const rendered = renderRefs(dropUncheckedDisclaimer(dropSearchedNote(dropNarration(blockquoteCards(sourceOnly(opened), found, carded)).text)).text, { found, works });
   const asked = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const whole = restoreElisions(rendered, retrieved, { asked });   // a "…" bridging the passage's own words → its contiguous words (11-04 #161/#138)
-  const guarded = dropUnverified(whole.text, retrieved, { asked });
+  const guarded = dropUnverified(whole.text, [...retrieved, ...carried], { asked });
   const speakers = fixQuoteSpeakers(guarded.text, retrieved);
   const linked = linkQuotes(speakers.text, retrieved);
   // streamed: the reply IS what the reader watched arrive, finished sentence by sentence (finishLive) — nothing snaps at the end

@@ -147,9 +147,17 @@ export function unquote(t, bad) {
  *  paraphrase) so the reply does not open "What they do hold…"; a source line ("— [Luke](…)") whose quotation went goes with
  *  it, and an emptied blockquote leaves no bare ">". `asked` = the reader's words (see unverifiedQuotes). Returns the cleaned
  *  text, how many sentences went, and how many quotations were kept as paraphrase. */
-export function dropUnverified(text, passages, { asked = [] } = {}) {
+export function dropUnverified(text, passages, { asked = [] } = {}, rowsDone = false) {
   const bad = unverifiedQuotes(text, passages, { asked });
   if (!bad.length) return { text, removed: 0 };
+  // a TABLE ROW keeps its cells: only the cell sentence holding the quotation goes (round 7d, Íqán turn 4 — split as sentences, a row lost
+  // everything after its first sentence, closing "|" and source cell included, and the next rows with it)
+  if (!rowsDone && String(text).split('\n').some((l) => /^[ \t]*\|/.test(l) && bad.some((q) => l.includes(q)))) {
+    let n = 0;
+    const fixed = String(text).split('\n').map((l) => (/^[ \t]*\|/.test(l) && bad.some((q) => l.includes(q)) ? (n++, rowWithout(l, bad)) : l)).join('\n');
+    const r = dropUnverified(fixed, passages, { asked }, true);
+    return { ...r, removed: r.removed + n };
+  }
   let removed = 0;
   // a short GLOSS beside the original script ("- **لمن أراد** (*liman aráda*): \"for whoever wishes\"": the writer's own English of a word,
   // 11-12 Arabic student — dropping it left "The English has…" orphans) loses its marks, never its sentence
@@ -231,11 +239,27 @@ const noBareQuoteMarks = (para) => {
  */
 export function createSentenceGate(passages, emit, { asked = [] } = {}) {
   let buf = '';
-  const release = (s) => { if (s && !unverifiedQuotes(s, passages, { asked }).length) emit(s); };
+  const release = (s) => {
+    if (!s) return;
+    const bad = unverifiedQuotes(s, passages, { asked });
+    if (!bad.length) emit(s);
+    else if (/^[ \t]*\|/.test(s)) emit(rowWithout(s, bad));   // a table row keeps its cells (round 7d, Íqán turn 4: rows 4, 7, 9, 10 went whole)
+  };
   const nextEnd = () => {
-    let open = false;
+    let open = false, block = /^[ \t]*>/.test(buf), row = /^[ \t]*\|/.test(buf);
     for (let i = 0; i < buf.length; i++) {
       const c = buf[i];
+      // A BLOCKQUOTE IS RELEASED WHOLE (round 7d, evilr7): split at a sentence inside it, its first sentence got the attribution line and the
+      // rest ("Gird yourselves…", "[[P2]]") ran on after it — "— [Gleanings](…) Gird yourselves…", "— [SAQ](…) ([SAQ](…))". It ends at the
+      // first line that is not "> …" (seen, so a block still arriving waits).
+      if (c === '\n') {
+        const next = buf.slice(i + 1);
+        if (row) return i + 1;   // A TABLE ROW IS RELEASED WHOLE, at its line end
+        if (/^[ \t]*\|/.test(next) && buf.slice(0, i).trim()) return i + 1;
+        if (block) { if (next.length && !/^[ \t]*>/.test(next) && (next.trim() || /\n/.test(next))) return i + 1; if (!next.length) return -1; continue; }
+        if (/^[ \t]*>/.test(next)) { if (buf.slice(0, i).trim()) return i + 1; block = true; continue; }
+      }
+      if (block || row) continue;
       if (c === '"') open = !open;
       else if (c === '“') open = true;
       else if (c === '”') open = false;
@@ -750,4 +774,20 @@ export function narrowQuoteLinks(text) {
     const q = quotedIn(label) ?? prior?.[1] ?? null;
     return q ? `[${label}](${narrowOceanLink(url, q)})` : m;
   });
+}
+
+/** One table row without the cell sentences holding the given quotations (an emptied cell reads "—"; a bare "([title](url))" left
+ *  after a dropped sentence goes with it). The row keeps every "|". Pure. */
+export function rowWithout(line, bad) {
+  const cells = String(line).split('|');
+  return cells.map((c, i) => {
+    if (i === 0 || i === cells.length - 1 || !bad.some((q) => c.includes(q))) return c;
+    const out = [];
+    let gone = false;
+    for (const s of splitSentences(c.trim())) {
+      if (bad.some((q) => s.includes(q)) || (gone && /^\(?\s*\[[^\]]*\]\([^)]*\)\s*\)?[.;,]?$/.test(s.trim()))) { gone = true; continue; }
+      gone = false; out.push(s);
+    }
+    return ` ${out.join(' ') || '—'} `;
+  }).join('|');
 }

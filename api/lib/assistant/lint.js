@@ -597,12 +597,15 @@ function dropSentences(text, bad) {
 // INTERNAL NARRATION — BLOCKING (11-14 round 4: "The candidate source here is a scholarly book…", "The glossary notes … look like the best
 // source… I'll check them directly."). Talk about candidates, tools, held research or the agent's next step never reaches the reader: such a
 // sentence is removed wherever it stands (outside blockquotes and tables). A reply that is ONLY narration comes back empty — the caller re-asks. Pure.
-const NARRATION = /\b(?:held research|research_lookup|quotation_candidates|search_in_work|fused_search|tool (?:results?|calls?|output)|the (?:search|tool)s? (?:returned|found|gave|show)|candidate (?:sources?|passages?|works?)|the candidates?\b|(?:looks?|seems?) like the best source|best (?:candidate|lead))/i;
+const NARRATION = /\b(?:held research|research_lookup|quotation_candidates|search_in_work|fused_search|tool (?:results?|calls?|output)|the (?:search|tool)s? (?:returned|found|gave|show)|candidate (?:sources?|passages?|works?)|the candidates?\b|(?:looks?|seems?) like the best source|best (?:candidate|lead)|\bsearch(?:ing|ed|es)? (?:inside|in|through|of) the (?:histories|library|works)\b|\bI (?:searched|looked|checked|tried)\b|\b(?:turns?|turned) up (?:no|nothing)\b|\bspellings? (?:searched|tried)\b)/i;   // search narration (round 7d, iqanr7)
 const PLAN = /^\s*(?:i['’]ll|i will|i['’]m going to|let me(?! know)|next,? i|i need to|i should|i can now|i['’]d (?:need|have) to)\b[^.!?\n]{0,200}\b(?:check|look|search|verify|consult|find|read|confirm|pull|trace|open|examine|dig)\b/i;
 // SELF-SOURCED DENIAL (Dawn-Breakers battery 11-14, dbp:004 — doc 21308 in the library): "The library does not give me Nabíl's own chapter … in
 // a form I can quote" talks about the tools and is false; the sentence goes (the prompt has him search inside the work instead).
 const LIBRARY_DENIAL = /\bthe library (?:does not|doesn['’]t|did not|didn['’]t|cannot|can['’]t) (?:give|show|offer|hand|let) me\b|\bin (?:a|any) form I can (?:quote|cite|use)\b/i;
-export const isNarration = (s) => { const t = String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '); return NARRATION.test(t) || PLAN.test(t) || LIBRARY_DENIAL.test(t); };
+// DELIVERY TALK (round 7d, Íqán turn 4: "I have no email address for you yet, so please send the one you would like this document delivered
+// to."): the system turns the reply into a PDF and sends it, or asks for the address itself (pdf/documents.js) — the writer never speaks of it.
+const DELIVERY = /\bI (?:have|hold|do not have|don['’]t have) (?:no |not )?(?:an? |your )?e-?mail address\b|\b(?:send|give|tell) me (?:the|an|your) (?:e-?mail )?address\b|\bthe one you would like\b[^.!?\n]{0,60}\b(?:sent|delivered|emailed)\b|\b(?:cannot|can['’]t|am unable to|am not able to) (?:send|e-?mail|deliver)\b|\bI(?:['’]ll| will) (?:e-?mail|send|deliver) (?:it|this|the (?:table|document|pdf)|you)\b/i;
+export const isNarration = (s) => { const t = String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '); return NARRATION.test(t) || PLAN.test(t) || LIBRARY_DENIAL.test(t) || DELIVERY.test(t.trim()); };
 /** "the text I hold" / "the passages I have" (dbp:002 "**What is not settled by the text I hold**") → "these sources": the reader sees texts, not
  *  what Anís holds. Outside blockquotes. Pure. */
 export const unholdTexts = (text) => String(text || '').split('\n').map((l) => (/^\s*>/.test(l) ? l
@@ -630,12 +633,14 @@ export function dropDanglingLeadIn(text, { final = true } = {}) {
 // A CUT-OFF SENTENCE: a sentence whose object vanished (a work ref with no work rendered to nothing — dbp:002 "Shoghi Effendi also quotes this
 // testimony in.") ends on a preposition or article. The sentence goes. Outside blockquotes and tables. → { text, dropped }. Pure.
 const CUT_OFF = /\b(?:in|of|from|by|with|at|into|the|an?|and)\s*[.!?]["”’)*_]*\s*$/i;
+const OPEN_END = /\b(?:in|of|from|by|with|at|into|on|to|for|the|an?|and|or|rests? on)\s*$/i;   // "…every other row rests on a" then the table (iqanr7)
 export function dropCutOff(text) {
   let dropped = 0;
   const out = String(text || '').split('\n').map((line) => {
     if (/^\s*(?:>|\|)/.test(line) || !line.trim()) return line;
     const sents = line.match(/[^.!?]+(?:[.!?…]+["”’)*_]*|$)\s*/g) || [line];
-    const kept = sents.filter((x) => !(/[.!?]["”’)*_]*\s*$/.test(x) && CUT_OFF.test(x.replace(/\[[^\]]*\]\([^)]*\)/g, 'LINK')) && ++dropped));
+    const kept = sents.filter((x) => { const y = x.replace(/\[[^\]]*\]\([^)]*\)/g, 'LINK');
+      return !(((/[.!?]["”’)*_]*\s*$/.test(x) && CUT_OFF.test(y)) || (!/[.!?…:;"”’)*_]\s*$/.test(x) && OPEN_END.test(y))) && ++dropped); });
     return kept.length === sents.length ? line : kept.join('').trimEnd();
   }).join('\n');
   return { text: dropped ? out.replace(/\n{3,}/g, '\n\n').trim() : String(text || ''), dropped };
@@ -744,3 +749,29 @@ export function unappliedCorrection(readerText, reply) {
   const rows = new Map(numberedRows(reply).map((r) => [r.n, r]));
   return named.filter((n) => rows.has(n) && OPEN_READINGS.test(rows.get(n).text));
 }
+
+/** "(searched: X, Y, Z)" in a table cell or line — search narration (round 7d, iqanr7 row 5) → gone. Pure. */
+export const dropSearchedNote = (text) => String(text || '').replace(/\s*\((?:searched|spellings? (?:searched|tried)|tried)\s*:[^()\n]*\)/gi, '');
+
+/** A REBUILT TABLE OPENS WITH THE TABLE (round 7d, Íqán turn 4 "email me the final table": "Here is the whole table again. Each row carries
+ *  only its own facts. This restores … because I added it to rows 4, 7 and 10 … The searches added only one thing: …"). When the reply
+ *  rewrites the conversation's table (≥2 numbered rows here, a numbered table before), the prose ahead of its first heading or table line
+ *  loses every sentence about the editing — the table, rows, searches, what I did — and keeps any sentence of substance. Pure. */
+const REBUILD_META = /\b(?:I|I['’](?:ve|ll|d)|my|me)\b|\b(?:the|this|your|whole|full|final|corrected|revised) table\b|\brows?\s+\d|\b(?:each|every) row\b|\bsearch(?:es|ed|ing)?\b|^\s*(?:here(?:['’]s| is| are)|this (?:restores|keeps|adds|corrects|version))\b|\b(?:now )?stands as\b/i;
+export const isRebuildMeta = (s) => REBUILD_META.test(String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '));
+export function dropRebuildPreamble(text) {
+  const t = String(text || ''), lines = t.split('\n');
+  const at = lines.findIndex((l) => /^\s*(?:#{1,6}\s|\|)/.test(l));
+  if (at <= 0) return { text: t, dropped: 0 };
+  let dropped = 0;
+  const head = lines.slice(0, at).map((line) => {
+    if (!line.trim() || /^\s*>/.test(line)) return line;
+    const sents = line.match(/[^.!?]+(?:[.!?…]+["”’)*_]*|$)\s*/g) || [line];
+    const kept = sents.filter((x) => !((REBUILD_META.test(x.replace(/[“"][^”"]{0,600}[”"]/g, ' ')) || isNarration(x)) && ++dropped));
+    return kept.join('').trimEnd();
+  });
+  if (!dropped) return { text: t, dropped: 0 };
+  return { text: [...head, ...lines.slice(at)].join('\n').replace(/^\s+/, '').replace(/\n{3,}/g, '\n\n'), dropped };
+}
+/** The reply rewrites the conversation's table: it has ≥2 numbered rows and an earlier reply had a numbered table. */
+export const rebuildsTable = (messages = [], text = '') => numberedRows(text).length >= 2 && messages.some((m) => m.role === 'assistant' && numberedRows(typeof m.content === 'string' ? m.content : '').length >= 2);

@@ -2,6 +2,7 @@
 // template on a line of its own — {{quote P3}}, {{book B1}}, {{side_by_side P1 P4}}, {{scene "Title" "line" P4 P5}} — and code expands it from the turn's refs
 // into the widget's marker + fallback markdown, plus its data for the clients. Unknown kind or a ref not in hand → line dropped. Pure.
 import { WIDGETS, widgetBlock } from './index.js';
+import { holdsPhrase, isPdfDump } from './card-text.js';
 
 const LINE = /^[ \t]*\{\{\s*([a-z_]+)((?:\s+["“][^"“”\n]*["”])*)((?:[\s,]+[PB]\d+)+)\s*\}\}[ \t]*$/gm;   // quoted strings: a scene's title and line
 export const TEMPLATE_KINDS = Object.keys(WIDGETS);
@@ -32,4 +33,29 @@ export function expandTemplates(text, refs, { start = 0 } = {}) {
   }).replace(/\{\{\s*book\s+(B\d+)\s*\}\}/g, '[[$1]]')   // a book template inside a sentence ("The library's copy is {{book B1}}.") is its linked title, never a hole
     .replace(/\{\{[^{}\n]*\}\}/g, '').replace(/\n{3,}/g, '\n\n').trim();
   return { text: out, widgets };
+}
+
+// A TYPED QUOTATION IS A CARD (round 7d, evilr7: three blockquotes of held passages, no card). A blockquote whose words a passage of
+// the turn holds (its own ref first, else any) becomes {{quote "the quoted words" P#}} — the card shows the words quoted, verified
+// against the passage, linked to its place; the attribution line under it goes with it. Words no passage holds, a PDF page, a
+// passage already carded, or a block under 8 words stay as typed. Raw text (before refs render). Pure.
+const stripBody = (lines) => lines.map((l) => l.replace(/^\s*>\s?/, '')).filter((l) => !/^\s*[—–-]{1,2}\s/.test(l)).join(' ')
+  .replace(/\[\[[PBW]\d+(?:\s*[,;]\s*[PBW]\d+)*\]\]/g, ' ').replace(/\(\s*\[[^\]]*\]\([^)]*\)\s*\)|\[([^\]]*)\]\([^)]*\)/g, (m, t) => t || ' ')
+  .replace(/[*_]/g, '').replace(/\s+/g, ' ').trim().replace(/^["“](.*)["”]$/, '$1').trim();
+export function blockquoteCards(text, found, carded) {
+  if (!found?.size || !/^\s*>/m.test(String(text || ''))) return String(text || '');
+  const lines = String(text).split('\n'), out = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^\s*>/.test(lines[i])) { out.push(lines[i]); continue; }
+    let j = i; while (j < lines.length && /^\s*>/.test(lines[j])) j++;
+    const block = lines.slice(i, j), body = stripBody(block);
+    const refs = [...block.join(' ').matchAll(/\b(P\d+)\b/g)].map((m) => m[1]);
+    const ok = (r) => { const p = found.get(r); return p?.text && p.source_url && !isPdfDump(p.text) && holdsPhrase(p.text, body) && !(carded?.has(cardKey(p.text)) || carded?.has(cardKey(body))); };
+    const ref = body.split(/\s+/).length >= 8 ? (refs.find(ok) || [...found.keys()].find((r) => /^P\d+$/.test(r) && ok(r))) : null;
+    if (!ref) { out.push(...block); i = j - 1; continue; }
+    let k = j; if (k < lines.length && /^\s*[—–]\s/.test(lines[k])) k++;   // "— [[P1]]" under the block: the card carries it
+    out.push(/["“”]/.test(body) ? `{{quote ${ref}}}` : `{{quote "${body}" ${ref}}}`);
+    i = k - 1;
+  }
+  return out.join('\n');
 }
