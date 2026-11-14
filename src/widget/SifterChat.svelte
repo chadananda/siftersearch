@@ -140,6 +140,25 @@
   const noCover = (e) => e.currentTarget.closest('a')?.classList.add('nocover');   // a 404 cover → the drawn one
   const initial = (t) => (String(t || '').replace(/^(?:the|a|an)\s+/i, '').match(/\p{L}/u)?.[0] || '·').toUpperCase();
   const mins = (s) => (s ? `${Math.max(1, Math.round(s / 60))} min` : null);
+  const clock = (s) => { s = Math.max(0, Math.round(s || 0)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+  // the talk card's own small player: one talk plays at a time; the track seeks; the time counts down
+  function tpToggle(e) {
+    const a = e.currentTarget.closest('.tp').querySelector('audio');
+    if (!a.paused) return a.pause();
+    e.currentTarget.getRootNode().querySelectorAll('.tp audio').forEach((x) => x !== a && x.pause());
+    a.play();
+  }
+  const tpSync = (e) => e.currentTarget.closest('.tp').classList.toggle('on', !e.currentTarget.paused);
+  function tpTick(e) {
+    const a = e.currentTarget, w = a.closest('.tp'), d = a.duration || 0;
+    w.style.setProperty('--p', d ? a.currentTime / d : 0);
+    if (d) w.querySelector('.tp-time').textContent = clock(d - a.currentTime);
+  }
+  function tpSeek(e) {
+    const w = e.currentTarget.closest('.tp'), a = w.querySelector('audio'), r = e.currentTarget.getBoundingClientRect();
+    const go = () => { a.currentTime = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * a.duration; };
+    if (a.duration) go(); else { a.addEventListener('loadedmetadata', go, { once: true }); a.play(); }
+  }
   // a passage card shows the quote: its quoted blocks leave the text
   const withoutQuote = (text) => String(text || '').replace(/^(?:>.*(?:\n|$))+/gm, '').replace(/\n{3,}/g, '\n\n').trim();
   // The card shows the description; drop it from the reply text when the reply opens with it.
@@ -509,36 +528,44 @@
   <article class="talk">
     <a class="talk-photo" href={t.url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
       {#if t.portrait_url || t.thumb_url}
-        <img src={faceSrc(t.portrait_url || t.thumb_url, 192)} srcset={[96, 144, 192, 288].map((w) => `${faceSrc(t.portrait_url || t.thumb_url, w)} ${w}w`).join(', ')}
-          sizes="(min-width: 480px) 96px, 76px" alt="" loading="lazy" decoding="async" />
+        <img src={faceSrc(t.portrait_url || t.thumb_url, 128)} srcset={[64, 96, 128, 192].map((w) => `${faceSrc(t.portrait_url || t.thumb_url, w)} ${w}w`).join(', ')}
+          sizes="60px" alt="" loading="lazy" decoding="async" />
       {:else}<span class="talk-photo-i">{initial(t.speaker)}</span>{/if}
     </a>
     <div class="talk-body">
-      <div class="talk-eyebrow"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5a2.5 2.5 0 0 0-2.5 2.5v4a2.5 2.5 0 0 0 5 0V4A2.5 2.5 0 0 0 8 1.5ZM3.5 7.5a4.5 4.5 0 0 0 9 0M8 12v2.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Talk</div>
+      <div class="talk-kicker">{['Talk', t.year, mins(t.duration_s)].filter(Boolean).join(' · ')}</div>
       <a class="talk-title" href={t.url} target="_blank" rel="noopener">{t.title}</a>
       {#if t.speaker}<div class="talk-speaker">{t.speaker}</div>{/if}
-      <div class="talk-meta">
-        {#each [t.year, mins(t.duration_s)].filter(Boolean) as x}<span class="talk-chip">{x}</span>{/each}
-        <a class="talk-open" href={t.url} target="_blank" rel="noopener" title="Opens in a new tab">Open talk<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11C5 7 7.5 5 11.5 5M9 2.5 11.5 5 9 7.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr">(opens in a new tab)</span></a>
-      </div>
     </div>
-    {#if t.audio_url}<audio class="talk-audio" controls preload="none" src={t.audio_url} aria-label="Listen: {t.title}"></audio>{/if}
+    <div class="tp">
+      {#if t.audio_url}
+        <button class="tp-btn" type="button" aria-label="Play or pause {t.title}" onclick={tpToggle}>
+          <svg class="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6L12.6 8z" fill="currentColor"/></svg>
+          <svg class="i-pause" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3h2.6v10H4.5zM8.9 3h2.6v10H8.9z" fill="currentColor"/></svg>
+        </button>
+        <div class="tp-track" role="presentation" onclick={tpSeek}><i></i></div>
+        <span class="tp-time">{clock(t.duration_s)}</span>
+        <audio preload="none" src={t.audio_url} ontimeupdate={tpTick} onplay={tpSync} onpause={tpSync} onended={tpSync}></audio>
+      {/if}
+      <a class="tp-open" href={t.url} target="_blank" rel="noopener" title="Opens in a new tab">Open talk<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr">(opens in a new tab)</span></a>
+    </div>
   </article>
 {/snippet}
 {#snippet bookCard(b)}
-  <div class="book">
+  <article class="book">
     <a class="book-cover" class:nocover={!b.cover_url} href={b.url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
-      {#if b.cover_url}<img src={coverSrc(b.cover_url, 240)} srcset={[160, 240, 320, 480].map((w) => `${coverSrc(b.cover_url, w)} ${w}w`).join(', ')}
-        sizes="(min-width: 480px) 112px, 88px" alt="Cover of {b.title}" loading="lazy" decoding="async" onerror={noCover} />{/if}
+      {#if b.cover_url}<img src={coverSrc(b.cover_url, 160)} srcset={[80, 120, 160, 240].map((w) => `${coverSrc(b.cover_url, w)} ${w}w`).join(', ')}
+        sizes="64px" alt="" loading="lazy" decoding="async" onerror={noCover} />{/if}
       <span class="book-blank"><span class="book-blank-i">{initial(b.title)}</span><span class="book-blank-t">{b.title}</span></span>
     </a>
     <div class="book-meta">
-      {#if b.url}<a class="book-read" href={b.url} target="_blank" rel="noopener" title="Opens in a new tab">Read<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11C5 7 7.5 5 11.5 5M9 2.5 11.5 5 9 7.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr">(opens in a new tab)</span></a>{/if}
+      <div class="book-kicker">{['Book', b.year].filter(Boolean).join(' · ')}</div>
       <a class="book-title" href={b.url} target="_blank" rel="noopener">{b.title}</a>
-      {#if b.author || b.year}<div class="book-by">{[b.author, b.year].filter(Boolean).join(' · ')}</div>{/if}
+      {#if b.author}<div class="book-by">{b.author}</div>{/if}
       {#if b.description}<p class="book-desc">{b.description}</p>{/if}
+      {#if b.url}<a class="book-read" href={b.url} target="_blank" rel="noopener" title="Opens in a new tab">Read the book<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr">(opens in a new tab)</span></a>{/if}
     </div>
-  </div>
+  </article>
 {/snippet}
 
 {#if cfg && !denied}
@@ -847,72 +874,91 @@
   }
   .avatar svg { width: 100%; height: 100%; display: block; }
   .bubblewrap { max-width: 84%; min-width: 0; }
-  .book { display: flex; gap: 14px; align-items: flex-start; clear: both; margin: 12px 0 8px; padding: 12px; background: #fffdf8; color: #2a2620;
-    border: 1px solid #e9e2d2; border-left: 3px solid var(--gold); border-radius: 12px; }
-  .book-cover { flex: 0 0 auto; display: block; line-height: 0; }
-  /* no cover (none, or a 404): a drawn one — deep ink, gold rule, the title's initial (Chad 11-13) */
-  .book-blank { display: none; width: 88px; aspect-ratio: 2 / 3; box-sizing: border-box; padding: 10px 8px; border-radius: 4px; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-    background: linear-gradient(160deg, #23324a, #121b2a); color: #e8d9b5; box-shadow: 0 2px 8px rgba(60, 40, 10, .18), inset 0 0 0 3px #121b2a, inset 0 0 0 4px color-mix(in srgb, var(--gold) 70%, transparent); line-height: 1.15; text-align: center; }
-  .book-blank-i { font-family: var(--serif); font-size: 30px; color: var(--gold); }
-  .book-blank-t { font-family: var(--serif); font-style: italic; font-size: 10px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
-  .book-cover.nocover img { display: none; }
-  .book-cover.nocover .book-blank { display: flex; }
-  .qcard-cover.nocover { display: none; }
-  /* talk card: a face-centred portrait, the title as the headline, chips, and the player across the foot (Chad 11-13) */
-  .talk { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; clear: both; margin: 12px 0 8px; padding: 14px; border-radius: 14px; color: #2a2620;
-    background: linear-gradient(135deg, #fffdf8, color-mix(in srgb, var(--gold) 9%, #fffdf8)); border: 1px solid #e9e2d2; box-shadow: 0 1px 2px rgba(60, 40, 10, .06), 0 6px 18px -8px rgba(60, 40, 10, .18); }
-  .talk-photo { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; overflow: hidden; line-height: 0; background: #23324a;
-    box-shadow: 0 0 0 2px #fffdf8, 0 0 0 3.5px color-mix(in srgb, var(--gold) 75%, transparent), 0 4px 12px rgba(60, 40, 10, .22); }
-  .talk-photo img { width: 100%; height: 100%; object-fit: cover; }
-  .talk-photo-i { font-family: var(--serif); font-size: 32px; color: var(--gold); line-height: 1; }
-  .talk-body { min-width: 0; align-self: center; }
-  .talk-eyebrow { display: flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: color-mix(in srgb, var(--gold) 70%, #5a4a2a); }
-  .talk-eyebrow svg { width: 12px; height: 12px; }
-  .talk-title { display: block; margin-top: 3px; font-family: var(--serif); font-size: 1.16em; font-weight: 600; line-height: 1.22; color: #22201b; text-decoration: none; text-wrap: balance; }
-  .talk-title:hover { color: var(--accent-deep); }
-  .talk-speaker { margin-top: 3px; font-size: .9em; color: #4d463a; }
-  .talk-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
-  .talk-chip { padding: 2px 9px; border-radius: 999px; font-size: .76em; color: #5d5446; background: color-mix(in srgb, var(--gold) 13%, transparent); border: 1px solid color-mix(in srgb, var(--gold) 28%, transparent); }
-  .talk-open { margin-left: auto; padding: 4px 12px; border-radius: 999px; font-size: .8em; text-decoration: none; color: #fff; background: var(--accent); white-space: nowrap; }
-  .talk-open:hover { background: var(--accent-deep); }
-  .talk-open .ext { width: 12px; height: 12px; margin-left: 4px; vertical-align: -1px; }
-  .talk .talk-audio { grid-column: 1 / -1; max-width: none; margin-top: 8px; }
-  .book-cover img { width: 88px; height: auto; border-radius: 4px; box-shadow: 0 2px 8px rgba(60, 40, 10, .18); }
-  .book-meta { min-width: 0; flex: 1 1 auto; }
-  .book-title, .book-by { display: block; }
-  .book-by { margin-top: 2px; }
-  .book-title { font-family: var(--serif); font-style: italic; font-size: 1.12em; line-height: 1.25; color: #2a2620; text-decoration: none; }
-  .book-title:hover { color: var(--accent-deep); text-decoration: underline; }
-  .book-by { font-size: .85em; color: #6b6253; }
-  .talk-audio { display: block; width: 100%; max-width: 320px; margin-top: 8px; height: 36px; }
-  .book-desc { margin: 6px 0 0; font-size: .9em; line-height: 1.45; display: -webkit-box; color: #3d372d; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
-  .book-read .ext { width: 12px; height: 12px; margin-left: 4px; vertical-align: -1px; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .bubble.follow { margin-top: 8px; }
-  .book-read { float: right; margin: 0 0 6px 10px; padding: 4px 12px; border-radius: 999px; font-size: .82em; line-height: 1.4;
-    text-decoration: none; color: #fff; background: var(--accent); }
-  .book-read:hover { background: var(--accent-deep); }
-  @media (min-width: 480px) { .book-cover img, .book-blank { width: 112px; } .talk-photo { width: 96px; height: 96px; } }
-  /* quote card: a quoted passage with its book's tiny cover and the linked citation (Chad 11-10) */
-  .qcard { display: flex; gap: 10px; align-items: flex-start; margin: .55em 0; padding: 10px; border: 1px solid #e7dfcf; border-left: 2.5px solid var(--gold);
-    border-radius: 0 8px 8px 0; background: color-mix(in srgb, var(--gold) 5%, transparent); }
-  .qcard-cover { flex: 0 0 auto; display: block; line-height: 0; }
-  .qcard-cover img { width: 44px; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 3px; box-shadow: 0 1px 5px rgba(60, 40, 10, .18); }
+  /* ── Cards (Chad 11-13): one rhythm for every widget — set in from the prose, clear air above and below, compact inside;
+     each kind its own character: the book a volume on a desk, the talk a listening card, the quote the words themselves. ── */
+  .book, .talk, .qcard, .scene { clear: both; box-sizing: border-box; margin: 16px 0 16px 14px; max-width: min(500px, calc(100% - 14px)); }
+  .kicker { font: 600 10px/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+  .ext { width: 12px; height: 12px; margin-left: 4px; vertical-align: -1.5px; transition: transform .2s; }
+  a:hover > .ext { transform: translateX(2px); }
+  /* book: paper, a cover lifted off the page, the title in the book face */
+  .book { display: flex; gap: 14px; align-items: flex-start; padding: 12px 16px 12px 12px; color: #2a2620;
+    background: linear-gradient(180deg, #fffdf8, #f9f3e4); border: 1px solid #ebe2cd; border-radius: 3px 10px 10px 3px;
+    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--gold) 80%, transparent), 0 10px 22px -16px rgba(60, 40, 10, .45); }
+  .book-cover { flex: 0 0 auto; display: block; line-height: 0; }
+  .book-cover img, .book-blank { width: 64px; border-radius: 2px 4px 4px 2px; transform: rotate(-2deg); transition: transform .3s cubic-bezier(.2, .8, .2, 1);
+    box-shadow: -2px 0 0 rgba(0, 0, 0, .06), 0 7px 14px -6px rgba(40, 25, 5, .5); }
+  .book-cover img { height: auto; }
+  .book:hover .book-cover img, .book:hover .book-blank { transform: rotate(0) translateY(-2px); }
+  /* no cover (none, or a 404): a drawn one — deep ink, a gold rule, the title's initial */
+  .book-blank { display: none; aspect-ratio: 2 / 3; box-sizing: border-box; padding: 8px 6px; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+    background: linear-gradient(160deg, #23324a, #121b2a); color: #e8d9b5; line-height: 1.15; text-align: center; outline: 1px solid color-mix(in srgb, var(--gold) 60%, transparent); outline-offset: -4px; }
+  .book-blank-i { font-family: var(--serif); font-size: 24px; color: var(--gold); }
+  .book-blank-t { font-family: var(--serif); font-style: italic; font-size: 8.5px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .book-cover.nocover img { display: none; }
+  .book-cover.nocover .book-blank { display: flex; }
+  .book-meta { min-width: 0; flex: 1 1 auto; }
+  .book-kicker { font: 600 10px/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: color-mix(in srgb, var(--gold) 65%, #5a4a2a); }
+  .book .book-title { display: block; margin-top: 4px; font-family: var(--serif); font-size: 1.08em; font-weight: 600; line-height: 1.22; color: #22201b; text-decoration: none; text-wrap: balance; }
+  .book .book-title:hover { color: var(--accent-deep); }
+  .book-by { margin-top: 2px; font-size: .85em; color: #6b6253; }
+  .book-desc { margin: 6px 0 0; font-size: .86em; line-height: 1.42; color: #3d372d; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .book .book-read { display: inline-block; margin-top: 8px; font-size: .8em; font-weight: 600; color: var(--accent); text-decoration: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+  .book .book-read:hover { color: var(--accent-deep); border-bottom-color: currentColor; }
+  /* talk: a listening card — night ink with a faint sound ripple, the speaker's face in a gold ring, its own small player */
+  .talk { position: relative; overflow: hidden; display: grid; grid-template-columns: auto 1fr; gap: 0 14px; align-items: center; max-width: min(460px, calc(100% - 14px));
+    padding: 14px 16px 10px 14px; border-radius: 14px; color: #ece6d8;
+    background: radial-gradient(130% 150% at 0% 0%, #2b3c58 0%, #18243a 50%, #0f1726 100%);
+    box-shadow: inset 0 0 0 1px rgba(232, 217, 181, .09), 0 12px 26px -16px rgba(10, 20, 40, .7); }
+  .talk::after { content: ''; position: absolute; right: -34px; top: -34px; width: 110px; height: 110px; border-radius: 50%; pointer-events: none;
+    border: 1px solid rgba(232, 217, 181, .1); box-shadow: 0 0 0 16px rgba(232, 217, 181, .035), 0 0 0 32px rgba(232, 217, 181, .02); }
+  .talk-photo { display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; overflow: hidden; line-height: 0; background: #23324a;
+    box-shadow: 0 0 0 2px #18243a, 0 0 0 3.5px var(--gold), 0 6px 16px -4px rgba(0, 0, 0, .55); }
+  .talk-photo img { width: 100%; height: 100%; object-fit: cover; filter: sepia(.12) contrast(1.04); }
+  .talk-photo-i { font-family: var(--serif); font-size: 26px; color: var(--gold); line-height: 1; }
+  .talk-body { min-width: 0; position: relative; z-index: 1; }
+  .talk-kicker { font: 600 10px/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: color-mix(in srgb, var(--gold) 85%, #fff); }
+  .talk-title { display: block; margin-top: 4px; font-family: var(--serif); font-size: 1.07em; font-weight: 600; line-height: 1.2; color: #fbf6ea; text-decoration: none; text-wrap: balance; }
+  .talk-title:hover { color: #fff; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--gold) 60%, transparent); text-underline-offset: 3px; }
+  .talk-speaker { margin-top: 2px; font-size: .84em; color: #b9b09c; }
+  .tp { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(232, 217, 181, .1); position: relative; z-index: 1; }
+  .tp-btn { flex: none; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+    background: var(--gold); color: #14203a; box-shadow: 0 3px 10px -3px color-mix(in srgb, var(--gold) 70%, transparent); transition: transform .15s; }
+  .tp-btn:hover { transform: scale(1.07); }
+  .tp-btn:focus-visible { outline: 2px solid #fbf6ea; outline-offset: 2px; }
+  .tp-btn svg { width: 14px; height: 14px; }
+  .tp-btn .i-pause, .tp.on .tp-btn .i-play { display: none; }
+  .tp.on .tp-btn .i-pause { display: block; }
+  .tp-track { flex: 1 1 auto; position: relative; height: 3px; border-radius: 2px; background: rgba(232, 217, 181, .16); cursor: pointer; }
+  .tp-track::before { content: ''; position: absolute; inset: -9px 0; }
+  .tp-track i { position: absolute; inset: 0 auto 0 0; width: calc(var(--p, 0) * 100%); border-radius: 2px; background: var(--gold); }
+  .tp-time { font: 500 11px/1 system-ui, -apple-system, sans-serif; font-variant-numeric: tabular-nums; color: #b9b09c; }
+  .tp audio { display: none; }
+  .tp-open { margin-left: auto; font-size: .78em; font-weight: 600; color: #e8d9b5; text-decoration: none; white-space: nowrap; }
+  .tp-open:hover { color: #fff; }
+  /* quote card: the words themselves — the book face, a gold rule, the book's small cover, the citation right beneath */
+  .qcard { display: flex; gap: 12px; align-items: flex-start; padding: 9px 14px 9px 13px; border-left: 2px solid var(--gold); border-radius: 0 8px 8px 0;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 8%, transparent), color-mix(in srgb, var(--gold) 2%, transparent)); }
+  .qcard-cover { flex: 0 0 auto; display: block; line-height: 0; margin-top: 2px; }
+  .qcard-cover img { width: 34px; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 2px 3px 3px 2px; box-shadow: 0 4px 10px -4px rgba(40, 25, 5, .5); }
+  .qcard-cover.nocover { display: none; }
   .qcard-body { min-width: 0; flex: 1 1 auto; }
-  .qcard-text { color: var(--quote); line-height: 1.5; }
-  .qcard .qcard-cite { margin: 6px 0 0; font-size: .85em; color: #6b6253; }
-  .qcard .qcard-cite a { color: inherit; text-decoration: none; }
-  .qcard .qcard-cite a:hover { color: var(--accent-deep); text-decoration: underline; }
-  .qcard .qcard-cite em { font-family: var(--serif); color: #2a2620; }
-  /* scene card: one moment of a story with the words that record it (Chad 11-13) */
-  .scene { margin: .7em 0; padding: 12px; border: 1px solid #e7dfcf; border-top: 3px solid var(--gold); border-radius: 10px; background: #fffdf8; color: #2a2620; }
+  .qcard-text, .qcard-text :global(p) { font-family: var(--serif); color: var(--quote); line-height: 1.5; }
+  .qcard-text :global(p), .qcard-text :global(blockquote) { margin: 0; padding: 0; border: 0; background: none; }
+  .qcard-text :global(p + p) { margin-top: .45em; }
+  .qcard-cite, .qcard .qcard-cite, .scene .qcard-cite { margin: 5px 0 0; font-size: .8em; color: #7a705f; }
+  .bubble .qcard-cite a, .qcard-cite a { color: inherit; text-decoration: none; }
+  .bubble .qcard-cite a:hover, .qcard-cite a:hover { color: var(--accent-deep); text-decoration: underline; }
+  .qcard-cite em { font-family: var(--serif); color: #2a2620; }
+  /* scene card: one moment of a story with the words that record it */
+  .scene { padding: 12px 14px; border: 1px solid #ebe2cd; border-top: 2.5px solid var(--gold); border-radius: 4px 4px 10px 10px; background: #fffdf8; color: #2a2620;
+    box-shadow: 0 10px 22px -16px rgba(60, 40, 10, .4); }
   .scene-head { display: flex; gap: 10px; align-items: center; }
-  .scene-title { margin: 0; font-family: var(--serif); font-size: 1.08em; line-height: 1.25; }
-  .scene-line { margin: 2px 0 0; font-size: .86em; color: #6b6253; }
-  .scene-pass { margin: 10px 0 0; padding-left: 10px; border-left: 2.5px solid var(--gold); }
-  .scene .qcard-cite { margin: 4px 0 0; font-size: .85em; color: #6b6253; }
-  .scene .qcard-cite a { color: inherit; text-decoration: none; }
-  .scene .qcard-cite em { font-family: var(--serif); color: #2a2620; }
+  .scene-title { margin: 0; font-family: var(--serif); font-size: 1.06em; line-height: 1.25; }
+  .scene-line { margin: 2px 0 0; font-size: .84em; color: #6b6253; }
+  .scene-pass { margin: 10px 0 0; padding-left: 10px; border-left: 2px solid var(--gold); }
   .msg.user .bubblewrap { max-width: 78%; }
 
   .bubble {
@@ -945,7 +991,7 @@
   .bubble :global(p:has(> strong:only-child)) { margin: 1em 0 .25em; }
   /* Blockquoted passages — the gilded rule motif marks the sacred text itself. */
   .bubble :global(blockquote) {
-    margin: .5em 0; padding: .35em 0 .35em .85em;
+    margin: .9em 0 .9em 14px; padding: .4em .9em .4em .85em;
     border-left: 2.5px solid var(--gold);
     background: color-mix(in srgb, var(--gold) 5%, transparent);
     border-radius: 0 6px 6px 0; font-style: italic;
@@ -1027,19 +1073,15 @@
     .panel { background: linear-gradient(178deg, #14181e, #0e1217); color: #e9e6dd; }
     .watermark { color: #b9c8dd; opacity: .045; }
     .msg.assistant .bubble { background: #1b212a; border-color: #2b3442; color: #e9e6dd; box-shadow: none; }
-    .book { background: #1b212a; border-color: #2b3442; border-left-color: var(--gold); color: #e9e6dd; }
-    .book-title { color: #f1ede3; }
-    .book-by { color: #a59d8c; }
+    .book, .scene { background: linear-gradient(180deg, #1e242d, #1a1f27); border-color: #2b3442; color: #e9e6dd; box-shadow: inset 3px 0 0 color-mix(in srgb, var(--gold) 70%, transparent); }
+    .scene { box-shadow: none; }
+    .book .book-title { color: #f1ede3; }
+    .book-by, .scene-line { color: #a59d8c; }
     .book-desc { color: #d3cec2; }
-    .talk { background: linear-gradient(135deg, #1b212a, #1f242b); border-color: #2b3442; color: #e9e6dd; box-shadow: none; }
-    .talk-photo { box-shadow: 0 0 0 2px #1b212a, 0 0 0 3.5px color-mix(in srgb, var(--gold) 75%, transparent); }
-    .talk-title { color: #f1ede3; }
-    .talk-speaker { color: #c9c2b3; }
-    .talk-chip { color: #cfc6b4; }
-    .talk .talk-audio { color-scheme: dark; }
-    .qcard { border-color: #2b3442; border-left-color: var(--gold); }
-    .qcard .qcard-cite { color: #a59d8c; }
-    .qcard .qcard-cite em { color: #f1ede3; }
+    .book .book-read { color: color-mix(in srgb, var(--accent) 35%, #cfe1ff); }
+    .talk { background: radial-gradient(130% 150% at 0% 0%, #26344c 0%, #161f30 55%, #10161f 100%); }
+    .qcard-cite, .qcard .qcard-cite, .scene .qcard-cite { color: #a59d8c; }
+    .qcard-cite em { color: #f1ede3; }
     .bubble.lit::first-letter { color: color-mix(in srgb, var(--accent) 45%, #cfe1ff); }
     .bubble :global(a) { color: color-mix(in srgb, var(--accent) 30%, #cfe1ff); }
     .nextq button { color: #c4cddb; border-color: rgba(196, 205, 219, .3); }   /* subtle, never unreadable (Chad 11-12) */
