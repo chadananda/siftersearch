@@ -30,4 +30,5 @@ export const api = {
   clearScore: (paraId, question) => call('DELETE', '/implied/score', { paraId, question }),
   scores: (p) => call('GET', '/implied/scores', p),
   scoreStats: () => call('GET', '/implied/scores/stats'),
+  sample: (p) => call('GET', '/implied/sample', p),
 };

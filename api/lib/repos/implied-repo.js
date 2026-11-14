@@ -275,6 +275,10 @@ export const hypeCountsWindow = (fromId, toId) => queryAll(`SELECT doc_id, COUNT
 /** Stored hyp_questions in one content-id window → [{ id, doc_id, hyp_questions }] (the question-fault REPORT walks windows). */
 export const hypWindow = (fromId, toId) => queryAll(`SELECT id, doc_id, hyp_questions FROM content WHERE id > ? AND id <= ? AND deleted_at IS NULL AND hyp_questions IS NOT NULL AND LENGTH(hyp_questions) > 2`, [fromId, toId], 'implied:hyp-window');
 
+/** Up to `limit` paragraphs WITH stored questions starting at content id `fromId` (primary-key range read, no scan) + their doc — the score-sample sampler picks random fromIds. */
+export const hypSampleWindow = (fromId, limit = 40) => queryAll(`SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.hyp_questions, d.title d_title, d.author d_author, d.religion d_religion, d.collection d_collection, d.slug d_slug
+  FROM content c LEFT JOIN docs d ON d.id = c.doc_id WHERE c.id >= ? AND c.deleted_at IS NULL AND c.hyp_questions IS NOT NULL AND LENGTH(c.hyp_questions) > 2 ORDER BY c.id LIMIT ?`, [Number(fromId), Number(limit)], 'implied:hyp-sample');
+
 /** doc id → title for these docs. */
 export async function titleOfDocs(ids) {
   const m = new Map();

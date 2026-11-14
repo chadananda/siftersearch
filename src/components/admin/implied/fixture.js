@@ -64,6 +64,8 @@ const log = (action, before, after, claim_id) => edits.unshift({ id: edits.lengt
 const words = (s) => s.toLowerCase().split(/\W+/).filter((w) => w.length > 4);
 // Returns the JSON the real endpoint would. m = method, path without /api/admin, p = query params, b = body
 const scores = new Map(), fold = (q) => String(q ?? '').toLowerCase().replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim(), skey = (pa, q) => pa + '|' + fold(q);
+const byFault = (all) => { const o = {}; all.filter((s) => s.fault).forEach((s) => { const f = (o[s.fault] ||= { n: 0, sum: 0, low: 0 }); f.n++; f.sum += s.score; f.low += s.score <= 2 ? 1 : 0; }); return Object.fromEntries(Object.entries(o).map(([k, f]) => [k, { n: f.n, avg: Math.round((f.sum / f.n) * 100) / 100, lowShare: f.low / f.n }])); };
+let sampleSeq = 0;
 const scoreRows = () => [...scores.values()].sort((a, c) => c.updatedAt.localeCompare(a.updatedAt)).map((s) => ({ ...s, doc: { title: 'Fixture book', author: 'Fixture author' }, link: '#' }));
 // myScore on every question-bearing object (items carry paraId + question; editor stated rows take the paragraph from the path)
 const annotate = (o, para) => {
@@ -79,13 +81,14 @@ const annotate = (o, para) => {
 export function fixtureApi(m, path, p = {}, b = {}) {
   let r;
   if (path === '/implied/score') {
-    if (m === 'PUT') { const e = { id: scores.size + 1, paraId: b.paraId, question: b.question, kind: b.kind || 'stated', impliedId: b.impliedId ?? null, score: b.score, tags: b.tags || [], note: b.note || null, rater: 'fixture', updatedAt: new Date().toISOString() }; scores.set(skey(b.paraId, b.question), e); return { score: e }; }
+    if (m === 'PUT') { const e = { id: scores.size + 1, paraId: b.paraId, question: b.question, kind: b.kind || 'stated', impliedId: b.impliedId ?? null, score: b.score, tags: b.tags || [], fault: b.fault || null, note: b.note || null, rater: 'fixture', updatedAt: new Date().toISOString() }; scores.set(skey(b.paraId, b.question), e); return { score: e }; }
     return { removed: scores.delete(skey(p.paraId, p.question)) ? 1 : 0 };
   }
   if (path === '/implied/scores/stats') {
     const all = [...scores.values()], tags = {}; all.forEach((s) => s.tags.forEach((t) => (tags[t] = (tags[t] || 0) + 1)));
-    return { total: all.length, byScore: Object.fromEntries([1, 2, 3, 4, 5].map((n) => [n, all.filter((s) => s.score === n).length])), byKind: {}, topTags: Object.entries(tags).map(([tag, n]) => ({ tag, n })).sort((x, y) => y.n - x.n), worst: scoreRows().filter((s) => s.score <= 2).slice(0, 10) };
+    return { total: all.length, byScore: Object.fromEntries([1, 2, 3, 4, 5].map((n) => [n, all.filter((s) => s.score === n).length])), byKind: {}, byFault: byFault(all), topTags: Object.entries(tags).map(([tag, n]) => ({ tag, n })).sort((x, y) => y.n - x.n), worst: scoreRows().filter((s) => s.score <= 2).slice(0, 10) };
   }
+  if (path === '/implied/sample') { const qs = { yesNo: ['Is God forgiving?', 'Is the soul immortal?', 'Does the Guardian mention Haifa here?'], namedBook: ['What does the Fixture book say about justice?', 'Why does Fixture book praise unity?'], any: ['What is the purpose of life?', 'How is wealth shared?'] }[p.fault || 'yesNo'] || []; return { fault: p.fault || 'yesNo', items: Array.from({ length: +p.n || 20 }, () => { const i = sampleSeq++, q = qs[i % qs.length]; return { paraId: 5000 + i, docId: 1, k: i % 4, question: q, fault: p.fault || 'yesNo', doc: { title: 'Fixture book', author: 'Fixture author', religion: "Baha'i" }, text: 'Fixture paragraph ' + i + '. The text of the passage the question was written from, shown under the question so it can be judged against what the passage really says.', link: '#', myScore: scores.get(skey(5000 + i, q))?.score ?? null }; }) }; }
   if (path === '/implied/scores') return { scores: scoreRows().filter((s) => !p.max || s.score <= +p.max), next: null };
   if (path === '/implied/search' || path === '/implied' || path === '/implied/graph' || path.startsWith('/hype/paragraph/') || /^\/implied\/[^/]+$/.test(path)) {
     const out = base(m, path, p, b);

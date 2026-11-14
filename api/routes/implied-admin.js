@@ -24,6 +24,7 @@ export default async function impliedAdminRoutes(fastify, opts = {}) {
   // question scores (1-5 per question, per rater) — static paths, so they win over /implied/:id
   fastify.put('/implied/score', pre, async (req) => ({ score: await qs.setScore(req.body || {}, editor(req) || '') }));
   fastify.delete('/implied/score', pre, async (req) => qs.clearScore({ paraId: req.query?.paraId, question: req.query?.question }, editor(req) || ''));
+  fastify.get('/implied/sample', pre, async (req) => { const q = req.query || {}; return S.sampleQuestions({ fault: q.fault || 'yesNo', n: num(q.n, 20), rater: editor(req) || '' }, deps); });
   fastify.get('/implied/scores/stats', pre, async () => S.scoreStats());
   fastify.get('/implied/scores', pre, async (req) => { const q = req.query || {}; return S.scoredList({ max: q.max ? Number(q.max) : undefined, kind: q.kind, limit: num(q.limit, 50), cursor: num(q.cursor, 0) }); });
   fastify.get('/implied/:id', pre, async (req) => (await S.itemDetail(Number(req.params.id), editor(req) || '')) || (() => { throw notFound('item'); })());

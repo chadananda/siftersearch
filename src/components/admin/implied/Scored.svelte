@@ -3,6 +3,7 @@
   import { untrack } from 'svelte';
   import { api } from './api.js';
   import ScoreBar from './ScoreBar.svelte';
+  import SampleScorer from './SampleScorer.svelte';
   import { num } from './util.js';
   let { p, setp } = $props();
   let rows = $state([]), next = $state(null), stats = $state(null), loading = $state(false), error = $state('');
@@ -21,6 +22,7 @@
   const peak = $derived(Math.max(1, ...Object.values(stats?.byScore || {})));
 </script>
 
+<SampleScorer onscored={() => load()} />
 <section class="stats">
   {#if stats}
     <div class="bars" aria-label="Scores by value">

@@ -8,7 +8,9 @@ const bad = (m) => Object.assign(new Error(m), { statusCode: 400 });
 const out = (r) => ({ id: r.id, paraId: r.para_id, question: r.question, kind: r.kind, impliedId: r.implied_id, score: r.score, tags: r.tags ? JSON.parse(r.tags) : [], note: r.note || null, rater: r.rater, updatedAt: r.updated_at });
 
 /** Upsert one rater's score. → the stored score */
-export async function setScore({ paraId, question, kind = 'stated', impliedId = null, score, tags = null, note = null }, rater = '') {
+export async function setScore({ paraId, question, kind = 'stated', impliedId = null, score, tags = null, note = null, fault = null }, rater = '') {
+  // `fault` (sample scoring: yesNo | namedBook | any) is stored as the tag fault:<x> so scoreStats can group by it
+  if (fault) tags = [...(Array.isArray(tags) ? tags : []).filter((t) => !String(t).startsWith('fault:')), `fault:${String(fault).slice(0, 20)}`];
   const s = Number(score), q = String(question ?? '').trim();
   if (!Number.isInteger(s) || s < 1 || s > 5) throw bad('score must be 1-5');
   if (!paraId || !q) throw bad('paraId and question are required');
@@ -51,10 +53,13 @@ export async function listScores({ max, kind, limit = 50, cursor = 0 } = {}) {
 export async function scoreStats() {
   const byScore = await queryAll('SELECT score, COUNT(*) n FROM question_scores GROUP BY score', [], 'qscore:stats-score');
   const byKind = await queryAll('SELECT kind, COUNT(*) n, ROUND(AVG(score), 2) avg FROM question_scores GROUP BY kind', [], 'qscore:stats-kind');
-  const tagRows = await queryAll('SELECT tags FROM question_scores WHERE tags IS NOT NULL', [], 'qscore:stats-tags');
-  const tags = new Map();
-  for (const r of tagRows) for (const t of JSON.parse(r.tags)) tags.set(t, (tags.get(t) || 0) + 1);
+  const tagRows = await queryAll('SELECT tags, score FROM question_scores WHERE tags IS NOT NULL', [], 'qscore:stats-tags');
+  const tags = new Map(), faults = {};
+  for (const r of tagRows) for (const t of JSON.parse(r.tags)) {
+    if (t.startsWith('fault:')) { const f = (faults[t.slice(6)] ||= { n: 0, sum: 0, low: 0 }); f.n++; f.sum += r.score; if (r.score <= 2) f.low++; } else tags.set(t, (tags.get(t) || 0) + 1);
+  }
+  const byFault = Object.fromEntries(Object.entries(faults).map(([k, f]) => [k, { n: f.n, avg: Math.round((f.sum / f.n) * 100) / 100, lowShare: Math.round((f.low / f.n) * 1000) / 1000 }]));
   const { rows: worst } = await listScores({ max: 2, limit: 10 });
   return { total: byScore.reduce((n, r) => n + r.n, 0), byScore: Object.fromEntries([1, 2, 3, 4, 5].map((s) => [s, byScore.find((r) => r.score === s)?.n || 0])),
-    byKind: Object.fromEntries(byKind.map((r) => [r.kind, { n: r.n, avg: r.avg }])), topTags: [...tags].map(([tag, n]) => ({ tag, n })).sort((a, b) => b.n - a.n).slice(0, 12), worst };
+    byKind: Object.fromEntries(byKind.map((r) => [r.kind, { n: r.n, avg: r.avg }])), byFault, topTags: [...tags].map(([tag, n]) => ({ tag, n })).sort((a, b) => b.n - a.n).slice(0, 12), worst };
 }

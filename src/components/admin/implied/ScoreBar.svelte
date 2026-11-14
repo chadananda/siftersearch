@@ -2,12 +2,12 @@
   // Compact 1-5 question scorer (1 stupid … 5 excellent). Click sets, click the same again clears; optimistic, error reverts. 1-2 opens an optional reason row (tag chips + note).
   // Keys 1-5 work on any focused row that wraps it (see keyScore in util.js). Saves via api.setScore / clearScore.
   import { api } from './api.js';
-  let { paraId, question, kind = 'stated', impliedId = null, score = null, onchange = () => {} } = $props();
+  let { paraId, question, kind = 'stated', impliedId = null, score = null, fault = null, onchange = () => {} } = $props();
   const NAMES = ['', 'stupid', 'weak', 'ok', 'good', 'excellent'];
   const TAGS = ['self-reference', 'vague', 'not answered by passage', 'too long', 'trivial', 'wrong tradition/term', 'duplicate'];
   let val = $state(null), tags = $state([]), note = $state(''), open = $state(false), err = $state(''), saved = $state(false);
   $effect(() => { val = score ?? null; });
-  const body = (extra = {}) => ({ paraId, question, kind, impliedId, score: val, tags, note, ...extra });
+  const body = (extra = {}) => ({ paraId, question, kind, impliedId, score: val, tags, note, ...(fault ? { fault } : {}), ...extra });
   async function pick(n) {
     const prev = val; err = ''; saved = false;
     if (val === n) { val = null; open = false; try { await api.clearScore(paraId, question); onchange(null); } catch (e) { val = prev; err = e.message; } return; }
