@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-14T13:24:46.601Z",
+  "generated": "2026-11-14T15:28:52.162Z",
   "entries": [
+    {
+      "hash": "a4af00055",
+      "date": "2026-11-14",
+      "type": "Other",
+      "description": "Anís on partner sites, host's own results first (OoL, bahai-library, Phelps)",
+      "scope": null
+    },
     {
       "hash": "29621af91",
       "date": "2026-11-13",
@@ -745,6 +752,15 @@
     }
   ],
   "grouped": {
+    "2026-11-14": [
+      {
+        "hash": "a4af00055",
+        "date": "2026-11-14",
+        "type": "Other",
+        "description": "Anís on partner sites, host's own results first (OoL, bahai-library, Phelps)",
+        "scope": null
+      }
+    ],
     "2026-11-13": [
       {
         "hash": "29621af91",
