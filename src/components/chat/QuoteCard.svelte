@@ -17,6 +17,13 @@
     <p class="m-0 text-xs sm:text-sm text-muted">—
       <a href={card.url} class="text-muted hover:text-accent no-underline" target="_blank" rel="noopener" title={ext ? 'Opens the source' : 'Opens the passage in the library'}>{#if card.author}{card.author}, {/if}<em class="text-primary">{card.title}</em>{#if card.place}, {card.place}{/if}</a>
     </p>
+    {#if card.image?.thumb}
+      <!-- the card's picture (Dawn-Breakers plate, chosen by code: api/lib/illustrations.js); opens the larger image; box reserved -->
+      <figure class="m-0 mt-1">
+        <a href={card.image.large} class="inline-block leading-none" target="_blank" rel="noopener"><img class="block rounded shadow h-auto" style="width:{card.image.thumb.width}px" src={card.image.thumb.src} srcset={card.image.thumb.srcset} sizes={card.image.thumb.sizes} width={card.image.thumb.width} height={card.image.thumb.height} alt={card.image.caption} loading="lazy" decoding="async" /></a>
+        <figcaption class="mt-1 text-xs text-muted">{card.image.caption} · Illustration from <em>The Dawn-Breakers</em></figcaption>
+      </figure>
+    {/if}
   </div>
 </figure>
 <style>

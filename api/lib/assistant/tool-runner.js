@@ -8,6 +8,7 @@ import { translationLabel } from './tool-defs.js';
 import { part } from './tool-cache.js';
 import { HISTORY_NAMES, sweepHistory } from './history-sweep.js';
 import { isSiteRoot } from './widgets/card-text.js';
+import { imagesForPassages, imagesNote } from '../illustrations.js';
 
 export const PASSAGE_CHARS = 4000;   // = prompt.js PASSAGE_CHARS (a passage's shown length)
 
@@ -118,7 +119,7 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
     const texts = ps.map(([, p]) => String(p.text || '').replace(/\s+/g, ' ').trim());
     // + "\n", the " …" a cut adds, and the "\n\n" between passages
     const caps = fitLengths(texts.map((t, i) => Math.min(t.length, ps[i][1].translation ? Math.max(n, 4000) : n)), SHOW_CHARS - heads.reduce((a, h) => a + h.length + 5, 0));
-    return ps.map((_, i) => `${heads[i]}\n${headOf(texts[i], caps[i])}`).join('\n\n');
+    return ps.map((_, i) => `${heads[i]}\n${headOf(texts[i], caps[i])}`).join('\n\n') + imagesNote(imagesForPassages(ps.map(([, p]) => p)));
   };
   const sweeps = [];   // each person lookup's sweep inside the histories: { query, variants, n } (agent-core: an absence claim needs an empty one)
   const searched = [];   // each search's query and its passages' documents in rank order (research's book step)

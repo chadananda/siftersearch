@@ -1,5 +1,6 @@
 // Edge research cache + question log + conversations. Pure; env injected: ANIS_DB (D1), ANIS_VEC (Vectorize), AI (Workers AI).
 // Mirrors api/lib/assistant/research-cache.js + question-log.js, but sets hold a passage SNAPSHOT (text included): a hit needs no tower call.
+import { imagesForPassages, toolImages } from '../../api/lib/illustrations.js';
 export const EMBED_MODEL = '@cf/baai/bge-m3';   // 1024-d, multilingual, cosine
 // bge-m3: calibrate (brief D2) — values carried over from the tower embedding model
 export const SAME_QUESTION = 0.88;
@@ -15,7 +16,9 @@ export async function embed(env, text) {
   const r = await env.AI.run(EMBED_MODEL, { text: [String(text)] });
   return r?.data?.[0] || null;
 }
-const parse = (row) => (row ? { ...row, passages: JSON.parse(row.passages || '[]') } : null);
+// a set carries the pictures its passages have (0–2, illustrations.js; derived on read, so a set held before the index has them too)
+const withImages = (set) => ({ ...set, images: toolImages(imagesForPassages(set.passages)) });
+const parse = (row) => (row ? withImages({ ...row, passages: JSON.parse(row.passages || '[]') }) : null);
 const byHash = async (env, h) => parse(await env.ANIS_DB.prepare('SELECT * FROM anis_research_sets WHERE qhash = ?').bind(h).first());
 const bump = (env, id) => env.ANIS_DB.prepare('UPDATE anis_research_sets SET hits = hits + 1 WHERE id = ?').bind(id).run();
 

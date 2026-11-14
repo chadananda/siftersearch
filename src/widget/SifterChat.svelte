@@ -1009,7 +1009,15 @@
     <div class="qcard-body">
       <div class="qcard-text">{@html body}</div>
       <p class="qcard-cite">— <a href={card.url} target="_blank" rel="noopener">{#if card.author}{`${card.author}, `}{/if}<em>{card.title}</em>{#if card.place}, {card.place}{/if}</a></p>
+      {#if card.image}{@render plate(card.image)}{/if}
     </div>
+  </figure>
+{/snippet}
+<!-- a card's picture (Dawn-Breakers plate, chosen by code: illustrations.js): the thumbnail opens the larger image; box reserved -->
+{#snippet plate(img)}
+  <figure class="plate">
+    <a href={img.large} target="_blank" rel="noopener"><img src={img.thumb.src} srcset={img.thumb.srcset} sizes={img.thumb.sizes} width={img.thumb.width} height={img.thumb.height} alt={img.caption} loading="lazy" decoding="async" /></a>
+    <figcaption>{img.caption} · Illustration from <em>The Dawn-Breakers</em></figcaption>
   </figure>
 {/snippet}
 {#snippet sceneCard(s)}
@@ -1028,6 +1036,7 @@
         <p class="qcard-cite">— <a href={p.url} target="_blank" rel="noopener">{#if p.author}{`${p.author}, `}{/if}<em>{p.title}</em>{#if p.place}, {p.place}{/if}</a></p>
       </figure>
     {/each}
+    {#if s.image}{@render plate(s.image)}{/if}
   </section>
 {/snippet}
 {#snippet talkCard(t)}
@@ -1219,6 +1228,7 @@
                             <div class="qcard-body">
                               <div class="qcard-text">{@html renderRich(`“${pc.excerpt}”`)}</div>
                               <p class="qcard-cite">— {#if pc.url}<a href={pc.url} target="_blank" rel="noopener">{#if pc.author}{`${pc.author}, `}{/if}<em>{pc.title}</em>{#if pc.place}, {pc.place}{/if}</a>{:else}{#if pc.author}{`${pc.author}, `}{/if}<em>{pc.title}</em>{#if pc.place}, {pc.place}{/if}{/if}</p>
+                              {#if pc.image}{@render plate(pc.image)}{/if}
                             </div>
                           </figure>
                         {/each}<!-- display widgets (side_by_side, quote, book, scene — the writer's inline templates): the reply's marker + fallback swapped for the component -->{#if m.widgets?.length}{#each widgetSegments(m.pending ? settled(m.content) : m.content, m.widgets) as ws}{#if ws.kind === 'widget' && ws.widget.kind === 'side_by_side'}<SideBySide widget={ws.widget} />{:else if ws.kind === 'widget' && ws.widget.kind === 'quote'}{@render qcard(ws.widget, renderRich(ws.widget.text))}{:else if ws.kind === 'widget' && ws.widget.kind === 'book'}{@render bookCard(ws.widget)}{:else if ws.kind === 'widget' && ws.widget.kind === 'scene'}{@render sceneCard(ws.widget)}{:else if ws.md?.trim()}{@html renderRich(ws.md.trim())}{/if}{/each}
@@ -1636,6 +1646,11 @@
   .bubble .qcard-cite a, .qcard-cite a { color: inherit; text-decoration: none; }
   .bubble .qcard-cite a:hover, .qcard-cite a:hover { color: var(--accent-deep); text-decoration: underline; }
   .qcard-cite em { font-family: var(--serif); color: #2a2620; }
+  .plate { margin: 8px 0 0; }
+  .plate a { display: inline-block; line-height: 0; }
+  .plate img { width: 120px; height: auto; border-radius: 3px; box-shadow: 0 3px 8px -4px rgba(40, 25, 5, .45); }
+  .plate figcaption { margin-top: 4px; font-size: .75em; line-height: 1.35; color: #7a705f; }
+  .root.dark .plate figcaption { color: #a59d8c; }
   /* scene card: one moment of a story with the words that record it */
   .scene { padding: 12px 14px; border: 1px solid #ebe2cd; border-top: 2.5px solid var(--gold); border-radius: 4px 4px 10px 10px; background: #fffdf8; color: #2a2620;
     box-shadow: 0 10px 22px -16px rgba(60, 40, 10, .4); }

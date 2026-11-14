@@ -1,0 +1,4156 @@
+{
+ "version": 1,
+ "source": "Nabíl, The Dawn-Breakers (1932, Shoghi Effendi’s edition): its plates and captions",
+ "built": "2026-11-14",
+ "docs": {
+  "21308": {
+   "title": "The Dawn-Breakers",
+   "chapters": [
+    {
+     "n": 1,
+     "title": "The Mission of S̱hayḵh Aḥmad-i-Aḥsá’í",
+     "from": 1,
+     "to": 122
+    },
+    {
+     "n": 2,
+     "title": "The Mission of Siyyid Káẓim-i-ras̱htí",
+     "from": 123,
+     "to": 155
+    },
+    {
+     "n": 3,
+     "title": "The Declaration of the Báb’s Mission",
+     "from": 156,
+     "to": 230
+    },
+    {
+     "n": 4,
+     "title": "Mullá Ḥusayn’s Journey to Ṭihrán",
+     "from": 231,
+     "to": 246
+    },
+    {
+     "n": 5,
+     "title": "Bahá’u’lláh’s Journey to Mázindarán",
+     "from": 247,
+     "to": 271
+    },
+    {
+     "n": 6,
+     "title": "Mullá Ḥusayn’s Journey to Ḵhurásán",
+     "from": 272,
+     "to": 284
+    },
+    {
+     "n": 7,
+     "title": "The Báb’s Pilgrimage to Mecca and Medina",
+     "from": 285,
+     "to": 304
+    },
+    {
+     "n": 8,
+     "title": "The Báb’s Stay in S̱híráz After the Pilgrimage",
+     "from": 305,
+     "to": 346
+    },
+    {
+     "n": 9,
+     "title": "THE BÁB’S STAY IN S̱HÍRÁZ AFTER THE PILGRIMAGE (Continued)",
+     "from": 347,
+     "to": 408
+    },
+    {
+     "n": 10,
+     "title": "The Báb’s Sojourn in Iṣfahán",
+     "from": 409,
+     "to": 433
+    },
+    {
+     "n": 11,
+     "title": "The Báb’s Stay in Kás̱hán",
+     "from": 434,
+     "to": 442
+    },
+    {
+     "n": 12,
+     "title": "The Báb’s Journey from Kás̱hán to Tabríz",
+     "from": 443,
+     "to": 465
+    },
+    {
+     "n": 13,
+     "title": "The Báb’s Incarceration in the Castle of Máh-kú",
+     "from": 466,
+     "to": 489
+    },
+    {
+     "n": 14,
+     "title": "Mullá Ḥusayn’s Journey to Mázindarán",
+     "from": 490,
+     "to": 499
+    },
+    {
+     "n": 15,
+     "title": "Ṭáhirih’s Journey from Karbilá to Ḵhurásán",
+     "from": 500,
+     "to": 536
+    },
+    {
+     "n": 16,
+     "title": "The Conference of Badas̱ht",
+     "from": 537,
+     "to": 568
+    },
+    {
+     "n": 17,
+     "title": "The Báb’s Incarceration in the Castle of C̱hihríq",
+     "from": 569,
+     "to": 583
+    },
+    {
+     "n": 18,
+     "title": "Examination of the Báb at Tabríz",
+     "from": 584,
+     "to": 608
+    },
+    {
+     "n": 19,
+     "title": "The Mázindarán Upheaval",
+     "from": 609,
+     "to": 715
+    },
+    {
+     "n": 20,
+     "title": "THE MÁZINDARÁN UPHEAVAL (Continued)",
+     "from": 716,
+     "to": 976
+    },
+    {
+     "n": 21,
+     "title": "The Seven Martyrs of Ṭihrán",
+     "from": 977,
+     "to": 1046
+    },
+    {
+     "n": 22,
+     "title": "The Nayríz Upheaval",
+     "from": 1047,
+     "to": 1123
+    },
+    {
+     "n": 23,
+     "title": "Martyrdom of the Báb",
+     "from": 1124,
+     "to": 1168
+    },
+    {
+     "n": 24,
+     "title": "The Zanján Upheaval",
+     "from": 1169,
+     "to": 1287
+    },
+    {
+     "n": 25,
+     "title": "Bahá’u’lláh’s Journey to Karbilá",
+     "from": 1288,
+     "to": 1312
+    },
+    {
+     "n": 26,
+     "title": "Attempt on the S̱háh’s Life, and Its Consequences",
+     "from": 1313,
+     "to": 1407
+    }
+   ]
+  }
+ },
+ "chapterDocs": {
+  "33841": 1,
+  "33842": 10,
+  "33843": 11,
+  "33844": 12,
+  "33845": 13,
+  "33846": 14,
+  "33847": 15,
+  "33848": 16,
+  "33849": 17,
+  "33850": 18,
+  "33851": 19,
+  "33852": 2,
+  "33853": 21,
+  "33854": 22,
+  "33855": 23,
+  "33856": 24,
+  "33857": 25,
+  "33858": 26,
+  "33859": 3,
+  "33860": 4,
+  "33861": 5,
+  "33862": 6,
+  "33863": 7,
+  "33864": 8,
+  "33865": 9
+ },
+ "images": [
+  {
+   "id": "db-00-inmost-shrine",
+   "doc": 21308,
+   "para": 96,
+   "chapter": 1,
+   "page": null,
+   "caption": "The Inmost Shrine of the Báb",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/00-inmost-shrine.png",
+   "w": 796,
+   "h": 1096,
+   "v": "dd0da0ea4b28",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-00-liv",
+   "doc": 21308,
+   "para": 96,
+   "chapter": 1,
+   "page": null,
+   "caption": "Genealogy of the Prophet Muḥammad",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/00-liv.png",
+   "w": 1160,
+   "h": 461,
+   "v": "d4d778011227",
+   "kind": "scene",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-00-lxiii-nabil",
+   "doc": 21308,
+   "para": 96,
+   "chapter": 1,
+   "page": null,
+   "caption": "Muḥammad-i-Zarandí, Surnamed Nabíl-i-a‘ẓam",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/00-lxiii-nabil.png",
+   "w": 670,
+   "h": 807,
+   "v": "b97347aa637d",
+   "kind": "portrait",
+   "people": [
+    {
+     "id": 1247931,
+     "name": "Nabíl-i-A'ẓam",
+     "keys": [
+      "nabil i azam",
+      "nabil i zarandi",
+      "nabil"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-01-shaykh-ahmad",
+   "doc": 21308,
+   "para": 96,
+   "chapter": 1,
+   "page": null,
+   "caption": "S̱hayḵh Aḥmad-i-Aḥsá’í",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/01-shaykh-ahmad.png",
+   "w": 495,
+   "h": 887,
+   "v": "f781a261cb2a",
+   "kind": "portrait",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-02-najaf",
+   "doc": 21308,
+   "para": 97,
+   "chapter": 1,
+   "page": 4,
+   "caption": "General View of Najaf",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/02-najaf.png",
+   "w": 1358,
+   "h": 831,
+   "v": "ba1cbc6ce95f",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Najaf"
+   ]
+  },
+  {
+   "id": "db-52-shiraz",
+   "doc": 21308,
+   "para": 97,
+   "chapter": 1,
+   "page": 4,
+   "caption": "General View of S̱híráz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/52-shiraz.png",
+   "w": 900,
+   "h": 275,
+   "v": "f42e538a6271",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-06-sons-of-shah",
+   "doc": 21308,
+   "para": 100,
+   "chapter": 1,
+   "page": 5,
+   "caption": "Fatḥ-‘alí S̱háh and Sons",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/06-sons-of-shah.png",
+   "w": 1358,
+   "h": 657,
+   "v": "74232f925654",
+   "kind": "portrait",
+   "people": [
+    {
+     "id": 1247687,
+     "name": "Fatḥ-'Alí Sháh",
+     "keys": [
+      "fath ali shah"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-06-shah",
+   "doc": 21308,
+   "para": 100,
+   "chapter": 1,
+   "page": 6,
+   "caption": "Fatḥ-‘alí S̱háh and Sons",
+   "plate_of": "db-06-sons-of-shah",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/06-shah.png",
+   "w": 488,
+   "h": 903,
+   "v": "ed4aa2fc423e",
+   "kind": "portrait",
+   "people": [
+    {
+     "id": 1247687,
+     "name": "Fatḥ-'Alí Sháh",
+     "keys": [
+      "fath ali shah"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-011-mirza-buzurg",
+   "doc": 21308,
+   "para": 111,
+   "chapter": 1,
+   "page": 12,
+   "caption": "Painting of Mírzá Buzurg (Father of Bahá’u’lláh)",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/011-mirza-buzurg.png",
+   "w": 542,
+   "h": 864,
+   "v": "598d56fb1b0b",
+   "kind": "portrait",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-26-karbila",
+   "doc": 21308,
+   "para": 128,
+   "chapter": 2,
+   "page": 25,
+   "caption": "View of Karbilá",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/26-karbila.png",
+   "w": 1343,
+   "h": 863,
+   "v": "0584b8f437c7",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Karbilá"
+   ]
+  },
+  {
+   "id": "db-26-shrine-of-husayn-in-karbila",
+   "doc": 21308,
+   "para": 130,
+   "chapter": 2,
+   "page": 30,
+   "caption": "Shrine of the Imám Ḥusayn in Karbilá",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/26-shrine-of-husayn-in-karbila.png",
+   "w": 543,
+   "h": 909,
+   "v": "5810ae525b4c",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247648,
+     "name": "Imám Ḥusayn",
+     "keys": [
+      "imam husayn"
+     ]
+    }
+   ],
+   "places": [
+    "Karbilá"
+   ]
+  },
+  {
+   "id": "db-29-shrine-of-husayn-in-karbila",
+   "doc": 21308,
+   "para": 132,
+   "chapter": 2,
+   "page": 30,
+   "caption": "Shrine of the Imám Ḥusayn in Karbilá",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/29-shrine-of-husayn-in-karbila.png",
+   "w": 544,
+   "h": 937,
+   "v": "f9c9817d8943",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247648,
+     "name": "Imám Ḥusayn",
+     "keys": [
+      "imam husayn"
+     ]
+    }
+   ],
+   "places": [
+    "Karbilá"
+   ]
+  },
+  {
+   "id": "db-41-kazimayn",
+   "doc": 21308,
+   "para": 149,
+   "chapter": 2,
+   "page": 40,
+   "caption": "View of Káẓimayn",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/41-kazimayn.png",
+   "w": 408,
+   "h": 730,
+   "v": "fbb370f0eca3",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Káẓimayn"
+   ]
+  },
+  {
+   "id": "db-43-masjid-i-baratha",
+   "doc": 21308,
+   "para": 151,
+   "chapter": 2,
+   "page": 42,
+   "caption": "Section of the Masjid-i-Baráṯhá",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/43-masjid-i-baratha.png",
+   "w": 543,
+   "h": 664,
+   "v": "fe7178414248",
+   "kind": "scene",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-45-resting-place-siyyid-kazim",
+   "doc": 21308,
+   "para": 154,
+   "chapter": 2,
+   "page": 47,
+   "caption": "Site of Siyyid Káẓim’s Resting Place (Tombstone now Removed)",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/45-resting-place-siyyid-kazim.png",
+   "w": 535,
+   "h": 945,
+   "v": "600c192c31e9",
+   "kind": "scene",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-49-home-of-mulla-husayn",
+   "doc": 21308,
+   "para": 157,
+   "chapter": 3,
+   "page": 48,
+   "caption": "Home of Mullá Ḥusayn",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/49-home-of-mulla-husayn.png",
+   "w": 538,
+   "h": 728,
+   "v": "9f897cd9b862",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247564,
+     "name": "Mullá Ḥusayn",
+     "keys": [
+      "mulla husayn"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-56-outskirts-shiraz",
+   "doc": 21308,
+   "para": 163,
+   "chapter": 3,
+   "page": 52,
+   "caption": "Outskirts of S̱híráz Where the Báb Often went to Walk",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/56-outskirts-shiraz.png",
+   "w": 497,
+   "h": 574,
+   "v": "50ff7a7f9c9c",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-64-entrance",
+   "doc": 21308,
+   "para": 166,
+   "chapter": 3,
+   "page": 53,
+   "caption": "Entrance of the Báb’s House in S̱híráz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/64-entrance.png",
+   "w": 408,
+   "h": 787,
+   "v": "1cb3146f9526",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-54-orange-tree-planted-by-the-bab",
+   "doc": 21308,
+   "para": 168,
+   "chapter": 3,
+   "page": 55,
+   "caption": "Orange Tree Planted by the Báb in the Courtyard of His House",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/54-orange-tree-planted-by-the-bab.png",
+   "w": 544,
+   "h": 875,
+   "v": "3d7c8707c13c",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-64-steps-to-declaration-chamber",
+   "doc": 21308,
+   "para": 168,
+   "chapter": 3,
+   "page": 55,
+   "caption": "Steps Leading to the Declaration Chamber",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/64-steps-to-declaration-chamber.png",
+   "w": 408,
+   "h": 554,
+   "v": "d9ef14be2c80",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-58-sitting-room",
+   "doc": 21308,
+   "para": 173,
+   "chapter": 3,
+   "page": 62,
+   "caption": "The Upper Room where He Declared His Mission",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/58-sitting-room.png",
+   "w": 901,
+   "h": 667,
+   "v": "0dced7633ae2",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-55-the-babs-samovar",
+   "doc": 21308,
+   "para": 175,
+   "chapter": 3,
+   "page": 62,
+   "caption": "Views of the Báb’s House in S̱híráz: The Báb’s Brazier and Samovar",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/55-the-babs-samovar.png",
+   "w": 898,
+   "h": 573,
+   "v": "0301ff5a3d4b",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-60-bedchamber",
+   "doc": 21308,
+   "para": 175,
+   "chapter": 3,
+   "page": 62,
+   "caption": "His Bedchamber",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/60-bedchamber.png",
+   "w": 423,
+   "h": 677,
+   "v": "ace7b82f3ba0",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-60-sitting-room",
+   "doc": 21308,
+   "para": 175,
+   "chapter": 3,
+   "page": 62,
+   "caption": "His Sitting Room",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/60-sitting-room.png",
+   "w": 422,
+   "h": 674,
+   "v": "1b5636d5fabe",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-60-mothers-room",
+   "doc": 21308,
+   "para": 175,
+   "chapter": 3,
+   "page": 62,
+   "caption": "The Báb’s Mother’s Room",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/60-mothers-room.png",
+   "w": 428,
+   "h": 678,
+   "v": "1dc76d144c67",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-64-original-window",
+   "doc": 21308,
+   "para": 182,
+   "chapter": 3,
+   "page": 64,
+   "caption": "Original Window Sash and Door of the Báb’s House in S̱híráz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/64-original-window.png",
+   "w": 411,
+   "h": 551,
+   "v": "288b123c12fe",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-58-upper-room",
+   "doc": 21308,
+   "para": 182,
+   "chapter": 3,
+   "page": 64,
+   "caption": "The Upper Room where He Declared His Mission",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/58-upper-room.png",
+   "w": 901,
+   "h": 566,
+   "v": "e4cd461e2643",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-51-masjid-i-ilkhani",
+   "doc": 21308,
+   "para": 187,
+   "chapter": 3,
+   "page": 66,
+   "caption": "Views of the Masjid-i-Ílḵhání",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/51-masjid-i-ilkhani.png",
+   "w": 901,
+   "h": 1052,
+   "v": "6e357c1cb25e",
+   "kind": "scene",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-53-shiraz-masjid-i-ilkani",
+   "doc": 21308,
+   "para": 194,
+   "chapter": 3,
+   "page": 69,
+   "caption": "Room in Masjid-i-Ílḵhání, S̱híráz, In which the Báb and Mullá Ḥusayn Met",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/53-shiraz-masjid-i-ilkani.png",
+   "w": 409,
+   "h": 789,
+   "v": "744d92215dc0",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    },
+    {
+     "id": 1247564,
+     "name": "Mullá Ḥusayn",
+     "keys": [
+      "mulla husayn"
+     ]
+    }
+   ],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-56-room-bab-born",
+   "doc": 21308,
+   "para": 198,
+   "chapter": 3,
+   "page": 72,
+   "caption": "Room (Left Hand) Where the Báb was Born. S̱híráz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/56-room-bab-born.png",
+   "w": 494,
+   "h": 279,
+   "v": "d29622572669",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-71-public-bath",
+   "doc": 21308,
+   "para": 198,
+   "chapter": 3,
+   "page": 72,
+   "caption": "Views of the Public Bath in S̱híráz Where the Báb Went as a Child",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/71-public-bath.png",
+   "w": 908,
+   "h": 798,
+   "v": "9f3c543d6740",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-73-qahviyih-awliya",
+   "doc": 21308,
+   "para": 201,
+   "chapter": 3,
+   "page": 73,
+   "caption": "The Ruins of the Qahviyih-Awlíyá the Báb Attended in S̱híráz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/73-qahviyih-awliya.png",
+   "w": 896,
+   "h": 487,
+   "v": "adeefdb7aaa4",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-73-qahviyih-awliya-entrance",
+   "doc": 21308,
+   "para": 201,
+   "chapter": 3,
+   "page": 73,
+   "caption": "Entrance Door OF THE QAHVIYIH-AWLÍYÁ",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/73-qahviyih-awliya-entrance.png",
+   "w": 424,
+   "h": 783,
+   "v": "10cc2eb0f4a0",
+   "kind": "scene",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-74-resting-place-of-babs-wife",
+   "doc": 21308,
+   "para": 204,
+   "chapter": 3,
+   "page": 76,
+   "caption": "Grave of the Báb’s Wife in S̱háh-C̱hirág̱h, S̱híráz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/74-resting-place-of-babs-wife.png",
+   "w": 420,
+   "h": 581,
+   "v": "665104dee61d",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-74-resting-place-of-babs-son",
+   "doc": 21308,
+   "para": 204,
+   "chapter": 3,
+   "page": 76,
+   "caption": "Tree Marking the Resting Place of the Báb’s Infant Son in Bábí-Duḵhtarán, S̱híráz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/74-resting-place-of-babs-son.png",
+   "w": 899,
+   "h": 716,
+   "v": "f97524042fdf",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-78-tahirihs-handwriting",
+   "doc": 21308,
+   "para": 215,
+   "chapter": 3,
+   "page": 84,
+   "caption": "Fascimile of Ṭáhirih’s Handwriting",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/78-tahirihs-handwriting.png",
+   "w": 548,
+   "h": 798,
+   "v": "c0b691c597bb",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247554,
+     "name": "Ṭáhirih",
+     "keys": [
+      "tahirih",
+      "qurratul ayn"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-86-kaziran-gate",
+   "doc": 21308,
+   "para": 218,
+   "chapter": 3,
+   "page": 87,
+   "caption": "Site of Kázirán Gate, S̱híráz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/86-kaziran-gate.png",
+   "w": 421,
+   "h": 774,
+   "v": "a3ff6e97a04e",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-86-market-vakil",
+   "doc": 21308,
+   "para": 218,
+   "chapter": 3,
+   "page": 87,
+   "caption": "The Market-Street of Vakíl, S̱híráz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/86-market-vakil.png",
+   "w": 417,
+   "h": 771,
+   "v": "9e77532e14b6",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-96-nim-avard-isfahan",
+   "doc": 21308,
+   "para": 229,
+   "chapter": 3,
+   "page": 96,
+   "caption": "The Madrisih of Ním-Ávard, Iṣfahán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/96-nim-avard-isfahan.png",
+   "w": 1391,
+   "h": 832,
+   "v": "5b92693b497c",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Iṣfahán"
+   ]
+  },
+  {
+   "id": "db-102-views-of-tihran",
+   "doc": 21308,
+   "para": 237,
+   "chapter": 4,
+   "page": 101,
+   "caption": "Views of Ṭihrán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/102-views-of-tihran.png",
+   "w": 902,
+   "h": 1007,
+   "v": "b7e57b0f18e3",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Ṭihrán"
+   ]
+  },
+  {
+   "id": "db-103-aqay-i-kalim",
+   "doc": 21308,
+   "para": 239,
+   "chapter": 4,
+   "page": 103,
+   "caption": "Áqáy-i-Kalím, Brother of Bahá’u’lláh",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/103-aqay-i-kalim.png",
+   "w": 487,
+   "h": 632,
+   "v": "c894f1df830c",
+   "kind": "portrait",
+   "people": [
+    {
+     "id": 1247712,
+     "name": "Áqáy-i-Kalím",
+     "keys": [
+      "aqay i kalim",
+      "mirza musa"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-105-house-of-baha",
+   "doc": 21308,
+   "para": 241,
+   "chapter": 4,
+   "page": 106,
+   "caption": "Views of the House of Bahá’u’lláh",
+   "plate_of": "db-105-house-of-baha-2",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/105-house-of-baha.png",
+   "w": 554,
+   "h": 305,
+   "v": "cbd56d956c17",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247562,
+     "name": "Bahá'u'lláh",
+     "keys": [
+      "bahaullah"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-105-house-of-baha-2",
+   "doc": 21308,
+   "para": 241,
+   "chapter": 4,
+   "page": 106,
+   "caption": "Views of the House of Bahá’u’lláh",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/105-house-of-baha-2.png",
+   "w": 904,
+   "h": 770,
+   "v": "eea76bec5b8b",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247562,
+     "name": "Bahá'u'lláh",
+     "keys": [
+      "bahaullah"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-110-approach-to-home-takur",
+   "doc": 21308,
+   "para": 247,
+   "chapter": 5,
+   "page": 111,
+   "caption": "Approach to,",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/110-approach-to-home-takur.png",
+   "w": 496,
+   "h": 940,
+   "v": "350de328d276",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247562,
+     "name": "Bahá'u'lláh",
+     "keys": [
+      "bahaullah"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-110-ruins-home-takur",
+   "doc": 21308,
+   "para": 247,
+   "chapter": 5,
+   "page": 111,
+   "caption": "And Ruins of, Bahá’u’lláh’s Original Home in Tákur Mázindarán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/110-ruins-home-takur.png",
+   "w": 897,
+   "h": 483,
+   "v": "a9a284cf07e7",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247562,
+     "name": "Bahá'u'lláh",
+     "keys": [
+      "bahaullah"
+     ]
+    }
+   ],
+   "places": [
+    "Tákur",
+    "Mázindarán"
+   ]
+  },
+  {
+   "id": "db-112-inscription-above-door",
+   "doc": 21308,
+   "para": 252,
+   "chapter": 5,
+   "page": 112,
+   "caption": "Inscription Placed by the Vazír, Mírzá Buzurg, Above Entrance Door of His House in Tákur",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/112-inscription-above-door.png",
+   "w": 896,
+   "h": 562,
+   "v": "9a6cad891c2c",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Tákur"
+   ]
+  },
+  {
+   "id": "db-115-exterior-room-baha",
+   "doc": 21308,
+   "para": 256,
+   "chapter": 5,
+   "page": 115,
+   "caption": "Exterior of the Room Occupied by Bahá’u’lláh in Tákur, Mázindarán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/115-exterior-room-baha.png",
+   "w": 548,
+   "h": 300,
+   "v": "7b8c823d6d97",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247562,
+     "name": "Bahá'u'lláh",
+     "keys": [
+      "bahaullah"
+     ]
+    }
+   ],
+   "places": [
+    "Tákur",
+    "Mázindarán"
+   ]
+  },
+  {
+   "id": "db-115-interior-room-baha",
+   "doc": 21308,
+   "para": 256,
+   "chapter": 5,
+   "page": 115,
+   "caption": "Interior of Bahá’u’lláh’s Room Kept in its Original Condition",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/115-interior-room-baha.png",
+   "w": 548,
+   "h": 285,
+   "v": "6ab34c9d2843",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247562,
+     "name": "Bahá'u'lláh",
+     "keys": [
+      "bahaullah"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-115-exterior-room-abd",
+   "doc": 21308,
+   "para": 256,
+   "chapter": 5,
+   "page": 115,
+   "caption": "Exterior of the Room Occupied by ‘Abdu’l-Bahá in Tákur, Mázindarán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/115-exterior-room-abd.png",
+   "w": 546,
+   "h": 302,
+   "v": "e6995a1b3d37",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247563,
+     "name": "‘Abdu’l-Bahá",
+     "keys": [
+      "abdul baha"
+     ]
+    }
+   ],
+   "places": [
+    "Tákur",
+    "Mázindarán"
+   ]
+  },
+  {
+   "id": "db-115-interior-room-abd",
+   "doc": 21308,
+   "para": 256,
+   "chapter": 5,
+   "page": 115,
+   "caption": "Interior of the Room Occupied by ‘Abdu’l-Bahá",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/115-interior-room-abd.png",
+   "w": 546,
+   "h": 293,
+   "v": "378fc1ac4c81",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247563,
+     "name": "‘Abdu’l-Bahá",
+     "keys": [
+      "abdul baha"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-124-mosque-gawhar-shad-mashhad",
+   "doc": 21308,
+   "para": 273,
+   "chapter": 6,
+   "page": 123,
+   "caption": "Views of the Mosque of Gawhar-S̱hád In Mas̱hhad Showing Pulpit Where Mullá Ḥusayn Preached",
+   "plate_of": "db-124-mosque-gawhar-shad-mashhad2",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/124-mosque-gawhar-shad-mashhad.png",
+   "w": 420,
+   "h": 641,
+   "v": "2c0c847ac316",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247564,
+     "name": "Mullá Ḥusayn",
+     "keys": [
+      "mulla husayn"
+     ]
+    }
+   ],
+   "places": [
+    "Mashhad"
+   ]
+  },
+  {
+   "id": "db-124-mosque-gawhar-shad-mashhad2",
+   "doc": 21308,
+   "para": 273,
+   "chapter": 6,
+   "page": 123,
+   "caption": "Views of the Mosque of Gawhar-S̱hád In Mas̱hhad Showing Pulpit Where Mullá Ḥusayn Preached",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/124-mosque-gawhar-shad-mashhad2.png",
+   "w": 904,
+   "h": 642,
+   "v": "ca2553bec510",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247564,
+     "name": "Mullá Ḥusayn",
+     "keys": [
+      "mulla husayn"
+     ]
+    }
+   ],
+   "places": [
+    "Mashhad"
+   ]
+  },
+  {
+   "id": "db-127-babiyyih-mashhad",
+   "doc": 21308,
+   "para": 278,
+   "chapter": 6,
+   "page": 126,
+   "caption": "View of the “Bábíyyih” in Mas̱hhad",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/127-babiyyih-mashhad.png",
+   "w": 588,
+   "h": 320,
+   "v": "107289c94c75",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Mashhad"
+   ]
+  },
+  {
+   "id": "db-127-babiyyih-mashhad2",
+   "doc": 21308,
+   "para": 281,
+   "chapter": 6,
+   "page": 128,
+   "caption": "View of the “Bábíyyih” in Mas̱hhad",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/127-babiyyih-mashhad2.png",
+   "w": 594,
+   "h": 321,
+   "v": "cd75c39883ed",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Mashhad"
+   ]
+  },
+  {
+   "id": "db-129-drawing-of-mecca",
+   "doc": 21308,
+   "para": 283,
+   "chapter": 6,
+   "page": 129,
+   "caption": "Drawing of Mecca",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/129-drawing-of-mecca.png",
+   "w": 903,
+   "h": 466,
+   "v": "c2bfded87f20",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Mecca"
+   ]
+  },
+  {
+   "id": "db-133-coat-worn-by-bab",
+   "doc": 21308,
+   "para": 291,
+   "chapter": 7,
+   "page": 133,
+   "caption": "Dress Worn under the Jubbih, Worn by the Báb. (Outer Coat)",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/133-coat-worn-by-bab.png",
+   "w": 537,
+   "h": 965,
+   "v": "740490a513c7",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-133-cap-worn-by-bab",
+   "doc": 21308,
+   "para": 291,
+   "chapter": 7,
+   "page": 133,
+   "caption": "Cap Around Which the Turban Was Wound. Worn by the Báb",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/133-cap-worn-by-bab.png",
+   "w": 409,
+   "h": 452,
+   "v": "952095616ca0",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-135-cloth-worn-by-bab",
+   "doc": 21308,
+   "para": 295,
+   "chapter": 7,
+   "page": 135,
+   "caption": "Cloth Worn by the Báb when Circumambulating the Ka‘bih",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/135-cloth-worn-by-bab.png",
+   "w": 538,
+   "h": 1059,
+   "v": "6996a0bc6010",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-139-drawing-medina",
+   "doc": 21308,
+   "para": 301,
+   "chapter": 7,
+   "page": 138,
+   "caption": "Drawing of Medina",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/139-drawing-medina.png",
+   "w": 894,
+   "h": 474,
+   "v": "f23cd54436c0",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Medina"
+   ]
+  },
+  {
+   "id": "db-144-views-masjid-i-naw",
+   "doc": 21308,
+   "para": 306,
+   "chapter": 8,
+   "page": 144,
+   "caption": "Views of the Masjid-i-Naw",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/144-views-masjid-i-naw.png",
+   "w": 593,
+   "h": 662,
+   "v": "85ab26fc2c09",
+   "kind": "scene",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-52-masjid-i-vakil1",
+   "doc": 21308,
+   "para": 314,
+   "chapter": 8,
+   "page": 151,
+   "caption": "Views of the Masjid-i-Vakíl, S̱híráz: Section of the Interior",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/52-masjid-i-vakil1.png",
+   "w": 594,
+   "h": 322,
+   "v": "92af251fd47e",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-52-masjid-i-vakil2",
+   "doc": 21308,
+   "para": 314,
+   "chapter": 8,
+   "page": 151,
+   "caption": "Views of the Masjid-i-Vakíl, S̱híráz: Pulpit from which the Báb Addressed the Congregation",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/52-masjid-i-vakil2.png",
+   "w": 420,
+   "h": 786,
+   "v": "95eebd68c09e",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-52-masjid-i-vakil3",
+   "doc": 21308,
+   "para": 314,
+   "chapter": 8,
+   "page": 151,
+   "caption": "Views of the Masjid-i-Vakíl, S̱híráz: Entrance Door",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/52-masjid-i-vakil3.png",
+   "w": 417,
+   "h": 782,
+   "v": "cc9cdfe220b8",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-182-house-quddus",
+   "doc": 21308,
+   "para": 367,
+   "chapter": 9,
+   "page": 182,
+   "caption": "Views of the House of Quddús’ Father in Bárfurús̱h",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/182-house-quddus.png",
+   "w": 587,
+   "h": 687,
+   "v": "226b522bce1b",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247552,
+     "name": "Quddús",
+     "keys": [
+      "quddus"
+     ]
+    }
+   ],
+   "places": [
+    "Bárfurúsh"
+   ]
+  },
+  {
+   "id": "db-189-siyyid-javad",
+   "doc": 21308,
+   "para": 386,
+   "chapter": 9,
+   "page": 189,
+   "caption": "Siyyid Javád-i-Karbilá’í",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/189-siyyid-javad.png",
+   "w": 414,
+   "h": 722,
+   "v": "e3b05dd26554",
+   "kind": "portrait",
+   "people": [
+    {
+     "id": 1247902,
+     "name": "Siyyid Javád-i-Karbilá'í",
+     "keys": [
+      "siyyid javad i karbilai"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-192-house-of-mirza-ali",
+   "doc": 21308,
+   "para": 394,
+   "chapter": 9,
+   "page": 192,
+   "caption": "Interior of Ḥájí Mírzá ‘Alí’s House in S̱híráz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/192-house-of-mirza-ali.png",
+   "w": 407,
+   "h": 781,
+   "v": "f0ddeda63cf4",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247570,
+     "name": "Khál-i-A‘ẓam",
+     "keys": [
+      "haji mirza siyyid ali",
+      "khal i azam"
+     ]
+    }
+   ],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-193-house-of-mirza-ali",
+   "doc": 21308,
+   "para": 396,
+   "chapter": 9,
+   "page": 193,
+   "caption": "Ḥájí Mírzá Siyyid ‘Alí’s House in S̱híráz (The Báb’s Maternal Uncle)",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/193-house-of-mirza-ali.png",
+   "w": 798,
+   "h": 703,
+   "v": "65e6e48175f5",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247570,
+     "name": "Khál-i-A‘ẓam",
+     "keys": [
+      "haji mirza siyyid ali",
+      "khal i azam"
+     ]
+    }
+   ],
+   "places": [
+    "Shíráz"
+   ]
+  },
+  {
+   "id": "db-199-views-of-isfahan",
+   "doc": 21308,
+   "para": 407,
+   "chapter": 9,
+   "page": 199,
+   "caption": "Views of Iṣfahán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/199-views-of-isfahan.png",
+   "w": 901,
+   "h": 491,
+   "v": "5693fa5e2fa0",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Iṣfahán"
+   ]
+  },
+  {
+   "id": "db-200-house-of-imam-jumih-in-isfahan1",
+   "doc": 21308,
+   "para": 409,
+   "chapter": 10,
+   "page": 201,
+   "caption": "Entrance",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/200-house-of-imam-jumih-in-isfahan1.png",
+   "w": 422,
+   "h": 786,
+   "v": "af7d1061eb61",
+   "kind": "scene",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-200-house-of-imam-jumih-in-isfahan2",
+   "doc": 21308,
+   "para": 409,
+   "chapter": 10,
+   "page": 201,
+   "caption": "Courtyard House of Imám Jum‘ih in Iṣfahán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/200-house-of-imam-jumih-in-isfahan2.png",
+   "w": 588,
+   "h": 324,
+   "v": "be9aa0867be1",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Iṣfahán"
+   ]
+  },
+  {
+   "id": "db-203-masjid-i-jumih-isfahan",
+   "doc": 21308,
+   "para": 414,
+   "chapter": 10,
+   "page": 202,
+   "caption": "Views of the Masjid-i-Jum‘ih in Iṣfahán, Showing Pulpit before which the Báb Prayed",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/203-masjid-i-jumih-isfahan.png",
+   "w": 601,
+   "h": 981,
+   "v": "4672c7eaf423",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Iṣfahán"
+   ]
+  },
+  {
+   "id": "db-206-house-of-mutamid",
+   "doc": 21308,
+   "para": 418,
+   "chapter": 10,
+   "page": 207,
+   "caption": "Views of the House of the Mu‘tamidu’d-Dawlih in Iṣfahán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/206-house-of-mutamid.png",
+   "w": 596,
+   "h": 1142,
+   "v": "9a5e5ed6ccf7",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247583,
+     "name": "Manúchihr Khán, the Mu‘tamidu’d-Dawlih",
+     "keys": [
+      "manuchihr khan",
+      "mutamidud dawlih"
+     ]
+    }
+   ],
+   "places": [
+    "Iṣfahán"
+   ]
+  },
+  {
+   "id": "db-210-imarat-i-khurshid",
+   "doc": 21308,
+   "para": 423,
+   "chapter": 10,
+   "page": 209,
+   "caption": "View of the ‘Imárat-i-Ḵhurs̱híd in Iṣfahán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/210-Imarat-i-khurshid.png",
+   "w": 418,
+   "h": 787,
+   "v": "3462199b20c2",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Iṣfahán"
+   ]
+  },
+  {
+   "id": "db-210-imarat-i-khurshid2",
+   "doc": 21308,
+   "para": 423,
+   "chapter": 10,
+   "page": 209,
+   "caption": "View of the Ruins of the Section the Báb Occupied",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/210-Imarat-i-khurshid2.png",
+   "w": 599,
+   "h": 311,
+   "v": "f4c65db6c4d1",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-211-manuchihr-khan",
+   "doc": 21308,
+   "para": 424,
+   "chapter": 10,
+   "page": 212,
+   "caption": "Manúc̱hihr Ḵhán the Mu‘tamidu’d-Dawlih",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/211-manuchihr-khan.png",
+   "w": 293,
+   "h": 1101,
+   "v": "8a17e89f8940",
+   "kind": "portrait",
+   "people": [
+    {
+     "id": 1247583,
+     "name": "Manúchihr Khán, the Mu‘tamidu’d-Dawlih",
+     "keys": [
+      "manuchihr khan",
+      "mutamidud dawlih"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-217-kashan",
+   "doc": 21308,
+   "para": 432,
+   "chapter": 10,
+   "page": 217,
+   "caption": "View of Kás̱hán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/217-kashan.png",
+   "w": 899,
+   "h": 294,
+   "v": "ccbc4f2b4292",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Káshán"
+   ]
+  },
+  {
+   "id": "db-218-gate-of-attar",
+   "doc": 21308,
+   "para": 434,
+   "chapter": 11,
+   "page": 217,
+   "caption": "Gate of ‘Aṭṭár, Kás̱hán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/218-gate-of-attar.png",
+   "w": 903,
+   "h": 653,
+   "v": "ec7c3dae2ee4",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Káshán"
+   ]
+  },
+  {
+   "id": "db-220-house-of-mirza-jani1",
+   "doc": 21308,
+   "para": 436,
+   "chapter": 11,
+   "page": 219,
+   "caption": "Views of the House of Ḥájí Mírzá Jání in Kás̱hán, Showing the Room where the Báb stayed",
+   "plate_of": "db-220-house-of-mirza-jani2",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/220-house-of-mirza-jani1.png",
+   "w": 597,
+   "h": 388,
+   "v": "8a947e28b70e",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1249196,
+     "name": "Ḥájí Mírzá Jání",
+     "keys": [
+      "haji mirza jani"
+     ]
+    }
+   ],
+   "places": [
+    "Káshán"
+   ]
+  },
+  {
+   "id": "db-220-house-of-mirza-jani2",
+   "doc": 21308,
+   "para": 436,
+   "chapter": 11,
+   "page": 219,
+   "caption": "Views of the House of Ḥájí Mírzá Jání in Kás̱hán, Showing the Room where the Báb stayed",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/220-house-of-mirza-jani2.png",
+   "w": 595,
+   "h": 1006,
+   "v": "f2442d5e219a",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1249196,
+     "name": "Ḥájí Mírzá Jání",
+     "keys": [
+      "haji mirza jani"
+     ]
+    },
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Káshán"
+   ]
+  },
+  {
+   "id": "db-223-qum",
+   "doc": 21308,
+   "para": 441,
+   "chapter": 11,
+   "page": 223,
+   "caption": "Views of Qum Showing the Ḥaram-i-Ma‘ṣúmih",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/223-qum.png",
+   "w": 900,
+   "h": 934,
+   "v": "293c46411ee9",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Qum"
+   ]
+  },
+  {
+   "id": "db-225-qumrud",
+   "doc": 21308,
+   "para": 444,
+   "chapter": 12,
+   "page": 225,
+   "caption": "Village of Qumrúd",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/225-qumrud.png",
+   "w": 901,
+   "h": 464,
+   "v": "2369959de945",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Qumrúd"
+   ]
+  },
+  {
+   "id": "db-225-kinar-gird",
+   "doc": 21308,
+   "para": 446,
+   "chapter": 12,
+   "page": 227,
+   "caption": "Ruins of the Fortress of Kinár-Gird",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/225-kinar-gird.png",
+   "w": 900,
+   "h": 463,
+   "v": "c452167f5361",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Kinár-Gird"
+   ]
+  },
+  {
+   "id": "db-226-kulayn",
+   "doc": 21308,
+   "para": 446,
+   "chapter": 12,
+   "page": 227,
+   "caption": "Views of the Village of Kulayn",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/226-kulayn.png",
+   "w": 892,
+   "h": 1017,
+   "v": "20f705e7a701",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Kulayn"
+   ]
+  },
+  {
+   "id": "db-229-muhammad-shah",
+   "doc": 21308,
+   "para": 450,
+   "chapter": 12,
+   "page": 229,
+   "caption": "Muḥammad S̱háh",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/229-muhammad-shah.png",
+   "w": 619,
+   "h": 915,
+   "v": "8b59baa26571",
+   "kind": "portrait",
+   "people": [
+    {
+     "id": 1247565,
+     "name": "Muḥammad Sháh",
+     "keys": [
+      "muhammad shah"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-233-haji-mirza-aqasi",
+   "doc": 21308,
+   "para": 453,
+   "chapter": 12,
+   "page": 235,
+   "caption": "Ḥájí Mírzá Áqásí",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/233-haji-mirza-aqasi.png",
+   "w": 549,
+   "h": 816,
+   "v": "610d537e8e1d",
+   "kind": "portrait",
+   "people": [
+    {
+     "id": 1247567,
+     "name": "Ḥájí Mírzá Áqásí",
+     "keys": [
+      "haji mirza aqasi"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-237-tabriz",
+   "doc": 21308,
+   "para": 457,
+   "chapter": 12,
+   "page": 236,
+   "caption": "Panorama of Tabríz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/237-tabriz.png",
+   "w": 899,
+   "h": 465,
+   "v": "0a021a4c8b80",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Tabríz"
+   ]
+  },
+  {
+   "id": "db-238-citadel-of-tabriz",
+   "doc": 21308,
+   "para": 460,
+   "chapter": 12,
+   "page": 238,
+   "caption": "The Ark (Citadel) of Tabríz where the Báb was Confined, Showing Interior and Exterior (X) of Room He Occupied",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/238-citadel-of-tabriz.png",
+   "w": 902,
+   "h": 716,
+   "v": "89ff6a6ad91c",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Tabríz"
+   ]
+  },
+  {
+   "id": "db-242-castle-of-mah-ku",
+   "doc": 21308,
+   "para": 464,
+   "chapter": 12,
+   "page": 242,
+   "caption": "The Castle of Máh-Kú",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/242-castle-of-mah-ku.png",
+   "w": 846,
+   "h": 1388,
+   "v": "1d113d5b6e9b",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Máh-Kú"
+   ]
+  },
+  {
+   "id": "db-257-milan",
+   "doc": 21308,
+   "para": 481,
+   "chapter": 13,
+   "page": 256,
+   "caption": "View of Mílán in Áḏhirbáyján",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/257-milan.png",
+   "w": 900,
+   "h": 292,
+   "v": "ce689877131c",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Mílán",
+    "Ádhirbáyján"
+   ]
+  },
+  {
+   "id": "db-274-houses-of-tahirih",
+   "doc": 21308,
+   "para": 508,
+   "chapter": 15,
+   "page": 275,
+   "caption": "Houses in Which Ṭáhirih Lived in Qazvín",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/274-houses-of-tahirih.png",
+   "w": 908,
+   "h": 1281,
+   "v": "f8a679f4329a",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247554,
+     "name": "Ṭáhirih",
+     "keys": [
+      "tahirih",
+      "qurratul ayn"
+     ]
+    }
+   ],
+   "places": [
+    "Qazvín"
+   ]
+  },
+  {
+   "id": "db-275-tahirihs-library",
+   "doc": 21308,
+   "para": 508,
+   "chapter": 15,
+   "page": 275,
+   "caption": "Ṭáhirih’s Library in her Father’s Home in Qazvín, Showing one of Her Relatives",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/275-tahirihs-library.png",
+   "w": 899,
+   "h": 625,
+   "v": "c61675965404",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247554,
+     "name": "Ṭáhirih",
+     "keys": [
+      "tahirih",
+      "qurratul ayn"
+     ]
+    }
+   ],
+   "places": [
+    "Qazvín"
+   ]
+  },
+  {
+   "id": "db-291-shah-rud",
+   "doc": 21308,
+   "para": 545,
+   "chapter": 16,
+   "page": 290,
+   "caption": "Village of S̱háh-Rúd",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/291-shah-rud.png",
+   "w": 903,
+   "h": 422,
+   "v": "f99f288ca134",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Sháh-Rúd"
+   ]
+  },
+  {
+   "id": "db-292-hamlet-of-badasht",
+   "doc": 21308,
+   "para": 550,
+   "chapter": 16,
+   "page": 292,
+   "caption": "Hamlet of Badas̱ht",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/292-hamlet-of-badasht.png",
+   "w": 896,
+   "h": 304,
+   "v": "6deda91420e3",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Badasht"
+   ]
+  },
+  {
+   "id": "db-296-perisan-howdah",
+   "doc": 21308,
+   "para": 558,
+   "chapter": 16,
+   "page": 296,
+   "caption": "The Persian Howdah",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/296-perisan-howdah.png",
+   "w": 904,
+   "h": 534,
+   "v": "711bd1e7d235",
+   "kind": "scene",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-301-castle-chihriq",
+   "doc": 21308,
+   "para": 567,
+   "chapter": 16,
+   "page": 301,
+   "caption": "Castle of C̱hihríq",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/301-castle-chihriq.png",
+   "w": 890,
+   "h": 401,
+   "v": "5ae451e020f4",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Chihríq"
+   ]
+  },
+  {
+   "id": "db-310-house-occupied-by-bab-urumiyyih",
+   "doc": 21308,
+   "para": 585,
+   "chapter": 18,
+   "page": 311,
+   "caption": "The House Occupied by the Báb in Urúmíyyih. The Bálá-Ḵhánih (Upper Room) Marked X is the Room in which He Stayed",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/310-house-occupied-by-bab-urumiyyih.png",
+   "w": 1401,
+   "h": 839,
+   "v": "fc7319b45c05",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Urúmíyyih"
+   ]
+  },
+  {
+   "id": "db-314-shah-as-child",
+   "doc": 21308,
+   "para": 591,
+   "chapter": 18,
+   "page": 314,
+   "caption": "Náṣiri’d-Dín S̱háh as a Child, Showing Mírzá Abu’l-Qásim, The Qá’im-Maqám on His Right and Ḥájí Mírzá Áqásí on His Left. On Extreme Left (Marked X) Stands Manúc̱hihr Ḵhán, the Mu‘tamidu’d-Dawlih",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/314-shah-as-child.png",
+   "w": 900,
+   "h": 566,
+   "v": "95044ba4c285",
+   "kind": "portrait",
+   "people": [
+    {
+     "id": 1247566,
+     "name": "Náṣiri’d-Dín Sháh",
+     "keys": [
+      "nasirid din shah"
+     ]
+    },
+    {
+     "id": 1249103,
+     "name": "Qá'im-Maqám Farahání",
+     "keys": [
+      "qaim maqam"
+     ]
+    },
+    {
+     "id": 1247567,
+     "name": "Ḥájí Mírzá Áqásí",
+     "keys": [
+      "haji mirza aqasi"
+     ]
+    },
+    {
+     "id": 1247583,
+     "name": "Manúchihr Khán, the Mu‘tamidu’d-Dawlih",
+     "keys": [
+      "manuchihr khan",
+      "mutamidud dawlih"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-315-nasirid-din-shah",
+   "doc": 21308,
+   "para": 593,
+   "chapter": 18,
+   "page": 315,
+   "caption": "Náṣiri’d-Dín S̱háh",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/315-nasirid-din-shah.png",
+   "w": 441,
+   "h": 873,
+   "v": "ccc431fcbd03",
+   "kind": "portrait",
+   "people": [
+    {
+     "id": 1247566,
+     "name": "Náṣiri’d-Dín Sháh",
+     "keys": [
+      "nasirid din shah"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-316-nasirid-din-shah",
+   "doc": 21308,
+   "para": 595,
+   "chapter": 18,
+   "page": 317,
+   "caption": "Náṣiri’d-Dín S̱háh",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/316-nasirid-din-shah.png",
+   "w": 437,
+   "h": 680,
+   "v": "ddb98fdfc6d9",
+   "kind": "portrait",
+   "people": [
+    {
+     "id": 1247566,
+     "name": "Náṣiri’d-Dín Sháh",
+     "keys": [
+      "nasirid din shah"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-317-eminent-mujtahids",
+   "doc": 21308,
+   "para": 595,
+   "chapter": 18,
+   "page": 317,
+   "caption": "Eminent Persian Mujtahids",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/317-eminent-mujtahids.png",
+   "w": 603,
+   "h": 350,
+   "v": "5cecb7663eea",
+   "kind": "portrait",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-318-namaz-kahih-of-tabriz",
+   "doc": 21308,
+   "para": 598,
+   "chapter": 18,
+   "page": 319,
+   "caption": "The Namáz-Ḵhánih of the S̱hayḵhu’l-Islám of Tabríz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/318-namaz-kahih-of-tabriz.png",
+   "w": 899,
+   "h": 498,
+   "v": "91ab8f90a249",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Tabríz"
+   ]
+  },
+  {
+   "id": "db-318-corner-where-bab-bastinadoed",
+   "doc": 21308,
+   "para": 598,
+   "chapter": 18,
+   "page": 319,
+   "caption": "Corner Marked X Showing Where the Báb was Bastinadoed",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/318-corner-where-bab-bastinadoed.png",
+   "w": 898,
+   "h": 485,
+   "v": "f294e27f7a12",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-325-nishapur",
+   "doc": 21308,
+   "para": 612,
+   "chapter": 19,
+   "page": 325,
+   "caption": "Village of Nís̱hápúr",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/325-nishapur.png",
+   "w": 948,
+   "h": 368,
+   "v": "dfffff945378",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Níshápúr"
+   ]
+  },
+  {
+   "id": "db-327-miyamay",
+   "doc": 21308,
+   "para": 615,
+   "chapter": 19,
+   "page": 327,
+   "caption": "View of the Village of Míyámay",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/327-miyamay.png",
+   "w": 951,
+   "h": 474,
+   "v": "6680cebc5937",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Míyámay"
+   ]
+  },
+  {
+   "id": "db-327-masjid-interior",
+   "doc": 21308,
+   "para": 615,
+   "chapter": 19,
+   "page": 327,
+   "caption": "Exterior of the Masjid",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/327-masjid-interior.png",
+   "w": 952,
+   "h": 509,
+   "v": "22f319d40d21",
+   "kind": "scene",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-327-masjid-exterior",
+   "doc": 21308,
+   "para": 615,
+   "chapter": 19,
+   "page": 327,
+   "caption": "Interior of the Masjid, Where Mullá Ḥusayn and his Companions Prayed",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/327-masjid-exterior.png",
+   "w": 951,
+   "h": 427,
+   "v": "b6ba99fae10f",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247564,
+     "name": "Mullá Ḥusayn",
+     "keys": [
+      "mulla husayn"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-334-house-of-saidul-ulama",
+   "doc": 21308,
+   "para": 627,
+   "chapter": 19,
+   "page": 333,
+   "caption": "House of the Sa‘ídu’l-‘Ulamá’ in Bárfurús̱h, Mázindarán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/334-house-of-saidul-ulama.png",
+   "w": 446,
+   "h": 700,
+   "v": "80e96496795c",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247606,
+     "name": "Sa‘ídu'l-‘Ulamá",
+     "keys": [
+      "saidul ulama"
+     ]
+    }
+   ],
+   "places": [
+    "Mázindarán",
+    "Bárfurúsh"
+   ]
+  },
+  {
+   "id": "db-335-caravansarai-sabzih-maydan1",
+   "doc": 21308,
+   "para": 629,
+   "chapter": 19,
+   "page": 334,
+   "caption": "Views of the Caravanserai of Sabzih-Maydán in Mázindarán",
+   "plate_of": "db-335-caravansarai-sabzih-maydan3",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/335-caravansarai-sabzih-maydan1.png",
+   "w": 952,
+   "h": 368,
+   "v": "b8209ec0de23",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Mázindarán",
+    "Sabzih-Maydán"
+   ]
+  },
+  {
+   "id": "db-335-caravansarai-sabzih-maydan2",
+   "doc": 21308,
+   "para": 629,
+   "chapter": 19,
+   "page": 334,
+   "caption": "Views of the Caravanserai of Sabzih-Maydán in Mázindarán",
+   "plate_of": "db-335-caravansarai-sabzih-maydan1",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/335-caravansarai-sabzih-maydan2.png",
+   "w": 950,
+   "h": 473,
+   "v": "e2c2c90780d5",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Mázindarán",
+    "Sabzih-Maydán"
+   ]
+  },
+  {
+   "id": "db-335-caravansarai-sabzih-maydan3",
+   "doc": 21308,
+   "para": 629,
+   "chapter": 19,
+   "page": 334,
+   "caption": "Views of the Caravanserai of Sabzih-Maydán in Mázindarán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/335-caravansarai-sabzih-maydan3.png",
+   "w": 951,
+   "h": 457,
+   "v": "009a7d82a92c",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Mázindarán",
+    "Sabzih-Maydán"
+   ]
+  },
+  {
+   "id": "db-343-shrine-shaykh-tabarsi",
+   "doc": 21308,
+   "para": 647,
+   "chapter": 19,
+   "page": 344,
+   "caption": "The Shrine of S̱hayḵh Ṭabarsí",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/343-shrine-shaykh-tabarsi.png",
+   "w": 951,
+   "h": 495,
+   "v": "017d02bdfaca",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Shaykh Ṭabarsí"
+   ]
+  },
+  {
+   "id": "db-344-tomb-of-tabarsi",
+   "doc": 21308,
+   "para": 649,
+   "chapter": 19,
+   "page": 345,
+   "caption": "The Tomb of the S̱hayḵh Ṭabarsí",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/344-tomb-of-tabarsi.png",
+   "w": 444,
+   "h": 830,
+   "v": "cb54df43e17a",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Shaykh Ṭabarsí"
+   ]
+  },
+  {
+   "id": "db-344-site-of-fort",
+   "doc": 21308,
+   "para": 649,
+   "chapter": 19,
+   "page": 345,
+   "caption": "Site of the Fort that Enclosed the Shrine",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/344-site-of-fort.png",
+   "w": 445,
+   "h": 272,
+   "v": "a3efb3630589",
+   "kind": "scene",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-345-entrance-shrine",
+   "doc": 21308,
+   "para": 652,
+   "chapter": 19,
+   "page": 346,
+   "caption": "Entrance of the Shrine of S̱hayḵh Ṭabarsí",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/345-entrance-shrine.png",
+   "w": 956,
+   "h": 685,
+   "v": "e94f86f8f5c6",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Shaykh Ṭabarsí"
+   ]
+  },
+  {
+   "id": "db-348-sketches-fort-tabarsi",
+   "doc": 21308,
+   "para": 657,
+   "chapter": 19,
+   "page": 347,
+   "caption": "Plans and Sketches of the Fort of S̱hayḵh Ṭabarsí",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/348-sketches-fort-tabarsi.png",
+   "w": 618,
+   "h": 770,
+   "v": "090b4bf0a2fe",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Shaykh Ṭabarsí"
+   ]
+  },
+  {
+   "id": "db-350-house-of-muhammad-taqi",
+   "doc": 21308,
+   "para": 662,
+   "chapter": 19,
+   "page": 350,
+   "caption": "House of Mírzá Muḥammad-Taqí, the Mujtahid, in Sárí, Mázindarán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/350-house-of-muhammad-taqi.png",
+   "w": 446,
+   "h": 842,
+   "v": "63004dceb857",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1249462,
+     "name": "Mírzá Muḥammad-Taqí of Sárí",
+     "keys": [
+      "mirza muhammad taqi"
+     ]
+    }
+   ],
+   "places": [
+    "Mázindarán",
+    "Sárí"
+   ]
+  },
+  {
+   "id": "db-360-village-afra",
+   "doc": 21308,
+   "para": 677,
+   "chapter": 19,
+   "page": 360,
+   "caption": "Village of Afrá",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/360-village-afra.png",
+   "w": 956,
+   "h": 522,
+   "v": "eb6298ac2a06",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Afrá"
+   ]
+  },
+  {
+   "id": "db-362-village-shir-gah",
+   "doc": 21308,
+   "para": 681,
+   "chapter": 19,
+   "page": 361,
+   "caption": "Village of S̱hír-Gáh",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/362-village-shir-gah.png",
+   "w": 952,
+   "h": 384,
+   "v": "6b1c458d459d",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Shír-Gáh"
+   ]
+  },
+  {
+   "id": "db-364-village-riz-ab",
+   "doc": 21308,
+   "para": 686,
+   "chapter": 19,
+   "page": 363,
+   "caption": "Village of Ríz-Áb",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/364-village-riz-ab.png",
+   "w": 950,
+   "h": 483,
+   "v": "20c8bc04b8e1",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Ríz-Áb"
+   ]
+  },
+  {
+   "id": "db-364-village-firuz-kuh",
+   "doc": 21308,
+   "para": 686,
+   "chapter": 19,
+   "page": 363,
+   "caption": "Village of Fírúz-Kúh",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/364-village-firuz-kuh.png",
+   "w": 952,
+   "h": 511,
+   "v": "aed4a61b0db8",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Fírúz-Kúh"
+   ]
+  },
+  {
+   "id": "db-364-village-vas-kas",
+   "doc": 21308,
+   "para": 686,
+   "chapter": 19,
+   "page": 363,
+   "caption": "Village of Vás-Kas",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/364-village-vas-kas.png",
+   "w": 952,
+   "h": 377,
+   "v": "d94cee94d827",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Vás-Kas"
+   ]
+  },
+  {
+   "id": "db-370-amul",
+   "doc": 21308,
+   "para": 700,
+   "chapter": 19,
+   "page": 371,
+   "caption": "View of Ámul",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/370-amul.png",
+   "w": 958,
+   "h": 368,
+   "v": "c4c5d7bd4ffc",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Ámul"
+   ]
+  },
+  {
+   "id": "db-370-house-governor-amul",
+   "doc": 21308,
+   "para": 700,
+   "chapter": 19,
+   "page": 371,
+   "caption": "House of the Governor of Ámul",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/370-house-governor-amul.png",
+   "w": 957,
+   "h": 445,
+   "v": "0d66f5ed4bab",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Ámul"
+   ]
+  },
+  {
+   "id": "db-373-amul-opening",
+   "doc": 21308,
+   "para": 706,
+   "chapter": 19,
+   "page": 373,
+   "caption": "Mark X Shows Place Where Opening was Made in the Wall",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/373-amul-opening.png",
+   "w": 954,
+   "h": 523,
+   "v": "e738c5624dac",
+   "kind": "scene",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-373-masjid-amul",
+   "doc": 21308,
+   "para": 706,
+   "chapter": 19,
+   "page": 373,
+   "caption": "Views of the Masjid of Ámul",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/373-masjid-amul.png",
+   "w": 443,
+   "h": 839,
+   "v": "afc1e8113a02",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Ámul"
+   ]
+  },
+  {
+   "id": "db-380-tree-mh-was-shot",
+   "doc": 21308,
+   "para": 718,
+   "chapter": 20,
+   "page": 379,
+   "caption": "Tree from which Mullá Ḥusayn was Shot",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/380-tree-mh-was-shot.png",
+   "w": 456,
+   "h": 844,
+   "v": "3fb09eee5508",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247564,
+     "name": "Mullá Ḥusayn",
+     "keys": [
+      "mulla husayn"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-401-dizva",
+   "doc": 21308,
+   "para": 751,
+   "chapter": 20,
+   "page": 401,
+   "caption": "Village of Dízvá",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/401-dizva.png",
+   "w": 954,
+   "h": 510,
+   "v": "baa65bd0ef3f",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Dízvá"
+   ]
+  },
+  {
+   "id": "db-412-madrisih-zaki1",
+   "doc": 21308,
+   "para": 770,
+   "chapter": 20,
+   "page": 411,
+   "caption": "Views of the Madrisih of Mírzá Zakí, in Bárfurús̱h, The Resting Place of Quddús",
+   "plate_of": "db-412-madrisih-zaki2",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/412-madrisih-zaki1.png",
+   "w": 954,
+   "h": 448,
+   "v": "b661e75337d9",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247552,
+     "name": "Quddús",
+     "keys": [
+      "quddus"
+     ]
+    }
+   ],
+   "places": [
+    "Bárfurúsh"
+   ]
+  },
+  {
+   "id": "db-412-madrisih-zaki2",
+   "doc": 21308,
+   "para": 770,
+   "chapter": 20,
+   "page": 411,
+   "caption": "Views of the Madrisih of Mírzá Zakí, in Bárfurús̱h, The Resting Place of Quddús",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/412-madrisih-zaki2.png",
+   "w": 957,
+   "h": 662,
+   "v": "15f0904522f8",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247552,
+     "name": "Quddús",
+     "keys": [
+      "quddus"
+     ]
+    }
+   ],
+   "places": [
+    "Bárfurúsh"
+   ]
+  },
+  {
+   "id": "db-427-muhammad-rida",
+   "doc": 21308,
+   "para": 958,
+   "chapter": 20,
+   "page": 427,
+   "caption": "Muḥammad-Riḍá, One of the Companions of Quddús who Survived the Struggle of S̱hayḵh Ṭabarsí",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/427-muhammad-rida.png",
+   "w": 632,
+   "h": 903,
+   "v": "dcc50ffd7826",
+   "kind": "portrait",
+   "people": [],
+   "places": [
+    "Shaykh Ṭabarsí"
+   ]
+  },
+  {
+   "id": "db-428-mirza-abu-talib",
+   "doc": 21308,
+   "para": 976,
+   "chapter": 20,
+   "page": 429,
+   "caption": "Mírzá Abú-Ṭálib, One of the Companions of Quddús who Survived the Struggle of S̱hayḵh Ṭabarsí",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/428-mirza-abu-talib.png",
+   "w": 635,
+   "h": 905,
+   "v": "c9c21daa69ac",
+   "kind": "portrait",
+   "people": [
+    {
+     "id": 1254435,
+     "name": "Mírzá Abú-Ṭálib",
+     "keys": [
+      "mirza abu talib"
+     ]
+    }
+   ],
+   "places": [
+    "Shaykh Ṭabarsí"
+   ]
+  },
+  {
+   "id": "db-438-masjid-i-shah1",
+   "doc": 21308,
+   "para": 990,
+   "chapter": 21,
+   "page": 439,
+   "caption": "Views of the Masjid-i-S̱háh of Ṭihrán",
+   "plate_of": "db-438-masjid-i-shah2",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/438-masjid-i-shah1.png",
+   "w": 441,
+   "h": 687,
+   "v": "e12a80206a3d",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Ṭihrán"
+   ]
+  },
+  {
+   "id": "db-438-masjid-i-shah2",
+   "doc": 21308,
+   "para": 990,
+   "chapter": 21,
+   "page": 439,
+   "caption": "Views of the Masjid-i-S̱háh of Ṭihrán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/438-masjid-i-shah2.png",
+   "w": 955,
+   "h": 409,
+   "v": "ea5a6773356b",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Ṭihrán"
+   ]
+  },
+  {
+   "id": "db-440-madrisih-mirza-salih",
+   "doc": 21308,
+   "para": 996,
+   "chapter": 21,
+   "page": 440,
+   "caption": "The Madrisih of Mírzá Ṣáliḥ in Ṭihrán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/440-madrisih-mirza-salih.png",
+   "w": 952,
+   "h": 506,
+   "v": "238a15ecba0b",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Ṭihrán"
+   ]
+  },
+  {
+   "id": "db-442-madrisiy-i-sadr",
+   "doc": 21308,
+   "para": 1001,
+   "chapter": 21,
+   "page": 442,
+   "caption": "The Madrisiy-i-Ṣadr in Ṭihrán (Mark X Showing the Room Bahá’u’lláh Occupied)",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/442-madrisiy-i-sadr.png",
+   "w": 948,
+   "h": 512,
+   "v": "befd7388dfe0",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247562,
+     "name": "Bahá'u'lláh",
+     "keys": [
+      "bahaullah"
+     ]
+    }
+   ],
+   "places": [
+    "Ṭihrán"
+   ]
+  },
+  {
+   "id": "db-443-madrisih",
+   "doc": 21308,
+   "para": 1003,
+   "chapter": 21,
+   "page": 443,
+   "caption": "The Madrisih of Dáru’s̱h-S̱hafáy-i-Masjid-i-S̱háh, in Ṭihrán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/443-madrisih.png",
+   "w": 435,
+   "h": 638,
+   "v": "e42d059586cb",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Ṭihrán"
+   ]
+  },
+  {
+   "id": "db-457-sabzih-maydan-tihran",
+   "doc": 21308,
+   "para": 1025,
+   "chapter": 21,
+   "page": 456,
+   "caption": "The Sabzih-Maydán of Ṭihrán where Many Believers Suffered Martyrdom",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/457-sabzih-maydan-tihran.png",
+   "w": 953,
+   "h": 467,
+   "v": "78be8c11832a",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Ṭihrán",
+    "Sabzih-Maydán"
+   ]
+  },
+  {
+   "id": "db-457-gate-of-naw",
+   "doc": 21308,
+   "para": 1028,
+   "chapter": 21,
+   "page": 458,
+   "caption": "Gate of Naw, Ṭihrán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/457-gate-of-naw.png",
+   "w": 955,
+   "h": 357,
+   "v": "65d01ac89028",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Ṭihrán"
+   ]
+  },
+  {
+   "id": "db-462-panorama-yazd",
+   "doc": 21308,
+   "para": 1041,
+   "chapter": 21,
+   "page": 462,
+   "caption": "Panorama of Yazd",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/462-panorama-yazd.png",
+   "w": 950,
+   "h": 446,
+   "v": "372286187796",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Yazd"
+   ]
+  },
+  {
+   "id": "db-466-vahids-house-yazd",
+   "doc": 21308,
+   "para": 1048,
+   "chapter": 22,
+   "page": 466,
+   "caption": "Vaḥíd’s House at Yazd",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/466-vahids-house-yazd.png",
+   "w": 942,
+   "h": 499,
+   "v": "dac3d4062f19",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247553,
+     "name": "Vaḥíd",
+     "keys": [
+      "vahid"
+     ]
+    }
+   ],
+   "places": [
+    "Yazd"
+   ]
+  },
+  {
+   "id": "db-470-fort-narin-yazd",
+   "doc": 21308,
+   "para": 1056,
+   "chapter": 22,
+   "page": 470,
+   "caption": "Views of the Fort of Nárín, Yazd",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/470-fort-narin-yazd.png",
+   "w": 947,
+   "h": 1063,
+   "v": "1f65a3867c34",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Yazd"
+   ]
+  },
+  {
+   "id": "db-478-panorama-nayriz",
+   "doc": 21308,
+   "para": 1076,
+   "chapter": 22,
+   "page": 478,
+   "caption": "Panorama of Nayríz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/478-panorama-nayriz.png",
+   "w": 949,
+   "h": 480,
+   "v": "9f9d6c87674a",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Nayríz"
+   ]
+  },
+  {
+   "id": "db-479-vahids-house-nayriz",
+   "doc": 21308,
+   "para": 1078,
+   "chapter": 22,
+   "page": 479,
+   "caption": "Vaḥíd’s House at Nayríz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/479-vahids-house-nayriz.png",
+   "w": 948,
+   "h": 567,
+   "v": "68d442bdfbb1",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247553,
+     "name": "Vaḥíd",
+     "keys": [
+      "vahid"
+     ]
+    }
+   ],
+   "places": [
+    "Nayríz"
+   ]
+  },
+  {
+   "id": "db-480-fort-khajih",
+   "doc": 21308,
+   "para": 1080,
+   "chapter": 22,
+   "page": 480,
+   "caption": "The Fort of Ḵhájih",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/480-fort-khajih.png",
+   "w": 951,
+   "h": 497,
+   "v": "4273bd39a5fb",
+   "kind": "scene",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-480-vahids-room-in-fort",
+   "doc": 21308,
+   "para": 1080,
+   "chapter": 22,
+   "page": 480,
+   "caption": "Vaḥíd’s Room in the Fort",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/480-vahids-room-in-fort.png",
+   "w": 444,
+   "h": 753,
+   "v": "ba48d381293c",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247553,
+     "name": "Vaḥíd",
+     "keys": [
+      "vahid"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-492-masjid-i-jami",
+   "doc": 21308,
+   "para": 1108,
+   "chapter": 22,
+   "page": 491,
+   "caption": "The Masjid-i-Jámi‘ at Nayríz, where Vaḥíd’s Addressed the Congregation",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/492-masjid-i-jami.png",
+   "w": 954,
+   "h": 1350,
+   "v": "36921db5826a",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247553,
+     "name": "Vaḥíd",
+     "keys": [
+      "vahid"
+     ]
+    }
+   ],
+   "places": [
+    "Nayríz"
+   ]
+  },
+  {
+   "id": "db-497-site-martyrdoms-nayriz",
+   "doc": 21308,
+   "para": 1116,
+   "chapter": 22,
+   "page": 496,
+   "caption": "Site of Martyrdoms at Nayríz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/497-site-martyrdoms-nayriz.png",
+   "w": 452,
+   "h": 666,
+   "v": "48da3781d5c8",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Nayríz"
+   ]
+  },
+  {
+   "id": "db-497-graves-martyrs-nayriz",
+   "doc": 21308,
+   "para": 1116,
+   "chapter": 22,
+   "page": 496,
+   "caption": "Graves of Martyrs at Nayríz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/497-graves-martyrs-nayriz.png",
+   "w": 957,
+   "h": 525,
+   "v": "6564fcd147bf",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Nayríz"
+   ]
+  },
+  {
+   "id": "db-498-vahids-resting-place",
+   "doc": 21308,
+   "para": 1119,
+   "chapter": 22,
+   "page": 497,
+   "caption": "Vaḥíd’s Resting Place in Nayríz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/498-vahids-resting-place.png",
+   "w": 446,
+   "h": 741,
+   "v": "8bb8ea2dfd72",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247553,
+     "name": "Vaḥíd",
+     "keys": [
+      "vahid"
+     ]
+    }
+   ],
+   "places": [
+    "Nayríz"
+   ]
+  },
+  {
+   "id": "db-500-mirza-taqi-khan",
+   "doc": 21308,
+   "para": 1122,
+   "chapter": 22,
+   "page": 500,
+   "caption": "Mírzá Taqí Ḵhán, the Amír-Niẓám",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/500-mirza-taqi-khan.png",
+   "w": 570,
+   "h": 835,
+   "v": "edeb34d8bf2e",
+   "kind": "portrait",
+   "people": [
+    {
+     "id": 1247568,
+     "name": "Amír-Niẓám",
+     "keys": [
+      "mirza taqi khan",
+      "amir nizam"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-503-prayer-beads-bab",
+   "doc": 21308,
+   "para": 1125,
+   "chapter": 23,
+   "page": 502,
+   "caption": "The Báb’s Prayer Beads and Signet Ring",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/503-prayer-beads-bab.png",
+   "w": 909,
+   "h": 799,
+   "v": "feaeba8ab400",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-503-quran-bab",
+   "doc": 21308,
+   "para": 1125,
+   "chapter": 23,
+   "page": 502,
+   "caption": "Qur’án Belonging to the Báb",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/503-quran-bab.png",
+   "w": 869,
+   "h": 517,
+   "v": "4bd213cd5374",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-509-house-of-mamaqani",
+   "doc": 21308,
+   "para": 1136,
+   "chapter": 23,
+   "page": 509,
+   "caption": "Ruins of the House of Mullá Muḥammad-i-Mámáqání, the Mujtahid of Tabríz",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/509-house-of-mamaqani.png",
+   "w": 954,
+   "h": 512,
+   "v": "2e281d4f8d6b",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247591,
+     "name": "Mullá Muḥammad-i-Mámáqání",
+     "keys": [
+      "mamaqani"
+     ]
+    }
+   ],
+   "places": [
+    "Tabríz"
+   ]
+  },
+  {
+   "id": "db-511-barrack-square-tabriz",
+   "doc": 21308,
+   "para": 1142,
+   "chapter": 23,
+   "page": 510,
+   "caption": "The Barrack-Square of Tabríz, where the Báb Suffered Martyrdom. Pillar on the Right Marked X is the Place Where He was Suspended and Shot",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/511-barrack-square-tabriz.png",
+   "w": 1477,
+   "h": 889,
+   "v": "96d211ba9674",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Tabríz"
+   ]
+  },
+  {
+   "id": "db-517-moat-surrounding-tabriz",
+   "doc": 21308,
+   "para": 1151,
+   "chapter": 23,
+   "page": 517,
+   "caption": "Site of the Moat that Surrounded Tabríz, where the Báb’s Body was Thrown",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/517-moat-surrounding-tabriz.png",
+   "w": 951,
+   "h": 510,
+   "v": "403e060fec91",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Tabríz"
+   ]
+  },
+  {
+   "id": "db-520-imam-zadih-hasan",
+   "doc": 21308,
+   "para": 1156,
+   "chapter": 23,
+   "page": 519,
+   "caption": "Views of the Imám-Zádih-Ḥasan at Ṭihrán, where the Báb’s Body was Kept",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/520-imam-zadih-hasan.png",
+   "w": 952,
+   "h": 1228,
+   "v": "a3fe785c00b9",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Ṭihrán"
+   ]
+  },
+  {
+   "id": "db-527-view-of-zanjan",
+   "doc": 21308,
+   "para": 1167,
+   "chapter": 23,
+   "page": 527,
+   "caption": "View of Zanján",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/527-view-of-zanjan.png",
+   "w": 955,
+   "h": 388,
+   "v": "9ad348bd3722",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Zanján"
+   ]
+  },
+  {
+   "id": "db-528-masjid-built-for-hujjat",
+   "doc": 21308,
+   "para": 1169,
+   "chapter": 24,
+   "page": 529,
+   "caption": "Views of the Masjid Built for Ḥujjat by his Companions",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/528-masjid-built-for-hujjat.png",
+   "w": 951,
+   "h": 970,
+   "v": "33290328efdd",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247580,
+     "name": "Ḥujjat",
+     "keys": [
+      "hujjat"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-535-caravanserai-masum",
+   "doc": 21308,
+   "para": 1183,
+   "chapter": 24,
+   "page": 535,
+   "caption": "The Caravanserai of Mírzá Ma‘ṣúm-i-Ṭabíb at Zanján, Mark X Showing Room the Báb Occupied",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/535-caravanserai-masum.png",
+   "w": 948,
+   "h": 876,
+   "v": "939c3d110fdf",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Zanján"
+   ]
+  },
+  {
+   "id": "db-562-graves-ashraf-and-mother",
+   "doc": 21308,
+   "para": 1241,
+   "chapter": 24,
+   "page": 562,
+   "caption": "Graves of As̱hraf (1) and His Mother (2)",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/562-graves-ashraf-and-mother.png",
+   "w": 958,
+   "h": 504,
+   "v": "9263d8f10696",
+   "kind": "scene",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-571-hujjats-house-zanjan",
+   "doc": 21308,
+   "para": 1264,
+   "chapter": 24,
+   "page": 571,
+   "caption": "Entrance to Ḥujjat’s Ruined House at Zanján",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/571-hujjats-house-zanjan.png",
+   "w": 449,
+   "h": 765,
+   "v": "5e6802bd17cd",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247580,
+     "name": "Ḥujjat",
+     "keys": [
+      "hujjat"
+     ]
+    }
+   ],
+   "places": [
+    "Zanján"
+   ]
+  },
+  {
+   "id": "db-578-square-zanjan",
+   "doc": 21308,
+   "para": 1280,
+   "chapter": 24,
+   "page": 579,
+   "caption": "Square in Zanján where Ḥujjat’s Body was Left Exposed for Three Days",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/578-square-zanjan.png",
+   "w": 958,
+   "h": 527,
+   "v": "5d8a3795d0bc",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247580,
+     "name": "Ḥujjat",
+     "keys": [
+      "hujjat"
+     ]
+    }
+   ],
+   "places": [
+    "Zanján"
+   ]
+  },
+  {
+   "id": "db-579-haji-iman",
+   "doc": 21308,
+   "para": 1282,
+   "chapter": 24,
+   "page": 579,
+   "caption": "Ḥájí Ímán (Marked X), One of the Survivors of the Struggle of Zanján",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/579-haji-iman.png",
+   "w": 585,
+   "h": 749,
+   "v": "eee7fb2978a8",
+   "kind": "portrait",
+   "people": [],
+   "places": [
+    "Zanján"
+   ]
+  },
+  {
+   "id": "db-597-village-afchih",
+   "doc": 21308,
+   "para": 1314,
+   "chapter": 26,
+   "page": 597,
+   "caption": "Village of Afc̱hih, Near Ṭihrán. the House of Bahá’u’lláh is Seen through the Trees",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/597-village-afchih.png",
+   "w": 958,
+   "h": 663,
+   "v": "89e01dd9a424",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247562,
+     "name": "Bahá'u'lláh",
+     "keys": [
+      "bahaullah"
+     ]
+    }
+   ],
+   "places": [
+    "Ṭihrán",
+    "Afchih"
+   ]
+  },
+  {
+   "id": "db-597-house-of-baha",
+   "doc": 21308,
+   "para": 1314,
+   "chapter": 26,
+   "page": 597,
+   "caption": "Bahá’u’lláh’s House in Afc̱hih, Near Ṭihrán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/597-house-of-baha.png",
+   "w": 962,
+   "h": 652,
+   "v": "d1ce46b19bed",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247562,
+     "name": "Bahá'u'lláh",
+     "keys": [
+      "bahaullah"
+     ]
+    }
+   ],
+   "places": [
+    "Ṭihrán",
+    "Afchih"
+   ]
+  },
+  {
+   "id": "db-598-baha-summer-home-shimiran",
+   "doc": 21308,
+   "para": 1317,
+   "chapter": 26,
+   "page": 597,
+   "caption": "Murg̱h-Maḥallih, Bahá’u’lláh’s Summer Residence in S̱himírán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/598-baha-summer-home-shimiran.png",
+   "w": 950,
+   "h": 672,
+   "v": "6c4af991b024",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247562,
+     "name": "Bahá'u'lláh",
+     "keys": [
+      "bahaullah"
+     ]
+    }
+   ],
+   "places": [
+    "Shimírán"
+   ]
+  },
+  {
+   "id": "db-602-niyavaran",
+   "doc": 21308,
+   "para": 1323,
+   "chapter": 26,
+   "page": 602,
+   "caption": "View of Níyávarán Near Ṭihrán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/602-niyavaran.png",
+   "w": 956,
+   "h": 513,
+   "v": "c4087f51fc66",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Ṭihrán",
+    "Níyávarán"
+   ]
+  },
+  {
+   "id": "db-604-russian-legation",
+   "doc": 21308,
+   "para": 1328,
+   "chapter": 26,
+   "page": 604,
+   "caption": "The Russian Legation in the Village of Zarkandih",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/604-russian-legation.png",
+   "w": 953,
+   "h": 513,
+   "v": "51f0d2a297cc",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Zarkandih"
+   ]
+  },
+  {
+   "id": "db-607-siyyih-chal",
+   "doc": 21308,
+   "para": 1333,
+   "chapter": 26,
+   "page": 608,
+   "caption": "Southern Part of Ṭihrán where Criminals were Hanged and where Many Bahá’í Martyrdoms Took Place (Mark X Indicates Site of Síyáh-C̱hál)",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/607-siyyih-chal.png",
+   "w": 954,
+   "h": 560,
+   "v": "a13412e75109",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Ṭihrán",
+    "Síyáh-Chál"
+   ]
+  },
+  {
+   "id": "db-610-martyred-family",
+   "doc": 21308,
+   "para": 1336,
+   "chapter": 26,
+   "page": 610,
+   "caption": "Bahá’í Family Martyred in Persia",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/610-martyred-family.png",
+   "w": 954,
+   "h": 614,
+   "v": "d5137d273db6",
+   "kind": "scene",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-611-gathered-around-martyr",
+   "doc": 21308,
+   "para": 1338,
+   "chapter": 26,
+   "page": 611,
+   "caption": "Believers Gathered Around the Body of a Martyr",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/611-gathered-around-martyr.png",
+   "w": 958,
+   "h": 641,
+   "v": "f230493a864c",
+   "kind": "scene",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-623-house-of-kalantar",
+   "doc": 21308,
+   "para": 1353,
+   "chapter": 26,
+   "page": 624,
+   "caption": "The House of the Kalántar in Ṭihrán, where Ṭáhirih was Confined (Upper Room Behind Tree is the One She Occupied)",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/623-house-of-kalantar.png",
+   "w": 957,
+   "h": 704,
+   "v": "c717a5414817",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247616,
+     "name": "Maḥmúd Khán-i-Kalantar",
+     "keys": [
+      "kalantar",
+      "mahmud khan"
+     ]
+    },
+    {
+     "id": 1247554,
+     "name": "Ṭáhirih",
+     "keys": [
+      "tahirih",
+      "qurratul ayn"
+     ]
+    }
+   ],
+   "places": [
+    "Ṭihrán"
+   ]
+  },
+  {
+   "id": "db-624-dress-persian-ladies",
+   "doc": 21308,
+   "para": 1355,
+   "chapter": 26,
+   "page": 625,
+   "caption": "Costume Worn by the Persian Ladies in the Middle of the Nineteenth Century",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/624-dress-persian-ladies.png",
+   "w": 927,
+   "h": 630,
+   "v": "def91f7274b8",
+   "kind": "scene",
+   "people": [],
+   "places": []
+  },
+  {
+   "id": "db-626-garden-ilkhani",
+   "doc": 21308,
+   "para": 1358,
+   "chapter": 26,
+   "page": 626,
+   "caption": "Site of the Garden of Ílḵhání where Ṭáhirih was Martyred",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/626-garden-ilkhani.png",
+   "w": 955,
+   "h": 516,
+   "v": "f58b89037a21",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247554,
+     "name": "Ṭáhirih",
+     "keys": [
+      "tahirih",
+      "qurratul ayn"
+     ]
+    }
+   ],
+   "places": []
+  },
+  {
+   "id": "db-638-view-of-takur",
+   "doc": 21308,
+   "para": 1381,
+   "chapter": 26,
+   "page": 638,
+   "caption": "General View of Tákur in Mázindarán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/638-view-of-takur.png",
+   "w": 954,
+   "h": 525,
+   "v": "c3eb644abc3f",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Tákur",
+    "Mázindarán"
+   ]
+  },
+  {
+   "id": "db-640-ruins-house-baha-takur",
+   "doc": 21308,
+   "para": 1386,
+   "chapter": 26,
+   "page": 640,
+   "caption": "Ruins of Bahá’u’lláh’s House. Originally Belonging to the Vazír, His Father, in Tákur, Mázindarán",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/640-ruins-house-baha-takur.png",
+   "w": 955,
+   "h": 1070,
+   "v": "65365f6d180b",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247562,
+     "name": "Bahá'u'lláh",
+     "keys": [
+      "bahaullah"
+     ]
+    }
+   ],
+   "places": [
+    "Tákur",
+    "Mázindarán"
+   ]
+  },
+  {
+   "id": "db-644-view-abadih",
+   "doc": 21308,
+   "para": 1396,
+   "chapter": 26,
+   "page": 644,
+   "caption": "View of Ábádih",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/644-view-abadih.png",
+   "w": 959,
+   "h": 449,
+   "v": "628a0f0817d9",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Ábádih"
+   ]
+  },
+  {
+   "id": "db-645-hadiqatur-rahman-nayriz",
+   "doc": 21308,
+   "para": 1399,
+   "chapter": 26,
+   "page": 646,
+   "caption": "The Hadíqatu’r-Raḥmán, where the Heads of the Martyrs of Nayríz Lie Buried",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/645-hadiqatur-rahman-nayriz.png",
+   "w": 959,
+   "h": 515,
+   "v": "c9d043779a30",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Nayríz"
+   ]
+  },
+  {
+   "id": "db-649-views-baghdad",
+   "doc": 21308,
+   "para": 1404,
+   "chapter": 26,
+   "page": 650,
+   "caption": "Views of Bag̱hdád",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/649-views-baghdad.png",
+   "w": 952,
+   "h": 950,
+   "v": "22c60ad88d56",
+   "kind": "scene",
+   "people": [],
+   "places": [
+    "Baghdád"
+   ]
+  },
+  {
+   "id": "db-662-house-baha-baghdad",
+   "doc": 21308,
+   "para": 1407,
+   "chapter": 26,
+   "page": 659,
+   "caption": "Bahá’u’lláh’s House in Bag̱hdád",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/662-house-baha-baghdad.png",
+   "w": 531,
+   "h": 905,
+   "v": "ace7bf31889e",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247562,
+     "name": "Bahá'u'lláh",
+     "keys": [
+      "bahaullah"
+     ]
+    }
+   ],
+   "places": [
+    "Baghdád"
+   ]
+  },
+  {
+   "id": "db-666-shrine-bab",
+   "doc": 21308,
+   "para": 1407,
+   "chapter": 26,
+   "page": 667,
+   "caption": "Views of the Illuminated Shrine of the Báb on Mount Carmel",
+   "credit": "The Dawn-Breakers (1932), Shoghi Effendi’s edition",
+   "r2": "illustrations/dawn-breakers/666-shrine-bab.png",
+   "w": 961,
+   "h": 1047,
+   "v": "d93b088c8933",
+   "kind": "scene",
+   "people": [
+    {
+     "id": 1247551,
+     "name": "the Báb",
+     "keys": [
+      "the bab"
+     ]
+    }
+   ],
+   "places": [
+    "Mount Carmel"
+   ]
+  }
+ ]
+}

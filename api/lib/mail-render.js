@@ -9,6 +9,8 @@
 // Quoted words (Chad 11-04): an italic quotation and a blockquote take the quotation ink (quote-style.js); RTL stays upright.
 import { Marked, Lexer } from 'marked';
 import { styleQuotes, QUOTE_INK } from './quote-style.js';
+import { sizeImgs } from './illustrations.js';
+const OWN_THUMB = /^https:\/\/siftersearch\.com\/img\/[^\s"<>]*[?&]tr=w-\d+,h-\d+,dpr-1[^\s"<>]*$/;
 
 export const PALETTE = Object.freeze({ ink: '#2b2621', sea: '#1f6f8b', mist: '#8fa3ab', rule: '#a9cbd6', quote: QUOTE_INK.light });
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -32,6 +34,8 @@ for (const m of [marked, markedBreaks]) {
       return `@@BIL${bilSlots.length - 1}@@\n`;
     },
     image({ href, text }) {   // no remote images (blocked by default, and a tracking risk): the alt text, linked
+      // except a card's picture: our image worker's fixed-size thumbnail (illustrations.js imageMarkdown) → sized, lazy, 2x srcset
+      if (OWN_THUMB.test(String(href || '').trim())) return sizeImgs(`<img src="${esc(href)}" alt="${esc(text || '')}">`);
       return SAFE_URL.test(String(href || '').trim()) ? `<a href="${esc(href)}">${esc(text || href)}</a>` : esc(text || '');
     },
   } });

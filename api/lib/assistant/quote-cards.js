@@ -5,12 +5,15 @@
 import { quoteBlocks, foldQuote } from '../quote-blocks.js';
 import { ANIS_ORIGIN as SITE } from '../anis-links.js';   // Anís output: the Anís host (Chad 11-14), never siftersearch.com
 import { sowCoverUrl } from '../sow-links.js';
+import { imagesFor, cardImage } from '../illustrations.js';
 
 const abs = (u) => (u ? (/^https?:/.test(u) ? u : `${SITE}${u}`) : null);
 const coverOf = (d) => abs(d.cover_url) ?? sowCoverUrl(d);   // a Star of the West issue: its page 1 scan, in place
 const base = (u) => String(u || '').replace(/[#?].*$/, '');
 const norm = (s) => ({ url: s?.url ?? s?.citation_url ?? s?.source_url ?? null, title: s?.title ?? s?.source_title ?? null, author: s?.author ?? s?.source_author ?? null,
-  doc: Number(s?.document_id ?? s?.doc_id) || null, place: s?.place ?? null, text: s?.text ?? '' });
+  doc: Number(s?.document_id ?? s?.doc_id) || null, para: s?.paragraph_index ?? null, place: s?.place ?? null, text: s?.text ?? '' });
+// a card of an illustrated book carries one plate, chosen by code from the passage's doc, paragraph and words (illustrations.js)
+const imageOf = (s) => cardImage(imagesFor({ doc: s.doc, para: s.para, text: s.text }, { max: 1 })[0]) ?? undefined;
 
 /** The place from the citation label once the work's title is taken off ("*Gleanings*, CXVII" → "CXVII"). Pure. */
 export function placeOf(attribution, title) {
@@ -55,7 +58,7 @@ export async function quoteCards(reply, sources, { namedWork = null, docs = defa
     const d = rows.get(source.doc) || {};
     const title = d.title || source.title || null;
     return { url: block.url, key: block.key, work_id: source.doc, title, author: d.author || source.author || null,
-      place: source.place || placeOf(block.attribution, title) || placeOf(block.attribution, source.title), cover_url: coverOf(d) };
+      place: source.place || placeOf(block.attribution, title) || placeOf(block.attribution, source.title), cover_url: coverOf(d), image: imageOf(source) };
   }).filter((c) => c.title);
   let books = [];
   // a book a quote card already shows (its cover beside the quote) gets no second card (Chad 11-12)
@@ -83,7 +86,7 @@ export async function refCards({ reply, passages = [], books = [] }, { docs = de
     const { p, s } = open[0];
     const d = (await docs([s.doc]).catch(() => []))[0] || {};
     passage = { work_id: s.doc, title: d.title || s.title, author: d.author || s.author, cover_url: coverOf(d) ?? sowCoverUrl({ title: s.title }), url: s.url, place: s.place,
-      excerpt: p.excerpt || String(s.text).replace(/⁅\/?[sp]\d+⁆/g, '').replace(/\s+/g, ' ').trim(), phrase: null };
+      excerpt: p.excerpt || String(s.text).replace(/⁅\/?[sp]\d+⁆/g, '').replace(/\s+/g, ' ').trim(), phrase: null, image: imageOf(s) };
     carded.add(s.doc);
   }
   return { passage, books: books.filter((b) => !carded.has(Number(b.id))) };

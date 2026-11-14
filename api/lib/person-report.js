@@ -1,6 +1,7 @@
 // Person report: one person's pre-researched biography as compact JSON for Anís (biography_lookup) — name or id → the person,
 // portrait, life dates, the built life timeline (events/relationships/journeys, each with cited sources) else cited facts.
 // No model, no new queries (deps imported on first call, so the pure helpers load anywhere): entityLookup (memoised name index) + getBioPerson (cached dossier, portrait manifest, timelines/<id>.json).
+import { imagesFor, toolImages } from './illustrations.js';
 
 const FACTS_MAX = 40;   // writer context: a life read start to end (evenly spaced along the chronology), the total rides along
 
@@ -21,6 +22,7 @@ export function toReport(p, { factsMax = FACTS_MAX } = {}) {
     proof: c.proof ?? null, source: c.source ?? null, cite: c.cite ?? null, url: c.url ?? null }));
   return { id: p.id, name: p.name, aliases: p.aliases || [], side: p.side ?? null, summary: p.summary ?? null, importance: p.importance ?? 0,
     portrait: p.portrait ?? null, portraitFull: p.portraitFull ?? null,
+    images: toolImages(imagesFor({ person: p.id })),   // the plates (Dawn-Breakers) that show this person: their portrait first, by the reviewed index
     wikipedia: p.wiki ? { title: p.wiki.title ?? null, url: p.wiki.url ?? p.wiki.page_url ?? null } : null,
     dates: p.dates || [], death: p.death ?? null, kinship: p.kinship || [],
     timeline: tl ? {
