@@ -69,24 +69,7 @@ describe('anisHref keeps the media staging path on the host', () => {
 });
 
 describe('no Anís talk page can play the original audio (Chad 11-14)', () => {
-  it('remasterOnly drops both original URLs and keeps the rest', async () => {
-    const { remasterOnly } = await import('../../src/lib/media.js');
-    const a = remasterOnly({ ogg: '/a.ogg', m4a: '/a.m4a', remastered: true, original_url: '/o.mp3', original_ogg: '/o.ogg' });
-    expect(a).toEqual({ ogg: '/a.ogg', m4a: '/a.m4a', remastered: true });
-    expect(remasterOnly(null)).toBe(null);
-  });
-  it('the talk page strips the original before render and turns the A/B switch off', () => {
-    const page = src('src/pages/media/[slug].astro');
-    expect(page).toMatch(/if \(anis && item\?\.audio\) item\.audio = remasterOnly\(item\.audio\)/);
-    expect(page).toMatch(/originals=\{!anis\}/);
-  });
-  it('the player gates the switch and every refreshed payload on originals', () => {
-    const p = src('src/components/media/MediaPlayer.svelte');
-    expect(p).toMatch(/hasOriginal = \$derived\(originals &&/);
-    expect(p).toMatch(/audioInfo = \$state\(audioOf\(item\.audio\)\)/);
-    expect(p).toMatch(/audioInfo = audioOf\(d\.audio\)/);
-    expect(p).not.toMatch(/audioInfo = (item|d)\.audio\b/);
-  });
+  // the player's own guarantee (both hosts) is in tests/components/media-original-button.test.js
   it('/media/remaster is not served on the Anís host and the index hides its link', () => {
     expect(src('src/pages/media/remaster.astro')).toMatch(/if \(isAnisHost\(Astro\.url\)\) return Astro\.redirect\('\/media', 301\)/);
     expect(src('src/pages/media/index.astro')).toMatch(/\{!isAnisHost\(Astro\.url\) && <a href="\/media\/remaster"/);

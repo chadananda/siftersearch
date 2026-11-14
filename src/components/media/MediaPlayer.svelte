@@ -8,7 +8,7 @@
   import { media } from '../../lib/api.js';
   import { audioReady, audioWarmPath } from '../../lib/media-ready.js';
   import { liveRefresh } from '../../lib/live-data.js';
-  import { flattenWords, flattenOriginalStarts, remasterOnly, mapTime, wordAt, youtubeAtTime, picture, sameMediaRevision } from '../../lib/media.js';
+  import { flattenWords, remasterOnly, wordAt, youtubeAtTime, picture, sameMediaRevision } from '../../lib/media.js';
   import { rangeFrom, formatTime, rangeParam } from '../../../api/lib/media/range.js';
   import MediaTranscript from './MediaTranscript.svelte';
   import MediaWaveform from './MediaWaveform.svelte';
@@ -20,12 +20,12 @@
   import { SITE } from '../../lib/share.js';
   import { eraVar, duration as dur } from '../../lib/media-listing.js';
 
-  let { item, initialRange = null, related = [], speakerKey = null, speakersByKey = {}, originals = true } = $props();   // originals=false (Anís host): no Original A/B, no original URLs
+  let { item, initialRange = null, related = [], speakerKey = null, speakersByKey = {} } = $props();
 
   const level = item.rights?.playback || 'search';
   let updatedTalkAvailable = $state(false);
-  const audioOf = (a) => (originals ? a : remasterOnly(a));
-  let audioInfo = $state(audioOf(item.audio)), s0paras = $state(item.paragraphs);
+  // The original never plays (Chad 10-29/10-31, both hosts): the player drops any original URL the API might carry.
+  let audioInfo = $state(remasterOnly(item.audio));
   const canPlay = $derived(!updatedTalkAvailable && ((level === 'full' && !!audioInfo && audioInfo.sync_ready !== false) || (level === 'clips' && !!item.clip_url)));
   const duration = Number(item.duration_s) || 0;
   // the contents list: the topic subheaders (each a #slug anchor), else the coarser chapters
@@ -36,22 +36,8 @@
   const qualityTitle = q ? [`Recording quality ${q.overall}`, q.primary_issue && q.primary_issue !== 'ok' ? ISSUE_LABEL[q.primary_issue] || q.primary_issue : 'clear',
     ...Object.entries(q.dimensions || {}).filter(([, x]) => x?.grade).map(([k, x]) => `${k} ${x.grade}`)].join(' · ') : '';
   const flat = flattenWords(item.paragraphs);
-  // ORIGINAL A/B (Chad 10-23): a remastered talk keeps its original copy; the small button under Play switches to it at the
-  // same moment (and back). Page times stay the MAIN copy's; the one conversion is now()/copyTime() via the words' starts
-  // on the original (s0). No s0 → positions map 1:1 and the highlight pauses while Original plays.
-  // audioInfo/s0paras start as the SSR data and are refreshed once on load (liveRefresh below): the page HTML is edge-cached,
-  // so a talk remastered after its page was cached still shows the switch within a minute
-  const gain = $derived(audioInfo?.improvement);
-  const remasterLabel = $derived(audioInfo?.remaster_tier === 'light' ? 'Light cleanup' : gain ? `Remastered · ~${gain.percent}% improved` : 'Remastered');
-  const remasterShort = $derived(audioInfo?.remaster_tier === 'light' ? 'Clean' : gain ? `Rem ~${gain.percent}%` : 'Rem');
-  const remasterTitle = $derived(gain ? `Estimated improvement from before-and-after audio checks: ${gain.quality_before} → ${gain.quality_after} out of 100, measured on ${gain.samples} matching excerpts.` : 'Compare the processed listening copy with the original');
-
-  const hasOriginal = $derived(originals && level === 'full' && !!audioInfo?.remastered && !!(audioInfo.original_url || audioInfo.original_ogg));
-  const starts0 = $derived(hasOriginal ? flattenOriginalStarts(s0paras) : null);
-  let copy = $state('main');                   // 'main' | 'original': which copy the <audio> holds
+  // audioInfo starts as the SSR data and is refreshed once on load (liveRefresh below): the page HTML is edge-cached
   let loaded = '';                             // the URL in the <audio> (audio.src is absolute; compare by ours)
-  const onOriginal = () => copy === 'original';
-  const copyTime = (t) => (onOriginal() && starts0 ? mapTime(t, flat.starts, starts0) : t);   // page (main) time → copy time
   const ytBase = item.youtube || (item.source?.kind === 'youtube' ? item.source.url : null);
 
   let audio;                                   // <audio>
@@ -79,10 +65,7 @@
   // recording's own; the ONE conversion is here (now) and at the seek below. A clip carries its own start.
   const offset = item.audio?.offset_s || 0;
   const skips = item.skips || [];
-  const now = () => {
-    const t = (clip ? clip.start : offset) + (audio?.currentTime || 0);
-    return onOriginal() && starts0 ? mapTime(t, starts0, flat.starts) : t;   // the original's time → the page's (main) time
-  };
+  const now = () => (clip ? clip.start : offset) + (audio?.currentTime || 0);
   const youtubeHref = $derived(youtubeAtTime(ytBase, current));
   const photo = item.thumb?.kind === 'sketch';
   // the header portrait at its size, face-centred by the image service (the biography helper; a tile is used as is)
@@ -135,13 +118,12 @@
   }
 
   function frame() {
-    if (switching) { raf = requestAnimationFrame(frame); return; }   // the source is changing: hold the position
     let t = now();
     // a dead gap (a tape flip) is skipped, never cut: jump to its end
-    if (level === 'full' && skips.length) { const to = skips.find((g) => t >= g.from && t < g.to)?.to; if (to != null) { audio.currentTime = Math.max(0, copyTime(to) - offset); t = to; } }
+    if (level === 'full' && skips.length) { const to = skips.find((g) => t >= g.from && t < g.to)?.to; if (to != null) { audio.currentTime = Math.max(0, to - offset); t = to; } }
     if (Math.abs(t - current) > 0.05) current = t;
     if (limit != null && t >= limit) { audio.pause(); note = 'End of the selected range.'; }
-    mark(onOriginal() && !starts0 ? -1 : wordAt(flat.starts, t + 0.02));
+    mark(wordAt(flat.starts, t + 0.02));
     if (playing) raf = requestAnimationFrame(frame);
   }
 
@@ -217,10 +199,9 @@
     try {
       if (level === 'full') {
         const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
-        const want = onOriginal() ? (ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg)
-          : (ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg);
+        const want = ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg;
         if (fresh || !audio.src || audio.src.startsWith('blob:') || loaded !== want || audio.error) { busy = true; try { await loadCopy(want); note = ''; } finally { busy = false; } }
-        await seekAndWait(copyTime(t) - offset);   // recording time → trimmed web copy time; wait for mobile range seek to finish
+        await seekAndWait(t - offset);   // recording time → trimmed web copy time; wait for mobile range seek to finish
       } else {
         const want = end ?? t + (item.rights.clip_cap || 180);
         if (fresh || !clip || t < clip.start || t >= clip.end - 0.5 || (end != null && end > clip.end + 0.1)) {
@@ -249,31 +230,8 @@
     follow = true; anchorY = anchorFor(wordEls[curK]); lastLineTop = null;
     audio.play().catch((e) => (note = `Could not play: ${e.message}`));
   }
-  /** Original | Remastered: same second, same play state, only the source changes (the other copy is not fetched until
-   *  the first switch). Rate and volume are kept; a stalled load gives up after 10 s and says so. */
-  let switching = false;
-  const ogg = () => (typeof Audio !== 'undefined' && new Audio().canPlayType('audio/ogg; codecs="opus"') ? 'ogg' : 'm4a');
   /** Wait until the audio object is in the edge store (202 + Retry-After while it is being prepared): "preparing audio". */
   const ready = path => audioReady(media.href(path), { onWaiting: () => { note = 'Getting the audio ready…'; } });
-  let loadingCopy = $state(false);   // the other copy is buffering (shown beside the switch)
-  async function switchCopy(which) {
-    if (!canPlay || !hasOriginal || which === copy || switching) return;
-    const t = started ? now() : startAt, wasPlaying = playing;
-    copy = which;
-    if (!started || !audio.src || audio.src.startsWith('blob:')) return;   // nothing loaded yet: the first play loads this copy
-    switching = true; loadingCopy = true; note = '';
-    try {
-      const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
-      const want = onOriginal() ? (ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg)
-        : (ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg);
-      await loadCopy(want); note = '';
-      await seekAndWait(copyTime(t) - offset);
-      audio.playbackRate = rate;
-      if (wasPlaying) await audio.play();
-    } catch (e) {
-      playing = false; note = `Could not switch: ${e.message}`;
-    } finally { switching = false; loadingCopy = false; if (!playing) frame(); }
-  }
   const seek = (t) => (playing || started ? playFrom(t, { end: null }) : (startAt = t, current = t, mark(wordAt(flat.starts, t + 0.02))));
   const onword = (k, el) => playFrom(flat.starts[k], { el });
   const onpara = (pi, el) => {
@@ -348,15 +306,13 @@
 
   const cleanups = [];
   onMount(() => {
-    // Opening a talk sends both copies this browser plays to the edge store (Chad 10-29), the playing copy first, then the
-    // original; each streams from R2 while it lands (idempotent: a present copy answers at once)
+    // Opening a talk sends the copy this browser plays to the edge store (Chad 10-29); it streams from R2 while it lands
+    // (idempotent: a present copy answers at once)
     if (level === 'full' && audioInfo && audio) {
       const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
       const main = ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg;
-      const orig = ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg;
-      const warms = [main, hasOriginal && orig].filter(Boolean).map((p) => audioWarmPath(media.href(p))).filter(Boolean);
-      // both copies copy to R2 while the listener reads the page; the restored one gets a 3 s head start (it plays first)
-      warms.forEach((w, i) => setTimeout(() => fetch(w, { method: 'POST' }).catch(() => {}), i * 3000));
+      const warm = main && audioWarmPath(media.href(main));
+      if (warm) fetch(warm, { method: 'POST' }).catch(() => {});
     }
     wordEls = Array.from(root.querySelectorAll('[data-k]'));
     let r = rangeFrom({ search: location.search, hash: location.hash });
@@ -392,7 +348,7 @@
       // SSR HTML and the refreshed API payload must be one transcript/audio snapshot. Never pair
       // a fresh immutable audio URL with word timings from older cached HTML.
       if (!sameMediaRevision(item.version, d.version)) { updatedTalkAvailable = true; audio?.pause(); return; }
-      if (d.audio) { audioInfo = audioOf(d.audio); s0paras = d.paragraphs; }
+      if (d.audio) audioInfo = remasterOnly(d.audio);
     }, {every:60_000, idle:false, initial:{version:item.version,summary:item.summary,audio:item.audio},
       same:(a,b)=>a.version===b.version && a.summary===b.summary && JSON.stringify(a.audio)===JSON.stringify(b.audio)});
     cleanups.push(stopMetadata);
@@ -401,7 +357,7 @@
     const onPlay = () => { if (silent()) return; playing = true; startedAt = performance.now(); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); };
     const onPause = () => { if (silent()) return; playing = false; cancelAnimationFrame(raf); frame(); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'; sessionPosition(); };
     const onEnded = () => { if (silent()) return; onPause(); if (level === 'clips' && clip && clip.end < duration - 1 && (limit == null || clip.end < limit - 0.5)) note = 'Excerpt ended — press play to continue.'; };
-    const onErr = () => { if (silent() || busy || switching) return; note = 'The audio could not be loaded.'; };
+    const onErr = () => { if (silent() || busy) return; note = 'The audio could not be loaded.'; };
     audio.addEventListener('play', onPlay); audio.addEventListener('pause', onPause); audio.addEventListener('ended', onEnded);
     audio.addEventListener('error', onErr); audio.addEventListener('seeked', sessionPosition);
     window.addEventListener('keydown', onKey);
@@ -435,28 +391,6 @@
   });
 </script>
 
-{#snippet abToggle(slim = false)}
-  {#if level === 'full'}
-    <!-- Version switch (Original | Remastered): one state, two places (hero + sticky bar). Its own labelled group, apart from Speed.
-         The hero slot is reserved in SSR when the page already knows the talk is remastered. -->
-    {#if slim}
-      {#if hasOriginal}
-        <div class="ab" role="radiogroup" aria-label="Audio version">
-          {#each [['original', 'Orig.'], ['main', remasterLabel]] as [k, label] (k)}
-          <button type="button" role="radio" aria-checked={copy === k} title={k === 'main' ? remasterTitle : 'Original recording'} class="ab-opt ab-opt-slim" class:on={copy === k} onclick={() => switchCopy(k)}>{label}</button>
-          {/each}
-        </div>
-      {/if}
-    {:else if hasOriginal}
-      <div class="ab mx-auto" role="radiogroup" aria-label="Audio version" data-original-slot>
-        {#each [['original', 'Original', 'Orig'], ['main', remasterLabel, remasterShort]] as [k, label, short] (k)}
-          <button type="button" role="radio" aria-checked={copy === k} title={k === 'main' ? remasterTitle : 'Original recording'} aria-busy={loadingCopy && copy === k} class="ab-opt" class:on={copy === k} class:buffering={loadingCopy && copy === k} onclick={() => switchCopy(k)}><span class="sm:hidden" aria-hidden="true">{short}</span><span class="hidden sm:inline">{label}</span></button>
-        {/each}
-      </div>
-    {/if}
-  {/if}
-{/snippet}
-
 <article class="talk">
   {#if audioInfo?.restoration_status === 'pending'}<p class="mt-3 text-sm text-radio-ink">Full restoration is pending. This listening copy has only basic cleanup.</p>{/if}
   <!-- the broadcast card continues from TalkHero (SSR-only, above this island): the player on the dial glass -->
@@ -482,7 +416,6 @@
           <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-radio-dial-ink">
             <span class="flex-none font-dial text-lg font-bold tabular-nums tracking-wider">{formatTime(current)} <span class="opacity-60">/ {formatTime(duration)}</span></span>
             {#if nowSection}<span class="min-w-0 truncate opacity-80">§ {nowSection.title}</span>{/if}
-            {@render abToggle()}
             <div class="flex flex-none items-center">
             <label class="flex items-center gap-1.5 text-xs opacity-80">Speed
               <select bind:value={rate} class="speed rounded-md bg-radio-paper px-1.5 py-0.5 font-sans text-sm text-radio-ink">
@@ -627,7 +560,6 @@
       </div>
       <div class="min-w-0 flex-1"><MediaWaveform url={item.waveform} {duration} {current} {range} onseek={seek} {ticks} variant="slim" label="Seek (condensed player)" /></div>
       <span class="font-dial text-base font-bold tabular-nums text-radio-on-dark">{formatTime(current)}</span>
-      {@render abToggle(true)}
     </div>
   </div>
 {/if}
@@ -697,15 +629,6 @@
     box-shadow: 0 0 0 0 var(--radio-glow), 0 4px 12px rgba(0, 0, 0, 0.25); transition: transform 0.2s, box-shadow 0.3s; }
   .bigplay:hover { transform: scale(1.05); box-shadow: 0 0 0 7px var(--radio-glow), 0 4px 12px rgba(0, 0, 0, 0.25); }
   .bigplay:disabled { opacity: 0.6; }
-  .ab { display: inline-flex; flex: none; align-items: stretch; height: 23px;   /* = the Speed select's rendered height */ border-radius: 9999px; overflow: hidden; background: var(--radio-paper); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--radio-dial-ink) 45%, transparent); }
-  .ab-opt { position: relative; cursor: pointer; display: inline-flex; align-items: center; padding: 0 0.55rem; font-size: 0.75rem; line-height: 1; font-weight: 600; color: var(--radio-ink); opacity: 0.8; transition: background 0.2s, opacity 0.2s; }
-  .ab-opt::before { content: ''; position: absolute; inset: -0.55rem -0.15rem; }   /* a padded hit area: compact to the eye, 44 px to a thumb */
-  .ab-opt-slim { padding: 0 0.5rem; font-size: 0.7rem; }
-  .buffering { animation: pulse 1.1s ease-in-out infinite; }
-  @keyframes pulse { 50% { opacity: 0.45; } }
-  .ab-opt:hover { opacity: 1; }
-  .ab-opt.on { background: var(--radio-amber); color: var(--radio-walnut-deep); opacity: 1; }
-  .ab-opt:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
   .bigplay:focus-visible, .chip:focus-visible, .log-row:focus-visible, .log-head:focus-visible, .rel:focus-visible, .topic:focus-visible, .fab:focus-visible, .follow:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
   .chip { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.5rem; padding: 0.4rem 0.9rem; border-radius: 0.7rem; color: var(--radio-on-dark);
     box-shadow: inset 0 0 0 1px var(--radio-brass); transition: background 0.2s; }

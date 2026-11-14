@@ -60,14 +60,14 @@ export function picture(url, w, h = w, { photo = true } = {}) {
 /** The published file URL of an item (thumb.jpg, waveform.json, …), relative to the API origin. */
 export const mediaFile = (slug, name) => `/api/media/${encodeURIComponent(slug)}/file/${String(name).split('/').map(encodeURIComponent).join('/')}`;
 
-/** A cached page and refreshed talk API are safe to combine only when they share a published item revision. */
-/** The audio record without the original copy's URLs: the Anís host never plays or exposes the original (Chad 11-14). */
+/** The audio record without the original copy's URLs: the player never plays or exposes the original (Chad 10-29/10-31). */
 export function remasterOnly(audio) {
   if (!audio) return audio;
   const { original_url, original_ogg, ...rest } = audio;
   return rest;
 }
 
+/** A cached page and refreshed talk API are safe to combine only when they share a published item revision. */
 export function sameMediaRevision(pageVersion, apiVersion) {
   const page = Number(pageVersion), fresh = Number(apiVersion);
   return Number.isSafeInteger(page) && page > 0 && page === fresh;
@@ -80,24 +80,6 @@ export function flattenWords(paragraphs = []) {
   let k = 0;
   paragraphs.forEach((p, pi) => (p.words || []).forEach((w, wi) => { starts[k] = Number(w[1]) || 0; ends[k] = Number(w[2]) || 0; para[k] = pi; idx[k] = wi; k++; }));
   return { starts, ends, para, idx, length: n };
-}
-
-/** The words' starts on a remastered talk's ORIGINAL copy (paragraph s0 arrays, a missing entry falls back to the main
- *  start), flat like flattenWords().starts; null when no paragraph carries s0 (not remastered, or not yet re-aligned). */
-export function flattenOriginalStarts(paragraphs = []) {
-  if (!paragraphs.some((p) => Array.isArray(p.s0))) return null;
-  const n = paragraphs.reduce((a, p) => a + (p.words?.length || 0), 0), out = new Float64Array(n);
-  let k = 0;
-  paragraphs.forEach((p) => (p.words || []).forEach((w, wi) => { out[k++] = Number(p.s0?.[wi] ?? w[1]) || 0; }));
-  return out;
-}
-
-/** A time on one copy → the same moment on the other, by the word playing: the word's start there + the time into it.
- *  Before the first word the gap to it is kept. Both arrays are word starts in the same word order. */
-export function mapTime(t, from, to) {
-  if (!from || !to || !from.length) return t;
-  const k = Math.max(0, wordAt(from, t));
-  return Math.max(0, to[k] + (t - from[k]));
 }
 
 /** Index of the word playing at time t: the last word whose start ≤ t (−1 before the first). Binary search; starts ascending. */

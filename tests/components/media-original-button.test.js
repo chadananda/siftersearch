@@ -1,10 +1,10 @@
-// The talk page's "Original" A/B button (Chad 10-23): the API's audio block (remastered + original URLs, per-paragraph s0),
-// the time mapping between the copies, and the SSR markup (slot always reserved; button only on a remastered talk).
+// The API's audio block (remastered + original URLs, per-paragraph s0) and the player's rule that the original never
+// plays (Chad 10-29/10-31, both hosts): no Original switch, no original URL rendered, loaded or warmed.
 import { describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { render } from 'svelte/server';
 import { talkAudio, isRemastered, originalStarts, originalField } from '../../api/lib/media/talk-audio.js';
-import { flattenOriginalStarts, mapTime, flattenWords } from '../../src/lib/media.js';
+import { remasterOnly } from '../../src/lib/media.js';
 import { readFileSync as rf } from 'fs';
 import MediaPlayer from '../../src/components/media/MediaPlayer.svelte';
 
@@ -35,64 +35,33 @@ describe('talkAudio (GET /api/media/:slug audio block)', () => {
   });
 });
 
-describe('copy time mapping', () => {
-  const paragraphs = [{ words: [['one', 1, 1.5], ['two', 2, 2.5]], s0: [1.05, 2.04] }, { words: [['three', 3, 3.5]] }];
-  const flat = flattenWords(paragraphs);
-  const s0 = flattenOriginalStarts(paragraphs);
-  it('flattens s0 in word order; a paragraph without s0 keeps the main starts', () => expect(Array.from(s0)).toEqual([1.05, 2.04, 3]));
-  it('no paragraph with s0 → null (highlight pauses while Original plays)', () => expect(flattenOriginalStarts([{ words: [['x', 0, 1]] }])).toBeNull());
-  it('main → original → main lands on the same moment of the same word', () => {
-    const t = 2.3, o = mapTime(t, flat.starts, s0);
-    expect(o).toBeCloseTo(2.34, 6);
-    expect(mapTime(o, s0, flat.starts)).toBeCloseTo(t, 6);
-  });
-  it('before the first word the gap is kept; never negative', () => {
-    expect(mapTime(0.5, flat.starts, s0)).toBeCloseTo(0.55, 6);
-    expect(mapTime(0, s0, flat.starts)).toBe(0);
-  });
-});
-
-describe('MediaPlayer SSR: Original | Remastered switch', () => {
+describe('the player never offers or loads the original (Chad 10-29/10-31)', () => {
   const full = (audio) => ({ ...base, rights: { ...base.rights, playback: 'full' }, audio });
-  const plain = { ogg: '/a.ogg', m4a: '/a.m4a', offset_s: 0, remastered: false };
-  const rem = { ...plain, remastered: true, original_url: '/o.m4a', original_ogg: '/o.ogg' };
-  it('a remastered talk shows the radiogroup, Remastered checked by default, no old Original button', () => {
-    const { body } = render(MediaPlayer, { props: { item: full(rem) } });
-    expect(body).not.toMatch(/>Listen</);
-    expect(body).toMatch(/role="radiogroup"[^>]*aria-label="Audio version"/);
-    expect(body).toMatch(/role="radio" aria-checked="true"[^>]*class="ab-opt[^"]* on"[^>]*>[\s\S]*?Remastered/);
-    expect(body).toMatch(/role="radio" aria-checked="false"[^>]*>[\s\S]*?Original/);
-  });
-  it('a talk not remastered shows no switch group (nothing reserved)', () => {
-    const { body } = render(MediaPlayer, { props: { item: full(plain) } });
-    expect(body).not.toMatch(/radiogroup/);
-  });
-  it('a clips-level talk has neither', () => {
-    const { body } = render(MediaPlayer, { props: { item: { ...base, clip_url: '/clip' } } });
-    expect(body).not.toMatch(/data-original-slot/);
-  });
-});
-
-// the switch keeps the position and play state: asserted on the component source (no browser here) + the time mapping above
-describe('switchCopy contract', () => {
+  const rem = { ogg: '/a.ogg', m4a: '/a.m4a', offset_s: 0, remastered: true, original_url: '/o.m4a', original_ogg: '/o.ogg' };
   const src = rf(new URL('../../src/components/media/MediaPlayer.svelte', import.meta.url), 'utf8');
-  const fn = src.slice(src.indexOf('async function switchCopy'), src.indexOf('const seek = (t)'));
-  it('defaults to the remastered (main) copy and does not persist the choice', () => {
-    expect(src).toMatch(/let copy = \$state\('main'\)/);
-    expect(src).not.toMatch(/localStorage|sessionStorage/);
+  it('remasterOnly drops both original URLs and keeps the rest', () => {
+    expect(remasterOnly(rem)).toEqual({ ogg: '/a.ogg', m4a: '/a.m4a', offset_s: 0, remastered: true });
+    expect(remasterOnly(null)).toBe(null);
   });
-  it('reads position + play state first, seeks the other copy to the same moment, restores rate and play state', () => {
-    expect(fn).toMatch(/const t = started \? now\(\) : startAt, wasPlaying = playing/);
-    expect(fn).toMatch(/seekAndWait\(copyTime\(t\) - offset\)/);
-    expect(fn).toMatch(/audio\.playbackRate = rate/);
-    expect(fn).toMatch(/if \(wasPlaying\) await audio\.play\(\)/);
-    expect(fn).toContain('await loadCopy(want)');
-    expect(src).toMatch(/25000/);   // shared metadata-load timeout also protects copy switching
-    expect(fn).toMatch(/loadingCopy = true/);
-    expect(src).toMatch(/preload="metadata"/);
+  it('a remastered talk whose audio still carries original URLs renders no switch and no original URL', () => {
+    const { body } = render(MediaPlayer, { props: { item: full(rem) } });
+    expect(body).not.toMatch(/radiogroup|Audio version|data-original-slot|>Orig/);
+    expect(body).not.toMatch(/\/o\.(m4a|ogg)/);
   });
-  it('a paused/unstarted player only flips the choice (the other copy is not fetched until needed)', () => {
-    expect(fn).toMatch(/if \(!started \|\| !audio\.src[^\n]*return;/);
+  it('the SSR data and every refreshed payload pass through remasterOnly; no code path names an original URL', () => {
+    expect(src).toMatch(/audioInfo = \$state\(remasterOnly\(item\.audio\)\)/);
+    expect(src).toMatch(/audioInfo = remasterOnly\(d\.audio\)/);
+    expect(src).not.toMatch(/audioInfo = (item|d)\.audio\b/);
+    expect(src).not.toMatch(/original_url|original_ogg|switchCopy|hasOriginal|originals/);
+  });
+  it('the source played and the copy warmed are the remastered ogg or m4a only', () => {
+    expect(src.match(/const (want|main) = ogg && audioInfo\.ogg \? audioInfo\.ogg : audioInfo\.m4a \|\| audioInfo\.ogg;/g)).toHaveLength(2);
+    expect(src).not.toMatch(/canPlayType[^\n]*original/);
+  });
+  it('the talk page strips the original before render, on both hosts', () => {
+    const page = rf(new URL('../../src/pages/media/[slug].astro', import.meta.url), 'utf8');
+    expect(page).toMatch(/^if \(item\?\.audio\) item\.audio = remasterOnly\(item\.audio\)/m);
+    expect(page).not.toMatch(/originals=/);
   });
 });
 
