@@ -74,3 +74,15 @@ describe('live pods', () => {
     expect(n).toBe(1);
   });
 });
+
+describe('podSnapshot (spend-watch)', () => {
+  it('returns state, $/h total and pods; unknown → usd_per_hr null', async () => {
+    const { podSnapshot } = await import('../../api/lib/media/live-pods.js');
+    resetLivePods();
+    const s = await podSnapshot({ fetchFn: fake({ rest: json([pod]) }), now: () => now, file: file(), apiKey: 'k' });
+    expect(s).toMatchObject({ state: 'ok', usd_per_hr: 0.69, pods: [{ name: 'sifter-unipase-600', cost_per_hr: 0.69 }] });
+    resetLivePods();
+    const u = await podSnapshot({ fetchFn: fake({ rest: new Error('x'), gql: new Error('y') }), now: () => now, file: file(), apiKey: 'k' });
+    expect(u).toMatchObject({ state: 'unknown', usd_per_hr: null, pods: [] });
+  });
+});

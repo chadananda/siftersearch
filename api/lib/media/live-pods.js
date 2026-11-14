@@ -63,3 +63,17 @@ export function livePodsView(live, st = {}, now = Date.now()) {
   });
   return { source: live.state === 'ok' ? 'runpod' : 'unknown', as_of: live.as_of, unknown_since: live.unknown_since ?? null, lane_age_s: Number.isFinite(laneAge) ? Math.round(laneAge / 1000) : null, lane_fresh: fresh, pods };
 }
+
+/** For ops reports (spend-watch): RunPod's live answer + the lane's enrichment in one call. Never throws.
+ *  → { state: 'ok'|'unknown', as_of, unknown_since, lane_fresh, lane_age_s, usd_per_hr, pods: [{ id, name, gpu, cost_per_hr, status, lease, idle_min, created }] }
+ *  lease/idle_min are null while the lane is stale (unknown, never assumed idle); state 'unknown' → pods [] and usd_per_hr null. */
+export async function podSnapshot(deps = {}) {
+  const [{ STATE_FILE }, live] = await Promise.all([import('./cloud.js'), livePods(deps)]);
+  const st = await readFile(STATE_FILE, 'utf8').then(JSON.parse).catch(() => ({}));
+  const beat = Number(await readFile(`${STATE_FILE}.beat`, 'utf8').catch(() => 0));
+  if (beat > (st.updated || 0)) st.updated = beat;
+  const v = livePodsView(live, st, Date.now());
+  return { state: live.state, as_of: v.as_of, unknown_since: v.unknown_since, lane_fresh: v.lane_fresh, lane_age_s: v.lane_age_s,
+    usd_per_hr: live.state === 'ok' ? Math.round(v.pods.reduce((a, p) => a + (p.cost_per_hr || 0), 0) * 100) / 100 : null,
+    pods: v.pods.map((p) => ({ id: p.id, name: p.name, gpu: p.gpu, cost_per_hr: p.cost_per_hr, status: p.status, lease: p.lease, idle_min: p.idle_min, created: p.created })) };
+}
