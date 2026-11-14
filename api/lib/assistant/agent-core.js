@@ -34,10 +34,10 @@ const nudge = (n) => `You have run ${n} library search${n === 1 ? '' : 'es'}. Be
  *  under `minPart` chars are left the older turns are dropped. Starts on a reader's turn. Pure. */
 /** The re-ask for a rebuilt table that lost, renumbered or merged rows (lint.js tableDrift). */
 export const driftAsk = (d) => `(note from the library, not the reader) Your table does not keep the rows of the latest table in this conversation.${d.missing.length ? ` Missing: ${d.missing.map((m) => `row ${m.n} (${m.name})`).join(', ')}.` : ''}${d.renamed.length ? ` Row number now names a different person: ${d.renamed.map((r) => `row ${r.n} was ${r.was}, now ${r.now}`).join('; ')}.` : ''}${d.added.length ? ` New row numbers: ${d.added.join(', ')}.` : ''}${d.moved.length ? ` Facts moved into another person's row: ${d.moved.map((m) => `row ${m.n} took row ${m.from}'s (${m.words.join(', ')})`).join('; ')}.` : ''} Write the whole table again: take the latest table row by row, keep every row and its number (1…N), apply only the reader's corrections and any new research to the row they concern — unless the reader asked to remove a row.`;
-/** A compile/revise/email turn's table vs the latest numbered table of the conversation (≥2 rows) → tableDrift, or null. */
 // THE SENTENCE-REMOVING TRANSFORMS, held per turn to the word rule (sentences.js wordSafe, Chad 11-14 "A.H."): whole sentences, a clause at its
 // own mark, or the offers named — any other cut → the piece unchanged, the rule in timings.form.unsafe; what went → form.drops
 const SENTENCE_DROPS = { dropCutOff, dropDanglingLeadIn, dropNarration, dropOffers, dropUncheckedDisclaimer, dropRebuildPreamble, dropSearchOffer, dropSourceSpeculation, deHead, recapitalise };
+/** A compile/revise/email turn's table vs the latest numbered table of the conversation (≥2 rows) → tableDrift, or null. */
 export function rebuiltDrift(messages = [], final = '') {
   const prior = [...messages].reverse().find((m) => m.role === 'assistant' && numberedRows(m.content).length >= 2);
   if (!prior) return null;
@@ -411,6 +411,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   // reorderWhy = why reorderQuotes declined or skipped a block; unsafe = transforms whose cut broke the word rule (input kept); drops = [{ rule, removed }] what each took out (capped, telemetry only)
   const form = { heads: 0, lead: null, first: null, depth: false, offers: 0, rewritten: false, rewroteFor: null, leadAfter: null, reordered: false, reorderWhy: [], unsafe: [], drops: [] };
   const { dropCutOff, dropDanglingLeadIn, dropNarration, dropOffers, dropUncheckedDisclaimer, dropRebuildPreamble, dropSearchOffer, dropSourceSpeculation, deHead, recapitalise } = wordSafe(form, SENTENCE_DROPS);
+  const { dropUnverified: guardQuotes } = wordSafe(form, { dropUnverified }, { keep: ['dropUnverified'] });   // an unverified quotation stays out
   const liveWidgets = [];
   const carded = new Set();   // passages already shown in a card this turn (widgets/templates.js: one card per passage)
   const heldNowAll = () => [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
@@ -682,7 +683,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const rendered = renderRefs(dropUncheckedDisclaimer(dropSearchedNote(dropNarration(blockquoteCards(sourceOnly(mendTemplates(opened, { found, works, books: bookCards, shown: shownCards(), carded, subject: subj })), found, carded)).text)).text, { found, works });
   const asked = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const whole = restoreElisions(rendered, retrieved, { asked });   // a "…" bridging the passage's own words → its contiguous words (11-04 #161/#138)
-  const guarded = dropUnverified(whole.text, [...retrieved, ...carried], { asked });
+  const guarded = guardQuotes(whole.text, [...retrieved, ...carried], { asked });
   const speakers = fixQuoteSpeakers(guarded.text, retrieved);
   const linked = linkQuotes(speakers.text, retrieved);
   // streamed: the reply IS what the reader watched arrive, finished sentence by sentence (finishLive) — nothing snaps at the end

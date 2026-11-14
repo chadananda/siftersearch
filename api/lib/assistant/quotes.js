@@ -7,7 +7,7 @@ import { citeLabel } from '../refs/place.js';
 import { readableTitle, cleanUrl } from './widgets/card-text.js';   // a file-name title reads as a title; a swallowed footnote arrow leaves the link (round 7e)
 import { foldVerbatim } from '../search/verbatim.js';
 import { encodeMarker } from '../ool-range.js';
-import { cutsAt } from './sentences.js';
+import { cutsAt, segment } from './sentences.js';
 
 export { quoteSpans };
 
@@ -56,22 +56,18 @@ const escapeRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // inside an open quotation or link text is not an end. 11-04 prod: the old split (/(?<=[.!?])\s+(?=[A-Z“"[*>(])/) never
 // split after `.”`, `.**` or before `Ḥ`/`‘`, so a whole paragraph read as ONE sentence — one unverified quote in it took the
 // run-in heading **Bahá'í.** and every sentence of the Bahá'í side with it (cmp-fasting-islam-bahai: 3.8k → 1.9k characters).
-const BREAK = /[ \t]*\n\s*|(?<=[.!?…][”"’'»)\]*_]*)\s+(?=[\p{Lu}“"‘'«[*_>(\d#ʻʿ-])/gu;
-const isOpen = (s) => (s.match(/“/g) || []).length > (s.match(/”/g) || []).length || (s.match(/"/g) || []).length % 2 === 1
-  || (s.match(/\[/g) || []).length > (s.match(/\]/g) || []).length;
+// 11-14 ("A.H."): the pieces are sentences.js segment()'s — the old BREAK regex ended a sentence before any capital, bracket or digit, so
+// "Rosa V. Winterburn", "Vol. 1", "A.L.M. Nicolas", "1281 A.H. (1865)" and a link's dotted URL were cut and the quote-fidelity drop took
+// half a sentence (119 of 555 saved replies it changed, every quotation unverified). Open quotes, links, {{markers}} and code never split.
 /** A paragraph → its sentences, each with the whitespace before it ({ text, sep }). Pure. */
 export function sentencePieces(para) {
-  const s = String(para || ''), out = [];
-  let start = 0, sep = '';
-  for (const m of s.matchAll(BREAK)) {
-    if (m.index === start) { start += m[0].length; if (out.length) sep = m[0]; continue; }
-    const text = s.slice(start, m.index);
-    if (!m[0].includes('\n') && isOpen(text)) continue;
-    out.push({ text, sep });
-    sep = m[0]; start = m.index + m[0].length;
+  const out = [];
+  let sep = '';
+  for (const g of segment(String(para || ''))) {
+    const lead = g.text.match(/^\s*/)[0], body = g.text.slice(lead.length), text = body.trimEnd();
+    if (text) { out.push({ text, sep: out.length ? sep + lead : '' }); sep = body.slice(text.length); } else sep += g.text;
   }
-  if (start < s.length) out.push({ text: s.slice(start), sep });
-  return out.filter((p) => p.text.trim());
+  return out;
 }
 export const splitSentences = (para) => sentencePieces(para).map((p) => p.text);
 /** A heading: a markdown `#` line or a line that is all bold/italic (a run-in "**Bahá'í.**" counts). Pure. */
@@ -150,6 +146,14 @@ export function unquote(t, bad) {
  *  it, and an emptied blockquote leaves no bare ">". `asked` = the reader's words (see unverifiedQuotes). Returns the cleaned
  *  text, how many sentences went, and how many quotations were kept as paraphrase. */
 export function dropUnverified(text, passages, { asked = [] } = {}, rowsDone = false) {
+  // a CODE FENCE (a chart's JSON, a side-by-side block) is not prose and is left as it is, as markQuotes leaves it (11-14 corpus: a
+  // chart's "title" lost its marks; a side-by-side lost its English lines and kept their <sup> marks)
+  const fences = [];
+  const held = String(text ?? '').replace(/^[ \t]*(`{3,}|~{3,})[^\n]*\n[\s\S]*?^[ \t]*\1[ \t]*$/gm, (b) => `\uE000${fences.push(b) - 1}\uE001`);
+  if (fences.length) {
+    const r = dropUnverified(held, passages, { asked }, rowsDone);
+    return { ...r, text: r.text.replace(/\uE000(\d+)\uE001/g, (_, i) => fences[i]) };
+  }
   const bad = unverifiedQuotes(text, passages, { asked });
   if (!bad.length) return { text, removed: 0 };
   // a TABLE ROW keeps its cells: only the cell sentence holding the quotation goes (round 7d, Íqán turn 4 — split as sentences, a row lost
@@ -225,7 +229,8 @@ export function dropUnverified(text, passages, { asked = [] } = {}, rowsDone = f
     }
     return noBareQuoteMarks(rejoin(kept));
   }).filter(Boolean).join('\n\n').trim();
-  return { text: out && quoteSpans(out).length + out.split(/\s+/).length > 12 ? out : NOTHING_LEFT, removed, ...(unquoted ? { unquoted } : {}) };
+  if (!(out && quoteSpans(out).length + out.split(/\s+/).length > 12)) return { text: NOTHING_LEFT, removed, whole: true, ...(unquoted ? { unquoted } : {}) };   // whole: the reply replaced, by design
+  return { text: out, removed, ...(unquoted ? { unquoted } : {}) };
 }
 // a ">" line with no quoted line on both sides of it (the blockquote's words went) goes; a paragraph of only ">" is empty
 const noBareQuoteMarks = (para) => {

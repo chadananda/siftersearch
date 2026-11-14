@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { segment, sentencesOf, keepsWords, wordSafe, cutsAt } from '../../api/lib/assistant/sentences.js';
-import { createSentenceGate } from '../../api/lib/assistant/quotes.js';
+import { createSentenceGate, dropUnverified, sentencePieces } from '../../api/lib/assistant/quotes.js';
 import { dropCutOff, dropNarration, dropUncheckedDisclaimer, dropRebuildPreamble, dropSearchOffer, dropSourceSpeculation, dropDanglingLeadIn } from '../../api/lib/assistant/lint.js';
 import { dropOffers, deHead } from '../../api/lib/assistant/reply-form.js';
 
@@ -84,6 +84,43 @@ describe('wordSafe()', () => {
   it('string transforms come back as strings', () => {
     const form = {}, T = wordSafe(form, { bad: (x) => x.slice(3) });
     expect(T.bad('Hello there.')).toBe('Hello there.');
+  });
+  it('a kept rule keeps its output on a violation (noted); a { whole } replacement is a drop, not a violation', () => {
+    const form = {}, T = wordSafe(form, { cut: (x) => ({ text: x.slice(3) }), all: () => ({ text: 'Nothing here.', whole: true }) }, { keep: ['cut'] });
+    expect(T.cut('Hello there.').text).toBe('lo there.');
+    expect(T.all('Hello there.').text).toBe('Nothing here.');
+    expect(form.unsafe).toEqual(['cut']);
+    expect(form.drops).toEqual([{ rule: 'all', removed: '(the whole reply)' }]);
+  });
+});
+
+describe('segment(): a citation after a sentence end is that sentence\'s', () => {
+  it('"…glory.”* ([The Kitáb-i-Íqán](…)) The table…" → the parenthesis rides with its sentence', () => {
+    const t = 'He wrote it.”* ([The Kitáb-i-Íqán](https://x.y/z?a=b.c)) The table follows.';
+    expect(sentencesOf(t)).toEqual(['He wrote it.”* ([The Kitáb-i-Íqán](https://x.y/z?a=b.c)) ', 'The table follows.']);
+    expect(sentencesOf('Done. (1865) was the year.')).toEqual(['Done. ', '(1865) was the year.']);
+  });
+});
+
+// quotes.js dropUnverified (the quote-fidelity drop) on segment(): 151 of 555 saved replies it changed lost words with the old BREAK regex
+// (every quotation unverified, the worst case), 1 after — a malformed fence
+describe('quotes.js sentencePieces / dropUnverified on segment()', () => {
+  it('abbreviations, initials, volumes and dotted URLs never end a piece', () => {
+    for (const t of ['Rosa V. Winterburn wrote to him.', 'See Vol. 1 of the set.', 'A.L.M. Nicolas translated it.', 'Read [the page](https://oceanlibrary.com/a.b/?x=1.2) today.', 'Revealed in 1281 A.H. (1865) for Aḥmad.'])
+      expect(sentencePieces(t).map((p) => p.text)).toEqual([t]);
+    expect(sentencePieces('One. Two.')).toEqual([{ text: 'One.', sep: '' }, { text: 'Two.', sep: ' ' }]);
+  });
+  const filler = 'The context around it is described at some length here, with enough words to stand. ';
+  it('a dropped quotation takes its citation with it, and nothing else', () => {
+    const t = `${filler}He was *"the recipient of the effulgent glory."* ([The Kitáb-i-Íqán](https://oceanlibrary.com/kitab-i-iqan_bahaullah/?paraId=para_260)) ${filler}`;
+    const r = dropUnverified(t, []);
+    expect(r.text).toBe(`${filler}${filler}`.trim());
+    expect(keepsWords(t, r.text).ok).toBe(true);
+  });
+  it('a code fence (chart JSON, side-by-side) is left as it is', () => {
+    const fence = '```chart\n{"title":"How Shoghi Effendi rendered it","bars":[{"label":"equity","value":9}]}\n```';
+    const t = `${filler}${filler.trim()}\n\n${fence}\n\n${filler}He said *"a thing nobody can find in any book."*`;
+    expect(dropUnverified(t, []).text).toBe(`${filler}${filler.trim()}\n\n${fence}\n\n${filler.trim()}`);
   });
 });
 

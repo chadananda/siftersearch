@@ -24,6 +24,18 @@ function ends(m, at, run, lineStart) {
   return !(/\d/.test(next) && /^\p{L}{1,5}$/u.test(word));   // Gen. 1.2 · Matt. 5 · ch. 4
 }
 
+// "…the effulgent glory.”* ([The Kitáb-i-Íqán](…)) The table…": a parenthesis right after a sentence end is that sentence's (its citation,
+// a date) — dropped with it, never left as debris. → where the next sentence starts (-1: the line ends there), or null (no such parenthesis)
+function cite(line, i) {
+  if (line[i] !== '(') return null;
+  let d = 0, j = i;
+  for (; j < line.length; j++) { if (line[j] === '(') d++; else if (line[j] === ')' && !--d) break; }
+  if (j >= line.length) return null;
+  const rest = line.slice(j + 1).match(/^[.,;:]?[ \t]*/)[0], k = j + 1 + rest.length;
+  if (k >= line.length) return -1;
+  return /[ \t]$/.test(rest) && !/\p{Ll}/u.test(line[k]) ? k : null;
+}
+
 /** text → its sentences [{ text, start, end }]; each carries its trailing space and line breaks. */
 export function segment(text) {
   const s = String(text ?? '');
@@ -34,7 +46,9 @@ export function segment(text) {
     if (!WHOLE_LINE.test(line)) {
       for (const e of line.matchAll(END)) {
         const at = lineStart + e.index;
-        if (ends(m, at, e[0], lineStart)) cuts.push(at + e[0].length);
+        if (!ends(m, at, e[0], lineStart)) continue;
+        const after = cite(line, e.index + e[0].length);
+        if (after !== null) { if (after >= 0) cuts.push(lineStart + after); } else cuts.push(at + e[0].length);
       }
     }
     lineStart += line.length + 1;
@@ -68,7 +82,9 @@ const CONJ = /^(?:and|but|so|yet|though|although|while|whereas)$/;
  *  or the `declared` pieces a transform names (a clause it cut, "…, and I can set those out."). removed = what was taken out.
  *  A changed, added or moved word — or a cut inside a sentence at anything else ("1281 A.|H.") — → ok false. */
 export function keepsWords(before, after, declared = []) {
-  const src = String(before ?? ''), aw = wordsOf(after);
+  // a table cell, and a line inside a {{quote: … }} card, is its own run of sentences (rowWithout drops one in a cell, dropUnverified a
+  // card's > line); '|' → '\n' and '{{'/'}}' → spaces keep every offset
+  const src = String(before ?? '').replace(/^[ \t]*\|.*$/gm, (row) => row.replaceAll('|', '\n')).replace(/\{\{|\}\}/g, '  '), aw = wordsOf(after);
   let units = segment(src).map((p) => ({ start: p.start, ws: wordsAt(p.text).map((x) => ({ ...x, i: x.i + p.start, e: x.e + p.start })) })).filter((u) => u.ws.length);
   for (const d of declared) {
     const dw = wordsOf(d);
@@ -106,15 +122,18 @@ export function keepsWords(before, after, declared = []) {
 }
 
 /** The sentence-removing transforms, each held to keepsWords: a violation → its input back and the rule in form.unsafe; what it took out →
- *  form.drops [{ rule, removed }] (telemetry, capped; never the reader's — the raw draft is not otherwise kept). Same call shapes. */
-export function wordSafe(form, fns) {
+ *  form.drops [{ rule, removed }] (telemetry, capped; never the reader's — the raw draft is not otherwise kept). Same call shapes.
+ *  keep: rules whose output stands even so (noted in form.unsafe); a result marked { whole } replaced the reply by design. */
+export function wordSafe(form, fns, { keep = [] } = {}) {
   form.unsafe ??= []; form.drops ??= [];
   return Object.fromEntries(Object.entries(fns).map(([rule, fn]) => [rule, (text, ...a) => {
     const r = fn(text, ...a), out = typeof r === 'string' ? r : r?.text;
     if (typeof text !== 'string' || typeof out !== 'string' || out === text) return r;
+    if (r?.whole) { if (form.drops.length < 30) form.drops.push({ rule, removed: '(the whole reply)' }); return r; }   // a declared replacement
     const k = keepsWords(text, out, [...(r?.offers || []), ...(r?.cuts || [])]);   // cuts: a clause a transform names (lint.js butKeeps)
     if (!k.ok) {
       if (form.unsafe.length < 20) form.unsafe.push(rule);
+      if (keep.includes(rule)) return r;   // a removal that must stand (an unverified quotation never comes back): noted, kept
       if (typeof r === 'string') return text;
       const back = { ...r, text };
       if ('dropped' in r) back.dropped = 0;
