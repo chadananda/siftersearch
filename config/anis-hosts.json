@@ -1,0 +1,9 @@
+{
+  "_doc": "Anís host classification (worker/anis/index.js → indications.js hostTradition). A domain covers its subdomains. A host not listed is tradition-neutral (siftersearch.com is interfaith: never listed).",
+  "traditions": {
+    "oceanlibrary.com": "Bahá'í Faith",
+    "oceanoflights.org": "Bahá'í Faith",
+    "bahai-library.com": "Bahá'í Faith",
+    "bahai.org": "Bahá'í Faith"
+  }
+}

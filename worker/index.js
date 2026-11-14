@@ -161,6 +161,8 @@ export function createExports(manifest) {
         if (env.ANIS_EDGE === '1' && env.ANIS && url.pathname === '/api/chat/stream' && request.method === 'POST') return env.ANIS.fetch(request);
         // a reader's thumbs on a reply are stored at the edge (anis_feedback) whichever engine answered
         if (env.ANIS && url.pathname === '/api/chat/feedback' && request.method === 'POST') return env.ANIS.fetch(request);
+        // the reader's own indications bio (worker/anis/bio.js): see or erase it
+        if (env.ANIS && url.pathname === '/api/chat/bio' && ['GET', 'DELETE', 'OPTIONS'].includes(request.method)) return env.ANIS.fetch(request);
         // shared discussions live at the edge (anis_shared): preview, publish, read, unpublish — every method, preflight included
         if (env.ANIS && (url.pathname === '/api/chat/share' || url.pathname.startsWith('/api/chat/share/'))) return env.ANIS.fetch(request);
         // voice (worker/anis/voice.js): dictation/conversation transcripts and read-aloud audio come from the edge whichever engine answers

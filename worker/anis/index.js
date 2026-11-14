@@ -18,6 +18,9 @@ import { shareDraft, sharePublish, shareDelete, published, discussionPage, notFo
 import { CHANNELS, MODES, channelOfMode, greetByName, speakable } from '../../api/lib/assistant/channels.js';
 const formSources = (xs) => xs.map((x) => ({ title: x?.title, url: x?.url ?? x?.source_url ?? null, text: x?.text ?? null }));
 import snapshot from './agent-tools.json';
+import hosts from '../../config/anis-hosts.json';
+import { NOTE_INDICATION_TOOL, renderBio, traditionLine, hostTradition } from '../../api/lib/assistant/indications.js';
+import { readerOf, loadBio, noteIndication, bioRoute } from './bio.js';
 
 const HELD_IN_TURN = 0.75;
 const enc = new TextEncoder();
@@ -68,7 +71,8 @@ export const CACHED_TOOLS = new Set(['around', 'bookCard', 'extractFromWork', 'f
 const FRESH_MS = 3 * 864e5;
 // a tool whose answer's SHAPE changed gets a new key, so no copy stored before the change is ever served (11-14 replay: a sourceOf copy
 // from before passages carried their roles reached the writer — holders, citing works and a study, no source card)
-export const TOOL_SHAPE = { sourceOf: 'roles' };
+// roles2 (round 5): the source passage carries its own writer and place, and the tower no longer names a study quoting the Writings
+export const TOOL_SHAPE = { sourceOf: 'roles2' };
 export const toolKey = async (fn, args) => `tool/${fn}${TOOL_SHAPE[fn] ? `@${TOOL_SHAPE[fn]}` : ''}/${[...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(args ?? []))))]
   .map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 40)}`;
 
@@ -170,6 +174,10 @@ export async function chat(request, env, ctx, deps = {}) {
       const conversationId = String(body.conversationId || '').slice(0, 64) || crypto.randomUUID();
       const site = hostOf(request.headers.get('origin') || request.headers.get('referer'));
       const turn = { channel, site, chatbot_location: body.chatbot_location || null };
+      const round = messages.filter((m) => m.role === 'user').length;
+      // the reader's indications bio (bio.js): read beside the restatement; the TRADITION line (host config, then the bio) + the bio ride in the turn
+      const reader = readerOf(body, { trusted: !!deps.trusted, conversationId });
+      const bioP = loadBio(env, reader).catch((err) => { console.warn(`[anis] bio read failed: ${err?.message}`); return []; });
       const name = (typeof body.name === 'string' && body.name.trim().slice(0, 60)) || (body.widget_token ? await personaOf(env, body.widget_token, fetchFn) : null);
       const mission = typeof body.mission === 'string' ? body.mission.trim().slice(0, 400) : '';
       // chat keeps the agent's own lengths (AGENT_SYSTEM); every other mode adds its channel frame (a letter greets its reader by name)
@@ -186,6 +194,7 @@ export async function chat(request, env, ctx, deps = {}) {
           return hit && { status: hit.set.status, question: hit.set.question, similarity: hit.similarity, passages: hit.set.passages };
         },
         researchCapture: (q, ps) => { const p = capture(env, q, ps); ctx.waitUntil(p.catch(() => {})); return p; },
+        noteIndication: noteIndication(env, { reader, conversationId, round, ctx }),
       };
       // Haiku restates the message as the canonical standalone question (follow-ups resolved), then the research cache is looked up
       // with it and the result put in the turn (≥ HELD_IN_TURN; the agent judges below SAME_QUESTION) — saving the research_lookup
@@ -213,8 +222,10 @@ export async function chat(request, env, ctx, deps = {}) {
         } else if (canon) { researchQ = canon; held = { question: canon }; }
       }
       const { impl, stat } = remoteImpl(env, { turn, local, fetchFn, ctx });
+      const bioRows = await bioP, bio = renderBio(bioRows);
+      const readerNote = `${traditionLine({ host: site, tradition: hostTradition(site, hosts), rows: bioRows })}${bio ? `\n\n${bio}` : ''}`;
       const model = modelFor('anis-agent').model, create = metered(deps.create || nativeFetchCreate(env, model, fetchFn, body.trace ? trace : null), model, 'anis-agent-edge', tally);
-      const A = await agentAnswer({ messages, onEvent: emit, frame, tools: impl, toolDefs: snapshot.tools, runner: runnerFor(impl), held, links: (t, ps) => finishLinks(formPass(t, { sources: formSources(ps) }).text, [...ps, ...(held?.passages || [])]).text,
+      const A = await agentAnswer({ messages, onEvent: emit, frame, tools: impl, toolDefs: [...snapshot.tools, NOTE_INDICATION_TOOL], reader: readerNote, runner: runnerFor(impl), held, links: (t, ps) => finishLinks(formPass(t, { sources: formSources(ps) }).text, [...ps, ...(held?.passages || [])]).text,
         create: async (p) => { rounds++; const t = Date.now(), rec = [null, null]; roundMs.push(rec); const r = await create(p);
           if (!p.stream) { rec[0] = rec[1] = Date.now() - t; return r; }
           return (async function* () { for await (const c of r) { rec[0] ??= Date.now() - t; yield c; } rec[1] = Date.now() - t; })(); }, workNotes: (title) => impl.workNotes(title).catch(() => ({ work: null, notes: [] })) });
@@ -225,7 +236,7 @@ export async function chat(request, env, ctx, deps = {}) {
       emit({ type: 'stage', stage: 'craft' });
       // links finished here from the passages the turn holds (Chad 11-13: no tower round-trip but new research); follow-up pills meanwhile
       const fmodel = modelFor('anis-followups').model, fcreate = guarded(metered(deps.create || nativeFetchCreate(env, fmodel, fetchFn), fmodel, 'anis-followups-edge', tally), fmodel);
-      const pills = mode !== 'chat' ? null : followupsWith(async (msgs) => (await fcreate({ messages: msgs, max_tokens: 160, thinking: false })).choices[0].message, question, A.reply);
+      const pills = mode !== 'chat' ? null : followupsWith(async (msgs) => (await fcreate({ messages: msgs, max_tokens: 160, thinking: false })).choices[0].message, question, A.reply, { reader: bio });
       const pool = [...A.retrieved, ...(held?.passages || [])];
       const fin = finishLinks(A.reply, pool), reply = mode === 'audio' ? speakable(fin.text) : fin.text;
       const citations = A.citations.map((c) => ({ ...c, url: c.url ? finishLinks(c.url, pool).text : c.url }));
@@ -246,7 +257,6 @@ export async function chat(request, env, ctx, deps = {}) {
       if (!C.stream) out = { reply: mode === 'email' ? reply.replace(/<!-- widget:[^>]*-->\s*/g, '') : reply, mode, status: 'answered', triage: await triageP,
         retrieved: A.retrieved.length, format: 'agent', conversationId, citations: cites, widgets: A.widgets || [], timings };
       // persistence never on the critical path
-      const round = messages.filter((m) => m.role === 'user').length;
       ctx.waitUntil(Promise.all([
         saveTurn(env, { conversationId, round, role: 'user', content: question, site, channel }),
         saveTurn(env, { conversationId, round, role: 'assistant', content: reply, meta: { steps: A.steps.length, timings, similarity: sim }, site, channel }),
@@ -313,6 +323,7 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(request) });
     if (pathname === '/healthz') return json({ ok: true, service: 'anis' });
     if (pathname === '/api/chat/stream' && request.method === 'POST') return chat(request, env, ctx);
+    if (pathname === '/api/chat/bio' && ['GET', 'DELETE'].includes(request.method)) return bioRoute(request, env, { headers: cors(request) });   // the reader's own indications (bio.js)
     if (pathname === '/api/chat/feedback' && request.method === 'POST') return feedback(request, env, { headers: cors(request) });   // thumbs on a reply (feedback.js)
     if (pathname === '/api/chat/share' || pathname.startsWith('/api/chat/share/')) return shareRoute(request, env, ctx);   // shared discussions (share.js)
     if (pathname === '/api/chat/transcribe' && request.method === 'POST') return transcribeRoute(request, env, ctx, { headers: cors(request), log: usageLog(env) });   // voice (voice.js)

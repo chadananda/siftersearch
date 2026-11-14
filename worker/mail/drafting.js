@@ -69,7 +69,7 @@ async function tower(env, path, body) {
  *  (channels.js: a letter, a little longer than chat, cards as quotations, not streamed). → the draft result. */
 export async function edgeTurn(env, m, messages) {
   const res = await env.ANIS.fetch('https://anis/_anis/turn', { method: 'POST', headers: { 'content-type': 'application/json', 'x-internal-key': env.S1_KEY },
-    body: JSON.stringify({ mode: 'email', messages, reader_name: m.from_name || null, conversationId: `mail-${m.thread_key}`.slice(0, 64) }) });
+    body: JSON.stringify({ mode: 'email', messages, reader_name: m.from_name || null, reader_id: `mail:${await emailHash(m.from_addr)}`, conversationId: `mail-${m.thread_key}`.slice(0, 64) }) });
   if (!res.ok) throw new Error(`anis /_anis/turn ${res.status}`);
   return res.json();
 }

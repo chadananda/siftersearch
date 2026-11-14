@@ -336,6 +336,7 @@
   }
   async function startOver() {
     try { await fetch(`${api}/api/v1/companion`, { method: 'DELETE', credentials: 'include' }); } catch { /* local reset still happens */ }
+    try { await fetch(`${api}/api/chat/bio?reader=${encodeURIComponent(sid)}`, { method: 'DELETE' }); } catch { /* the bio stays keyed to a retired id */ }
     try { localStorage.removeItem(`sifter-chat-sid:${token}`); } catch { /* private mode */ }
     newConversation();
   }
@@ -514,7 +515,7 @@
         method: 'POST',
         credentials: 'include',   // the anonymous session cookie IS the visitor's companion identity
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ messages: history, widget_token: token, conversationId: activeId,
+        body: JSON.stringify({ messages: history, widget_token: token, conversationId: activeId, reader_id: sid,   // the device id: one indications bio per reader (worker/anis/bio.js)
           ...(name ? { name } : {}), ...(mission ? { mission } : {}),
           ...(cfg?.chatbotLocation ? { chatbot_location: cfg.chatbotLocation } : {}), ...(opts.mode ? { mode: opts.mode } : {}) }),
       });
