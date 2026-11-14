@@ -702,8 +702,8 @@
             {#if onetap !== 'hidden'}
               <div class="onetap" role="region" aria-label="Email research summaries">
                 {#if onetap === 'offer'}
-                  <p>Enjoying the research? Receive a <strong>detailed summary</strong> of your conversations by email.</p>
                   <div class="obtns">
+                    <p>Get a <strong>summary</strong> of your research by email</p>
                     <button class="oconnect" onclick={onetapConnect}>Connect with Google</button>
                     <button class="olater" onclick={onetapSnooze}>Not now</button>
                   </div>
@@ -751,6 +751,7 @@
     --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
     --gold: #c8a24b;
     --gold-soft: #e7d5a4;
+    --panel-bg: #f9f6f0;   /* solid panel colour: what a sticky strip sits on */
     --quote: #6b4a2b;   /* = global.css --quote / quote-style.js QUOTE_INK */
     --accent-deep: color-mix(in srgb, var(--accent) 72%, #14273a);
     --halo: color-mix(in srgb, var(--accent) 28%, transparent);
@@ -758,23 +759,23 @@
   .root.right { right: 20px; }
   .root.left { left: 20px; align-items: flex-start; }
 
-  /* One Tap invite card — quiet, gold-edged, in the reading column */
+  /* One Tap invite — a slim strip pinned to the bottom of the conversation, never a big card at the top (Chad 11-13) */
   .onetap {
-    margin: 14px 6px 4px; padding: 14px 16px;
-    border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--gold) 7%, transparent);
+    position: sticky; bottom: 0; margin-top: auto; z-index: 2;
+    padding: 6px 10px; border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
+    background: color-mix(in srgb, var(--gold) 8%, var(--panel-bg));
     animation: fadeup .45s ease both;
   }
-  .onetap p { margin: 0 0 10px; font-family: var(--serif); font-size: 14.5px; line-height: 1.45; }
+  .onetap p { margin: 0; flex: 1; min-width: 0; font-family: var(--serif); font-size: 13px; line-height: 1.3; }
   .onetap .odone { margin: 0; color: var(--gold); }
-  .obtns { display: flex; gap: 10px; align-items: center; }
+  .obtns { display: flex; gap: 8px; align-items: center; }
   .oconnect {
-    border: 0; border-radius: 999px; padding: 8px 16px; cursor: pointer;
-    background: var(--accent-deep); color: #fff; font-size: 13.5px; font-weight: 600;
+    border: 0; border-radius: 999px; padding: 4px 11px; cursor: pointer; white-space: nowrap;
+    background: var(--accent-deep); color: #fff; font-size: 12px; font-weight: 600;
   }
   .oconnect:hover { filter: brightness(1.12); }
-  .olater { border: 0; background: none; color: inherit; opacity: .6; cursor: pointer; font-size: 13px; }
+  .olater { border: 0; background: none; color: inherit; opacity: .6; cursor: pointer; font-size: 12px; white-space: nowrap; padding: 0 2px; }
   .olater:hover { opacity: .9; }
   .oframe { width: 100%; height: 120px; border: 0; display: block; background: transparent; }
   @keyframes fadeup { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -1079,7 +1080,7 @@
   /* ── Dark: deep ink, warm text, lifted links, same gold. ── */
   @media (prefers-color-scheme: dark) {
     .sample-list { background: #1e293b; color: #e2e8f0; }
-    .root { --quote: #dcc4a0; }
+    .root { --quote: #dcc4a0; --panel-bg: #11151a; }
     .panel { background: linear-gradient(178deg, #14181e, #0e1217); color: #e9e6dd; }
     .watermark { color: #b9c8dd; opacity: .045; }
     .msg.assistant .bubble { background: #1b212a; border-color: #2b3442; color: #e9e6dd; box-shadow: none; }
