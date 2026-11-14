@@ -199,22 +199,22 @@ export async function scoreStats() { const s = await scores.scoreStats(); return
 
 const FAULTS = ['yesNo', 'namedBook', 'any'];
 /** Random STATED legacy questions of one fault type (any = no filter, a control group) for hand scoring. Samples random content-id windows (primary-key range reads), filters in JS,
- *  until n found or MAX_TRIES windows read. rater '' / skipScored false = no skip-already-scored filter (the ops report). Dropped slots (q:'') never count; k = slot position. */
+ *  ONE question per window (a whole window = neighbouring paragraphs of one book, which made the sample one book), until n found or MAX_TRIES windows read. rater '' / skipScored false = no skip-already-scored filter (the ops report). Dropped slots (q:'') never count; k = slot position. */
 export async function sampleQuestions({ fault = 'yesNo', n = 20, rater = '', skipScored = true } = {}, deps = {}) {
   if (!FAULTS.includes(fault)) throw Object.assign(new Error(`fault must be one of ${FAULTS.join(', ')}`), { statusCode: 400, reason: 'bad fault' });
-  const want = Math.min(Math.max(Number(n) || 20, 1), 200), WIN = 60, MAX_TRIES = 120, rand = deps.rand || Math.random;
+  const want = Math.min(Math.max(Number(n) || 20, 1), 200), WIN = 60, MAX_TRIES = Math.max(120, want * 8), rand = deps.rand || Math.random;
   const window = deps.window || repo.hypSampleWindow, maxId = await (deps.maxId || (await import('../paragraphs-repo.js')).maxContentId)();
   const questionFault = deps.fault || (await import('../rag/enrich/retrieval.js')).questionFault;
   const seen = new Set(), out = [];
   for (let t = 0; t < MAX_TRIES && out.length < want && maxId > 0; t++) {
-    const rows = await window(1 + Math.floor(rand() * maxId), WIN), found = [];
+    const rows = await window(1 + Math.floor(rand() * maxId), WIN), found = [], cands = [];
     for (const r of rows) {
       const hits = repo.splitHyp(r.hyp_questions).stated.map((x, k) => ({ x, k, q: typeof x === 'string' ? x : x?.q ?? x?.question ?? '' })).filter((h) => String(h.q).trim());
-      const ok = hits.filter((h) => fault === 'any' || questionFault(h.q, r.d_title, { seeker: !!h.x?.seeker }) === fault);
-      if (!ok.length) continue;
-      const h = ok[Math.floor(rand() * ok.length)], key = `${r.id}|${h.k}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
+      for (const h of hits) if ((fault === 'any' || questionFault(h.q, r.d_title, { seeker: !!h.x?.seeker }) === fault) && !seen.has(`${r.id}|${h.k}`)) cands.push({ r, h });
+    }
+    if (cands.length) {
+      const { r, h } = cands[Math.floor(rand() * cands.length)];
+      seen.add(`${r.id}|${h.k}`);
       found.push({ paraId: r.id, docId: r.doc_id, k: h.k, question: String(h.q).trim(), fault, doc: { title: r.d_title ?? null, author: r.d_author ?? null, religion: r.d_religion ?? null },
         text: String(r.text || '').length > 600 ? String(r.text).slice(0, 600).replace(/\s+\S*$/, '') + '…' : String(r.text || ''),
         link: readerUrl({ doc_id: r.doc_id, slug: r.d_slug, religion: r.d_religion, collection: r.d_collection }, r.paragraph_index ?? null), myScore: null });
