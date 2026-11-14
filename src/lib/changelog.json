@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-14T13:08:53.721Z",
+  "generated": "2026-11-14T13:17:59.707Z",
   "entries": [
     {
       "hash": "29621af91",
@@ -741,13 +741,6 @@
       "date": "2026-11-01",
       "type": "Other",
       "description": "Anís round 9 state at laptop shutdown; citation source order (Chad 11-01)",
-      "scope": null
-    },
-    {
-      "hash": "521760474",
-      "date": "2026-10-31",
-      "type": "Other",
-      "description": "Anís wording battery → then simulated-conversation quality loop (Chad 10-31)",
       "scope": null
     }
   ],
@@ -1515,15 +1508,6 @@
         "date": "2026-11-01",
         "type": "Other",
         "description": "Anís round 9 state at laptop shutdown; citation source order (Chad 11-01)",
-        "scope": null
-      }
-    ],
-    "2026-10-31": [
-      {
-        "hash": "521760474",
-        "date": "2026-10-31",
-        "type": "Other",
-        "description": "Anís wording battery → then simulated-conversation quality loop (Chad 10-31)",
         "scope": null
       }
     ]
