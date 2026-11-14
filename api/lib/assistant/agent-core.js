@@ -5,7 +5,7 @@ import { workNotes as workNotesLookup, asPassage, SAME_QUESTION } from './tool-d
 import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
 import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence, contentAbsence, emptyInWork, conflictClaims, danglingOpens, askedSource, unappliedCorrection, dropSearchedNote, dropRebuildPreamble, fixCounts, wantsTable, dropSourceSpeculation, dropLinkDebris, duplicateRows, noteDuplicateRows, recapitalise, pointsAbove, dropAbovePointer, unlinkSiteRoots, rebuildsTable, isRebuildMeta } from './lint.js';
 import { DEPTH, hasDepth, dropDepth, dropOffers, deHead, liveDeHead, firstQuoted, leadSource, leadAsk, reorderQuotes } from './reply-form.js';
-import { sentencesOf } from './sentences.js';
+import { sentencesOf, wordSafe } from './sentences.js';
 import { ANIS_ORIGIN } from '../anis-links.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
@@ -35,6 +35,9 @@ const nudge = (n) => `You have run ${n} library search${n === 1 ? '' : 'es'}. Be
 /** The re-ask for a rebuilt table that lost, renumbered or merged rows (lint.js tableDrift). */
 export const driftAsk = (d) => `(note from the library, not the reader) Your table does not keep the rows of the latest table in this conversation.${d.missing.length ? ` Missing: ${d.missing.map((m) => `row ${m.n} (${m.name})`).join(', ')}.` : ''}${d.renamed.length ? ` Row number now names a different person: ${d.renamed.map((r) => `row ${r.n} was ${r.was}, now ${r.now}`).join('; ')}.` : ''}${d.added.length ? ` New row numbers: ${d.added.join(', ')}.` : ''}${d.moved.length ? ` Facts moved into another person's row: ${d.moved.map((m) => `row ${m.n} took row ${m.from}'s (${m.words.join(', ')})`).join('; ')}.` : ''} Write the whole table again: take the latest table row by row, keep every row and its number (1…N), apply only the reader's corrections and any new research to the row they concern — unless the reader asked to remove a row.`;
 /** A compile/revise/email turn's table vs the latest numbered table of the conversation (≥2 rows) → tableDrift, or null. */
+// THE SENTENCE-REMOVING TRANSFORMS, held per turn to the word rule (sentences.js wordSafe, Chad 11-14 "A.H."): whole sentences, a clause at its
+// own mark, or the offers named — any other cut → the piece unchanged, the rule in timings.form.unsafe; what went → form.drops
+const SENTENCE_DROPS = { dropCutOff, dropDanglingLeadIn, dropNarration, dropOffers, dropUncheckedDisclaimer, dropRebuildPreamble, dropSearchOffer, dropSourceSpeculation, deHead, recapitalise };
 export function rebuiltDrift(messages = [], final = '') {
   const prior = [...messages].reverse().find((m) => m.role === 'assistant' && numberedRows(m.content).length >= 2);
   if (!prior) return null;
@@ -405,7 +408,9 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   // the reply's form, for timings (worker/anis): never in the reader's text. heads = section heads turned into prose; lead/first = the
   // first draft's quotation order (leadSource) and its first quoted passage; rewritten = the one form rewrite ran (lead source only)
   // leadAfter = the order still wrong after the rewrite; reordered = code then moved whole quotation blocks (reorderQuotes)
-  const form = { heads: 0, lead: null, first: null, depth: false, offers: 0, rewritten: false, rewroteFor: null, leadAfter: null, reordered: false };
+  // unsafe = transforms whose cut broke the word rule (input kept); drops = [{ rule, removed }] what each took out (capped, telemetry only)
+  const form = { heads: 0, lead: null, first: null, depth: false, offers: 0, rewritten: false, rewroteFor: null, leadAfter: null, reordered: false, unsafe: [], drops: [] };
+  const { dropCutOff, dropDanglingLeadIn, dropNarration, dropOffers, dropUncheckedDisclaimer, dropRebuildPreamble, dropSearchOffer, dropSourceSpeculation, deHead, recapitalise } = wordSafe(form, SENTENCE_DROPS);
   const liveWidgets = [];
   const carded = new Set();   // passages already shown in a card this turn (widgets/templates.js: one card per passage)
   const heldNowAll = () => [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
@@ -628,7 +633,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
       // the form rewrite reordered the reply and left a paragraph opening on a pronoun with no one named before it ("There he names…") → keep the draft
       if (preForm && danglingOpens(final).length && !danglingOpens(preForm).length) final = preForm;
       // an answer that ends on a plan ("I'll check…") or is only narration is unfinished: once, the agent writes it from what it holds, with no tools
-      if (!replanned && (endsOnPlan(final) || (final.trim() && !dropNarration(final).text.trim()))) {
+      if (!replanned && (endsOnPlan(final) || (final.trim() && !SENTENCE_DROPS.dropNarration(final).text.trim()))) {
         replanned = true; capped = true; gate = false; streamed = false;   // the replay replaces anything shown
         msgs.push({ role: 'assistant', content: final }, { role: 'user', content: WRITE_NOW });
         const r2 = await readRound(create, { messages: msgs, max_tokens: maxTokens, thinking: false }, null);

@@ -7,6 +7,7 @@ import { citeLabel } from '../refs/place.js';
 import { readableTitle, cleanUrl } from './widgets/card-text.js';   // a file-name title reads as a title; a swallowed footnote arrow leaves the link (round 7e)
 import { foldVerbatim } from '../search/verbatim.js';
 import { encodeMarker } from '../ool-range.js';
+import { cutsAt } from './sentences.js';
 
 export { quoteSpans };
 
@@ -276,7 +277,15 @@ export function createSentenceGate(passages, emit, { asked = [] } = {}) {
       else if (c === '“') open = true;
       else if (c === '”') open = false;
       else if (!open && buf.startsWith('\n\n', i)) return i + 2;
-      else if (!open && /[.!?]/.test(c) && /\s/.test(buf[i + 1] || '')) return i + 2;
+      else if (!open && /[.!?]/.test(c) && /\s/.test(buf[i + 1] || '')) {
+        // A SENTENCE ENDS WHERE segment() SAYS (Chad 11-14 "A.H."): "1281 A.H. (1865)", "J. E. Esslemont", "vol. 2" run on; the next word decides
+        let j = i + 1;
+        while (buf[j] === ' ' || buf[j] === '\t') j++;
+        if (buf[i + 1] === '\n' || buf[j] === '\n') return i + 2;
+        if (j >= buf.length) return -1;
+        const ls = buf.lastIndexOf('\n', i) + 1;
+        if (cutsAt(buf.slice(ls, j + 1), j - ls)) return j;
+      }
     }
     return -1;
   };
