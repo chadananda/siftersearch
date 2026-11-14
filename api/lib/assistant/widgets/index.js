@@ -20,7 +20,8 @@ const pictured = (w) => ({ ...w,
   fromRefs: (refs, ctx, strings) => {
     const d = w.fromRefs(refs, ctx, strings);
     if (!d) return d;
-    const own = refs.map((r) => ctx?.found?.get(r)).filter(Boolean), subject = ctx?.subject || '';
+    const own = refs.map((r) => ctx?.found?.get(r)).filter(Boolean), s = ctx?.subject;
+    const subject = typeof s === 'string' ? s : [s?.text, ...(s?.names || [])].filter(Boolean).join(' ');   // agent-core's subj is { text, names, earlier }
     let img = imagesForPassages(own, { max: 1, subject })[0];
     if (!img && ctx?.found) {
       const words = own.map((p) => p.text || '').join(' ');

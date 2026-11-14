@@ -169,4 +169,28 @@ describe('live: the right plate or none', async () => {
     expect(WIDGETS.quote.fromRefs(['P3'], { found }).image).toBeUndefined();   // names the Báb, not Tabríz
     expect(WIDGETS.quote.fromRefs(['P2'], { found: new Map([['P2', bab.travellersNarrative]]) }).image).toBeUndefined();   // no plate in the turn
   });
+  it('live 955deda17: the Vaḥíd ¶350 card ("The S̱háh confidentially signified…") gets the subject\'s portrait, never a house by city', () => {
+    const p = card(live.shah2.passage);
+    expect(imagesFor({ doc: DB, para: p.paragraph_index, text: p.text }).map((x) => x.id)).not.toContain('db-192-house-of-mirza-ali');   // Shíráz alone binds nothing
+    // agent-core hands widgets its subj object { text, names, earlier }
+    const subject = { text: live.shah2.question, names: [], earlier: null };
+    const d = WIDGETS.scene.fromRefs(['P1'], { found: new Map([['P1', p]]), subject }, [live.shah2.scene.title, live.shah2.scene.line]);
+    expect(d.image.id).toBe('db-229-muhammad-shah');
+  });
+  it('the subject\'s portrait outranks a caption match; a named site still binds', () => {
+    const quddus = 'They came to the house of the father of Quddús in Bárfurúsh, where Quddús was living.';
+    const at = imageById('db-182-house-quddus');
+    expect(imagesFor({ doc: DB, para: at.para + 5, text: quddus })[0].id).toBe(at.id);
+    expect(imagesFor({ doc: DB, para: at.para + 5, text: quddus, subject: 'Who was Muḥammad Sháh?' })[0].id).toBe('db-229-muhammad-shah');
+    expect(imagesFor({ doc: DB, para: at.para + 5, text: 'He went to a house in Bárfurúsh.' })).toEqual([]);   // city + "house", no owner
+  });
+  it('the card markdown is a whole image link on the Anís host, which the own-site lint keeps', async () => {
+    const { citeLinks } = await import('../../api/lib/assistant/lint.js');
+    const md = imageMarkdown(cardImage(imageById('db-192-house-of-mirza-ali')));
+    expect(md).toMatch(/^\[!\[[^\]]+\]\(https:\/\/anis\.oceanlibrary\.com\/img\/[^)]+\)\]\(https:\/\/anis\.oceanlibrary\.com\/img\/[^)]+\)/);
+    expect(citeLinks(md, []).text).toBe(md);
+    expect(citeLinks(md, []).text).not.toMatch(/\[!(?!\[)/);
+    expect(imageMarkdown(null)).toBe('');
+  });
 });
+

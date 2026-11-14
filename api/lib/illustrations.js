@@ -3,7 +3,13 @@
 // for a passage — the plate facing its paragraph, then one whose caption names a person/place the passage names, then one of its chapter;
 // for a person, their portrait plate. Code picks, never the model; nothing fits → none. Pure (bundles in the Anís Worker). Deps: imagekit.
 import INDEX from '../../data/illustrations.json' with { type: 'json' };
-import { imgSet, svcFixed } from '../../src/lib/imagekit.js';
+import { imgSet as imgSetSs, svcFixed as svcFixedSs } from '../../src/lib/imagekit.js';
+import { ANIS_ORIGIN } from './anis-links.js';
+// Anís output names the Anís host, never siftersearch.com (its lint strips our own links — live 11-14: "[!Interior …]" with no url);
+// the Anís host serves /img/* through the same image Worker
+const onAnis = (u) => String(u).replace(/https:\/\/siftersearch\.com\/img\//g, `${ANIS_ORIGIN}/img/`);
+const imgSet = (...a) => { const r = imgSetSs(...a); return { ...r, src: onAnis(r.src), ...(r.srcset ? { srcset: onAnis(r.srcset) } : {}) }; };
+const svcFixed = (...a) => { const r = svcFixedSs(...a); return typeof r === 'string' ? onAnis(r) : { ...r, src: onAnis(r.src) }; };
 
 export const fold = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[‘’'ʼ`]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 
@@ -33,9 +39,35 @@ export const allImages = () => IMAGES;
 /**
  * 0–max pictures for a passage or a person: `{ doc, para, text }` (a passage), `{ person }` (a person id: their portrait plate first,
  * then the plates showing them), `{ place }` (a place name). Scored only on what the index records from captions:
- * in its chapter, the plate facing the paragraph or one whose caption names a person/place the passage names; else a portrait
- * of a person the passage (then `subject`, the question's subject) names. Nearness alone never picks a plate. Nothing fits → [].
+ * the plate facing the paragraph; the portrait of `subject` (the question's subject); a plate of its chapter whose caption names a
+ * person or a site (not a bare city) the passage names; a portrait of a person the passage names. Nothing fits → [].
  */
+// A city alone binds no plate (live 11-14: a passage naming Shíráz drew "Interior of Ḥájí Mírzá ‘Alí’s House in Shíráz"). A caption's
+// SITE does: its noun (house, square, fort, shrine…) with the name that makes it one place ("House of Quddús' Father" → house + quddus;
+// "Ḥájí Mírzá ‘Alí’s House" → house + haji mirza ali). The passage must name the noun and every name word.
+const SITE = /\b(house|houses|home|square|fort|fortress|shrine|mosque|masjid|prison|moat|gate|castle|barracks?|tomb|citadel|garden|bath|caravanserai|madrisih|village|mausoleum)\b/;
+const QUIET = new Set(['the', 'of', 'a', 'and', 'in', 'views', 'view', 'interior', 'exterior', 'ruins', 'original', 'courtyard', 'site', 'room', 'entrance', 'public', 'which', 'where', 'his', 'her', 'their', 'showing', 'x', 'to', 'ruined', 'father', 'fathers', 'near', 'on']);
+const siteOf = (caption) => {
+  const c = fold(caption), m = c.match(SITE);
+  if (!m) return null;
+  const before = c.slice(0, m.index).trim().split(' '), after = c.slice(m.index + m[0].length).trim().split(' ');
+  let names = [];
+  if (after[0] === 'of') for (const w of after.slice(1)) { if (['in', 'where', 'showing', 'x', 'near', 'on'].includes(w)) break; if (!QUIET.has(w)) names.push(w); }
+  else for (let i = before.length - 1; i >= 0 && !QUIET.has(before[i]) && before[i]; i--) names.unshift(before[i]);
+  names = names.slice(0, 4).map((w, i, all) => (i === all.length - 1 && after[0] !== 'of' && w.length > 3 && w.endsWith('s') ? w.slice(0, -1) : w));
+  return names.length ? { noun: m[1].replace(/s$/, ''), names } : null;
+};
+export const siteOfPlate = (id) => SITES.get(id) ?? null;
+const SITES = new Map(IMAGES.map((x) => [x.id, siteOf(x.caption)]));
+const namesSite = (x, hay) => { const st = SITES.get(x.id); return !!st && hay.includes(st.noun) && st.names.every((w) => has(hay, w)); };
+// portraits of the persons named in `words`, first named first
+const portraitsIn = (words) => {
+  if (!words) return [];
+  const at = (x) => Math.min(...x.people.flatMap((p) => (p.keys || []).map((k) => ` ${words} `.indexOf(` ${k} `)).filter((i) => i >= 0)), 1e9);
+  return IMAGES.filter((x) => x.kind === 'portrait' && !x.plate_of).map((x) => ({ x, i: at(x) })).filter((y) => y.i < 1e9)
+    .sort((a, b) => a.i - b.i || a.x.people.length - b.x.people.length).map((y) => y.x);
+};
+
 export function imagesFor({ doc = null, para = null, person = null, place = null, text = '', subject = '' } = {}, { max = 2 } = {}) {
   if (person != null) { const pid = Number(person);
     return IMAGES.filter((x) => x.people.some((p) => p.id === pid)).sort((a, b) => (b.kind === 'portrait') - (a.kind === 'portrait') || a.people.length - b.people.length).slice(0, max); }
@@ -44,25 +76,23 @@ export function imagesFor({ doc = null, para = null, person = null, place = null
   const chapter = chapterOf(doc, para);
   if (chapter == null) return [];
   const main = !!INDEX.docs?.[doc], hay = fold(text);
-  const placesIn = new Set(PLACES.filter((p) => p.keys.some((k) => has(hay, k))).map((p) => p.name));
-  // 1-2. a plate of this chapter that faces the paragraph, or whose caption names a person/place the passage names; nearness only breaks ties
-  const fit = IMAGES.filter((x) => x.chapter === chapter).map((x) => {
+  const inChapter = IMAGES.filter((x) => x.chapter === chapter);
+  // 1. the plate facing the paragraph
+  const facing = main && para != null ? inChapter.filter((x) => x.para === para) : [];
+  if (facing.length) return facing.slice(0, max);
+  // 2. the portrait of the question's subject outranks any caption match ("Who was Muḥammad Sháh?" → his portrait on every card)
+  const subj = portraitsIn(fold(subject))[0];
+  if (subj) return [subj];
+  // 3. a plate of this chapter whose caption names a person, or a site, the passage names; nearness only breaks ties
+  const fit = inChapter.map((x) => {
     let s = 0;
-    if (main && para != null && x.para === para) s += 6;
     for (const p of x.people) if (p.keys?.some((k) => has(hay, k))) s += 4;
-    for (const p of x.places) if (placesIn.has(p)) s += 3;
+    if (namesSite(x, hay)) s += 3;
     return { x, s, near: main && para != null && x.para != null ? Math.abs(x.para - para) : 1e9 };
   }).filter((y) => y.s > 0).sort((a, b) => b.s - a.s || a.near - b.near).map((y) => y.x);
   if (fit.length) return fit.slice(0, max);
-  // 3. a portrait of a person the passage names (first named first), else of the question's subject. Never a bare same-chapter plate:
-  // no picture is better than a wrong one (live 11-14: the Vaḥíd passage drew "the House of Quddús' Father").
-  for (const words of [hay, fold(subject)]) {
-    if (!words) continue;
-    const at = (x) => Math.min(...x.people.flatMap((p) => (p.keys || []).map((k) => ` ${words} `.indexOf(` ${k} `)).filter((i) => i >= 0)), 1e9);
-    const shown = IMAGES.filter((x) => x.kind === 'portrait' && !x.plate_of).map((x) => ({ x, i: at(x) })).filter((y) => y.i < 1e9);
-    if (shown.length) return shown.sort((a, b) => a.i - b.i || a.x.people.length - b.x.people.length).map((y) => y.x).slice(0, 1);
-  }
-  return [];
+  // 4. a portrait of a person the passage names. Never a bare same-chapter plate or a city alone: no picture beats a wrong one.
+  return portraitsIn(hay).slice(0, 1);
 }
 
 export function imagesForPassages(passages = [], { max = 2, subject = '' } = {}) {
