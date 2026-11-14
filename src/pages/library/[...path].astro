@@ -14,6 +14,8 @@ import CollectionPage from '../../components/library/CollectionPage.svelte';
 import DocumentPresentation from '../../components/library/DocumentPresentation.svelte';
 import { coverImg } from '../../lib/library-stacks.js';
 import { slugifyPath } from '../../../api/lib/slug.js';
+import { docHome } from '../../../api/lib/library/doc-home.js';
+import { docPageUrl } from '../../../api/lib/library/doc-slug.js';
 
 // Disable prerendering - these pages fetch data client-side
 export const prerender = false;
@@ -59,6 +61,18 @@ if (segments.length === 3) {
     else if (res.ok) {
       const data = await res.json();
       doc = data?.document || null;
+      // Chad 11-14: a document's public page is a collaborator's (when one holds it) or its Anís /doc page, never this reader.
+      // `?reader` keeps the reader (staff editing). by-path carries no source_url/metadata, so the full row decides; if that
+      // read fails, /doc decides (it sends a collaborator-held text on, one hop later).
+      if (doc && !Astro.url.searchParams.has('reader')) {
+        let home = null;
+        try {
+          const r = await fetch(`${API_BASE}/api/library/documents/${doc.id}?includeParagraphs=false`, { signal: AbortSignal.timeout(3000) });
+          if (r.ok) home = docHome({ ...(await r.json())?.document, id: doc.id });
+        } catch { /* /doc decides */ }
+        home ||= docPageUrl(doc);
+        if (home) return Astro.redirect(home, 301);
+      }
       if (doc) {
         // slim props: null fields dropped (the reader treats missing and null alike)
         const slim = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined));
