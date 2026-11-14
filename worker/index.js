@@ -21,7 +21,7 @@ import { shortLink, shortHost, SHORT_PATH, SHORT_HOST } from './short-links.js';
 import { anisAppRoute, sitemapXml } from './anis-app.js';
 import { DISCUSSION_PATH } from './anis/share.js';
 import { DISCUSS_PATH, DISCUSS_API, DIALOGUE_PATH, discussUrl, discussTurns, discussSitemapUrls } from './anis/discuss.js';
-import { DOC_PATH, docResponse, docSitemapUrls } from './anis/doc-pages.js';
+import { DOC_PATH, docSitemapUrls } from './anis/doc-pages.js';
 import { BIOGRAPHY_PATH, bioSitemapUrls } from './anis/people.js';
 import { MEDIA_PATH, mediaSitemapUrls } from './anis/talks.js';
 import { astroPath, anisResponse, ANIS_ORIGIN } from '../src/lib/anis-host.js';
@@ -38,7 +38,7 @@ installFetchCache();
 const WARM_API = ['/api/media/index', '/api/media/progress', '/api/media/progress/live', '/api/speakers', '/api/v1/pages', '/api/library/landing', '/api/library/shelves'];
 const WARM_PAGES = ['/', '/library', '/docs', '/research', '/about', '/sitemap-library.xml'];
 const WARM_TALKS = 24;
-const WARM_ANIS = ['/media', '/bio', '/discuss'];   // siftersearch's designed pages on the Anís host (its own cache keys)
+const WARM_ANIS = ['/media', '/bio', '/discuss', '/doc'];   // siftersearch's designed pages on the Anís host (its own cache keys)
 
 // x-sifter-origin-test: down | slow=<ms> — simulate an unreachable / slow tower for THIS request (internal key only).
 const originTest = (request, env) => {
@@ -134,21 +134,13 @@ export function createExports(manifest) {
       async fetch(request, env, ctx) {
         const url = new URL(request.url);
         if (url.hostname === SHORT_HOST) {   // anis.oceanlibrary.com: Anís as an installable app at the root (worker/anis-app.js)
-          // siftersearch's designed pages, rendered for this host (src/lib/anis-host.js ASTRO_SECTIONS: /media/**, /bio[/<slug>], /discuss[/<slug>]); keys in the Anís namespace
+          // siftersearch's designed pages, rendered for this host (src/lib/anis-host.js ASTRO_SECTIONS: /media/**, /bio[/<slug>], /discuss[/<slug>], /doc/**); keys in the Anís namespace
           const ap = ['GET', 'HEAD'].includes(request.method) && astroPath(url.pathname);
           if (ap) {
             const test = originTest(request, env), st = { env, ctx, tainted: false, test };
             const policy = policyFor(url, request.method, policyHeaders(request, test));
             const produce = anisProducer(url, ap, env, ctx);
             return als.run(st, () => (policy.mode === 'cache' ? serveCached({ key: anisCacheKey(url, policy.kind, BUILD_VERSION), policy, env, ctx, produce }) : produce().then((r) => r.res)));
-          }
-          // unique library texts (worker/anis/doc-pages.js): /doc, /doc/books|tablets[/<n>], /doc/<slug>, edge-cached the same way
-          const xm = ['GET', 'HEAD'].includes(request.method) && DOC_PATH.exec(url.pathname);
-          if (xm) {
-            const test = originTest(request, env), st = { env, ctx, tainted: false, test };
-            const policy = policyFor(url, request.method, policyHeaders(request, test));
-            const produce = () => docResponse(xm, { api: API_ORIGIN });
-            return als.run(st, () => (policy.mode === 'cache' ? serveCached({ key: cacheKey(url, policy.kind, BUILD_VERSION), policy, env, ctx, produce }) : produce().then((r) => r.res)));
           }
           if (url.pathname === '/anis-sitemap.xml' && request.method === 'GET') {   // the app root + every published discussion, /doc text, biography and talk
             const urls = await als.run({ env, ctx, tainted: false, test: null }, async () => (await Promise.all([discussSitemapUrls, docSitemapUrls, bioSitemapUrls, mediaSitemapUrls].map((f) => f({ api: API_ORIGIN })))).flat());

@@ -1,10 +1,10 @@
 // anis.oceanlibrary.com/doc: slug → page (301 to canonical, 404 unknown), the copyright ceiling, the side-by-side view, index + sitemap.
 import { describe, it, expect } from 'vitest';
-import { DOC_PATH, docResponse, docSitemapUrls, PAGE_SIZE, TEXT_PAGE } from '../../worker/anis/doc-pages.js';
+import { readFileSync } from 'node:fs';
+import { DOC_PATH, docView, docSitemapUrls, PAGE_SIZE, TEXT_PAGE } from '../../worker/anis/doc-pages.js';
 import { PREVIEW_PARAGRAPHS } from '../../api/lib/rights/preview.js';
-import { THEME_PREP } from '../../worker/anis/content-widget.js';
-
-const noWidget = (h) => h.replace(THEME_PREP, '').replace(/<script>window\.anisPage=[\s\S]*?<\/script><script>[\s\S]*?<\/script>/, '');
+import { astroPath } from '../../src/lib/anis-host.js';
+const PAGE = readFileSync(new URL('../../src/pages/doc/[...path].astro', import.meta.url), 'utf8');
 
 const API = 'https://api.test';
 const BOOK = { id: '8632', title: 'Gate of the Heart', author: 'Nader Saiedi', collection: "Baha'i Books", language: 'en', encumbered: 1,
@@ -39,8 +39,8 @@ function fake({ bookParas = 40, sbs = SBS, catalogue = CAT } = {}) {
   return { calls, fetchFn };
 }
 const get = async (path, f = fake()) => {
-  const r = await docResponse(DOC_PATH.exec(path), { api: API, fetchFn: f.fetchFn });
-  return { ...r, status: r.res.status, html: r.res.status === 301 ? '' : await r.res.text(), location: r.res.headers.get('location') };
+  const r = await docView(DOC_PATH.exec(path), { api: API, fetchFn: f.fetchFn });
+  return { ...r, html: r.view?.body || '' };
 };
 
 describe('routing and slugs', () => {
@@ -64,8 +64,7 @@ describe('routing and slugs', () => {
     for (const p of ['/doc/no-such-text-999', '/doc/no-id-here', '/doc/plain-book-77/4']) {
       const r = await get(p);
       expect(r.status, p).toBe(404);
-      expect(r.html).toContain('<meta name="robots" content="noindex">');
-      expect(r.html).not.toContain('rel="canonical"');
+      expect(r.view.noindex).toBe(true);
     }
   });
 });
@@ -85,12 +84,11 @@ describe('copyrighted book: the opening only', () => {
     expect(f.calls.some((u) => u.includes('/sbs'))).toBe(false);
     expect(r.html).toContain('href="https://example.com/buy"');
     expect(r.html).toContain('Wilfrid Laurier University Press');
-    expect(r.html).toContain('<link rel="canonical" href="https://anis.oceanlibrary.com/doc/gate-of-the-heart-nader-saiedi-8632">');
-    const ld = JSON.parse(/<script type="application\/ld\+json">(.*?)<\/script>/.exec(r.html)[1]);
-    expect(ld).toMatchObject({ '@type': 'Book', name: 'Gate of the Heart', author: { name: 'Nader Saiedi' }, isAccessibleForFree: false });
+    expect(r.view.url).toBe('https://anis.oceanlibrary.com/doc/gate-of-the-heart-nader-saiedi-8632');
+    expect(r.view.ld).toMatchObject({ '@type': 'Book', name: 'Gate of the Heart', author: { name: 'Nader Saiedi' }, isAccessibleForFree: false });
     expect(r.html).toMatch(/href="\/\?ask=[^"]*Gate%20of%20the%20Heart[^"]*" data-anis-ask=/);
-    expect(r.html).toMatch(/window\.anisPage=\{"type":"text","slug":"gate-of-the-heart[^"]*-8632","title":"Gate of the Heart/);
-    expect(noWidget(r.html)).not.toMatch(/siftersearch/i);
+    expect(r.view.text).toMatchObject({ type: 'text', slug: 'gate-of-the-heart-nader-saiedi-8632', title: 'Gate of the Heart' });
+    expect(r.html).not.toMatch(/siftersearch/i);
   });
 });
 
@@ -111,12 +109,12 @@ describe('link policy: collaborators first, else the text here', () => {
     expect((r1.html.match(/<p id="p\d+">/g) || []).length).toBe(TEXT_PAGE);
     expect(r1.html).toContain('<p id="p0">Paragraph number 1.</p>');
     expect(r1.html).toContain('href="/doc/plain-book-77/2" rel="next"');
-    expect(r3.html).toContain('<link rel="canonical" href="https://anis.oceanlibrary.com/doc/plain-book-77/3">');
+    expect(r3.view.url).toBe('https://anis.oceanlibrary.com/doc/plain-book-77/3');
     expect(r3.html).toContain('<p id="p400">Paragraph number 401.</p>');
     expect(r3.html).not.toContain('rel="next"');
     expect((await get('/doc/plain-book-77/1')).location).toBe('https://anis.oceanlibrary.com/doc/plain-book-77');
     expect((await get('/doc/77/2')).location).toBe('https://anis.oceanlibrary.com/doc/plain-book-77/2');
-    expect(noWidget(r1.html)).not.toMatch(/siftersearch/i);
+    expect(r1.html).not.toMatch(/siftersearch/i);
   });
   it('a copyrighted book has no page 2', async () => {
     expect((await get('/doc/gate-of-the-heart-nader-saiedi-8632/2')).status).toBe(404);
@@ -132,11 +130,10 @@ describe('original beside the English', () => {
     expect(r.html).toContain('<p class="o" lang="ar" dir="rtl">سبحانك اللّهمّ</p><p class="t" lang="en">Glorified art Thou, O my God!</p>');
     expect((r.html.match(/class="row" tabindex="0"/g) || []).length).toBe(2);
     expect(r.html).toContain('<h2 lang="ar" dir="rtl">هو</h2>');
-    expect(r.html).toMatch(/\.row:hover,\.row:focus\{/);
-    expect(r.html).toMatch(/@media \(max-width:760px\)\{\.row,\.cols\{grid-template-columns:1fr\}/);
+    expect(r.view.wide).toBe(true);
     expect(r.html).toContain('href="https://oceanoflights.org/bab-ahmad/"');
-    expect(JSON.parse(/<script type="application\/ld\+json">(.*?)<\/script>/.exec(r.html)[1])).toMatchObject({ '@type': 'CreativeWork', inLanguage: ['ar', 'en'], translator: { name: 'Shoghi Effendi' } });
-    expect(noWidget(r.html)).not.toMatch(/siftersearch/i);
+    expect(r.view.ld).toMatchObject({ '@type': 'CreativeWork', inLanguage: ['ar', 'en'], translator: { name: 'Shoghi Effendi' } });
+    expect(r.html).not.toMatch(/siftersearch/i);
   });
 });
 
@@ -154,7 +151,8 @@ describe('index, lists, sitemap', () => {
   });
   it('no catalogue yet → 503 tainted (never cached as an empty index)', async () => {
     const r = await get('/doc', fake({ catalogue: null }));
-    expect(r.status).toBe(503); expect(r.tainted).toBe(true);
+    expect(r.status).toBe(503);
+    expect(PAGE).toMatch(/r\.status === 503\) return new Response\([^)]*\{ status: 503/);   // a non-200 is never cached
   });
   it('sitemap: index, list pages, every text', async () => {
     const urls = await docSitemapUrls({ api: API, fetchFn: fake().fetchFn });
@@ -182,9 +180,34 @@ describe('edge cache', async () => {
     const { readFileSync } = await import('fs');
     const { join } = await import('path');
     const src = readFileSync(join(import.meta.dirname, '../../worker/index.js'), 'utf8');
-    expect(src).toMatch(/DOC_PATH\.exec\(url\.pathname\)/);
+    expect(astroPath('/doc')).toBe('/doc');
+    expect(astroPath('/doc/tablets/2')).toBe('/doc/tablets/2');
+    expect(src).not.toMatch(/docResponse/);
     expect(src).toMatch(/docSitemapUrls[,\]]/);
     expect(src).toMatch(/DOC_PATH\.test\(url\.pathname\)\) return Response\.redirect/);
     expect(readFileSync(join(import.meta.dirname, '../../worker/anis-app.js'), 'utf8')).toContain('(api|widget|d|discuss|doc|bio|media)');
+  });
+});
+
+describe('the page around the text: Anís chrome, the library reader look', () => {
+  it('one canonical from the view, the widget with the text as its context, Anís header, JSON-LD in the head', () => {
+    expect(PAGE).toMatch(/<Layout [^>]*canonical=\{v\.url\}[^>]*noindex=\{!!v\.noindex\}[^>]*anisPage=\{v\.text/);
+    expect(PAGE).not.toMatch(/rel="canonical"/);
+    expect(PAGE).toContain('<SiteNav currentPage="doc" />');
+    expect(PAGE).toMatch(/type="application\/ld\+json" slot="head"/);
+  });
+  it('the reader card: Libre Caslon on paper, light and dark through light-dark()', () => {
+    expect(PAGE).toMatch(/--paper: light-dark\(#faf8f3, var\(--surface-1\)\)/);
+    expect(PAGE).toMatch(/\.reader \{[^}]*'Libre Caslon Text'/);
+    expect(PAGE).toMatch(/\.row:hover, \.doc-page \.row:focus/);
+  });
+  it('never siftersearch.com; only the Anís host renders it', () => {
+    const rendered = PAGE.split('\n').filter((l) => !/^\/\/|^const API = /.test(l)).join('\n');   // comments and the server-side API origin never render
+    expect(rendered).not.toMatch(/siftersearch/i);
+    expect(PAGE).toMatch(/if \(!isAnisHost\(Astro\.url\)\) return Response\.redirect/);
+  });
+  it('the generic page shell is gone from doc-pages.js', () => {
+    const src = readFileSync(new URL('../../worker/anis/doc-pages.js', import.meta.url), 'utf8');
+    expect(src).not.toMatch(/<!doctype|<body>|widgetEmbed|\bTOP\b|<style>/i);
   });
 });

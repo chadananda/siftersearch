@@ -11,7 +11,8 @@ describe('anis-host', () => {
   it('maps paths both ways', () => {
     expect(astroPath('/bio/the-bab', ['bio'])).toBe('/biography/the-bab');
     expect(astroPath('/discuss/x-y', ['discuss'])).toBe('/dialogue/x-y');
-    expect(astroPath('/doc/1')).toBe(null);
+    expect(astroPath('/doc/1')).toBe('/doc/1');
+    expect(astroPath('/d/x-y')).toBe(null);
     expect(anisPath('/biography/the-bab')).toBe('/bio/the-bab');
     expect(anisPath('/dialogue')).toBe('/discuss');
     expect(anisPath('/biographyx')).toBe('/biographyx');

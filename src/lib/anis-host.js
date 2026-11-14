@@ -11,10 +11,11 @@ export const isAnisHost = (url) => {
   try { return new URL(url).hostname === ANIS_HOST; } catch { return false; }
 };
 
-// the sections whose designed Astro pages render on the Anís host (/doc still uses worker/anis/doc-pages.js)
-export const ASTRO_SECTIONS = ['media', 'bio', 'discuss'];
+// the sections whose Astro pages render on the Anís host (/doc: src/pages/doc, Anís-only, decided by worker/anis/doc-pages.js)
+export const ASTRO_SECTIONS = ['media', 'bio', 'discuss', 'doc'];
 const ASTRO_ROUTE = { media: [/^\/media(\/.*)?$/, (p) => p], bio: [/^\/bio(\/[^/]+)?\/?$/, (p) => p.replace(/^\/bio/, '/biography')],
-  discuss: [/^\/discuss(\/(?!assessment\/?$)[a-z0-9][a-z0-9-]{0,160})?\/?$/, (p) => p.replace(/^\/discuss/, '/dialogue')] };
+  discuss: [/^\/discuss(\/(?!assessment\/?$)[a-z0-9][a-z0-9-]{0,160})?\/?$/, (p) => p.replace(/^\/discuss/, '/dialogue')],
+  doc: [/^\/doc(\/.*)?$/, (p) => p] };
 
 /** An Anís-host path → the Astro route that renders it there, or null. */
 export function astroPath(p, sections = ASTRO_SECTIONS) {

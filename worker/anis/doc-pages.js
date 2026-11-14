@@ -3,10 +3,10 @@
 // tablet shows its Persian/Arabic beside the English, row by row (/api/library/documents/:id/sbs?cached=true: stored
 // alignments only, so a crawler never buys one). Index /doc (+ /doc/books, /doc/tablets[/<page>]) from the reports-built
 // catalogue (GET /api/library/doc-pages). Any other text: a collaborator that holds it gets a 301 (link policy, doc-home.js), else
-// its public text renders here, TEXT_PAGE paragraphs a page (/doc/<slug>/<n>). Look and head: share.js. Edge-cached by the site
-// Worker; producer contract {res, tainted}.
-import { esc, plain, head, TOP, titleFrom, ORIGIN } from './share.js';
-import { widgetEmbed, askLink } from './content-widget.js';
+// its public text renders here, TEXT_PAGE paragraphs a page (/doc/<slug>/<n>). This module decides and builds the article;
+// the page around it (Anís chrome, head, the library reader's look) is src/pages/doc/[...path].astro, edge-cached like /media.
+import { esc, plain, titleFrom, ORIGIN } from './share.js';
+import { askLink } from './content-widget.js';
 import { PREVIEW_PARAGRAPHS } from '../../api/lib/rights/preview.js';
 import { docPageSlug, docIdFromSlug } from '../../api/lib/library/doc-slug.js';
 import { oceanoflightsUrl, inventoryUrl } from '../../api/lib/source-links.js';
@@ -28,53 +28,8 @@ const SITES = [[/oceanlibrary\.com/, 'The English in the Ocean Library'], [/ocea
 const siteLabel = (u) => SITES.find(([re]) => re.test(u))?.[1] || 'Its source';
 const md = (s) => esc(String(s || '').replace(/<!--[\s\S]*?-->/g, '')).replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>').replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
 
-const CSS = `main.wide{max-width:72rem}
-.crumb{margin:0 0 10px;font:14px/1.4 var(--sans)}.crumb a{display:inline-flex;align-items:center;min-height:48px}
-.links{margin:18px 0 0;padding:0;list-style:none;font:15px/1.5 var(--sans)}.links li{margin:6px 0}
-.text{margin:8px 0 0}.text p{margin:0 0 1em}.text h2{margin:1.6em 0 .5em;font:600 21px/1.35 var(--serif)}
-.ends{margin:28px 0 0;padding:18px 22px;border:1px solid var(--line);border-left:2px solid var(--gold);border-radius:4px 12px 12px 4px;background:var(--card)}
-.ends p{margin:0 0 .6em}.ends p:last-child{margin:0}
-.sbs{margin:18px 0 0}
-.par{margin:0;padding:10px 0;border-top:1px solid var(--line)}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:6px 36px;margin:0 -10px;padding:6px 10px;border-radius:8px;outline:0}
-.row:hover,.row:focus{background:var(--card);box-shadow:inset 2px 0 0 var(--gold)}
-.row p{margin:0}.row .o{order:2}.row .t{order:1}
-.o[dir=rtl]{font:21px/1.95 'Noto Naskh Arabic','Amiri','Scheherazade New','Geeza Pro','Traditional Arabic','Times New Roman',serif;text-align:right}
-.par h2{margin:.6em 0 .2em;font:600 20px/1.5 var(--serif)}.par h2[dir=rtl]{font-family:'Noto Naskh Arabic','Amiri','Geeza Pro',serif;text-align:right}
-.n{font:12px/1 var(--sans);color:var(--muted);margin:0 0 4px}
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:36px;margin:24px 0 0;font:600 12px/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-.cols .oh{order:2;text-align:right}
-@media (max-width:760px){.row,.cols{grid-template-columns:1fr}.row .o,.row .t{order:0}.cols{display:none}.row .t{color:var(--muted)}}
-.list{list-style:none;margin:20px 0 0;padding:0}
-.list li{padding:14px 0;border-top:1px solid var(--line)}
-.list h3{margin:0;font:600 19px/1.35 var(--serif)}.list h3 a{color:var(--ink);text-decoration:none}.list h3 a:hover{text-decoration:underline}
-.list p{margin:4px 0 0;font:14px/1.4 var(--sans);color:var(--muted)}
-.sec{margin:44px 0 0}.sec h2{margin:0;font:600 24px/1.3 var(--serif)}.sec .more{display:inline-flex;align-items:center;min-height:48px;font:15px/1 var(--sans)}
-.pager{display:flex;gap:18px;margin:24px 0 0;font:15px/1 var(--sans)}.pager a{display:inline-flex;align-items:center;min-height:48px}`;
-const FOOT = `<footer><div class="wrap"><p>A text from the Ocean library, presented by Anís, the Ocean AI Research Assistant of Ocean 2.0.</p><p>Books under copyright show their opening pages only. Read more in the <a href="https://oceanlibrary.com/">Ocean Library</a>.</p></div></footer>`;
-const og = (o) => `<meta property="og:type" content="${o.type}">
-<meta property="og:site_name" content="Ocean 2.0">
-<meta property="og:title" content="${esc(o.title)}">
-<meta property="og:description" content="${esc(o.description)}">
-<meta property="og:url" content="${o.url}">
-<meta property="og:image" content="${ORIGIN}/anis-app/og-1200x630.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="${esc(o.title)}">
-<meta name="twitter:description" content="${esc(o.description)}">
-${o.ld ? `<script type="application/ld+json">${JSON.stringify(o.ld).replace(/</g, '\\u003c')}</script>\n` : ''}<style>${CSS}</style>
-`;
-const page = (o, main) => `${head({ title: o.title, description: o.description, canonical: o.url, extra: og(o) })}
-<body>
-${TOP}
-<main class="wrap${o.wide ? ' wide' : ''}">
-${main}
-</main>
-${FOOT}
-${widgetEmbed(o.text)}
-</body>
-</html>`;
+// a page's head facts and its article; the Astro page renders the rest
+const page = (o, body) => ({ ...o, body });
 const person = (name) => (name ? { '@type': 'Person', name } : undefined);
 const byline = (d) => [d.author, d.collection].filter(Boolean).map(esc).join(' · ');
 const pid = (p) => (Number.isInteger(p.paragraph_index) ? ` id="p${p.paragraph_index}"` : '');
@@ -202,14 +157,13 @@ export function docListPage(cat, kind, n = 1) {
 ${pages > 1 ? `<nav class="pager" aria-label="Pages">${n > 1 ? `<a href="${at(n - 1)}" rel="prev">Previous</a>` : ''}<span class="meta">Page ${n} of ${pages}</span>${n < pages ? `<a href="${at(n + 1)}" rel="next">Next</a>` : ''}</nav>` : ''}`);
 }
 
-export const docNotFound = () => page({ type: 'website', title: 'Text not found — Anís', description: 'This text is not available.', url: `${ORIGIN}/doc` },
+export const docNotFound = () => page({ type: 'website', title: 'Text not found — Anís', description: 'This text is not available.', url: `${ORIGIN}/doc`, noindex: true },
   `<p class="kicker">Not found</p><h1>This text is not available</h1><p class="summary">It may have been moved or withdrawn.</p>
-<aside class="cta" aria-label="Browse"><a class="btn" href="/doc">See all texts</a></aside>`).replace(/<link rel="canonical"[^>]*>/, '<meta name="robots" content="noindex">');
+<aside class="cta" aria-label="Browse"><a class="btn" href="/doc">See all texts</a></aside>`);
 
-const HTML = { 'content-type': 'text/html; charset=utf-8', 'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin' };
-const ok = (html) => ({ res: new Response(html, { status: 200, headers: { ...HTML, 'cache-control': 'public, max-age=300' } }), tainted: false });
-const notFound = () => ({ res: new Response(docNotFound(), { status: 404, headers: { ...HTML, 'cache-control': 'no-store' } }), tainted: false });
-const movedTo = (location) => ({ res: new Response(null, { status: 301, headers: { location, 'cache-control': 'public, max-age=3600' } }), tainted: false });
+const ok = (view) => ({ status: 200, view });
+const notFound = () => ({ status: 404, view: docNotFound() });
+const movedTo = (location) => ({ status: 301, location });
 const moved = (path) => movedTo(ORIGIN + path);
 const read = async (fetchFn, path) => {
   const r = await fetchFn(path, { headers: { accept: 'application/json' } });   // anonymous: the public window, never a staff read
@@ -220,11 +174,12 @@ const read = async (fetchFn, path) => {
 const catalogue = async (api, fetchFn) => { const { data } = await read(fetchFn, `${api}/api/library/doc-pages`); if (!data) throw new Error("no catalogue"); return data; };
 const hasEnglish = (sbs) => (sbs?.paragraphs || []).some((p) => p.rows?.some((r) => r.t && r.o));
 
-/** GET /doc[/books|/tablets[/<n>]|/<slug>] → { res, tainted }. `m` = DOC_PATH's match; `api` = the tower origin. */
-export async function docResponse(m, { api, fetchFn = fetch }) {
+/** GET /doc[/books|/tablets[/<n>]|/<slug>] → { status: 200|404, view } | { status: 301, location } | { status: 503 }.
+ *  `m` = DOC_PATH's match; `api` = the tower origin. A view = { type, title, description, url, ld, text, wide, noindex, body }. */
+export async function docView(m, { api, fetchFn = fetch }) {
   try {
     const [, kind, n, slug, pn] = m;
-    if (kind) { const html = docListPage(await catalogue(api, fetchFn), kind, n ? Number(n) : 1); return html ? ok(html) : notFound(); }
+    if (kind) { const v = docListPage(await catalogue(api, fetchFn), kind, n ? Number(n) : 1); return v ? ok(v) : notFound(); }
     if (!slug) return ok(docIndexPage(await catalogue(api, fetchFn)));
     const id = docIdFromSlug(slug), at = pn ? Number(pn) : 1;
     if (!id || at < 1) return notFound();
@@ -232,7 +187,7 @@ export async function docResponse(m, { api, fetchFn = fetch }) {
     const doc = missing ? null : data?.document;
     if (!doc?.title) return notFound();
     const d = { ...doc, id }, canonical = docPageSlug(d), path = `/doc/${canonical}${at > 1 ? `/${at}` : ''}`;
-    const here = (html) => (slug !== canonical || (pn && at === 1) ? moved(path) : ok(html));
+    const here = (v) => (slug !== canonical || (pn && at === 1) ? moved(path) : ok(v));
     // 1. an original beside its English: found nowhere else, so it stays here even when a collaborator holds the text
     if (Number(doc.encumbered) !== 1) {
       const s = await read(fetchFn, `${api}/api/library/documents/${id}/sbs?cached=true&limit=${SBS_LIMIT}`);
@@ -246,7 +201,7 @@ export async function docResponse(m, { api, fetchFn = fetch }) {
     if (at > 1 && !(data.paragraphs || []).length) return notFound();
     return here(textPage(d, data.paragraphs, { n: at, total: data.paragraphTotal ?? doc.paragraph_count ?? 0 }));
   } catch {
-    return { res: new Response('This text is briefly unavailable. Please try again in a moment.', { status: 503, headers: { 'content-type': 'text/plain; charset=utf-8', 'retry-after': '30' } }), tainted: true };
+    return { status: 503 };
   }
 }
 

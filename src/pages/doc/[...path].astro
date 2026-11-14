@@ -1,0 +1,86 @@
+---
+// /doc on anis.oceanlibrary.com: the library's unique texts (copyrighted openings, originals beside their English, texts no
+// collaborator holds) in the library reader's look: paper card, Libre Caslon, centred title (DocumentPresentation.svelte).
+// What renders, and every 301/404, is decided by worker/anis/doc-pages.js (docView); this page is the chrome around it.
+// Only the Anís host serves it: siftersearch.com/doc 301s there before reaching Astro (worker/index.js).
+import Layout from '../../layouts/Layout.astro';
+import SiteNav from '../../components/anis/SiteNav.astro';
+import { isAnisHost, ANIS_ORIGIN } from '../../lib/anis-host.js';
+import { DOC_PATH, docView, docNotFound } from '../../../worker/anis/doc-pages.js';
+
+if (!isAnisHost(Astro.url)) return Response.redirect(`${ANIS_ORIGIN}${Astro.url.pathname}`, 301);
+const m = DOC_PATH.exec(Astro.url.pathname);
+const API = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';   // SSR fetch — needs an absolute origin
+const r = m ? await docView(m, { api: API }) : { status: 404 };
+if (r.status === 301) return new Response(null, { status: 301, headers: { Location: r.location, 'Cache-Control': 'public, max-age=3600' } });
+if (r.status === 503) return new Response('This text is briefly unavailable. Please try again in a moment.', { status: 503, headers: { 'Retry-After': '30', 'Cache-Control': 'no-store' } });
+const v = r.view || docNotFound();
+Astro.response.status = r.status === 200 ? 200 : 404;
+Astro.response.headers.set('Cache-Control', r.status === 200 ? 'public, max-age=300, s-maxage=900, stale-while-revalidate=3600' : 'no-store');
+const ld = v.ld ? JSON.stringify(v.ld).replace(/</g, '\\u003c') : null;
+---
+
+<Layout title={v.title} description={v.description} type={v.type} canonical={v.url} noindex={!!v.noindex} anisPage={v.text || { type: 'page', title: v.title }}>
+  {ld && <script type="application/ld+json" slot="head" set:html={ld} />}
+  <SiteNav currentPage="doc" />
+  <main class:list={['doc-page', { wide: v.wide }]}>
+    <div class="reader" set:html={v.body} />
+    <p class="doc-foot">A text from the Ocean library, presented by Anís, the Ocean AI Research Assistant of Ocean 2.0. Books under copyright show their opening pages only. Read more in the <a href="https://oceanlibrary.com/">Ocean Library</a>.</p>
+  </main>
+</Layout>
+
+<style is:global>
+  /* the library reader's look (DocumentPresentation.svelte .document-content), following the reader's light/dark choice */
+  .doc-page { --paper: light-dark(#faf8f3, var(--surface-1)); --ink: light-dark(#1a1a1a, var(--text-primary)); --dim: light-dark(#555, var(--text-muted));
+    --hair: light-dark(rgba(0,0,0,.08), var(--border-subtle)); --tag: light-dark(#e8e4dc, var(--surface-2)); --lnk: light-dark(#1d4ed8, var(--accent));
+    max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+  .doc-page.wide { max-width: 72rem; }
+  .doc-page .reader { padding: 2rem 2.5rem 3rem; background: var(--paper); color: var(--ink); border: 1px solid var(--hair); border-radius: .5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06); font: 1.0625rem/1.75 'Libre Caslon Text', 'Caslon Fallback', Georgia, 'Times New Roman', serif; overflow-wrap: break-word; }
+  .doc-page a { color: var(--lnk); }
+  .doc-page .crumb { margin: 0 0 1rem; text-align: center; font: .8125rem/1.4 system-ui, -apple-system, sans-serif; }
+  .doc-page .crumb a { display: inline-flex; align-items: center; min-height: 48px; color: var(--dim); }
+  .doc-page .kicker { display: table; margin: 0 auto .75rem; padding: .25rem .625rem; border-radius: 1rem; background: var(--tag); color: var(--dim);
+    font: .6875rem/1.4 system-ui, -apple-system, sans-serif; letter-spacing: .05em; text-transform: uppercase; }
+  .doc-page h1 { margin: 0 0 .5rem; text-align: center; font: 600 2rem/1.3 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif; color: var(--ink); text-wrap: balance; }
+  .doc-page .meta { margin: 0 0 1rem; text-align: center; font-size: 1.125rem; font-style: italic; color: var(--dim); }
+  .doc-page .summary { max-width: 40rem; margin: 0 auto 1rem; text-align: center; color: var(--dim); }
+  .doc-page .rule { height: 1px; margin: 1.5rem 0 .5rem; border: 0; background: var(--hair); }
+  .doc-page .text > p, .doc-page .text > h2 { margin: 0; padding: .75rem 0; border-bottom: 1px solid var(--hair); }
+  .doc-page .text > :last-child { border-bottom: 0; }
+  .doc-page .text > h2 { margin-top: 1rem; font-size: 1.25rem; font-weight: 600; line-height: 1.4; }
+  .doc-page .text[dir=rtl] { font: 1.25rem/2 'Amiri', 'Traditional Arabic', serif; }
+  .doc-page .ends { margin: 1.75rem 0 0; padding: 1rem 1.25rem; border: 1px solid var(--hair); border-radius: .5rem; background: var(--tag); font-size: .95rem; }
+  .doc-page .ends p { margin: 0 0 .5rem; } .doc-page .ends p:last-child { margin: 0; }
+  .doc-page .links { margin: 0 0 1rem; padding: 0; list-style: none; text-align: center; font: .9375rem/1.5 system-ui, -apple-system, sans-serif; }
+  .doc-page .links li { margin: .35rem 0; }
+  .doc-page .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 2.25rem; margin: 1.5rem 0 0; color: var(--dim);
+    font: 600 .75rem/1.2 system-ui, -apple-system, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+  .doc-page .cols .oh { order: 2; text-align: right; }
+  .doc-page .par { margin: 0; padding: .75rem 0; border-bottom: 1px solid var(--hair); }
+  .doc-page .row { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem 2.25rem; margin: 0 -.6rem; padding: .4rem .6rem; border-radius: .4rem; outline: 0; }
+  .doc-page .row:hover, .doc-page .row:focus { background: light-dark(rgba(59,130,246,.08), var(--surface-2)); box-shadow: inset 3px 0 0 var(--lnk); }
+  .doc-page .row p { margin: 0; } .doc-page .row .o { order: 2; } .doc-page .row .t { order: 1; }
+  .doc-page .o[dir=rtl], .doc-page .par h2[dir=rtl] { font: 1.3rem/2 'Amiri', 'Noto Naskh Arabic', 'Traditional Arabic', 'Geeza Pro', serif; text-align: right; }
+  .doc-page .par h2 { margin: .5rem 0 .2rem; font-size: 1.25rem; font-weight: 600; }
+  .doc-page .n { margin: 0 0 .25rem; color: var(--dim); font: .75rem/1 system-ui, -apple-system, sans-serif; }
+  @media (max-width: 760px) {
+    .doc-page .reader { padding: 1.25rem 1rem 2rem; }
+    .doc-page .row, .doc-page .cols { grid-template-columns: 1fr; } .doc-page .row .o, .doc-page .row .t { order: 0; }
+    .doc-page .cols { display: none; } .doc-page .row .t { color: var(--dim); }
+  }
+  .doc-page .list { margin: 1rem 0 0; padding: 0; list-style: none; }
+  .doc-page .list li { padding: .875rem 0; border-top: 1px solid var(--hair); }
+  .doc-page .list h3 { margin: 0; font-size: 1.15rem; font-weight: 600; line-height: 1.35; }
+  .doc-page .list h3 a { color: var(--ink); text-decoration: none; } .doc-page .list h3 a:hover { text-decoration: underline; }
+  .doc-page .list p { margin: .2rem 0 0; color: var(--dim); font: .875rem/1.4 system-ui, -apple-system, sans-serif; }
+  .doc-page .sec { margin: 2.5rem 0 0; } .doc-page .sec .kicker { margin-left: 0; }
+  .doc-page .sec h2 { margin: 0; font-size: 1.5rem; font-weight: 600; line-height: 1.3; } .doc-page .sec .meta { text-align: left; font-size: 1rem; }
+  .doc-page .more, .doc-page .pager a { display: inline-flex; align-items: center; min-height: 48px; font: .9375rem/1 system-ui, -apple-system, sans-serif; }
+  .doc-page .pager { display: flex; gap: 1.1rem; align-items: center; justify-content: center; margin: 1.5rem 0 0; }
+  .doc-page .pager .meta { margin: 0; font-size: .9375rem; }
+  .doc-page .cta { margin: 2rem 0 0; padding-top: 1.25rem; border-top: 1px solid var(--hair); text-align: center; font-family: system-ui, -apple-system, sans-serif; }
+  .doc-page .cta p { margin: 0 0 .6rem; color: var(--dim); }
+  .doc-page .btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 1.1rem; border-radius: 999px; background: var(--accent); color: var(--surface-0); font-weight: 600; text-decoration: none; }
+  .doc-foot { max-width: 40rem; margin: 1.5rem auto 0; text-align: center; color: var(--text-muted); font-size: .85rem; }
+</style>
