@@ -1354,6 +1354,12 @@ async function multiIndexSearchRun(query, options, qcalls) {
   // phrase layer itself did not fail, as before.
   const quotation = isVerbatimQuery(query) && !isQuestion(query);   // the reader typed a passage's own words → the phrase layer's exact-recall setting
   const phraseRan = ((options.phraseLayer && !semanticOff) || meiliOff) && (!scope_config || scope_config.primary) && !filters.documentId;
+  // TALK QUOTE PASS (Chad 11-13: talks are library documents with fully searchable transcripts): a quotation also searches the
+  // talks' phrases alone — a small filtered search, near exact — so a talk's own words find it even where the library-wide
+  // approximate list lets it fall out (11-13: a sentence ranked first inside its talk, absent library-wide at ef 512)
+  const talkQuoteP = quotation && phraseRan && !filters.collection
+    ? searchPhrases(query, { limit: 10, filters: { ...qfilters, collection: 'Media' }, timeoutMs: 1500, exact: true }).catch(() => ({ hits: [] }))
+    : null;
   const bahaiScope = filters.religion === "Baha'i";
   const canonP = !phraseRan ? null : gate((async () => {
     const byRel = await getOlDocIdsByReligion();
@@ -1547,6 +1553,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
   // only in a Bahá'í search: run unscoped too (10-20 trial) it displaced other traditions (karma, wu wei, nirvana, fasting;
   // battery 66 → 60). Unscoped Bahá'í topics need the planner to infer the scope instead.
   const doctrinalResult = doctrinalP && !phraseResult.failed ? await doctrinalP : { hits: [] };
+  const talkQuoteResult = talkQuoteP ? await talkQuoteP : { hits: [] };
 
   // Qdrant layers: hits carry paragraph_id + doc_id only → stubs, filled by the fetch below. The phrase layer
   // also returns the matched span so callers can highlight the phrase, not the whole paragraph.
@@ -1555,7 +1562,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
   const talksAsked = !!(options.talks || filters.collection || filters.author || aboutTalks(query));
   // doctrine (default) or law / administration — the House is primary only on the latter (Chad 10-23); 'talks' weighs talks neutrally
   const authorityDomain = options.domain || (talksAsked && aboutTalks(query) ? 'talks' : queryDomain(query));
-  for (const [layer, result] of [['phrase', phraseResult], ['qkeyword', qkeywordResult], ['qhype', qhypeResult], ['qconcept', qconceptResult], ['canon', canonResult], ['doctrinal', doctrinalResult]]) {
+  for (const [layer, result] of [['phrase', phraseResult], ['qkeyword', qkeywordResult], ['qhype', qhypeResult], ['qconcept', qconceptResult], ['canon', canonResult], ['doctrinal', doctrinalResult], ['talkquote', talkQuoteResult]]) {
     (result.hits || []).forEach((hit, rank) => {
       // authority FROM THE OUTSET: each layer's contribution is weighed by the passage's writer (Qdrant payload)
       const af = keyFactor(bahaiScope ? hit.author_fold : null, hit.scope, hit.collection, authorityDomain);
