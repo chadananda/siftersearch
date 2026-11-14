@@ -11,7 +11,7 @@
   import { media } from '../../lib/api.js';
   import { audioReady, audioWarmPath } from '../../lib/media-ready.js';
   import { liveRefresh } from '../../lib/live-data.js';
-  import { expandParagraph, flattenWords, segmentWordAt, remasterOnly, wordAt, youtubeAtTime, picture, sameMediaRevision } from '../../lib/media.js';
+  import { applyTimings, expandParagraph, flattenWords, segmentWordAt, remasterOnly, wordAt, youtubeAtTime, picture, sameMediaRevision } from '../../lib/media.js';
   import { rangeFrom, formatTime, rangeParam } from '../../../api/lib/media/range.js';
   import MediaTranscript from './MediaTranscript.svelte';
   import MediaWaveform from './MediaWaveform.svelte';
@@ -49,9 +49,14 @@
   };
   // the paragraphs rendered as word spans; the SSR range (?t=a-b) is split on the server so its shading is in the first paint
   const live = new SvelteSet(initialRange ? parasIn(initialRange.start, initialRange.end ?? null) : []);
-  /** Split paragraph pi into word spans (idempotent); resolves once they are in the DOM. */
+  // word timings outside a ?t range arrive with the first API refresh (onMount); until then an untimed paragraph's words
+  // all span the paragraph, so a click or a selection plays from its start. Resolves true once filled, false if they cannot be.
+  let timingsDone = () => {};
+  const timings = paragraphs.some((p) => p.untimed) ? new Promise((r) => { timingsDone = r; }) : Promise.resolve(true);
+  /** Split paragraph pi into word spans (idempotent; after its timings); resolves once they are in the DOM. */
   async function upgrade(pi) {
     if (pi == null || pi < 0) return;
+    if (paragraphs[pi]?.untimed) await timings;
     live.add(pi);
     await tick();
   }
@@ -376,14 +381,26 @@
     if (r) {
       startAt = r.start; current = r.start; limit = r.end ?? null;
       range = r.end != null ? r : null;
-      // split the target paragraph(s) before marking and scrolling: the same text and layout, so nothing moves
-      parasIn(r.start, r.end ?? null).forEach((pi) => live.add(pi));
-      tick().then(() => { const k = wordAt(flat.starts, r.start + 0.02); mark(k); wordEl(k)?.scrollIntoView({ block: 'center', behavior: 'instant' }); });
+      // split the target paragraph(s) (after their timings) before marking and scrolling: the same text and layout, so
+      // nothing moves; if the timings never came, the paragraph's first word
+      const pis = parasIn(r.start, r.end ?? null);
+      Promise.all(pis.map(upgrade)).then(() => {
+        const k = pis.length && paragraphs[pis[0]].untimed ? paraStart[pis[0]] : wordAt(flat.starts, r.start + 0.02);
+        mark(k); wordEl(k)?.scrollIntoView({ block: 'center', behavior: 'instant' });
+      });
     }
     // The hero is server-rendered outside this island. Refresh its description
     // along with the audio metadata so a cached page cannot hide editorial updates.
+    const noTimings = setTimeout(() => timingsDone(false), 8000);
+    cleanups.push(() => clearTimeout(noTimings));
     const stopMetadata = liveRefresh(async () => {
       const d = await media.get(item.slug);
+      // the first answer of the same revision carries the word timings the page left out
+      if (paragraphs.some((p) => p.untimed) && sameMediaRevision(item.version, d.version)) {
+        applyTimings(paragraphs, flat, paraStart, d.paragraphs);
+        timingsDone(true);
+        if (curK >= 0) mark(wordAt(flat.starts, current + 0.02));
+      }
       return {version:d.version, summary:d.summary, audio:d.audio};
     }, d => {
       const description = document.querySelector('.talk-hero [data-talk-description]');
@@ -430,7 +447,7 @@
 
   $effect(() => { if (audio) audio.playbackRate = rate; });
   // a shaded range (a moment, a selection played) is split into spans so its shading shows
-  $effect(() => { const r = range; if (r?.end != null) untrack(() => parasIn(r.start, r.end).forEach((pi) => live.add(pi))); });
+  $effect(() => { const r = range; if (r?.end != null) untrack(() => parasIn(r.start, r.end).forEach(upgrade)); });
   // the hero (TalkHero, server-rendered outside this island) spins its record and lights its lamp while playing
   $effect(() => {
     const on = playing;

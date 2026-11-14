@@ -70,7 +70,10 @@ const iso = (s) => { s = Math.round(s || 0); return `PT${Math.floor(s / 3600) ? 
 const transcriptText = item ? item.paragraphs.map((p) => p.words.filter((w) => !w[3]).map((w) => w[0]).join(' ')).join('\n\n') : '';
 // the player's props carry the transcript compact (text + centisecond timings, ~8× smaller than the word tuples); the
 // transcript renders as plain text and is split into word spans on the client as needed (MediaTranscript)
-if (item?.paragraphs) item.paragraphs = item.paragraphs.map(compactParagraph);
+// only a ?t range's paragraphs carry their timings (it is shaded and marked in the first paint); the rest come from the API
+// after first paint (MediaPlayer → applyTimings) — a third of the page's compressed weight
+const timedIn = (p) => !!initialRange && (p.t1 ?? Infinity) >= initialRange.start && (p.t0 ?? 0) <= (initialRange.end ?? initialRange.start);
+if (item?.paragraphs) item.paragraphs = item.paragraphs.map((p) => compactParagraph(p, { timed: timedIn(p) }));
 const ld = item ? [{
   '@context': 'https://schema.org', '@type': 'AudioObject', name: item.title, url, description,
   ...(item.speaker ? { author: { '@type': 'Person', name: item.speaker } } : {}),

@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { render } from 'svelte/server';
-import { compactParagraph, expandParagraph, segmentText, segmentWordAt, transcriptClickWord, flattenWords } from '../../src/lib/media.js';
+import { applyTimings, compactParagraph, expandParagraph, segmentText, segmentWordAt, transcriptClickWord, flattenWords } from '../../src/lib/media.js';
 import MediaTranscript from '../../src/components/media/MediaTranscript.svelte';
 import MediaPlayer from '../../src/components/media/MediaPlayer.svelte';
 
@@ -34,6 +34,41 @@ describe('compactParagraph / expandParagraph', () => {
     for (const bad of [[['a b', 0, 1]], [['', 0, 1]]]) expect(compactParagraph({ n: 1, words: bad })).toEqual({ n: 1, words: bad });
     expect(expandParagraph(para)).toBe(para);
     expect(expandParagraph({ n: 1, tx: '', tm: '' }).words).toEqual([]);
+  });
+});
+
+describe('deferred word timings (only a ?t range ships them; the rest come after first paint)', () => {
+  it('timed: false leaves tm out; expanding gives every word the paragraph span, marked untimed', () => {
+    const c = compactParagraph(para, { timed: false });
+    expect(c).not.toHaveProperty('tm');
+    expect(c).toMatchObject({ tx: 'Well, uh the earth is one', hid: [1] });
+    const e = expandParagraph(c);
+    expect(e.untimed).toBe(true);
+    expect(e.words).toEqual([['Well,', 1.2, 5.07], ['uh', 1.2, 5.07, 1], ['the', 1.2, 5.07], ['earth', 1.2, 5.07], ['is', 1.2, 5.07], ['one', 1.2, 5.07]]);
+  });
+  it('an untimed paragraph still finds its paragraph by time, and a click plays from its start', () => {
+    const ps = base.paragraphs.slice(0, 3).map((p) => expandParagraph(compactParagraph(p, { timed: false })));
+    const flat = flattenWords(ps);
+    const k = flat.starts.findIndex((_, i) => flat.para[i] === 1);
+    expect(flat.starts[k]).toBe(base.paragraphs[1].t0);
+    expect(flat.ends[k]).toBe(base.paragraphs[1].t1);
+  });
+  it('applyTimings fills words and the flat arrays from the API paragraphs; a count mismatch stays untimed', () => {
+    const ps = base.paragraphs.slice(0, 3).map((p, i) => expandParagraph(compactParagraph(p, { timed: i !== 0 ? false : true })));
+    const flat = flattenWords(ps);
+    const paraStart = ps.reduce((acc, p, i) => { acc.push(i ? acc[i - 1] + ps[i - 1].words.length : 0); return acc; }, []);
+    const full = base.paragraphs.slice(0, 3).map((p, i) => (i === 2 ? { ...p, words: p.words.slice(1) } : p));
+    expect(applyTimings(ps, flat, paraStart, full)).toBe(1);
+    expect(ps[1].untimed).toBeUndefined();
+    expect(ps[2].untimed).toBe(true);
+    expect(ps[1].words.map((w) => [w[1], w[2]])).toEqual(base.paragraphs[1].words.map((w) => [w[1], w[2]]));
+    const k = paraStart[1] + 2;
+    expect([flat.starts[k], flat.ends[k]]).toEqual([base.paragraphs[1].words[2][1], base.paragraphs[1].words[2][2]]);
+  });
+  it('cuts most of the compact weight on a real talk', () => {
+    const timed = JSON.stringify(base.paragraphs.map((p) => compactParagraph(p)));
+    const deferred = JSON.stringify(base.paragraphs.map((p) => compactParagraph(p, { timed: false })));
+    expect(deferred.length).toBeLessThan(timed.length * 0.7);
   });
 });
 
@@ -106,8 +141,8 @@ describe('the player: compact props, deep links, selection', () => {
     expect(body).not.toMatch(/data-k="0"/);
     expect(body).toMatch(/bg-highlight-range/);
   });
-  it('a deep link (#t / ?t / ?p / ?m) splits the target paragraph before it marks and scrolls', () => {
-    const at = src.indexOf('parasIn(r.start, r.end ?? null).forEach((pi) => live.add(pi))');
+  it('a deep link (#t / ?t / ?p / ?m) splits the target paragraph (after its timings) before it marks and scrolls', () => {
+    const at = src.indexOf('Promise.all(pis.map(upgrade)).then(');
     expect(at).toBeGreaterThan(0);
     expect(src.indexOf('wordEl(k)?.scrollIntoView', at)).toBeGreaterThan(at);
   });
@@ -120,8 +155,25 @@ describe('the player: compact props, deep links, selection', () => {
     expect(src).toMatch(/wordOf\(first, r\.startContainer, r\.startOffset, false\)/);
     expect(src).toMatch(/paragraphs\[flat\.para\[k\]\]\.words\[flat\.idx\[k\]\]/);
   });
-  it('the page compacts after the JSON-LD transcript is built from the full words', () => {
+  it('upgrade waits for the timings; the first same-revision refresh fills them, with a timeout fallback', () => {
+    expect(src).toMatch(/if \(paragraphs\[pi\]\?\.untimed\) await timings;/);
+    expect(src).toMatch(/sameMediaRevision\(item\.version, d\.version\)\) \{\s*applyTimings\(paragraphs, flat, paraStart, d\.paragraphs\)/);
+    expect(src).toMatch(/setTimeout\(\(\) => timingsDone\(false\), \d+\)/);
+  });
+  it('the page compacts after the JSON-LD transcript is built, keeping timings only inside the ?t range', () => {
     const page = readFileSync(new URL('../../src/pages/media/[slug].astro', import.meta.url), 'utf8');
-    expect(page.indexOf('item.paragraphs.map(compactParagraph)')).toBeGreaterThan(page.indexOf('const transcriptText'));
+    const at = page.indexOf('compactParagraph(p, { timed: timedIn(p) })');
+    expect(at).toBeGreaterThan(page.indexOf('const transcriptText'));
+    expect(page).toMatch(/const timedIn = \(p\) => !!initialRange && /);
+  });
+  it('SSR with deferred timings and a ?t range: the range paragraphs are timed and split, the rest plain', () => {
+    const p2 = base.paragraphs[1], r = { start: p2.t0 + 0.5, end: p2.t1 - 1 };
+    const inR = (p) => (p.t1 ?? Infinity) >= r.start && (p.t0 ?? 0) <= r.end;
+    const it2 = { ...item, paragraphs: base.paragraphs.map((p) => compactParagraph(p, { timed: inR(p) })) };
+    const { body } = render(MediaPlayer, { props: { item: it2, initialRange: r } });
+    const k0 = flattenWords(base.paragraphs.slice(0, 1)).length;
+    expect(body).toMatch(new RegExp(`data-k="${k0}"`));
+    expect(body).not.toMatch(/data-k="0"/);
+    expect(body).toMatch(/bg-highlight-range/);
   });
 });

@@ -75,8 +75,9 @@ export function sameMediaRevision(pageVersion, apiVersion) {
 
 /** A transcript paragraph as the talk page ships it (page weight, 11-14): the word tuples become the words' text joined by
  *  single spaces (tx) and their timings as centiseconds, a (gap since the previous word's end, length) pair per word,
- *  comma-joined (tm); hid lists the words the copy edit dropped. A paragraph whose words cannot round-trip is kept whole. */
-export function compactParagraph(p) {
+ *  comma-joined (tm); hid lists the words the copy edit dropped. A paragraph whose words cannot round-trip is kept whole.
+ *  timed: false leaves tm out (the page ships it only where a ?t range needs it; the rest arrive after first paint). */
+export function compactParagraph(p, { timed = true } = {}) {
   const { words, s0, sentences, ...rest } = p || {};
   if (!Array.isArray(words) || words.some((w) => !w?.[0] || /\s/.test(w[0]))) return p;
   const tm = [], hid = [];
@@ -86,14 +87,20 @@ export function compactParagraph(p) {
     tm.push(a - prev, b - a); prev = b;
     if (w[3]) hid.push(i);
   });
-  return { ...rest, tx: words.map((w) => w[0]).join(' '), tm: tm.join(','), ...(hid.length ? { hid } : {}) };
+  return { ...rest, tx: words.map((w) => w[0]).join(' '), ...(timed ? { tm: tm.join(',') } : {}), ...(hid.length ? { hid } : {}) };
 }
 
-/** compactParagraph reversed: words [[text, s, e(, 1 = dropped)]] back from tx/tm/hid; a full paragraph passes through. */
+/** compactParagraph reversed: words [[text, s, e(, 1 = dropped)]] back from tx/tm/hid; a full paragraph passes through.
+ *  Without tm every word spans the whole paragraph [t0, t1] and the paragraph is marked untimed (applyTimings fills it):
+ *  a time still finds its paragraph, and a click plays from the paragraph's start. */
 export function expandParagraph(p) {
   if (!p || p.words || p.tx == null) return p;
   const { tx, tm, hid, ...rest } = p;
   const texts = tx ? tx.split(' ') : [], times = tm ? tm.split(',').map(Number) : [], drop = new Set(hid || []);
+  if (tm == null) {
+    const a = Number(p.t0) || 0, b = Number(p.t1) || a;
+    return { ...rest, untimed: true, words: texts.map((w, i) => (drop.has(i) ? [w, a, b, 1] : [w, a, b])) };
+  }
   let at = 0;
   const words = texts.map((w, i) => {
     const a = at + (times[2 * i] || 0), b = a + (times[2 * i + 1] || 0);
@@ -135,6 +142,22 @@ export function flattenWords(paragraphs = []) {
   let k = 0;
   paragraphs.forEach((p, pi) => (p.words || []).forEach((w, wi) => { starts[k] = Number(w[1]) || 0; ends[k] = Number(w[2]) || 0; para[k] = pi; idx[k] = wi; k++; }));
   return { starts, ends, para, idx, length: n };
+}
+
+/** Copy word timings from full paragraphs (the API's, same revision) into the untimed ones and their flat entries, in
+ *  place; a paragraph whose word count differs stays untimed. Returns how many were filled. */
+export function applyTimings(paragraphs, flat, paraStart, full = []) {
+  let n = 0;
+  paragraphs.forEach((p, pi) => {
+    const ws = full[pi]?.words;
+    if (!p?.untimed || !Array.isArray(ws) || ws.length !== p.words.length) return;
+    ws.forEach((w, i) => {
+      const s = Number(w[1]) || 0, e = Number(w[2]) || 0, k = paraStart[pi] + i;
+      p.words[i][1] = s; p.words[i][2] = e; flat.starts[k] = s; flat.ends[k] = e;
+    });
+    delete p.untimed; n++;
+  });
+  return n;
 }
 
 /** Index of the word playing at time t: the last word whose start ≤ t (−1 before the first). Binary search; starts ascending. */
