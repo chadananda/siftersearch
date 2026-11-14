@@ -7,7 +7,7 @@
 // per-profile analytics, and a self-contained console page (/widget-admin). Served from the API — not CF Pages —
 // so it ships via the backend deploy path (the Astro build is unavailable here). The HOUSE profile (is_house=1,
 // siftersearch.com) is the internal lab and cannot be deleted.
-import { readFileSync } from 'fs';
+import { readFileSync, statSync } from 'fs';
 import { createHash } from 'crypto';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -33,12 +33,21 @@ export const publicLoader = (loader, hash, site, alsoPublic = []) =>
     `var api = new URL(script.src).origin; if (!/^https?:\\/\\/(localhost|127\\.0\\.0\\.1)(:|$)/.test(api) && ${JSON.stringify(alsoPublic)}.indexOf(api) < 0) api = ${JSON.stringify(site)};`);
 // The loader is never kept by a browser: it is 2 KB and the only unversioned piece, so a deploy reaches every page load.
 export const LOADER_CACHE = 'public, no-cache, max-age=0, s-maxage=60';
-const BUNDLE = loadAsset('sifter-chat.js');
-const BUNDLE_HASH = bundleHash(BUNDLE);
-const LOADER = loadAsset('widget.js');
 const SITE_ORIGIN = (process.env.PUBLIC_WIDGET_ORIGIN || 'https://siftersearch.com').replace(/\/$/, '');
 const ALSO_PUBLIC = (process.env.PUBLIC_WIDGET_ORIGINS || 'https://anis.oceanlibrary.com').split(',').map((s) => s.trim().replace(/\/$/, '')).filter(Boolean);
-const ASSETS = { 'widget.js': LOADER ? publicLoader(LOADER, BUNDLE_HASH, SITE_ORIGIN, ALSO_PUBLIC) : null, 'sifter-chat.js': BUNDLE };
+// The built files are re-read when they change on disk: a push that only rebuilds the bundle reloads no service (the coordinator
+// follows the import graph), so a boot-time copy served the old widget until an unrelated restart (Chad 11-13 "I don't see it").
+const mtime = (file) => { try { return statSync(join(STATIC_DIR, file)).mtimeMs; } catch { return 0; } };
+let built = null;
+const current = () => {
+  const now = Date.now();
+  if (built && now - built.checked < 5000) return built;
+  const stamp = `${mtime('sifter-chat.js')}:${mtime('widget.js')}`;
+  if (built?.stamp === stamp) { built.checked = now; return built; }
+  const bundle = loadAsset('sifter-chat.js'), hash = bundleHash(bundle), loader = loadAsset('widget.js');
+  built = { stamp, checked: now, hash, assets: { 'widget.js': loader ? publicLoader(loader, hash, SITE_ORIGIN, ALSO_PUBLIC) : null, 'sifter-chat.js': bundle } };
+  return built;
+};
 const DEMO_HTML = loadAsset('demo.html');
 const ADMIN_HTML = loadAsset('admin.html');
 
@@ -65,9 +74,10 @@ export default async function widgetRoutes(fastify) {
   const apiOrigin = () => (process.env.PUBLIC_WIDGET_ORIGIN || 'https://siftersearch.com').replace(/\/$/, '');
 
   // ── Static assets (long-cached; bundle versioned by deploy) ─────────────────────────────────────────────────
-  for (const [file, body] of Object.entries(ASSETS)) {
+  for (const file of ['widget.js', 'sifter-chat.js']) {
     const path = file === 'widget.js' ? '/widget.js' : '/widget/sifter-chat.js';
     fastify.get(path, async (req, reply) => {
+      const { assets, hash: BUNDLE_HASH } = current(), body = assets[file];
       if (!body) return reply.code(404).send('// widget asset not built — run: npm run build:widget');
       // A request for exactly this build (?v=<hash>) is immutable; the loader and unversioned requests stay short.
       const pinned = file === 'sifter-chat.js' && req.query?.v === BUNDLE_HASH;
@@ -79,7 +89,7 @@ export default async function widgetRoutes(fastify) {
 
   // The current build, for running widgets to compare with their own and self-update (SifterChat checkVersion).
   fastify.get('/widget/version', async (req, reply) => reply.header('cache-control', LOADER_CACHE)
-    .header('access-control-allow-origin', '*').send({ v: BUNDLE_HASH }));
+    .header('access-control-allow-origin', '*').send({ v: current().hash }));
 
   // Demo page — accepts ?key= so any profile (incl. the house lab) is testable without touching a host site.
   fastify.get('/widget/demo', async (req, reply) => {
