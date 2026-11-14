@@ -11,12 +11,13 @@ import CompanionControls from '../../components/admin/CompanionControls.svelte';
 import AnisInsights from '../../components/admin/AnisInsights.svelte';
 import AnisThreads from '../../components/admin/AnisThreads.svelte';
 import AnisImprove from '../../components/admin/AnisImprove.svelte';
+import AnisReview from '../../components/admin/AnisReview.svelte';
 import { Content as TrmContent } from '../../../docs/architecture/anis-trm.md';
 
 const about = (await getCollection('agents')).find((a) => a.id === 'agent-anis');
 const { Content: AboutContent } = about ? await render(about) : { Content: null };
 const TABS = [
-  ['threads', 'Threads'], ['deployments', 'Deployments'], ['personality', 'Personality Adjustment'], ['assessment', 'Assessment'],
+  ['threads', 'Threads'], ['conversations', 'Edge conversations'], ['questions', 'Questions'], ['documents', 'Documents'], ['deployments', 'Deployments'], ['personality', 'Personality Adjustment'], ['assessment', 'Assessment'],
   ['improvement', 'Improvement'],
   ['activity', 'Activity'], ['costs', 'Costs'], ['system1', 'System-1'], ['trm', 'TRM'], ['about', 'About Anís'],
 ];
@@ -37,6 +38,11 @@ const TABS = [
     <section id="panel-threads" role="tabpanel" aria-labelledby="tab-threads">
       <AnisThreads client:only="svelte"><IslandSkeleton slot="fallback" /></AnisThreads>
     </section>
+    {['conversations', 'questions', 'documents'].map((v) => (
+      <section id={`panel-${v}`} role="tabpanel" aria-labelledby={`tab-${v}`} hidden>
+        <AnisReview view={v} client:only="svelte"><IslandSkeleton slot="fallback" /></AnisReview>
+      </section>
+    ))}
     <section id="panel-deployments" role="tabpanel" aria-labelledby="tab-deployments" hidden>
       <WidgetManager client:only="svelte"><IslandSkeleton slot="fallback" /></WidgetManager>
     </section>

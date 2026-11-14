@@ -180,6 +180,17 @@ async function bookGooglePulse() {
 }
 
 // Drive wear once a day (RAM write tier, Chad 11-10): one SMART sample per day → TB/day per NVMe/SSD for the weekly email.
+// The edge mirror (Chad 11-13): Anís's D1 (conversations, research cache, question log, mail) copied to tower every
+// 10 minutes, so the admin reviews it here and it can be redeployed from here (ops/edge-mirror-job.js).
+async function edgeMirrorLoop() {
+  await nap(90_000);   // not in the boot path
+  while (!isDraining()) {
+    const { edgeMirrorJob } = await import('../lib/ops/edge-mirror-job.js');
+    await edgeMirrorJob().catch((err) => logger.warn({ err: err.message }, 'edge mirror: sync failed'));
+    await nap(Number(process.env.EDGE_MIRROR_EVERY_MS) || 10 * 60_000);
+  }
+}
+
 async function driveWearPulse() {
   const { enqueue, pendingRuns, latest } = await import('../lib/repos/ops-report-repo.js');
   await nap(300_000);
@@ -200,4 +211,4 @@ const ONLY = String(process.env.OPS_ONLY || '').split(',').map((x) => x.trim()).
 const CARRY = ['reingest-carry'];   // siftersearch-reports-carry's jobs (and MEDIA_JOBS, siftersearch-media's) — the main worker never claims (or requeues) them
 if (ONLY.length) await runService({ name: process.env.name || 'siftersearch-reports-carry', registry: REPORTS, only: ONLY });
 else await runService({ name: process.env.name || 'siftersearch-reports', registry: REPORTS, lanes: LANES, laneWorkers: LANE_WORKERS,
-  main: true, foreign: [...INDEX_JOB_NAMES, ...CARRY, ...MEDIA_JOBS], loops: [telemetryLoop, pulseLoop, scoutPulse, ocrLoop, pipelineSnapshotLoop, bookGooglePulse, deweyJobsLoop, driveWearPulse] });
+  main: true, foreign: [...INDEX_JOB_NAMES, ...CARRY, ...MEDIA_JOBS], loops: [telemetryLoop, pulseLoop, scoutPulse, ocrLoop, pipelineSnapshotLoop, bookGooglePulse, deweyJobsLoop, driveWearPulse, edgeMirrorLoop] });

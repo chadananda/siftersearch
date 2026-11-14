@@ -2214,6 +2214,20 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_anis_question_log_site ON anis_question_log(site, at)');
     logger.info('Migration 205 complete: anis_question_log');
   },
+  206: async () => {
+    // EDGE MIRROR (Chad 11-13: "everything should be there on Tower-NAS" — to redeploy elsewhere, and to review and edit what Anís
+    // generates from the admin): every row of the edge's D1 databases, schema-agnostic (row as JSON, keyed by its primary key).
+    // edge-mirror-repo.js; synced by ops/edge-mirror-job.js every 10 min. edge_mirror_tables holds each table's CREATE sql + cursor.
+    await query(`CREATE TABLE IF NOT EXISTS edge_mirror (
+      db TEXT NOT NULL, tbl TEXT NOT NULL, pk TEXT NOT NULL, rid INTEGER NOT NULL, data TEXT NOT NULL, synced_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (db, tbl, pk))`);
+    await query('CREATE INDEX IF NOT EXISTS idx_edge_mirror_rid ON edge_mirror(db, tbl, rid)');
+    await query(`CREATE INDEX IF NOT EXISTS idx_edge_mirror_turns ON edge_mirror(json_extract(data, '$.conversation_id')) WHERE tbl = 'anis_turns'`);
+    await query(`CREATE TABLE IF NOT EXISTS edge_mirror_tables (
+      db TEXT NOT NULL, name TEXT NOT NULL, sql TEXT NOT NULL, pk TEXT, rows INTEGER DEFAULT 0, max_rid INTEGER DEFAULT 0, synced_at TEXT,
+      full_at TEXT, PRIMARY KEY (db, name))`);
+    logger.info('Migration 206 complete: edge_mirror');
+  },
 };
 
 export const graphMigrations = {

@@ -804,6 +804,14 @@ export const admin = {
   },
 
   /** Anís threads with each reply's audit roll-up; filter: all | strategy | problems | pending. */
+  // what the edge Anís generated, from tower's mirror: edge/sets · edge/sets/:id · edge/questions · edge/conversations(/:id) · edge/status · documents
+  async getAnisReview(path) {
+    return request(`/api/admin/anis/${path}`);
+  },
+  async setAnisSetStatus(id, status) {
+    return request(`/api/admin/anis/edge/sets/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) });
+  },
+
   async getAnisThreads(days = 30, filter = 'all') {
     return request(`/api/admin/anis/threads?days=${days}&filter=${filter}`);
   },

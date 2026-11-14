@@ -9,6 +9,9 @@ import { threadsOverview, threadDetail, strategyGaps, turnTrace, parseTurnId } f
 import { tracesForThread, tracesForTurn, childTraces, docTitles } from '../lib/repos/search-trace-repo.js';
 import { auditsSince } from '../lib/repos/audit-store-repo.js';
 import { listAnisThreads, anisThread, anisThreadMessages } from '../lib/repos/anis-threads-repo.js';
+import { researchSets, researchSet, questionLog, edgeConversations, edgeConversation, mirrorTables, upsertRows } from '../lib/repos/edge-mirror-repo.js';
+import { edgeCall } from '../lib/ops/edge-mirror-job.js';
+import { listDocuments } from '../lib/assistant/pdf/document-list.js';
 import { forensicsSince, listImprovements, getImprovement, recordBehaviorRuns, BEHAVIOR_STATES, setImprovementStatus, improveStats, improveReportData, improveDigestData, improveOverviewData, behaviorRunStates, IMPROVEMENT_STATUSES } from '../lib/repos/improve-repo.js';
 import { theoriesDb, listTheories, theoryCounts } from '../lib/repos/jev-theories-repo.js';
 import { improveOverview } from '../lib/audit/improve-overview.js';
@@ -29,6 +32,28 @@ export function parseSince(v, now = Date.now()) {
 const TARGET_FILTERS = ['code', 'data', ...TARGETS];
 
 export default async function anisAdminRoutes(fastify) {
+  // What the edge Anís generates, from tower's mirror (Chad 11-13: review and edit it from the admin; edge-mirror-repo.js).
+  const days = { type: 'object', properties: { days: { type: 'integer', minimum: 1, maximum: 365, default: 30 } } };
+  fastify.get('/anis/edge/status', { preHandler: requireInternal }, async () => ({ anis: await mirrorTables('anis'), ops: await mirrorTables('ops') }));
+  fastify.get('/anis/edge/sets', { preHandler: requireInternal,
+    schema: { querystring: { type: 'object', properties: { status: { type: 'string', enum: ['candidate', 'curated', 'stale'] } } } } },
+  async (request) => ({ sets: await researchSets({ status: request.query.status || null }) }));
+  fastify.get('/anis/edge/sets/:id', { preHandler: requireInternal }, async (request, reply) =>
+    (await researchSet(request.params.id)) || reply.code(404).send({ error: 'no such set' }));
+  // curate / retire a cached answer: the edge first (it serves readers), then the mirror
+  fastify.post('/anis/edge/sets/:id/status', { preHandler: requireInternal,
+    schema: { body: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: ['candidate', 'curated', 'stale'] } } } } },
+  async (request) => {
+    const { row } = await edgeCall('/_d1/edit', { op: 'set-status', id: Number(request.params.id), status: request.body.status });
+    await upsertRows('anis', 'anis_research_sets', ['id'], [row]);
+    return { id: row.id, status: row.status };
+  });
+  fastify.get('/anis/edge/questions', { preHandler: requireInternal, schema: { querystring: days } }, async (request) => ({ questions: await questionLog({ days: request.query.days || 30 }) }));
+  fastify.get('/anis/edge/conversations', { preHandler: requireInternal, schema: { querystring: days } }, async (request) => ({ conversations: await edgeConversations({ days: request.query.days || 30 }) }));
+  fastify.get('/anis/edge/conversations/:id', { preHandler: requireInternal }, async (request, reply) =>
+    (await edgeConversation(request.params.id)) || reply.code(404).send({ error: 'no such conversation' }));
+  fastify.get('/anis/documents', { preHandler: requireInternal }, async () => ({ documents: await listDocuments() }));
+
   fastify.get('/anis/overview', {
     preHandler: requireInternal,
     schema: { querystring: { type: 'object', properties: { days: { type: 'integer', minimum: 1, maximum: 365, default: 30 } } } },
