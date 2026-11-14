@@ -78,6 +78,17 @@ describe('documents cache', () => {
     expect(c.url).not.toBe(a.url);
     expect(renders).toBe(2);
   });
+  it('with a stored short-link map every hit returns the same /d/ link, rendered once', async () => {
+    const { makeDocuments } = await import('../../api/lib/assistant/pdf/documents.js');
+    const stored = new Set(); let renders = 0;
+    const docs = makeDocuments({ render: async () => { renders++; return Buffer.from('%PDF'); }, upload: async (k) => { stored.add(k); return `https://r2/${k}`; },
+      exists: async (k) => (stored.has(k) ? `https://r2/${k}` : null), publicUrl: (k) => `https://r2/${k}`, keep: null, outbox: {}, store: {}, shortBase: 'https://s/d' });
+    const a = await docs.create({ title: 'Tablet', markdown: 'x', cacheKey: 'sbs|1|2' });
+    const b = await docs.create({ title: 'Tablet', markdown: 'x', cacheKey: 'sbs|1|2' });
+    expect(a.url).toMatch(/^https:\/\/s\/d\/\w{8}$/);
+    expect(b).toMatchObject({ url: a.url, cached: true });
+    expect(renders).toBe(1);
+  });
 });
 
 describe('sentenceRows', () => {

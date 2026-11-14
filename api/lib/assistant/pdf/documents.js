@@ -68,7 +68,12 @@ export function makeDocuments({ render = renderPdf, upload, exists, publicUrl, k
         : `anis/pdf/${randomBytes(16).toString('hex')}/anis-${slug(title)}.pdf`;
       const code = shortCode(cacheKey ? createHash('sha256').update(`short|${cacheKey}`).digest() : randomBytes(8));
       const short = shortBase ? `${shortBase}/${code}` : null;
-      if (cacheKey) { const hit = await cached(key); if (hit) return { url: short || hit, file_url: hit, key, title, cached: true }; }
+      // a hit hands out the short link only when its map was stored (a render whose map write failed would otherwise give every
+      // later reader a /d/ link that resolves nowhere); else the file's own address — the same one the first render returned
+      if (cacheKey) {
+        const hit = await cached(key);
+        if (hit) return { url: short && (await cached(`anis/s/${code}.json`).catch(() => null)) ? short : hit, file_url: hit, key, title, cached: true };
+      }
       const fileUrl = await urlOf(key).catch(() => null);
       // the map first: the PDF's own share QR carries the short link only once it resolves
       const mapped = short && fileUrl ? await put(`anis/s/${code}.json`, Buffer.from(JSON.stringify({ url: fileUrl, title })), 'application/json').catch(() => null) : null;
