@@ -4,7 +4,7 @@
 // 'duplicate', search documents removed, runs cancelled, files kept, slugs redirected to the best.
 import { describe, it, expect, vi } from 'vitest';
 vi.mock('../../api/lib/db.js', () => ({ query: vi.fn(async () => ({})), queryOne: vi.fn(), queryAll: vi.fn(async () => []), transaction: vi.fn() }));
-import { copyQuality, pickBest, mergeMeta, groupsFromRows, intakeDedupe, mediaDedupeJob, NOISE, gramSet, overlap, datesAgree, confirmPair, gateGroup, undoPlan } from '../../api/lib/media/dedupe.js';
+import { copyQuality, pickBest, mergeMeta, groupsFromRows, intakeDedupe, mediaDedupeJob, NOISE, gramSet, overlap, datesAgree, confirmPair, gateGroup, undoPlan, reversedOf, markReversed } from '../../api/lib/media/dedupe.js';
 
 // a deterministic "speech": n distinct words from a seed (no 5-gram shared between seeds)
 const speech = (seed, n = 400, from = 0) => Array.from({ length: n }, (_, i) => `w${seed}x${i + from}`).join(' ');
@@ -492,5 +492,55 @@ describe('media-dedupe job: the library-wide scan', () => {
     expect(r4.scan.reread).toBe(1);   // only the talk the stopped scan never reached
     expect(r4.yielded).toBe(true);
     expect(calls.marked.length).toBe(marked);
+  });
+});
+
+describe('a copy digitised backwards (Chad 11-14: desert-rose tape #2BB)', () => {
+  const rev = (of) => ({ reversed: { of, evidence: 'measured', by: 't', at: 'T' } });
+  it('a reversed mark confirms the pair though the transcripts share nothing', () => {
+    const a = { slug: 'tape-2', meta: {}, text: gramSet(TALK) }, b = { slug: 'tape-2bb', meta: rev('tape-2'), text: gramSet(OTHER) };
+    expect(confirmPair(b, a)).toMatchObject({ same: true, by: 'same audio, reversed (measured)' });
+    expect(confirmPair(a, b)).toMatchObject({ same: true });
+    expect(confirmPair({ ...b, meta: rev('elsewhere') }, a)).toMatchObject({ same: false });
+  });
+  it('a reversed copy never wins, even on air and better measured', () => {
+    const fwd = { id: 1, slug: 'tape-2', state: 'running', restored: 0, meta: srcMeta(1.5) };
+    const bwd = { id: 2, slug: 'tape-2bb', state: 'done', restored: 1, meta: onAirMeta(rev('tape-2')) };
+    expect(pickBest([bwd, fwd]).best.slug).toBe('tape-2');
+    expect(reversedOf(bwd)).toBe('tape-2');
+  });
+  it('the job retires an on-air reversed copy while the forward one is not yet on air', async () => {
+    const rows = [
+      { id: 20, slug: 'tape-2', state: 'error', restored: 0, dir: '/d/f', doc_id: null, dup_group: 20 },
+      { id: 21, slug: 'tape-2bb', state: 'done', restored: 1, dir: '/d/b', doc_id: 201, dup_group: 20 },
+    ];
+    const metas = { '/d/f': srcMeta(1.5, { slug: 'tape-2' }), '/d/b': onAirMeta({ slug: 'tape-2bb', ...rev('tape-2') }) };
+    const calls = { marked: [], deleted: [], purged: [] }, writes = {};
+    const deps = {
+      repo: { dedupeRows: async () => rows, setDupGroup: async () => {}, markDuplicateItems: async (ids, why, g) => calls.marked.push({ ids, why, g }),
+        reviveItem: async () => {}, undoDuplicate: async () => {}, clearDupGroup: async () => {} },
+      readMeta: async (dir) => metas[dir], writeMeta: async (dir, m) => { writes[dir] = m; },
+      ops: { pendingRuns: async () => [], cancel: async () => {} },
+      docs: { softDeleteDocs: async (ids) => { calls.deleted.push(...ids); return { deleted: ids.length, refused: [] }; } },
+      allowWrite: true, purge: async (s) => { calls.purged.push(s); return true; }, queue: async () => {}, now: () => 'T0',
+      textStamp: async (dir) => `${dir}@1`, readText: async (dir) => (dir === '/d/f' ? TALK : OTHER), prior: { since: 'T-1', prior: {}, merged: [] }, pairCache: new Map(),
+      content: { restoreRetiredDocs: async () => ({ restored: 0 }) },
+    };
+    await mediaDedupeJob({ write: true }, deps);
+    expect(calls.marked[0]).toMatchObject({ ids: [21], g: 20 });
+    expect(calls.deleted).toEqual([201]);
+    expect(calls.purged).toContain('tape-2bb');
+    expect(writes['/d/b'].dedup).toMatchObject({ verdict: 'duplicate', best: 'tape-2' });
+  });
+  it('markReversed writes the evidence and joins the two into one group; no evidence, no mark', async () => {
+    const items = { 'tape-2': { id: 4082, slug: 'tape-2', dir: '/d/f', dup_group: null }, 'tape-2bb': { id: 4081, slug: 'tape-2bb', dir: '/d/b', dup_group: null } };
+    const writes = {}, groups = [];
+    const deps = { repo: { getMediaBySlug: async (s) => items[s], setDupGroup: async (ids, g) => groups.push([ids, g]) },
+      readMeta: async () => ({ title: 'T' }), writeMeta: async (dir, m) => { writes[dir] = m; }, now: () => 'T0' };
+    expect(await markReversed({ slug: 'tape-2bb', of: 'tape-2', evidence: '' }, deps)).toHaveProperty('error');
+    expect(await markReversed({ slug: 'nope', of: 'tape-2', evidence: 'x' }, deps)).toHaveProperty('error');
+    expect(await markReversed({ slug: 'tape-2bb', of: 'tape-2', evidence: 'whisper: reversed = forward' }, deps)).toEqual({ marked: 'tape-2bb', of: 'tape-2', group: 4081 });
+    expect(writes['/d/b']).toMatchObject({ title: 'T', reversed: { of: 'tape-2', evidence: 'whisper: reversed = forward', at: 'T0' } });
+    expect(groups).toEqual([[[4081, 4082], 4081]]);
   });
 });

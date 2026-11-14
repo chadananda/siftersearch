@@ -105,6 +105,13 @@ export default async function mediaOps(fastify) {
   // rent ONE CPU pod by hand (Chad 10-31: never automatic): it runs cpu-prep + cpu-finish overflow from the edge queue and ends itself when
   // idle. { vcpu?: 32, flavor?: 'cpu5c' } → the pod id, its host name and RunPod's own $/h. Honors the rentals pause.
   // repair: every talk off the air (state ≠ done) loses published_at → { cleared, ids } (11-01: 2187/2188 duplicates still dated as published)
+  // a talk measured to be another recorded BACKWARDS (Chad 11-14): { slug, of, evidence } → the mark + one group; media-dedupe (queued now) retires it
+  fastify.post('/ops/media/reversed', guard, async (req, reply) => {
+    const b = req.body || {}, r = await (await import('../lib/media/dedupe.js')).markReversed({ slug: b.slug, of: b.of, evidence: b.evidence, by: by(req) });
+    if (r.error) return reply.code(400).send(r);
+    req.log.info({ ...r, by: by(req) }, 'reversed copy marked');
+    return { ...r, dedupe: await (await import('../lib/repos/ops-report-repo.js')).enqueue('media-dedupe', { write: true }, by(req)) };
+  });
   fastify.post('/ops/media/off-air-published', guard, async (req) => {
     const r = await (await import('../lib/repos/media-repo.js')).clearOffAirPublished();
     req.log.info({ cleared: r.cleared, by: by(req) }, 'off-air published_at cleared');

@@ -41,7 +41,9 @@ export function pickBest(copies) {
   const all = copies.map((c) => ({ c, id: Number(c.id), q: copyQuality(c.meta), has: !!c.meta }));
   for (const x of all) x.q.on_air = x.q.on_air || (x.c.state !== undefined && live(x.c));
   const measured = all.filter((x) => x.has);
-  const pool = measured.length ? measured : all;
+  // a copy digitised BACKWARDS (meta.reversed, Chad 11-14) is unusable: it never wins while a playable copy exists
+  const playable = (a) => (a.some((x) => !reversedOf(x.c)) ? a.filter((x) => !reversedOf(x.c)) : a);
+  const pool = playable(measured.length ? measured : all);
   const basis = pool.length > 1 && pool.every((x) => x.q.remaster != null) ? 'remaster' : 'original';
   const score = (x) => x.q[basis];
   const scored = pool.filter((x) => score(x) != null).sort((a, b) => score(b) - score(a) || fuller(a, b));
@@ -91,7 +93,10 @@ export function datesAgree(ma = {}, mb = {}) {
   const ya = yearOf(ma?.date) || yearOf(ma?.year), yb = yearOf(mb?.date) || yearOf(mb?.year);
   return !ya || !yb || ya === yb;
 }
+/** The slug this copy is a backwards recording of (meta.reversed, set by `ops.mjs media reversed` with the measured evidence), or null. */
+export const reversedOf = (c) => c?.meta?.reversed?.of || null;
 const sameAudio = (a, b) => {
+  if ((reversedOf(a) && reversedOf(a) === b.slug) || (reversedOf(b) && reversedOf(b) === a.slug)) return 'same audio, reversed (measured)';
   const sa = a.sha256 || a.meta?.source?.sha256, sb = b.sha256 || b.meta?.source?.sha256, fa = a.meta?.fingerprint ?? a.fingerprint, fb = b.meta?.fingerprint ?? b.fingerprint;
   return (sa && sa === sb) ? 'same file (sha256)' : (fa && fa === fb) ? 'same audio fingerprint' : null;
 };
@@ -267,6 +272,21 @@ const defaultSidecar = async (path) => {
 };
 const name = (c) => c.slug || `#${c.id}`;
 
+/** A talk measured to be another talk recorded backwards (Chad 11-14: Desert Rose #2BB = tape #2 reversed): the mark on its meta.json +
+ *  one duplicate group, so the media-dedupe run retires it (off air, search document removed, URL → the playable copy). */
+export async function markReversed({ slug, of, evidence, by = 'ops' }, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const readMeta = deps.readMeta || defaultReadMeta, writeMeta = deps.writeMeta || defaultWriteMeta;
+  const [a, b] = [await repo.getMediaBySlug(slug), await repo.getMediaBySlug(of)];
+  if (!a?.dir || !b) return { error: `unknown talk: ${!a?.dir ? slug : of}` };
+  if (!String(evidence || '').trim()) return { error: 'evidence required (what was measured)' };
+  const meta = await readMeta(a.dir);
+  await writeMeta(a.dir, { ...meta, reversed: { of: b.slug, evidence: String(evidence).slice(0, 1000), by, at: (deps.now || (() => new Date().toISOString()))() } });
+  const g = Number(b.dup_group ?? a.dup_group ?? Math.min(a.id, b.id));
+  await repo.setDupGroup([Number(a.id), Number(b.id)], g);
+  return { marked: a.slug, of: b.slug, group: g };
+}
+
 // transcript text for the gate: the raw ASR (both copies were transcribed the same way), else the worked paragraphs
 async function defaultTextStamp(dir) {
   const { stat } = await import('fs/promises');
@@ -376,7 +396,7 @@ export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPa
       if (copies.some((c) => c.state === 'excluded')) { out.skipped++; continue; }   // an excluded talk stays excluded, every copy
       // 1. the content gate (cached per pair of transcript versions)
       const gkey = JSON.stringify(gate), pairs = [];
-      const key = (a, b) => `${a.id}@${a.stamp}|${b.id}@${b.stamp}|${gkey}`;
+      const key = (a, b) => `${a.id}@${a.stamp}${reversedOf(a) ? '~r' : ''}|${b.id}@${b.stamp}${reversedOf(b) ? '~r' : ''}|${gkey}`;   // a reversed mark changes the verdict
       let loaded = false;
       const cById = new Map(copies.map((c) => [Number(c.id), c]));
       for (const [ia, ib, source] of gEdges) {
@@ -507,7 +527,8 @@ async function settleGroup(copies, { pairs, runs, out, write, sample, repo, ops,
   if (held.length) { out.held_kept = (out.held_kept || 0) + held.length; if ((out.held_kept_list ||= []).length < 50) out.held_kept_list.push(...held.map((c) => ({ copy: name(c), best: name(best) }))); }
   const bestLive = live(best);
   // the on-air stand-in stays on air until the better copy is complete; everything else goes
-  const losers = others.filter((c) => (bestLive || !live(c)) && !waiting.includes(c) && !held.includes(c));
+  // (a reversed copy is never an on-air stand-in: it goes even before the best is on air — its page then 404s until the best is)
+  const losers = others.filter((c) => (bestLive || !live(c) || reversedOf(c)) && !waiting.includes(c) && !held.includes(c));
   if ([best, ...copies.filter(live)].some((c) => runs.has(Number(c.id)))) { out.busy++; return; }
   const m = mergeMeta(best, others);
   const todo = losers.filter((c) => !(c.state === 'duplicate' && Number(c.dup_group) === g && (!c.meta || (c.meta.dedup?.verdict === 'duplicate' && c.meta.dedup.best === best.slug))));
