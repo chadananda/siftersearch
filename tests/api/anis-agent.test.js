@@ -150,6 +150,8 @@ describe('source questions', async () => {
     // the tablet only when known: untitled, unlinked or merely possible → the source link alone
     for (const o of [{ ...SA[1], title: 'Untitled' }, { ...SA[1], source_url: null }, { ...SA[1], role: 'possible_original' }])
       expect(sourceAnswer([SA[0], o])[0].note).toContain('From [Gleanings from the Writings of Bahá’u’lláh](https://oceanlibrary.com/gleanings?paraId=p117).');
+    // where in the work, when the source carries it (round 5: "From [Gleanings…, #117](…), quoting the [Lawḥ-…](…).")
+    expect(sourceLine({ ...SA[0], place: '#117' }, SA[1])).toBe('From [Gleanings from the Writings of Bahá’u’lláh, #117](https://oceanlibrary.com/gleanings?paraId=p117), quoting the [Lawḥ-i-Maqṣúd](https://oceanoflights.org/maqsud#p4).');
     expect(sourceLine(SA[0], { ...SA[1], title: 'The Tablet of Wisdom' })).toBe('From [Gleanings from the Writings of Bahá’u’lláh](https://oceanlibrary.com/gleanings?paraId=p117), quoting [The Tablet of Wisdom](https://oceanoflights.org/maqsud#p4).');
     // no source → at most two near passages, marked
     const none = sourceAnswer(SA.slice(1));

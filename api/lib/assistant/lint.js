@@ -609,3 +609,29 @@ export function dropNarration(text) {
 }
 /** The reply's last sentence is a plan ("I'll check them directly.") — an unfinished answer. Pure. */
 export const endsOnPlan = (text) => { const t = String(text || '').trim(); const last = (t.match(/[^.!?\n]+[.!?…]*\s*$/) || [''])[0]; return !!last.trim() && PLAN.test(last); };
+
+/** CIRCULAR EVIDENCE (Chad 11-14, conversation 73b1d410: "fail"). In an identification table ("who was each of them"), a row whose
+ *  only citation is the very text being explained — the list that names them, here the Kitáb-i-Íqán — gives no evidence of who
+ *  the person was. The list = a cited passage of a work the reader's question names that itself names ≥2 of the table's people.
+ *  → the names of those rows (the agent then searches the histories for them). Pure. passages: [[ref, passage]] or a Map. */
+const foldL = (s) => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').replace(/[‘’'`ʼʻ]/g, '').toLowerCase();
+const COMMON_NAME = new Set(['mulla', 'siyyid', 'sayyid', 'haji', 'hajji', 'mirza', 'shaykh', 'muhammad', 'ali', 'husayn', 'hasan', 'aqa', 'khan', 'abdul', 'the', 'and', 'of']);
+const TITLE_STOP = new Set(['kitab', 'the', 'writings', 'from', 'with', 'tablet', 'book', 'selections', 'gleanings', 'lawh', 'suriy', 'baha', 'bahaullah', 'abdul', 'abdulbaha']);
+const nameKeys = (name) => foldL(name).split(/[\s\-–—,()]+/).filter((w) => w.length >= 4 && !COMMON_NAME.has(w));
+export function circularRows(text, passages = [], question = '') {
+  const map = passages instanceof Map ? passages : new Map(passages);
+  const q = foldL(question);
+  const lines = String(text || '').split('\n'), sep = (l) => /^\s*\|[\s:|-]+\|?\s*$/.test(l || '');
+  const rows = lines.filter((l, i) => /^\s*\|/.test(l) && !sep(l) && !sep(lines[i + 1])).map((l) => {
+    const cells = l.split('|').slice(1, -1).map((c) => c.trim());
+    const name = cells.find((c) => /\p{L}{3}/u.test(c) && !/\[\[?[PW]\d/.test(c)) || '';
+    const refs = [...l.matchAll(/\[\[?([PW]\d+(?:\s*[,;]\s*[PW]\d+)*)\]\]?/g)].flatMap((m) => m[1].split(/\s*[,;]\s*/)).filter((r) => map.has(r));
+    return { name, keys: nameKeys(name), refs: [...new Set(refs)] };
+  }).filter((r) => r.keys.length);
+  if (rows.length < 2) return [];
+  const names = (p) => rows.filter((r) => r.keys.some((k) => foldL(p?.text).includes(k))).length;
+  const named = (p) => foldL(p?.title).split(/[^a-z]+/).filter((w) => w.length >= 4 && !TITLE_STOP.has(w)).some((w) => q.includes(w));
+  const lists = new Set([...map].filter(([, p]) => named(p) && names(p) >= 2).map(([r]) => r));
+  if (!lists.size) return [];
+  return rows.filter((r) => r.refs.length && r.refs.every((x) => lists.has(x))).map((r) => r.name);
+}

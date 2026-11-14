@@ -8,6 +8,14 @@
     "parameters": {
      "type": "object",
      "properties": {
+      "about": {
+       "type": "string",
+       "enum": [
+        "teaching",
+        "history"
+       ],
+       "description": "The question's kind, your judgment: \"teaching\" (what a text or the Faith teaches — commentary is left out once the core texts answer) or \"history\" (an event, a date, who a person was — scholarship and histories kept beside the core texts). Default teaching"
+      },
       "question": {
        "type": "string",
        "description": "The reader's question, restated to stand alone in its canonical form: the plain question with full proper names, diacritics and the subject's own title (\"What is the Kitáb-i-Aqdas?\" for \"what's the Most Holy Book about\"; \"Who was Shoghi Effendi?\" for \"who was the Guardian\"), no conversational wording"
@@ -227,6 +235,14 @@
          "description": "Documents dated up to this year"
         }
        }
+      },
+      "about": {
+       "type": "string",
+       "enum": [
+        "teaching",
+        "history"
+       ],
+       "description": "The question's kind, your judgment: \"teaching\" (what a text or the Faith teaches — commentary is left out once the core texts answer) or \"history\" (an event, a date, who a person was — scholarship and histories kept beside the core texts). Default teaching"
       },
       "layers": {
        "type": "array",

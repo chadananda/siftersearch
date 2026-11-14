@@ -57,7 +57,8 @@ export function sourceLine(source, original = null) {
   const link = (label, url) => (url ? `[${label}](${url})` : label);
   const t = String(original?.title || '').trim(), the = /^the\s/i.test(t) ? '' : 'the ';
   const tablet = original && t && !/^untitled\b/i.test(t) && original.source_url ? `, quoting ${the}${link(t, original.source_url)}` : '';
-  return `From ${link(String(source.title || 'the source').trim(), source.source_url)}${tablet}.`;
+  const label = String(source.title || 'the source').trim() + (source.place ? `, ${source.place}` : '');   // where in the work, when known (refs/place.js)
+  return `From ${link(label, source.source_url)}${tablet}.`;
 }
 // THE SOURCE IS CORE (memory "quote candidates = core only"; 11-14 replay: the tower named "Paradise and Paradigm", a scholar's study
 // filed on the Christian shelf with author "Bahá'u'lláh", as the source): a Bahá'í source is a written text of the Central Figures or Shoghi
@@ -137,7 +138,7 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
       return [ref, tref];
     }).flat();
   };
-  const searchLibrary = async ({ query, tradition: tr, filters }) => {
+  const searchLibrary = async ({ query, tradition: tr, filters, about }) => {
     const tradition = tr ?? filters?.tradition;
     const early = impl.originals && /bah/i.test(String(tradition || '')) ? impl.originals(query).catch(() => []) : null;
     // a Bahá'í-scoped search starts the Writings pass beside it (11-12: run after it, the two searches took 2.5–4.8 s); used only when needed
@@ -161,14 +162,18 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
     if (impl.ownSource) part('own_source', Date.now() - o0);
     // written core (English Writings, Shoghi Effendi) → the Persian/Arabic originals with their translations → compilations,
     // talks, recollections, the House → commentary last, and left out when the written core is enough (source-tier.js coreFirst)
-    const { kept, left } = coreFirst(byTier(hits), orig.length);
+    // — for a TEACHING question. A history or biography question (the agent's own judgment, `about`; Chad 11-14, Dawn-Breakers:
+    // "we will need to pull in other sources to unravel many of these") keeps the same order and drops nothing
+    const history = about === 'history';
+    const { kept, left } = history ? { kept: byTier(hits), left: 0 } : coreFirst(byTier(hits), orig.length);
     hits = kept;
     searched.push({ query, docs: hits.map((p) => p.document_id).filter((x) => x != null) });
     const core = hits.filter(isWrittenCore).map((p) => add(p));
     const origRefs = await showOriginals(orig);
     const rest = hits.filter((p) => !isWrittenCore(p)).map((p) => add(p));
     const out = show([...core, ...origRefs, ...rest]);
-    return left ? `${out}\n\n(${left} passage${left > 1 ? 's' : ''} of commentary left out: the Writings above answer this — search a scholar by name only for a point they do not address)` : out;
+    if (history && hits.some((p) => sourceTier(p) === 'secondary')) return `${out}\n\n(history question: scholarship is kept — name each scholar's claim as theirs ("Balyuzi writes…"); the Writings and Shoghi Effendi still lead where they speak)`;
+    return left ? `${out}\n\n(${left} passage${left > 1 ? 's' : ''} of commentary left out: the Writings above answer this — search a scholar by name only for a point they do not address; if this is a history or biography question, search again with about: "history" to keep them)` : out;
   };
   // originals_search: the original-language pass alone, as many as it finds (the researcher's own Persian/Arabic or English words)
   const searchOriginals = async ({ query, tradition }) => {

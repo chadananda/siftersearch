@@ -100,6 +100,9 @@ async function fastRows(query, engine, limit, ctx = {}) {
   const { religion, ...rest } = engine;
   return (await fast(query, religion, limit, ...(Object.keys(rest).length ? [rest] : []))).map(toPassage);
 }
+// The question's KIND, judged by the agent (Chad 11-14, Dawn-Breakers pilot): a teaching question answers from the core texts and
+// leaves commentary out once they suffice; a history or biography question keeps the same order but never drops scholarship.
+const ABOUT = { type: 'string', enum: ['teaching', 'history'], description: 'The question\'s kind, your judgment: "teaching" (what a text or the Faith teaches — commentary is left out once the core texts answer) or "history" (an event, a date, who a person was — scholarship and histories kept beside the core texts). Default teaching' };
 const SEARCH_INPUT = (extra = {}) => ({ type: 'object', additionalProperties: false, required: ['query'], properties: {
   query: str('Words to search for, as the texts would say them'), filters: FILTERS, limit: LIMIT(8), ...extra } });
 const P_EX = { id: 1201, document_id: 12, paragraph_index: 4, title: 'Gleanings from the Writings of Bahá’u’lláh', author: "Bahá'u'lláh", religion: "Baha'i",
@@ -218,7 +221,7 @@ const ENTRIES = [
   // THE search: layers, filters (authority, work, years, language, tradition, author) and dedup in one call
   { name: 'fused_search', label: 'Fused Search', kind: 'tool', outputName: 'Passage[]', description: FUSED_DESC, cost: C(true, 250),
     purpose: 'The one typed search: every layer (or the ones you pick) fused on the query as written, filtered, deduped across layers/copies/editions.',
-    input: SEARCH_INPUT({ layers: LAYERS, tiers: TIERS, min_results: { type: 'integer', minimum: 1, maximum: 20, default: 3, description: 'tiers: widen while fewer than this many passages' },
+    input: SEARCH_INPUT({ about: ABOUT, layers: LAYERS, tiers: TIERS, min_results: { type: 'integer', minimum: 1, maximum: 20, default: 3, description: 'tiers: widen while fewer than this many passages' },
       spell: { type: 'boolean', default: false, description: 'Correct misspellings against the library vocabulary before searching (deterministic; query_used says what was searched)' } }),
     output: { type: 'object', required: ['passages'], properties: { passages: { type: 'array', items: PASSAGE }, query_used: { ...nul('string'), description: 'The query actually searched (differs when spell corrected it)' },
       relaxed: { type: 'array', items: { type: 'string' }, description: 'Filters dropped by tiers to reach the passages' } } }, llmOmit: ['limit', 'min_results'],
@@ -623,7 +626,7 @@ const ENTRIES = [
       // rows the wording did not hold (cross-translation holders among them): handed on as role 'candidate' for the tree-level judge.holds
       const maybe = (r?.unsure || []).map((x) => toPassage({ text: x.text, title: x.title, author: x.author, source_url: x.url, document_id: x.documentId, role: 'candidate', score: sc0(x) }));
       if (!r?.origin) return { passages: dedupePassages(maybe) };
-      const o = r.origin, t = r.tablet?.certain ? r.tablet : null, c0 = !t ? r.tablet?.candidates?.[0] : null, who = r.quoteAuthor || o.author;
+      const o = r.origin, t = r.tablet?.certain ? r.tablet : null, c0 = !t ? r.tablet?.candidates?.[0] : null, who = r.quoteAuthor || o.author;   // the original TABLET's writer only; the source passage keeps its own writer (round 5: a quoted voice became a study's author)
       const sc = (x) => Math.round(contentContainment(quotation, x?.text || '') * 100) / 100;
       // the original's language is its document's metadata (any language the library holds); the script guess only where the doc records none
       const { langCode } = await import('./editions.js');
@@ -637,7 +640,7 @@ const ENTRIES = [
       const where = o.religion && !/^bah/i.test(o.religion) && o.id
         ? await (ctx?.deps?.referenceOf || (await import('./editions.js')).referenceOf)(o.id, ctx?.deps?.editions || {}).catch(() => null) : null;
       const ref = where?.chapter != null ? `${o.title} ${where.chapter}${where.verse ? `:${where.verse}` : ''}${where.exact ? '' : ' (approx.)'}` : null;
-      return { passages: dedupePassages([{ ...toPassage({ id: o.id, text: o.text, title: o.title, author: who, religion: o.religion, source_url: o.rangeUrl || o.url, document_id: o.documentId, role: 'source', score: sc(o), ...(o.tier ? { tier: o.tier } : {}) }), ...(ref ? { ref } : {}) },
+      return { passages: dedupePassages([{ ...toPassage({ id: o.id, text: o.text, title: o.title, author: o.author || o.bookAuthor || null, religion: o.religion, source_url: o.rangeUrl || o.url, document_id: o.documentId, role: 'source', score: sc(o), ...(o.tier ? { tier: o.tier } : {}), locator: o.locator ?? null, subdocument: o.subdocument ?? null, para_no: o.para_no ?? null }), ...(ref ? { ref } : {}) },
         ...(t ? [orig(t, 'original')] : c0?.text ? [orig(c0, 'possible_original')] : []), ...foreign.map((x) => toPassage({ ...x, role: 'original' })),
         ...(r.citedBy || []).slice(0, 3).map((c) => toPassage({ text: c.text || c.excerpt || `${c.title} quotes it${c.paragraphs ? ` (${c.paragraphs} paragraphs)` : ''}.`,
           title: c.title, author: c.author, source_url: c.rangeUrl || c.url, document_id: c.documentId, role: 'cited_by', score: sc(c) })), ...maybe]) };
@@ -685,7 +688,7 @@ const PROCESS_ENTRIES = [
   { name: 'research_lookup', label: 'Research Lookup', kind: 'tool', process: true, outputName: 'Passage[]', cost: C(false, 200),
     purpose: 'Research already done for a question (research-cache.js): the passages earlier answers used, re-read from the library.',
     description: 'Research already held for this question: call FIRST with the question restated to stand alone. Returns [P#] passages earlier answers to it used (curated sets first), or that none is held.',
-    input: { type: 'object', additionalProperties: false, required: ['question'], properties: { question: str('The reader\'s question, restated to stand alone in its canonical form: the plain question with full proper names, diacritics and the subject\'s own title ("What is the Kitáb-i-Aqdas?" for "what\'s the Most Holy Book about"; "Who was Shoghi Effendi?" for "who was the Guardian"), no conversational wording', 500) } },
+    input: { type: 'object', additionalProperties: false, required: ['question'], properties: { about: ABOUT, question: str('The reader\'s question, restated to stand alone in its canonical form: the plain question with full proper names, diacritics and the subject\'s own title ("What is the Kitáb-i-Aqdas?" for "what\'s the Most Holy Book about"; "Who was Shoghi Effendi?" for "who was the Guardian"), no conversational wording', 500) } },
     output: { type: 'object', properties: { status: { type: 'string' }, similarity: { type: 'number' }, passages: { type: 'array', items: PASSAGE } } },
     async run(a, ctx = {}) { return ctx.researchLookup ? ctx.researchLookup(a.question) : null; } },
   { name: 'book_card', label: 'Book Card', kind: 'tool', process: true, outputName: 'Book', cost: C(false, 300),

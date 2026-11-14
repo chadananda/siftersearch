@@ -104,6 +104,18 @@ describe('each search tool calls only its own layer', () => {
     expect(deps.searchKeywordQdrant).toHaveBeenCalledWith('b', {});
     expect(deps.searchHypeQdrant).not.toHaveBeenCalled();
   });
+  // round 5: the source passage is credited to its OWN writer — the quote's voice (quoteAuthor) names only the original tablet's writer
+  it('quotation_candidates: the source keeps its own writer and place; the quoted voice is the tablet\'s writer only', async () => {
+    const sourceHunt = async () => ({ quoteAuthor: 'Bahá’u’lláh', citedBy: [],
+      origin: { id: 9, documentId: 90, title: 'A Study', author: 'Christopher George Buck', text: 'q', url: 'https://x/s#p1', religion: 'Christian', locator: '#117.2' },
+      tablet: { certain: true, documentId: 77, title: 'Lawḥ-i-Maqṣúd', text: 'ع', url: 'https://oceanoflights.org/m#p4' } });
+    const deps = { ...layerDeps(), getLinkMeta: async () => new Map() };
+    const r = await tools.run('quotation_candidates', { quotation: 'q' }, { deps, sourceHunt, sourceHuntMod: null });
+    const src = r.passages.find((p) => p.role === 'source'), orig = r.passages.find((p) => p.role === 'original');
+    expect(src.author).toBe('Christopher George Buck');
+    expect(src.place).toBe('#117.2');
+    expect(orig.author).toBe('Bahá’u’lláh');
+  });
 });
 
 describe('callers list tools only from the registry', () => {

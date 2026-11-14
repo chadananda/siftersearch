@@ -3,7 +3,7 @@
 import { toolRunner, TOOL_CHARS } from './tool-runner.js';
 import { workNotes as workNotesLookup, asPassage, SAME_QUESTION } from './tool-defs.js';
 import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
-import { dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer } from './lint.js';
+import { circularRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer } from './lint.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
 import { expandTemplates } from './widgets/templates.js';
@@ -23,9 +23,40 @@ export const AGENT_TOOL_NAMES = ['research_lookup', 'book_card', 'search_in_work
 export const NOT_FOUND = '[[NOT_IN_LIBRARY]]', MIN_SEARCHES = 3;
 const nudge = (n) => `You have run ${n} library search${n === 1 ? '' : 'es'}. Before the library is said to lack this, run at least ${MIN_SEARCHES} differently worded searches in the right scope, in the words the SOURCE itself would use (a 1910 birth notice says "a daughter was born", not "birth"); a hint the reader gave (an issue, a year) is a scope to search, never a reason to ask back. Search now, then answer.`;
 
-export const AGENT_SYSTEM = `You are Anís, a study companion in a library of the world's sacred texts — the scriptures, originals, history and scholarship of many traditions, the Bahá'í Writings most fully. Your readers come from every tradition and none, from newcomers to scholars. You answer readers in chat.
+/** THE CONVERSATION AS THE AGENT SEES IT (Chad 11-14, conversation 73b1d410: a 12,433-char table reply was clipped to 3,000 chars with
+ *  its newlines collapsed, so "email me the final table" rebuilt a thin one and lost the reader's #11 correction). Earlier turns go in
+ *  VERBATIM, newlines kept: up to `max` messages (the widget sends 12), newest first within `budget` chars; the latest message and the
+ *  last two replies always whole; an older turn past the budget keeps its head and tail at line breaks with a marked gap, and once
+ *  under `minPart` chars are left the older turns are dropped. Starts on a reader's turn. Pure. */
+/** The re-ask for circular identification rows (lint.js circularRows). */
+export const circularAsk = (names) => `(note from the library, not the reader) These rows cite only the text being explained — the list that NAMES them — as evidence of who they were: ${names.join('; ')}. Naming is not evidence. For EACH of them, run fused_search with about: "history" on the name and its variants (with diacritics and without, and the short name alone, e.g. "Turshízí", "Khu'í") — Nabíl's narrative (The Dawn-Breakers), God Passes By, Balyuzi, Momen — then write the whole table again: every row's evidence a passage that DESCRIBES the person (a role, an event, a fate), or "not identified in the library (searched: <the names you searched>)". Never cite the text being explained as evidence of who someone was.`;
+export const CONVO_BUDGET = 60000, CONVO_MAX = 12;
+export function convoWindow(messages = [], { budget = CONVO_BUDGET, max = CONVO_MAX, minPart = 1500 } = {}) {
+  const all = (messages || []).slice(-max).map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: String(m.content ?? '').replace(/\r\n/g, '\n').trim() }));
+  const whole = new Set([all.length - 1]);
+  for (let i = all.length - 1, n = 0; i >= 0 && n < 2; i--) if (all[i].role === 'assistant') { whole.add(i); n++; }
+  let left = budget - [...whole].reduce((t, i) => t + all[i].content.length, 0);
+  const out = [];
+  for (let i = all.length - 1; i >= 0; i--) {
+    const m = all[i];
+    if (whole.has(i) || m.content.length <= left) { out.unshift(m); if (!whole.has(i)) left -= m.content.length; continue; }
+    if (left < minPart) break;
+    const c = m.content, gap = `\n\n[middle of this ${m.role === 'assistant' ? 'reply' : 'message'} omitted]\n\n`;
+    const h = c.lastIndexOf('\n', Math.floor(left * 0.6)), headEnd = h > 0 ? h : Math.floor(left * 0.6);
+    const t = c.indexOf('\n', c.length - Math.floor(left * 0.4)), tailStart = t > 0 ? t + 1 : c.length - Math.floor(left * 0.4);
+    out.unshift({ ...m, content: `${c.slice(0, headEnd)}${gap}${c.slice(tailStart)}` });
+    // the reader's turn it answered comes with it (its head when long), so the window still opens on the reader
+    const u = all[i - 1];
+    if (m.role === 'assistant' && u?.role === 'user') out.unshift({ ...u, content: u.content.length <= minPart ? u.content : `${u.content.slice(0, Math.max(u.content.lastIndexOf('\n', minPart), minPart / 2))}\n\n[rest of this message omitted]` });
+    break;
+  }
+  while (out.length > 1 && out[0].role !== 'user') out.shift();
+  return out;
+}
 
-TRADITION — NEVER ASSUMED (Chad 11-14). Each turn carries a TRADITION line. The question itself decides first: when it names or plainly implies a tradition ("the Aqdas", "the Guardian", "what does the Gita say"), that tradition is in play. Otherwise the line says which, or that none is: then a general question ("what happens after death") is answered briefly from the traditions the library holds best for it — a sentence and a passage or two from each — and the reader is offered to go deeper in one. Never presume the reader's faith in your wording: no "as a Bahá'í you…", "our Writings", "we believe"; name whose texts they are ("the Bahá'í Writings say…"). The Bahá'í rules below (core texts first, the order of authority, originals and Shoghi Effendi's translations, the community's readings of titles) govern whenever the Bahá'í Faith is in play; with another tradition, the same idea in its own terms — its scripture first, then its recognised interpreters, then scholarship.
+export const AGENT_SYSTEM = `You are Anís, a companion researcher for Ocean, an interfaith library of the world's sacred texts — the scriptures, originals, history and scholarship of many traditions. Your readers come from every tradition and none, from newcomers to scholars. You answer readers in chat.
+
+TRADITION — NEVER ASSUMED (Chad 11-14). Each turn carries a TRADITION line. The question itself decides first: when it names or plainly implies a tradition ("the Aqdas", "the Guardian", "what does the Gita say"), that tradition is in play. Otherwise the line gives what the reader has said of their own tradition, and the deployment's own description of its audience when the host site wrote one (a description of the site's readers, never of this reader; take from it only what it plainly says), or that none is assumed: then a general question ("what happens after death") is answered briefly from the traditions the library holds best for it — a sentence and a passage or two from each — and the reader is offered to go deeper in one. Never presume the reader's faith in your wording: no "as a Bahá'í you…", "our Writings", "we believe"; name whose texts they are ("the Bahá'í Writings say…"). The Bahá'í rules below (core texts first, the order of authority, originals and Shoghi Effendi's translations, the community's readings of titles) govern whenever the Bahá'í Faith is in play; with another tradition, the same idea in its own terms — its scripture first, then its recognised interpreters, then scholarship.
 
 WHAT THE READER SHOWS. When the reader reveals something about themselves in their own words — the faith they call theirs ("I'm a Catholic"), their level ("I'm new to this", "I read Persian"), a lasting interest, their language, their role (a study-class tutor, a researcher, a newcomer, a seeker), a work or person they care about — call note_indication (when you have it), once per fact, in the same round as your other tool calls: never a round of its own, never once you are writing. Only what they said or plainly showed: never from a name, never from one question's topic (asking about Islam is an interest, not being Muslim). A turn may carry WHAT THIS READER HAS INDICATED: let it steer depth, tradition and direction (what you offer next, a letter's angle); never recite it back or mention it, and never treat it as more than what they said.
 
@@ -75,6 +106,8 @@ WRITING:
 - NEVER NARRATE. The reader sees only the answer: never write about candidates, tools, searches, held research or what you will check next ("The candidate source is…", "I'll check the notes"). When your searches run out, write the answer from what you hold and say plainly what is not settled.
 - LINKS COME FROM PASSAGES. Cite with refs ([[P3]]) only; never type a library address or a paragraph id yourself — code makes every link from a passage you hold, and a typed one is removed.
 - CORE TEXTS FIRST (the Bahá'í Faith in play). Answer from the written texts of Bahá'u'lláh, the Báb and 'Abdu'l-Bahá and from Shoghi Effendi — in English and in the Persian and Arabic originals (originals_search; quote an original with its existing translation, never a new one) — and let them lead and carry the argument. A recorded talk of 'Abdu'l-Bahá may stand beside a written text when it adds something, named as spoken; a pilgrim's recollection after that; a scholar's book only for a point no Writing addresses, named as that writer's view. Quote 'Abdu'l-Bahá from His own text, never through a scholar who quotes Him. When your passages lead with a talk or a study, search the Writings on that point before writing.
+- HISTORY AND BIOGRAPHY keep scholarship. Judge each question's kind yourself and pass it as about on fused_search and research_lookup: "teaching" (what a text or the Faith teaches — the core texts suffice and commentary is left out) or "history" (an event, a date, who a person was). For history the same order holds — the Writings and Shoghi Effendi lead where they speak — but the histories and scholars (Nabíl, Balyuzi, Momen, Mázandarání, Nicolas, Taherzadeh…) are needed to unravel obscure figures: search them on purpose, by the person's name and its variants, for EACH person you have not yet identified before writing that the library holds nothing on them; name each scholar's claim as theirs ("Balyuzi identifies him as…"). The evidence decides an identification, and a correction from the reader is evidence: weigh it against the passages, never keep an earlier reading out of habit.
+- WHO WAS EACH OF THEM (an identification table or list): each person's evidence is a passage that DESCRIBES them — a role, an event, a fate. The text that merely names them (the list being explained) is never evidence of who they were. Before writing, search each person not yet identified separately (about: "history"; the name with diacritics, without, and the short name alone — "Turshízí", "Khu'í"); if still nothing, the row says "not identified in the library (searched: …)".
 - With the Bahá'í Faith in play, prefer, in order: the Writings of Bahá'u'lláh, the Báb and 'Abdu'l-Bahá; Shoghi Effendi; then compilations; "Uncompiled Published Letters" (or "Uncompiled Letters") only when nothing else holds the words. A recollection of a Central Figure's spoken words (pilgrim notes, a visitor's article) only when no Writing says it, and named as a recollection in a few words. Doctrine rests on the Writings and Shoghi Effendi; the Universal House of Justice speaks with authority on law and administration.
 - In a Bahá'í question, readings in the community's sense: "the House" = the Universal House of Justice, "the Master" = 'Abdu'l-Bahá, "the Guardian" = Shoghi Effendi, "the Blessed Beauty" = Bahá'u'lláh, "the Most Holy Book" = the Kitáb-i-Aqdas, "the Nine Year Plan" = 2022–2031.
 - When the library does not hold what was asked (after the searches above), say so in one sentence, start with ${NOT_FOUND}, and give what it does hold that helps, with refs. Never fill a gap from memory.
@@ -170,7 +203,15 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const give = (ps) => ps.map((x) => { const r = add(asPassage(x)); if (r) fromStrategy.add(r); return r; }).filter(Boolean);
   // held research reaches the agent in tier order too (core first, Chad 11-14): it was captured in search order, a study first
   // and commentary left out when the held written core is enough (source-tier.js coreFirst; 11-14 replay: Savi's commentary closed the Evil One reply)
-  const heldRefs = new Set(), giveHeld = (ps) => { const refs = give(coreFirst(byTier(ps || [])).kept); for (const r of refs) heldRefs.add(r); return refs; };
+  // — for a TEACHING question. A history or biography question (`about: 'history'`, the agent's judgment — no word rules; Chad 11-14,
+  // Dawn-Breakers pilot) keeps the order and drops nothing: the held-back scholarship is given when the agent asks for it
+  let heldBack = [];
+  const heldRefs = new Set(), giveHeld = (ps, about) => {
+    const all = byTier(ps || []), kept = about === 'history' ? all : coreFirst(all).kept;
+    heldBack = all.filter((p) => !kept.includes(p));
+    const refs = give(kept); for (const r of refs) heldRefs.add(r); return refs;
+  };
+  const backNote = () => heldBack.length ? `\n\n(${heldBack.length} passage${heldBack.length > 1 ? 's' : ''} of scholarship held back because the Writings above answer a teaching question — if this is a HISTORY or BIOGRAPHY question, call research_lookup with about: "history" to see them)` : '';
   if (impl.bookCard) run.book_card = async (a) => {
     const r = await impl.bookCard(a);
     if (!r) return `no work or section like "${a.title}" in the library — try document_search with another spelling, or fused_search for passages that name it`;
@@ -235,13 +276,16 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   };
   // research cache (research-cache.js, Chad 11-12): passages earlier answers to this question used; never a finished reply. Not tool-cached (sets grow).
   let researchQ = null;
-  if (raw?.researchLookup) run.research_lookup = async ({ question }) => {
+  if (raw?.researchLookup || held?.passages?.length) run.research_lookup = async ({ question, about }) => {
+    // the held research's scholarship, asked for on a history question: given from what is held, no second lookup
+    if (about === 'history' && heldBack.length) { const back = heldBack; heldBack = []; return `the scholarship held back (history question: name each scholar's claim as theirs; the Writings and Shoghi Effendi still lead where they speak)\n\n${show(give(byTier(back)).map((r) => (heldRefs.add(r), r)))}`; }
+    if (!raw?.researchLookup) return 'nothing more is held for this question — research it with the tools';
     researchQ = String(question || '').trim() || researchQ;
     const r = await raw.researchLookup(researchQ).catch((err) => { console.warn(`[anis] research lookup failed: ${err.message}`); return null; });
     if (!r?.passages?.length) return 'no research held for this question yet — research it with the tools';
     const same = r.similarity >= SAME_QUESTION;
     if (same && r.question) researchQ = r.question;   // a reworded question grows the set it matched, not a duplicate
-    return `${same ? `research held for this question (${r.status}): these passages answered it before — answer from them; search only for a point the reader raises that they do not cover` : `research held for an EARLIER question ("${r.question}"; you judge: if it asks the same thing, treat it as this question's research and answer from it; if only related, start from it and search for the rest; if unrelated, ignore it) (${r.status})`}\n\n${show(giveHeld(r.passages))}`;   // a hit answers from the held research (11-13: hits re-searched 9–15 tower calls, 15–20 s)
+    return `${same ? `research held for this question (${r.status}): these passages answered it before — answer from them; search only for a point the reader raises that they do not cover` : `research held for an EARLIER question ("${r.question}"; you judge: if it asks the same thing, treat it as this question's research and answer from it; if only related, start from it and search for the rest; if unrelated, ignore it) (${r.status})`}\n\n${show(giveHeld(r.passages, about))}${backNote()}`;   // a hit answers from the held research (11-13: hits re-searched 9–15 tower calls, 15–20 s)
   };
   // research looked up BEFORE the first round (the Worker, on a same-question hit): it rides in the reader's turn, not a tool result —
   // the API holds a reply written after a tool result until it is complete (11-13: first word 5–6 s after research_lookup; in the turn, 0.9 s)
@@ -251,7 +295,8 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     if (held.same) researchQ = held.question;
     const head = held.same ? `RESEARCH HELD FOR THIS QUESTION (${held.status}): these passages answered it before and hold its quotations — choose the quotes, scenes and cards from them and answer with NO search. Search only if the reader asks for something specific (a named work, date or detail) that none of them holds. The one exception: a SOURCE QUESTION (the reader quotes words and asks where they come from, who said them, whether they are authentic) — call quotation_candidates first even so; these passages do not trace a source.`
       : `RESEARCH HELD FOR AN EARLIER QUESTION ("${held.question}", ${held.status}) — you judge: if the reader asks about the same subject in other words (\"tell me about X\" = \"who was X?\"; a casual or misspelt form = the canonical one), it IS this question: answer from these passages with no searching. If it asks something narrower or different, start from them and search only for the rest; if unrelated, ignore them and research. A SOURCE QUESTION (where quoted words come from) always calls quotation_candidates first.`;
-    heldText = `${head} research_lookup is already done this turn — do not call it.\n\n${show(giveHeld(held.passages))}`;
+    const shown = show(giveHeld(held.passages));
+    heldText = `${head} research_lookup is already done this turn — do not call it${heldBack.length ? ', except with about: "history" for the scholarship held back (below)' : ''}.\n\n${shown}${backNote()}`;
   } else if (held?.question) {
     researchQ = held.question;   // the canonical restatement: what this turn's research is saved under
     heldText = 'NO RESEARCH HELD for this question yet — research_lookup is already done this turn; do not call it. Research it with the tools.';
@@ -265,15 +310,15 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     return show(notes.slice(0, 5).map((n, i) => add({ id: `note:${work}:${i}`, text: n.quote, title: n.source_title,
       author: n.speaker || n.source_author, source_url: n.url, religion: "Baha'i" })), 600);
   };
-  const convo = messages.slice(-9).map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: clip(m.content, 3000) }));
+  const convo = convoWindow(messages);
   // a turn inside a conversation answers its one new point (11-12: a follow-up objection came back as a 550–700-word survey)
-  const followUp = convo.some((m) => m.role === 'assistant') ? `\n\nTHIS TURN CONTINUES A CONVERSATION. The reader has read your earlier replies: answer only the new point, in about 150–250 words — a direct answer, then the 2–3 passages that settle it. Do not repeat or re-survey what earlier replies covered; more is offered under the reply. Never say an earlier reply was cut off, incomplete or wrong unless a passage you hold now shows it.` : '';
+  const followUp = convo.some((m) => m.role === 'assistant') ? `\n\nTHIS TURN CONTINUES A CONVERSATION. The reader has read your earlier replies: answer only the new point, in about 150–250 words — a direct answer, then the 2–3 passages that settle it. Do not repeat or re-survey what earlier replies covered; more is offered under the reply. The one exception: when the reader asks you to compile, revise, send, email or tabulate what was built earlier (\"email me the final table\", \"put it in a document\"), build it IN FULL from the earlier replies above, every row, with every later correction the reader or you made applied — no new survey, no thinner version, and never claim something was not built or is not held when it is in this conversation. Never say an earlier reply was cut off, incomplete or wrong unless a passage you hold now shows it.` : '';
   const msgs = [{ role: 'system', content: frame ? `${AGENT_SYSTEM}${followUp}\n\nTHIS CHANNEL'S REPLY FRAME (it governs length and tone; it overrides the lengths above): ${frame}` : `${AGENT_SYSTEM}${followUp}` }, ...convo];
   // per-turn context rides in the reader's turn (the system prompt stays cached): the TRADITION line + the reader's bio, then held research
   const turnNote = [reader, heldText].filter(Boolean).join('\n\n');
   if (turnNote) { const u = msgs.findLastIndex((m) => m.role === 'user'); msgs[u] = { ...msgs[u], content: `${msgs[u].content}\n\n---\n${turnNote}` }; }
   const steps = [], usage = { in: 0, out: 0 };
-  let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false, capped = false, replanned = false;
+  let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false, capped = false, replanned = false, circled = false;
   // the answering round streams a sentence at a time; only sentences whose quotations are in a passage held are shown
   const asked0 = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const held0 = () => [...found.values()].map((p) => ({ ...p, source_title: p.title }));
@@ -377,6 +422,14 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
       if ((final.includes(NOT_FOUND) || (n > 0 && !found.size && !works.size)) && n < MIN_SEARCHES && !nudged && round < maxRounds - 1 && calls < maxCalls) {
         nudged = true;
         msgs.push({ role: 'assistant', content: final.replaceAll(NOT_FOUND, '').trim() || '(no answer yet)' }, { role: 'user', content: nudge(n) });
+        continue;
+      }
+      // circular evidence (lint.js circularRows; Chad 11-14 "fail"): identification rows whose only citation is the text being explained →
+      // once, the agent searches the histories for those people and rewrites the table (the replay replaces anything shown)
+      const circ = circled ? [] : circularRows(final, [...found], asked0.slice(-3).join(' '));
+      if (circ.length && round < maxRounds - 1 && calls < maxCalls) {
+        circled = true; gate = false; streamed = false;
+        msgs.push({ role: 'assistant', content: final }, { role: 'user', content: circularAsk(circ) });
         continue;
       }
       // an answer that ends on a plan ("I'll check…") or is only narration is unfinished: once, the agent writes it from what it holds, with no tools

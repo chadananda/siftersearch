@@ -1,6 +1,6 @@
 // SourceHunt: origin choice, citing publications, tablet (linked vs cross-lingual candidates) — all deps faked.
 import { describe, it, expect } from 'vitest';
-import { sourceHunt, prepareQuote, rankOrigins, quoteAuthorOf, misfiled } from '../../api/lib/source-hunt.js';
+import { sourceHunt, prepareQuote, rankOrigins, quoteAuthorOf, misfiled, quotesWriter } from '../../api/lib/source-hunt.js';
 
 const QUOTE = 'The earth is but one country, and mankind its citizens';
 const ROWS = {
@@ -112,6 +112,21 @@ describe('sourceHunt', () => {
       expect(misfiled({ religion: 'Christian', book_author: 'Bahá’u’lláh' })).toBe(true);
       expect(misfiled({ religion: 'Islam', book_author: 'Rumi' })).toBe(false);   // another tradition's own writer stays a source
       expect(misfiled({ religion: null, book_author: 'Bahá’u’lláh' })).toBe(false);
+    });
+    // round 5 (the real record, per the collections session): Buck's own study on the Christian shelf, writer = book author = Buck, Bahá'u'lláh
+    // only QUOTED — the foreign rule (meant for Rumi, the Gita) took it as "another tradition's own work" over Gleanings
+    it('another tradition\'s row that quotes the Bahá\'í writer (names him, or marks him quoted) is never the origin', async () => {
+      for (const extra of [{ authors: '[{"name":"Christopher George Buck","role":"author"},{"name":"Bahá’u’lláh","role":"quoted"}]' }, { text: `Baha'u'llah's moral admonitions: ${QUOTE}` }]) {
+        const rows = async (ids) => (await rowsWith([1, 3])(ids)).map((r) => (r.id === 3
+          ? { ...r, religion: 'Christian', collection: null, book_author: 'Christopher George Buck', authors: '[{"name":"Christopher George Buck","role":"author"}]',
+            title: 'Paradise and Paradigm', source_site: null, fm_translator: null, ...extra }
+          : { ...r, authors: '[{"name":"Bahá’u’lláh","role":"author"}]' }));
+        const r = await sourceHunt(QUOTE, deps({ rows }), { coreOnly: true });
+        expect(r.origin).toMatchObject({ id: 1, title: 'Gleanings' });
+      }
+      expect(quotesWriter({ writer: 'Rumi', text: 'Listen to the reed' }, 'Bahá’u’lláh')).toBe(false);          // the Masnavi stays a source
+      expect(quotesWriter({ writer: 'Bahá’u’lláh', text: 'Bahá’u’lláh says' }, 'Bahá’u’lláh')).toBe(false);     // His own text
+      expect(quotesWriter({ writer: 'Buck', text: 'x' }, null)).toBe(false);
     });
   });
 

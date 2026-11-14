@@ -210,7 +210,7 @@ export function rankOrigins(cands, quoteAuthor = null, religion = null) {
   const published = (c) => (anyProvisional && !isProvisional(c) && (guardianWritings(c) || isCoreHolder(c)) ? 1 : 0);
   const year = (c) => { const y = parseInt(c.year, 10); return y > 0 ? y : 9999; };
   // scripture itself (another tradition's text holding the words) is the origin of a Bahá'í book that quotes it (11-01 wording battery)
-  const scripture = (c) => (c.holds ?? ((c.overlap || 0) >= VERBATIM)) && c.religion && !/ba?h[aá]['’ʼ‘]?[ií]/i.test(c.religion) && (c.overlap || 0) >= VERBATIM ? 1 : 0;
+  const scripture = (c) => (c.holds ?? ((c.overlap || 0) >= VERBATIM)) && c.religion && !/ba?h[aá]['’ʼ‘]?[ií]/i.test(c.religion) && (c.overlap || 0) >= VERBATIM && !quotesWriter(c, quoteAuthor) ? 1 : 0;
   // a tradition the seeker NAMED ("the Buddha said …", "which sura …") outranks a Bahá'í book that quotes it (11-01 battery)
   const key = (c) => [c.holds ?? ((c.overlap || 0) >= VERBATIM) ? 1 : 0, religion && sameTradition(c.religion, religion) ? 1 : 0, scripture(c), quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, published(c), c.ownWork ? 1 : 0, bookStanding(c),
     // the paragraph holding the WORDING beats one the decision passed on meaning only — a neighbour (Liliane 10-05: Gleanings
@@ -233,9 +233,23 @@ const docBrief = (r) => ({ id: r.doc_id, title: r.title, site: r.source_site || 
 const bookAuthority = (c) => { if (c.book_authority != null) return c.book_authority; try { return getAuthority({ ...c, author: c.book_author }); } catch { return null; } };
 const isCoreHolder = (c) => isCoreLiterature({ ...c, author: c.writer, book_authority: bookAuthority(c) });
 // a core origin: core literature, or the Writings in Shoghi Effendi's own translation (guardianWritings)
-// a Central Figure or Shoghi Effendi as the writer of a row filed under ANOTHER tradition is a metadata contradiction, never a source
-// (11-14 replay: "Paradise and Paradigm", a scholar's study on the Christian shelf with author "Bahá'u'lláh", was the source card)
+// a Central Figure or Shoghi Effendi as the WRITER of a row filed under another tradition is a metadata contradiction, never a source
+// (the collections session fixed 9 such documents on 11-14; a guard against the class, cheap). NOT what put "Paradise and Paradigm" on the
+// source card: its writer is Christopher George Buck — see quotesWriter below.
 export { misfiled };
+// A row of another tradition that NAMES the quote's (Bahá'í) writer, or marks him as the quoted voice, while written by someone else is
+// commentary quoting him — never where his words come from (round 5, 11-14: Buck's "Paradise and Paradigm", on the Christian shelf and his
+// own work, beat Gleanings through the foreign rule meant for Rumi and the Gita). The Bible and the Masnavi never name Bahá'u'lláh. Pure.
+const foldName = (s) => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').replace(/['’‘`ʼʻ\-]/g, '').toLowerCase();
+export function quotesWriter(c, quoteAuthor) {
+  const qa = firstPerson(quoteAuthor || '') || quoteAuthor;
+  if (!qa || !DOCTRINAL.has(qa) || (firstPerson(c?.writer || '') || c?.writer) === qa) return false;
+  let list = [];
+  try { list = typeof c?.authors === 'string' ? JSON.parse(c.authors || '[]') || [] : c?.authors || []; } catch { /* no list */ }
+  if (list.some((a) => a?.role === 'quoted' && (firstPerson(a.name || '') || a.name) === qa)) return true;
+  const key = foldName(qa).replace(/^the /, 'the ');
+  return foldName(c?.text).includes(key);
+}
 const isCoreOrigin = (c) => !misfiled(c) && (isCoreHolder(c) || guardianWritings(c));
 // opts.prefer(candidate): the work the seeker NAMED ("in the Dawn-Breakers …") — the best-ranked holder it accepts is the origin,
 // ahead of coreOnly (the reader chose the book; Anís respond.js passes Jev's draw_from span)
@@ -359,7 +373,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   // Bahá'í core pick is the source — a Bahá'í book quoting Rumi is not where Rumi's line comes from. Bahá'í quotes have no such holder: unchanged.
   const tierCore = (c) => isCoreHolder(c) || doctrinalTier({ religion: c.religion, collection: c.collection, title: c.pubTitle || c.title, author: c.book_author }) === 'core';
   const ownCore = (c) => sameTradition(c.religion, trad) && !misfiled(c) && tierCore(c);
-  const foreign = (c) => !!c.religion && !/^bah/i.test(c.religion) && !misfiled(c) && (c.overlap || 0) >= VERBATIM && (c.ownWork || tierCore(c));
+  const foreign = (c) => !!c.religion && !/^bah/i.test(c.religion) && !misfiled(c) && !quotesWriter(c, quoteAuthor) && (c.overlap || 0) >= VERBATIM && (c.ownWork || tierCore(c));
   const bahaiPick = ranked.find(isCoreOrigin), foreignPick = !trad ? ranked.find(foreign) : null;
   const coreOf = otherTrad ? (ranked.find(ownCore) || ranked.find((c) => c.ownWork && sameTradition(c.religion, trad)))
     : foreignPick && (!bahaiPick || ranked.indexOf(foreignPick) < ranked.indexOf(bahaiPick)) ? foreignPick : bahaiPick;
@@ -381,6 +395,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   const exactAll = byMeaning.highlightBy === 'decision' ? [] : quoteRanges(origin.text, q.text);
   const hl = byMeaning.highlightBy === 'decision' ? byMeaning : exactAll.length ? { highlight: exactAll, highlightBy: 'wording' } : byMeaning;
   const originOut = { religion: origin.religion || null, ...(coreOnly && !named && origin.religion && !/^bah/i.test(origin.religion) && !tierCore(origin) ? { tier: 'own_work' } : {}), id: origin.id, documentId: origin.doc_id, title: origin.pubTitle || origin.title, author: origin.writer, bookAuthor: origin.book_author,
+    ...Object.fromEntries(['locator', 'subdocument', 'para_no'].filter((k) => origin[k] != null).map((k) => [k, origin[k]])),   // where in the work (refs/place.js): "From Gleanings, #117"
     translated_by: translatedBy(origin),
     text: origin.text, highlight: hl.highlight, highlightBy: hl.highlightBy,
     url: origin.url, rangeUrl: textFragment(origin.url, origin.text, hl.highlight, 4, origin.doc_id), site: siteOf(origin.url, origin.source_site), overlap: +origin.overlap.toFixed(2) };

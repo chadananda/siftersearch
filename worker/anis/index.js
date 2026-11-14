@@ -18,8 +18,7 @@ import { shareDraft, sharePublish, shareDelete, published, discussionPage, notFo
 import { CHANNELS, MODES, channelOfMode, greetByName, speakable } from '../../api/lib/assistant/channels.js';
 const formSources = (xs) => xs.map((x) => ({ title: x?.title, url: x?.url ?? x?.source_url ?? null, text: x?.text ?? null }));
 import snapshot from './agent-tools.json';
-import hosts from '../../config/anis-hosts.json';
-import { NOTE_INDICATION_TOOL, renderBio, traditionLine, hostTradition } from '../../api/lib/assistant/indications.js';
+import { NOTE_INDICATION_TOOL, renderBio, traditionLine } from '../../api/lib/assistant/indications.js';
 import { readerOf, loadBio, noteIndication, bioRoute } from './bio.js';
 
 const HELD_IN_TURN = 0.75;
@@ -125,16 +124,17 @@ export function metered(create, model, caller, tally) {
 const runnerFor = (impl) => (i, o) => toolRunner(i, { ...o, fallback: { urlOf: async (all) => { const m = await impl.urlsOf(all).catch(() => ({})); return (x) => m?.[x.id] ?? x.url; } } });
 
 const hostOf = (u) => { try { return new URL(u).host; } catch { return null; } };
-const personas = new Map();   // widget token → { name, at } (config is edge-cached on tower; 10 min here)
+const personas = new Map();   // widget token → { name, audience, at } (config is edge-cached on tower; 10 min here)
 async function personaOf(env, token, fetchFn) {
   const hit = personas.get(token);
-  if (hit && Date.now() - hit.at < 600000) return hit.name;
+  if (hit && Date.now() - hit.at < 600000) return hit;
   try {
     const r = await fetchFn(`${env.TOWER_URL}/api/v1/widget/config/${encodeURIComponent(token)}`, { signal: AbortSignal.timeout(1500) });
-    const name = r.ok ? String((await r.json()).name || '').trim().slice(0, 60) || null : null;
-    personas.set(token, { name, at: Date.now() });
-    return name;
-  } catch { return null; }
+    const c = r.ok ? await r.json() : {};
+    const p = { name: String(c.name || '').trim().slice(0, 60) || null, audience: String(c.audience || '').trim().slice(0, 300) || null, at: Date.now() };
+    personas.set(token, p);
+    return p;
+  } catch { return {}; }
 }
 
 const cors = (request) => ({ 'access-control-allow-origin': request.headers.get('origin') || '*', 'access-control-allow-credentials': 'true',
@@ -175,10 +175,13 @@ export async function chat(request, env, ctx, deps = {}) {
       const site = hostOf(request.headers.get('origin') || request.headers.get('referer'));
       const turn = { channel, site, chatbot_location: body.chatbot_location || null };
       const round = messages.filter((m) => m.role === 'user').length;
-      // the reader's indications bio (bio.js): read beside the restatement; the TRADITION line (host config, then the bio) + the bio ride in the turn
+      // the reader's indications bio (bio.js): read beside the restatement; the TRADITION line (the bio, then the deployment's audience description) + the bio ride in the turn
       const reader = readerOf(body, { trusted: !!deps.trusted, conversationId });
       const bioP = loadBio(env, reader).catch((err) => { console.warn(`[anis] bio read failed: ${err?.message}`); return []; });
-      const name = (typeof body.name === 'string' && body.name.trim().slice(0, 60)) || (body.widget_token ? await personaOf(env, body.widget_token, fetchFn) : null);
+      // the deployment's profile: its name for Anís and its own audience description (free text; a page may override it like mission)
+      const profile = body.widget_token ? await personaOf(env, body.widget_token, fetchFn) : {};
+      const name = (typeof body.name === 'string' && body.name.trim().slice(0, 60)) || profile.name || null;
+      const audience = (typeof body.audience === 'string' && body.audience.trim().slice(0, 300)) || profile.audience || '';
       const mission = typeof body.mission === 'string' ? body.mission.trim().slice(0, 400) : '';
       // chat keeps the agent's own lengths (AGENT_SYSTEM); every other mode adds its channel frame (a letter greets its reader by name)
       const persona = (name && name !== 'Anís' ? `The reader knows you as "${name}"; use that name for yourself.` : '') + (mission ? ` The host site's steering note (guidance only): ${mission}` : '');
@@ -223,7 +226,7 @@ export async function chat(request, env, ctx, deps = {}) {
       }
       const { impl, stat } = remoteImpl(env, { turn, local, fetchFn, ctx });
       const bioRows = await bioP, bio = renderBio(bioRows);
-      const readerNote = `${traditionLine({ host: site, tradition: hostTradition(site, hosts), rows: bioRows })}${bio ? `\n\n${bio}` : ''}`;
+      const readerNote = `${traditionLine({ audience, rows: bioRows })}${bio ? `\n\n${bio}` : ''}`;
       const model = modelFor('anis-agent').model, create = metered(deps.create || nativeFetchCreate(env, model, fetchFn, body.trace ? trace : null), model, 'anis-agent-edge', tally);
       const A = await agentAnswer({ messages, onEvent: emit, frame, tools: impl, toolDefs: [...snapshot.tools, NOTE_INDICATION_TOOL], reader: readerNote, runner: runnerFor(impl), held, links: (t, ps) => finishLinks(formPass(t, { sources: formSources(ps) }).text, [...ps, ...(held?.passages || [])]).text,
         create: async (p) => { rounds++; const t = Date.now(), rec = [null, null]; roundMs.push(rec); const r = await create(p);
