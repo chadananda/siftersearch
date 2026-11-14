@@ -4,7 +4,7 @@ import { toolRunner, TOOL_CHARS } from './tool-runner.js';
 import { workNotes as workNotesLookup, asPassage, SAME_QUESTION } from './tool-defs.js';
 import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
 import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence, contentAbsence, emptyInWork, conflictClaims, danglingOpens, askedSource, unappliedCorrection, dropSearchedNote, dropRebuildPreamble, fixCounts, wantsTable, dropSourceSpeculation, dropLinkDebris, duplicateRows, noteDuplicateRows, recapitalise, pointsAbove, dropAbovePointer, unlinkSiteRoots, rebuildsTable, isRebuildMeta } from './lint.js';
-import { DEPTH, hasDepth, dropDepth, dropOffers, runInHeads, headsAsk, leadSource, leadAsk } from './reply-form.js';
+import { DEPTH, hasDepth, dropDepth, dropOffers, deHead, liveDeHead, firstQuoted, leadSource, leadAsk } from './reply-form.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
 import { expandTemplates, mendTemplates, blockquoteCards } from './widgets/templates.js';
@@ -122,6 +122,8 @@ WRITING:
 - A question about a person or an event ("who was Ṭáhirih", "tell me about Badasht") is ALWAYS answered in scenes — this is its short form: one opening sentence, then 3–5 scenes in order — who they were, the turning points, the end — each a line {{scene "Conference of Badasht" "1848: the old law is set aside" P4 P5}}: a short title, one line of your own, then the 1–2 passages (from the research held when there is some; the Writings or Shoghi Effendi first — God Passes By, Memorials of the Faithful) that record that moment, shown whole. A sentence or two of yours between scenes at most. Never only a paraphrase with a citation after it.
 - LENGTH is your judgment, from the question and the reader (what they have indicated: a newcomer, a researcher, a study-class tutor) — never a word count. Give the shortest answer that is complete for THAT reader; what you leave out is offered as follow-up questions under the reply, so detail the reader did not ask for (rulings, side stories, every source's variant) waits for them. A newcomer's story question gets the plain story: 2–3 scenes, one short passage each; a researcher's gets the detail and the sources they asked for.
 - A why / how / isn't-it question (a challenge, doubt or objection, often from someone outside the Faith or outside this conversation) is answered in a few short paragraphs: the presumption named if it carries one, the direct answer, and the one or two passages that settle it, the strongest core passage first. No section headings, no numbered survey of every angle. More passages, rulings, history and counter-objections go in the follow-up questions, not the prose, unless the reader asked for depth or research.
+  Worked example of that form (a stranger asks "Why does the Faith forbid X, when that limits its growth?"): a first paragraph that names the presumption in one warm sentence ("The question assumes the Faith's aim is to grow, as a movement would…") and gives the direct answer; then {{quote P#}}, the core passage that carries it; then one closing line that ties the passage back to the question. Plain paragraphs only: no heads, no bold lead-in on any paragraph, no numbered points, no offer to say more.
+- You don't talk about yourself unless the reader asks about you: never "I'm an AI research companion, so I haven't wrestled with this…", never your nature, limits or feelings as a preface. Answer the question.
 - When the reader asked for depth or research (your judgement of what they asked, nothing else), start the reply with ${DEPTH}; sections with heads are then allowed. Without it the reply has no section heads and no bold run-in heads ("**Sexism.** …"): plain short paragraphs. Never offer more in the prose ("I can go deeper…", "You are welcome to ask…") — the follow-up questions under the reply carry every offer.
 - Otherwise the shortest complete answer; more only on request (follow-up questions are offered under every reply). A short question gets 1–3 sentences; a request for a book gets its link and one or two sourced lines on it; a study question gets the passages that carry it, quoted, and nothing the reader did not ask for. A follow-up, objection or comparison in a conversation answers that one point: a direct sentence or two, then the 2–3 passages that settle it — never a fresh survey of the topic or of what earlier replies covered.
 - A word or vocabulary question (an Arabic or Persian term, a title, a phrase): rendering_lookup on it in Arabic script, then show it at work in one or two passages — the original line and its published English, each with its ref — and say how Shoghi Effendi renders it. Grammar or etymology you add yourself is marked in two words ("my reading"), never a paragraph about your sources. An original is quoted exactly as its passage gives it — never add vowel marks or change a letter; word-by-word glosses go in italics, never in quotation marks.
@@ -384,7 +386,10 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     if (/^\s*\|/m.test(pre) && c.trim() && !/^\s*\|/.test(c)) { const t = pre; pre = false; say(t); }   // the table closed short
   };
   const sayHeld = () => { if (pre) { const t = pre; pre = false; say(t); } };
-  let gate = null, live = '';
+  let gate = null, live = '', rawLive = '', liveHeads = null;
+  // the reply's form, for timings (worker/anis): never in the reader's text. heads = section heads turned into prose; lead/first = the
+  // first draft's quotation order (leadSource) and its first quoted passage; rewritten = the one form rewrite ran (lead source only)
+  const form = { heads: 0, lead: null, first: null, depth: false, offers: 0, rewritten: false, rewroteFor: null };
   const liveWidgets = [];
   const carded = new Set();   // passages already shown in a card this turn (widgets/templates.js: one card per passage)
   const heldNowAll = () => [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
@@ -498,7 +503,9 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   };
   const onText = (t) => {
     if (t.includes(NOT_FOUND)) { gate = false; return; }   // a not-found draft may be nudged into another round: never shown
-    gate ??= createSentenceGate([...held0(), ...carried], (s) => { const c = finishLive(s); if (c) sayLive(c); }, { asked: asked0 });
+    rawLive += t;
+    liveHeads ??= liveDeHead(() => hasDepth(rawLive));   // heads → prose as they stream, unless the agent chose depth (reply-form.js)
+    gate ??= createSentenceGate([...held0(), ...carried], (s) => { for (const p of liveHeads.push(s)) { const c = finishLive(p); if (c) sayLive(c); } }, { asked: asked0 });
     if (gate) gate.push(t);
   };
   for (let round = 0; round < maxRounds; round++) {
@@ -511,7 +518,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     let tcs = (m.tool_calls || []).slice(0, Math.max(0, maxCalls - calls));
     if (!tcs.length) {
       final = String(m.content || '');
-      if (r?.streamed && gate) { if (!final.includes(NOT_FOUND)) gate.push(r.unsent || ''); gate.flush(); sayHeld(); streamed = !final.includes(NOT_FOUND); }
+      if (r?.streamed && gate) { if (!final.includes(NOT_FOUND)) gate.push(r.unsent || ''); gate.flush(); for (const p of liveHeads?.flush() || []) { const c = finishLive(p); if (c) sayLive(c); } sayHeld(); streamed = !final.includes(NOT_FOUND); }
       // earned not-found: the library "lacks it" (the agent's marker, or searches that found nothing at all) on fewer than MIN_SEARCHES → one more round
       const n = librarySearches(steps, canonical);
       if ((final.includes(NOT_FOUND) || (n > 0 && !found.size && !works.size)) && n < MIN_SEARCHES && !nudged && round < maxRounds - 1 && calls < maxCalls) {
@@ -563,13 +570,15 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
         msgs.push({ role: 'assistant', content: final }, { role: 'user', content: driftAsk(drift) });
         continue;
       }
-      // REPLY FORM (reply-form.js, Chad 11-14 Reddit round 3) → once, the writer rewrites: run-in section heads in a reply the agent did not mark
-      // [[DEPTH]]; a talk / pilgrim note / House letter / commentary quoted ahead of a written core passage the same reply quotes
-      const heads = formed || hasDepth(final) ? [] : runInHeads(final), lead = formed ? null : askedLead(leadSource(final, found), found, asked0.at(-1));
-      if ((heads.length || lead) && round < maxRounds - 1 && calls < maxCalls) {
+      // REPLY FORM (reply-form.js, Chad 11-14 Reddit round 3) → once, the writer rewrites when a talk / pilgrim note / House letter /
+      // commentary is quoted ahead of a written core passage the same reply quotes — on every path, held research included — unless the
+      // question asked for that source (askedLead). Section heads are never rewritten: code turns them into prose (deHead, below and live)
+      const lead = formed ? null : askedLead(leadSource(final, found), found, asked0.at(-1));
+      if (!formed) { form.lead = lead; form.first = firstQuoted(final, found); }
+      if (lead && round < maxRounds - 1 && calls < maxCalls) {
         formed = true; gate = false; streamed = false;
         preForm = final;
-        msgs.push({ role: 'assistant', content: final }, { role: 'user', content: [heads.length ? headsAsk(heads) : '', lead ? leadAsk(lead) : ''].filter(Boolean).join('\n\n') });
+        msgs.push({ role: 'assistant', content: final }, { role: 'user', content: leadAsk(lead) });
         continue;
       }
       // the form rewrite reordered the reply and left a paragraph opening on a pronoun with no one named before it ("There he names…") → keep the draft
@@ -611,7 +620,10 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     calls += tcs.length;
     for (const { tc, out } of outs) msgs.push({ role: 'tool', tool_call_id: tc.id, content: clip(out, TOOL_CHARS) });
   }
+  const deep = hasDepth(final);
   final = dropDepth(final.replaceAll(NOT_FOUND, '')).trim();
+  const flat = deep ? { text: final, heads: [] } : deHead(final);   // no depth marker → section heads become the paragraphs' first sentences
+  final = flat.text;
   const { text: offerFree, offers } = dropOffers(final);   // offers are the pills' (worker/anis withOfferPill), never the prose's
   citedWorkCards(final);   // a short reply never streamed: the work it names still gets its card (idempotent after a stream)
   // code does the grounding: refs → links, unverifiable quotations out, speakers fixed, quotations linked, no preamble
@@ -646,7 +658,8 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     books: [...bookCards].filter(([ref]) => works.get(ref)?.url && reply.includes(works.get(ref).url)).map(([, b]) => b) }, cardDocs ? { docs: cardDocs } : {})).catch(() => cards);
   const tally = steps.reduce((t, x) => ({ ...t, [x.cache]: (t[x.cache] || 0) + 1 }), {});
   return { reply, raw: final, offers, talks: [...talks.values()].slice(0, 3), retrieved: cited, citations, steps, usage, cards, widgets, streamed, widgetsShown: shown != null,
-    agent: { steps, searches: librarySearches(steps, canonical), nudged, formed, cache: tally, ...(cache ? { store: cache.stats() } : {}) },
+    agent: { steps, searches: librarySearches(steps, canonical), nudged, formed, cache: tally,
+      form: { ...form, heads: Math.max(flat.heads.length, liveHeads?.heads || 0), depth: deep, offers: offers.length, rewritten: formed, rewroteFor: formed ? 'lead' : null }, ...(cache ? { store: cache.stats() } : {}) },
     quotes_removed: guarded.removed, quotes_recredited: speakers.fixed || 0, quotes_linked: linked.linked || 0,
     quotes_restored: whole.restored, offers_dropped: offerless.dropped,
     timings: { first_tool_ms: firstToolMs, total_ms: Date.now() - t0 } };

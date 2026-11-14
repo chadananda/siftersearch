@@ -1,6 +1,6 @@
-// Reply form checks (Chad 11-14, Reddit round 3): offers → pills, run-in heads only at the agent's own depth, core text quoted first. Form only, never intent.
+// Reply form checks (Chad 11-14, Reddit rounds 3–4): offers → pills, section heads → prose by code unless the agent chose depth, core text quoted first. Form only, never intent.
 import { describe, it, expect } from 'vitest';
-import { DEPTH, hasDepth, dropDepth, dropOffers, isInvite, runInHeads, headsAsk, quotedRefs, leadSource, leadAsk, offerPill, withOfferPill } from '../../api/lib/assistant/reply-form.js';
+import { DEPTH, hasDepth, dropDepth, dropOffers, isInvite, isOfferSentence, runInHeads, deHead, liveDeHead, firstQuoted, quotedRefs, leadSource, leadAsk, offerPill, withOfferPill } from '../../api/lib/assistant/reply-form.js';
 
 const B = 'Bahá’í';
 const WRIT = { author: 'Bahá’u’lláh', religion: B, title: 'Gleanings from the Writings of Bahá’u’lláh', collection: 'Core Tablets' };
@@ -53,16 +53,74 @@ describe('run-in section heads (1jhg01p: **Sexism.** **Homophobia.** **Transphob
     expect(runInHeads('A **bold** word.\n\n**“The earth is but one country”** He wrote.\n\n**“And mankind its citizens”** too.')).toEqual([]);
     expect(runInHeads('**God** is beyond attribute.\n\n**Love** is the bond.')).toEqual([]);
   });
-  it('the rewrite note names the heads and offers the depth marker', () => {
-    const a = headsAsk(runInHeads(essay));
-    expect(a).toContain('"Sexism"');
-    expect(a).toContain(DEPTH);
-    expect(a).toMatch(/^\(note from the library, not the reader\)/);
-  });
   it('the depth marker is the agent’s own field, stripped before anything is shown', () => {
     expect(hasDepth(`${DEPTH}\n**Sexism.** …`)).toBe(true);
     expect(dropDepth(`${DEPTH}\n**Sexism.** text`)).toBe('**Sexism.** text');
     expect(hasDepth('**Sexism.** …')).toBe(false);
+  });
+});
+
+describe('section heads become prose (round 3: 7 replies, round 4: 197utk7); real lists and bold quotations stay', () => {
+  it('bold run-ins become the paragraph’s first sentence; a lone bold head joins the paragraph after it', () => {
+    const r = deHead('The question assumes a frame.\n\n**Sexism.** The Writings hold equality.\n\n**Homophobia:** Prejudice is ruled out.\n\n**Transphobia**\n\nNo text addresses it directly.');
+    expect(r.text).toBe('The question assumes a frame.\n\nSexism. The Writings hold equality.\n\nHomophobia. Prejudice is ruled out.\n\nTransphobia. No text addresses it directly.');
+    expect(r.heads).toEqual(['Sexism', 'Homophobia', 'Transphobia']);
+  });
+  it('a markdown heading and a numbered heading line (197utk7 "1. Human origins…") become prose', () => {
+    const r = deHead('Intro.\n\n## How agreement is found\nConsultation seeks the truth.\n\n1. Human origins and evolution\n\nThe Writings hold that humanity was always distinct.');
+    expect(r.text).not.toMatch(/^#|^1\./m);
+    expect(r.text).toContain('How agreement is found. Consultation seeks the truth.');
+    expect(r.text).toContain('Human origins and evolution. The Writings hold');
+  });
+  it('a real numbered list, a bold quotation and a bold word in a sentence are left alone', () => {
+    const list = 'Three things:\n\n1. Prayer\n2. Fasting\n3. Service';
+    expect(deHead(list)).toEqual({ text: list, heads: [] });
+    const items = 'Steps.\n\n1. Pray daily.\n\n2. Read the Writings morning and evening.';
+    expect(deHead(items).text).toBe(items);
+    const table = '# The thirteen named in the Íqán\n\n| # | Name |\n|---|---|\n| 1 | Ṭáhirih |';
+    expect(deHead(table).text).toBe(table);   // a compiled table keeps its title (Dawn-Breakers round 7 email turn)
+    const titled = '# The thirteen named in the Íqán\n\nBahá’u’lláh names some of the learned.\n\n| # | Name |\n|---|---|';
+    expect(deHead(titled).text).toBe(titled);   // "# X" is a title, not a section head
+    const q = '**“The earth is but one country”** He wrote.\n\nA **bold** word stays.';
+    expect(deHead(q).text).toBe(q);
+  });
+  it('a head over a card ends as its own sentence; the card is untouched', () => {
+    expect(deHead('**What He wrote**\n\n{{quote P1}}\n\nThat settles it.').text).toBe('What He wrote.\n\n{{quote P1}}\n\nThat settles it.');
+  });
+  it('live: a numbered head split across stream pieces comes out the same as the whole reply', () => {
+    const pieces = ['The question assumes a frame. ', '\n\n1. ', 'Human origins and evolution\n\n', 'The Writings hold that humanity was always distinct. ', '\n\n**Its rank.** Shoghi Effendi ranks it first.'];
+    const L = liveDeHead(); const out = [];
+    for (const p of pieces) out.push(...L.push(p));
+    out.push(...L.flush());
+    expect(out.join('')).toBe(deHead(pieces.join('')).text);
+    expect(L.heads).toBe(2);
+  });
+  it('live: with the depth marker the pieces pass through untouched', () => {
+    const L = liveDeHead(() => true);
+    expect([...L.push('**Its rank.** First.'), ...L.flush()].join('')).toBe('**Its rank.** First.');
+  });
+});
+
+describe('first-person offers (1j4m76y, rounds 3 and 4)', () => {
+  it('"I can set out how … traditions answer" leaves the prose and becomes a pill', () => {
+    const o = 'I can set out how the Christian or Islamic traditions answer your question, if that would help.';
+    expect(isOfferSentence(o)).toBe(true);
+    const r = dropOffers(`Each Manifestation renews the same faith.\n\n${o}`);
+    expect(r.text).toBe('Each Manifestation renews the same faith.');
+    expect(offerPill(r.offers[0])).toBe('Tell me more about how the Christian or Islamic traditions answer your question');
+    expect(offerPill('I can set out how the Christian or Islamic traditions answer your question.')).toBe('Tell me more about how the Christian or Islamic traditions answer your question');   // round 4, verbatim
+  });
+  it('a trailing ", and I can set those out alongside it" is cut from the claim; a pronoun topic makes no pill', () => {
+    const r = dropOffers('Each tradition reads its own fulfilment from their own scriptures, and I can set those out alongside it.');
+    expect(r.text).toBe('Each tradition reads its own fulfilment from their own scriptures.');
+    expect(r.offers).toEqual(['I can set those out alongside it.']);
+    expect(offerPill(r.offers[0])).toBe(null);
+  });
+  it('"I can see why…", "I cannot…" and quoted words are not offers', () => {
+    expect(isOfferSentence('I can see why that seems hard.')).toBe(false);
+    expect(isOfferSentence('I cannot find that passage.')).toBe(false);
+    const q = 'He said, “I can show you the way.”';
+    expect(dropOffers(`An answer.\n\n${q}`).text).toContain(q);
   });
 });
 
@@ -81,11 +139,14 @@ describe('the core text is quoted first (1xebxqv: a pilgrim note led)', () => {
     expect(leadSource('{{quote P1}}', found)).toBe(null);
     expect(leadSource('{{quote P1}}\n\nSee [[P2]].', found)).toBe(null);
   });
+  it('firstQuoted reports the first quotation’s tier and authors (telemetry)', () => {
+    expect(firstQuoted('{{quote P1}}\n\n{{quote P2}}', found)).toMatchObject({ ref: 'P1', tier: 'reported' });
+    expect(firstQuoted('No quotation.', found)).toBe(null);
+  });
 });
 
 // ---- wired into the agent (agent-core.js): the marker never reaches a reader on any path; one rewrite; offers carried for the pills ----
 import { agentAnswer } from '../../api/lib/assistant/agent.js';
-import { headsAsk as HA } from '../../api/lib/assistant/reply-form.js';
 
 const GPB = { id: 11, text: 'Foremost among the priceless treasures cast forth from the billowing ocean of Bahá’u’lláh’s Revelation ranks the Kitáb-i-Íqán.',
   title: 'God Passes By', author: 'Shoghi Effendi', source_url: 'https://oceanlibrary.com/gpb#p1', document_id: 5, paragraph_index: 1 };
@@ -129,13 +190,38 @@ describe('agent: the depth marker never leaks, on any path', () => {
 });
 
 describe('agent: one rewrite for form, offers kept for the pills', () => {
-  it('run-in heads without the marker → the writer rewrites once; the reader gets the plain version', async () => {
+  it('run-in heads without the marker → no rewrite: code turns them into prose; the form is in the telemetry', async () => {
     const seen = [];
-    const r = await agentAnswer({ messages: [{ role: 'user', content: 'What is the Iqan?' }], tools, create: async (p) => { seen.push(p);
-      return seen.length === 1 ? SEARCH : seen.length === 2 ? say(SECTIONED) : say('The Íqán is foremost among His works; Shoghi Effendi ranks it first [[P1]].'); } });
-    expect(seen).toHaveLength(3);
-    expect(seen[2].messages.at(-1)).toEqual({ role: 'user', content: HA(['Its rank', 'Its purpose']) });
+    const r = await agentAnswer({ messages: [{ role: 'user', content: 'What is the Iqan?' }], tools, create: async (p) => { seen.push(p); return seen.length === 1 ? SEARCH : say(SECTIONED); } });
+    expect(seen).toHaveLength(2);
     expect(r.reply).not.toContain('**Its rank.**');
+    expect(r.reply).toMatch(/Its rank\. Shoghi Effendi ranks it first/);
+    expect(r.agent.form).toMatchObject({ heads: 2, depth: false, rewritten: false, rewroteFor: null, lead: null });
+  });
+  it('streamed heads reach the reader as prose too', async () => {
+    const ev = []; let n = 0;
+    const r = await agentAnswer({ messages: [{ role: 'user', content: 'What is the Iqan?' }], tools, onEvent: (e) => ev.push(e),
+      create: async () => (n++ === 0 ? chunks(['Let me search.'], 'fused_search') : chunks(['The Íqán is foremost among His works, as Shoghi Effendi says in his history of the Faith. ',
+        '\n\n**Its rank.** Shoghi Effendi ranks it first [[P1]].', '\n\n**Its purpose.** It answers a seeker’s questions [[P1]].'])) });
+    const text = ev.filter((e) => e.type === 'text').map((e) => e.content).join('');
+    expect(text).not.toContain('**Its');
+    expect(text).toMatch(/Its purpose\. It answers/);
+    expect(r.agent.form.heads).toBe(2);
+  });
+  it('held research, one round (1xebxqv): a House passage quoted ahead of the Writings → the lead rewrite still runs', async () => {
+    const HOUSE = { id: 901, title: 'Issues Related to the Study of the Bahá’í Faith', author: 'Universal House of Justice', religion: B, source_url: 'https://oceanlibrary.com/issues#p1', text: 'The Faith has no clergy and no creed imposed from above.' };
+    const GL = { id: 902, title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh', religion: B, source_url: 'https://oceanlibrary.com/gleanings#p2', text: 'Consort with the followers of all religions in a spirit of friendliness and fellowship.' };
+    const seen = [];
+    const r = await agentAnswer({ messages: [{ role: 'user', content: 'Is the Faith a cult?' }], tools: { search: async () => [] },
+      held: { same: true, status: 'candidate', question: 'Is the Bahá’í Faith a cult?', passages: [HOUSE, GL] },
+      create: async (p) => { seen.push(p);
+        const turn = p.messages.findLast((m) => m.role === 'user' && /HELD/.test(m.content))?.content || '';
+        const ref = (t) => turn.match(new RegExp(`(P\\d+)[^\\n]*${t}`))?.[1];
+        const h = ref('Issues Related'), g = ref('Gleanings');
+        return say(seen.length === 1 ? `{{quote ${h}}}\n\nBahá’u’lláh wrote:\n\n{{quote ${g}}}` : `Bahá’u’lláh wrote:\n\n{{quote ${g}}}`); } });
+    expect(seen).toHaveLength(2);
+    expect(seen[1].messages.at(-1).content).toMatch(/quoted first/);
+    expect(r.agent.form).toMatchObject({ rewritten: true, rewroteFor: 'lead', first: { tier: 'house' } });
   });
   it('a plain reply is not rewritten; a closing offer leaves the prose and is returned for the pills', async () => {
     const seen = [];

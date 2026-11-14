@@ -1,6 +1,7 @@
 // REPLY FORM checks (Chad 11-14, Reddit round 3): what the reply LOOKS like, never what the question means (no intent by words; md-valid.js is the
-// precedent). Offers out of the prose and into the pills; bold run-in section heads only when the agent itself chose depth (its marker);
-// a pilgrim note / talk / commentary never quoted ahead of a written core passage the same reply quotes. Pure. Deps: lint, source-tier.
+// precedent). Offers out of the prose and into the pills; section heads only when the agent itself chose depth (its marker) — otherwise
+// turned into plain prose by code (deHead; a rewrite cleared 5 of 17 at +10 s); a pilgrim note / talk / commentary never quoted ahead of a
+// written core passage the same reply quotes. Pure. Deps: lint, source-tier.
 import { isSearchOffer, isOffer } from './lint.js';
 import { sourceTier, isWrittenCore } from './source-tier.js';
 
@@ -17,7 +18,12 @@ const unquote = (s) => String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' 
 const INVITE = /\b(?:you(?:['’]re| are) (?:welcome|free|invited) to (?:ask|explore|look)|feel free to (?:ask|let me know|follow up)|let me know if you(?:['’]d| would)? (?:like|want|wish)|(?:just )?ask me (?:about|if|for|to|how|what|why)\b|if you(?:['’]d| would)? like(?:,| to (?:explore|go|look|hear|read|see|know|learn|dig)| more\b| me to\b))/i;
 const NUDGE = /^\s*(?:just\s+(?:ask|say|let\s+me\s+know)|let\s+me\s+know|happy\s+to\s+help|i['’]m\s+here\b)[^.!?\n]{0,80}[.!?]?\s*$/i;
 export const isInvite = (s) => INVITE.test(unquote(s));
-export const isOfferSentence = (s) => isSearchOffer(s) || isOffer(s) || isInvite(s);
+// A FIRST-PERSON OFFER of more (1j4m76y: "I can set out how the Christian or Islamic traditions answer your question."): Anís speaks of the
+// texts, not of what it could do next — "I could not find…" and "I can only say…" are not offers
+const I_OFFER = /^\s*(?:and\s+|so\s+)?I\s+(?:can|could)(?:\s+also)?\s+(?!not\b|only\b|never\b|n['’]t\b|see\s+why\b)[a-z]/i;
+const I_CLAUSE = /^([\s\S]*?\S)\s*[,;]?\s+(?:and|but|so)\s+(I\s+(?:can|could)(?:\s+also)?\s+(?!not\b|only\b|never\b)[a-z][^.!?]*)([.!?]+)(\s*)$/i;
+export const isFirstPersonOffer = (s) => I_OFFER.test(unquote(s));
+export const isOfferSentence = (s) => isSearchOffer(s) || isOffer(s) || isInvite(s) || isFirstPersonOffer(s);
 
 const sentences = (line) => line.match(/[^.!?]+(?:[.!?]+["”’)*_]*|$)\s*/g) || [line];
 
@@ -30,9 +36,12 @@ export function dropOffers(text, { allowEmpty = false } = {}) {
     const ss = sentences(line), kept = [];
     for (let i = 0; i < ss.length; i++) {
       if (isOfferSentence(ss[i])) { offers.push(ss[i].trim()); if (ss[i + 1] && NUDGE.test(ss[i + 1])) i++; continue; }
+      // "…from their own scriptures, and I can set those out alongside it." → the claim stays, the offer goes
+      const c = !/[“"]/.test(ss[i]) && ss[i].match(I_CLAUSE);
+      if (c) { offers.push(`${c[2].trim()}${c[3][0]}`); kept.push(`${c[1].replace(/[,;]$/, '')}.${c[4]}`); continue; }
       kept.push(ss[i]);
     }
-    return kept.length === ss.length ? line : kept.join('').trimEnd();
+    return kept.join('') === ss.join('') ? line : kept.join('').trimEnd();
   }).join('\n').replace(/\n{3,}/g, '\n\n').trim();
   return offers.length && (out || allowEmpty) ? { text: out, offers } : { text: src, offers: [] };
 }
@@ -50,7 +59,75 @@ export function runInHeads(text) {
   }
   return heads.length >= 2 ? heads : [];
 }
-export const headsAsk = (heads) => `(note from the library, not the reader) Your reply is set out under section heads (${heads.slice(0, 4).map((h) => `"${h.slice(0, 40)}"`).join(', ')}). Unless the reader asked for depth or research, answer as a few short plain paragraphs: no bold run-in heads, no headings — same substance, same quotations and refs, said directly. If the reader DID ask for depth or research, keep the sections and start the reply with ${DEPTH}. Write the whole reply again.`;
+
+// ---- heads → plain prose, by code (team-lead 11-14: "an 11 s rewrite that clears 2 of 9 isn't worth keeping for heads") ----
+// Form only: the head's words stay, as the paragraph's first sentence. Without the agent's DEPTH marker:
+//   "**Sexism.** On rights…" → "Sexism. On rights…";  "**How agreement is found**" / "## X" (not a "# X" title) alone, then a paragraph → "X. The paragraph…";
+//   "1. Human origins and evolution" alone, then a paragraph (197utk7) → "Human origins and evolution. The paragraph…".
+// A real list (numbered items in a row), a table's heading, a bold quotation, a bold word inside a sentence and "**X** Text" with no stop are left alone.
+const QUOTED = /^\s*[“"‘«][\s\S]*[”"’»]\s*$/;
+const NUMBERED = /^\s*\d{1,2}[.)]\s/;
+const asSentence = (h) => { const t = h.replace(/\*\*/g, '').trim().replace(/\s*[:—–-]+$/, '').trim(); return /[.!?]["”’)]*$/.test(t) ? t : `${t}.`; };
+const isProse = (p) => !!p?.trim() && !STRUCTURED.test(p) && !/^\s*#/.test(p) && !/^\s*\*\*/.test(p);
+/** → { head, body } when the paragraph opens with a section head (numbered heads need what is around them), else null. */
+function headOf(para, prev, next) {
+  const [first, ...more] = para.replace(/^\s+/, '').split('\n'), rest = more.join('\n');
+  if (/^\s*\|/.test(rest.trim() ? rest : next || '')) return null;   // a table's title stays a heading (a compiled table or email)
+  let m = first.match(/^#{2,6}\s+(\S.*?)\s*#*\s*$/);   // "# X" is the reply's title (a compiled table, an email) and stays
+  if (m) return { head: m[1], body: rest };
+  m = first.match(/^\*\*([^*\n]{1,160})\*\*\s*(.*)$/);
+  if (m) {
+    const [, h, after] = m;
+    if (QUOTED.test(h)) return null;
+    if (!after.trim()) return { head: h, body: rest };
+    const p = after.match(/^([.:—–-])\s*(.*)$/);
+    if (p) return { head: h, body: [p[2], rest].filter(Boolean).join('\n') };
+    return /[.:!?]["”’)]*\s*$/.test(h) ? { head: h, body: [after, rest].filter(Boolean).join('\n') } : null;
+  }
+  m = !rest && first.match(/^\d{1,2}[.)]\s+(?:\*\*)?([^*\n]{1,80}?)(?:\*\*)?\s*$/);
+  return m && !/[.!?;,:]$/.test(m[1]) && isProse(next) && !NUMBERED.test(prev || '') ? { head: m[1], body: '' } : null;
+}
+/** → { text, heads }: every section head made the first sentence of its paragraph. `prev`: the paragraph before `text` (a live piece). */
+export function deHead(text, { prev = '' } = {}) {
+  const heads = [];
+  // a bold run-in at any line start, its text on the same line (1g330j9 put "**Purpose of sex.** …" after a single line break)
+  const lined = String(text || '').split('\n').map((line) => {
+    const m = !/^\s*[>|]/.test(line) && line.match(/^(\s*)\*\*([^*\n]{1,160})\*\*\s*(\S.*)$/), h = m && headOf(`**${m[2]}** ${m[3]}`);
+    if (!h?.body?.trim()) return line;
+    heads.push(h.head.replace(/[.:—–\s-]+$/, ''));
+    return `${m[1]}${asSentence(h.head)} ${h.body}`;
+  }).join('\n');
+  const parts = lined.split(/(\n{2,})/), out = [];
+  for (let i = 0; i < parts.length; i += 2) {
+    const para = parts[i], lead = para.match(/^\s*/)[0];
+    const h = para.trim() ? headOf(para, i ? parts[i - 2] : prev, parts[i + 2]) : null;
+    if (!h) { out.push(para, parts[i + 1] ?? ''); continue; }
+    heads.push(h.head.replace(/\*\*/g, '').replace(/[.:—–\s-]+$/, ''));
+    if (h.body.trim()) out.push(`${lead}${asSentence(h.head)} ${h.body.trimStart()}`, parts[i + 1] ?? '');
+    else if (isProse(parts[i + 2])) { out.push(`${lead}${asSentence(h.head)} ${parts[i + 2].trimStart()}`, parts[i + 3] ?? ''); i += 2; }
+    else out.push(`${lead}${asSentence(h.head)}`, parts[i + 1] ?? '');
+  }
+  return heads.length ? { text: out.join(''), heads } : { text: String(text || ''), heads };
+}
+// a paragraph that may be a head with its paragraph still to come (a live piece ends on it): "\n1. ", "Human origins\n\n", "**X**", "## X"
+const OPEN_HEAD = /^(?:\d{1,2}[.)]\s*(?:\*\*)?[^*\n.!?]{0,80}(?:\*\*)?|#{1,6}\s+[^\n]+|\*\*[^*\n]{1,160}\*\*[.:]?)$/;
+/** Live: pieces as the gate releases them → pieces de-headed. A piece ending on a possible head is held until the next arrives
+ *  (197utk7 streamed "\n1. " then "Human origins and evolution\n\n"). `deep`: the agent's marker seen → pieces pass untouched. */
+export function liveDeHead(deep = () => false) {
+  let held = '', prev = '', heads = 0;
+  const emit = (s) => { const r = deHead(s, { prev }); heads += r.heads.length; const paras = r.text.split(/\n{2,}/).filter((p) => p.trim()); if (paras.length) prev = paras.at(-1); return r.text; };
+  return {
+    push(piece) {
+      if (deep()) { const s = held + piece; held = ''; return s ? [s] : []; }
+      const s = held + piece; held = '';
+      const at = s.search(/\n{2,}\s*\S[^\n]*\s*$/), tail = at < 0 ? s : s.slice(at), last = tail.trim();
+      if (last && OPEN_HEAD.test(last) && !QUOTED.test(last.replace(/\*\*/g, ''))) { held = tail; const before = at < 0 ? '' : s.slice(0, at); return before ? [emit(before)] : []; }
+      return [emit(s)];
+    },
+    flush() { const s = held; held = ''; return s ? [emit(s)] : []; },
+    get heads() { return heads; },
+  };
+}
 
 /** The quoted passages in the order the reader meets them: {{quote P3}} cards, blockquote lines citing P#, and an inline "…" right before its ref. */
 export function quotedRefs(text) {
@@ -76,19 +153,25 @@ export function leadSource(text, found) {
   const core = refs.slice(1).find((r) => isWrittenCore(get(r)));
   return core ? { first: refs[0], core, firstTier: sourceTier(get(refs[0])) } : null;
 }
+/** The first quoted passage that the turn holds, with its tier and writers — telemetry (timings.form.first), never shown. */
+export function firstQuoted(text, found) {
+  const ref = quotedRefs(text).find((r) => found?.get?.(r)), p = ref && found.get(ref);
+  return p ? { ref, tier: sourceTier(p), author: p.author ?? p.source_author ?? null, book_author: p.book_author ?? null } : null;
+}
 const KIND = { reported: 'a talk or pilgrim’s recollection', house: 'a letter of the House of Justice', secondary: 'commentary' };
 export const leadAsk = ({ first, core, firstTier }) => `(note from the library, not the reader) Your first quotation, ${first}, is ${KIND[firstTier] || 'not a written core text'}, and you also quote ${core}, a written core text (the Writings or Shoghi Effendi). The core text leads: write the reply again with ${core} quoted first; keep ${first} after it only if it adds something, named for what it is.`;
 
 // ---- the offer becomes a pill ----
 const STOP = new Set('about also could deeper further more into like would what which their there these those this that with from have your just tell some show share explain look further other bahá bahai faith writings teachings'.split(' '));
 const words = (s) => (String(s || '').toLowerCase().match(/\p{L}{4,}/gu) || []).filter((w) => !STOP.has(w));
-const OFFER_HEAD = /^.*?\b(?:I (?:can|could)(?: also)?|I(?:['’]d| would) be (?:glad|happy) to|I(?:['’]m| am) happy to|would you like me to|shall I|should I|want me to|(?:if )?you(?:['’]re| are) (?:welcome|free|invited) to ask(?: me)?|feel free to ask(?: me)?|ask me)\s+(?:go (?:deeper|further)\s+(?:into|on|in)|say more (?:about|on)|look (?:at|into)|walk you through|show you|share|explain|explore|trace|unpack|read|open|about)?\s*/i;
+const OFFER_HEAD = /^.*?\b(?:I (?:can|could)(?: also)?|I(?:['’]d| would) be (?:glad|happy) to|I(?:['’]m| am) happy to|would you like me to|shall I|should I|want me to|(?:if )?you(?:['’]re| are) (?:welcome|free|invited) to ask(?: me)?|feel free to ask(?: me)?|ask me)\s+(?:go (?:deeper|further)\s+(?:into|on|in)|say more (?:about|on)|look (?:at|into)|walk you through|show you|share|explain|explore|trace|unpack|read|open|set out|lay out|about)?\s*/i;
 /** "I can go deeper into how the Writings frame chastity, or …" → "Tell me more about how the Writings frame chastity" (≤ 90 chars), or null. */
 export function offerPill(offer) {
   const s = String(offer || '').trim();
   if (!OFFER_HEAD.test(s)) return null;
-  const topic = s.replace(OFFER_HEAD, '').split(/,\s*(?:or|and)\s|\s+(?:if|should|whenever|when) you\b|\s+—\s|[.!?;]/)[0].replace(/[\s,:]+$/, '').trim();
-  if (words(topic).length < 1) return null;
+  const topic = s.replace(OFFER_HEAD, '').split(/,\s*(?:or|and)\s|,\s*if\b|\s+(?:if|should|whenever|when) you\b|\s+—\s|[.!?;]/)[0].replace(/[\s,:]+$/, '').trim();
+  // "I can set those out alongside it": the offer points back at the reply, not at a question a pill could ask
+  if (words(topic).length < 1 || /^(?:those|these|them|it|this|that)\b/i.test(topic) || /\bI\s+(?:can|could)(?:\s+also)?\s+\w+\s+(?:those|these|them|it|this|that)\b/i.test(s)) return null;
   const pill = `Tell me more about ${topic}`;
   return pill.length <= 90 ? pill : null;
 }
