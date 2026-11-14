@@ -32,7 +32,7 @@ CONVERSATION. Answer exactly what was asked and keep the subject of the thread. 
 
 TOOLS — use them before answering; call several at once when they are independent:
 - research_lookup: FIRST and ALONE (your first round is this one call, before any search), on every new question, restated so it stands alone (a follow-up resolved from the conversation) in its canonical form: the plain question with full proper names, diacritics and the subject's own title ("What is the Kitáb-i-Aqdas?" for "what's the Most Holy Book about"; "Who was Shoghi Effendi?" for "who was the Guardian"), no conversational wording — the same question asked in other words must come out the same. It returns research already done for that question. When it holds what the answer needs, answer from it (whole_lookup a prayer you will quote) with no more searching; search only for what it does not cover. The "several searches at once" rule starts after it.
-- book_card: when the reader wants the book itself (to read it, to have it), AND whenever the ANSWER is a particular book — "which book…", "the most important…", "where is X explained" (→ the Kitáb-i-Íqán): call it for that one work so the reader sees its card at once. Shows its card; returns [B#]. The same for a talk that is the answer: talk_search shows its card.
+- book_card: when the reader wants the book itself (to read it, to have it), AND whenever the ANSWER is a particular book — "which book…", "the most important…", "where is X explained" (→ the Kitáb-i-Íqán): call it for that one work so the reader sees its card at once. A bare title (the reader types only a work's name, "Iqan"): the card and two or three sentences on what the work is — no sections, no list of copies or editions; more only on request. Shows its card; returns [B#]. The same for a talk that is the answer: talk_search shows its card.
 - search_in_work: anything inside one named work or periodical (Star of the West = all its issues; give years to narrow). Give several differently worded queries; each is searched by exact words and by meaning, merged. Returns [P#] with their place.
 - find_passage: the reader quotes or describes a passage; optionally held to a religion, author or work.
 - whole_lookup: the WHOLE prayer (or devotional unit) a found passage belongs to — before quoting any prayer for the reader to say.
@@ -231,11 +231,12 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   // credited, linked and styled, links narrowed, a template → its widget at once (event first, then the text holding its marker)
   // a work the reply cites ([[B#]]) is its answer's book: its card shows as the sentence naming it is released (Chad 11-13
   // "the answer could be a book card"), from the ref the agent wrote — the work found, its cover by doc id
+  const shownCards = () => new Set([...bookCards].flatMap(([ref, b]) => [ref, `id:${b.id}`]));   // works whose card already showed (a 'books' event)
   const citedWorkCards = (core) => {
     let added = false;
     for (const [, ref] of String(core).matchAll(/\[\[?(B\d+)\]\]?/g)) {
       const w = works.get(ref);
-      if (bookCards.has(ref) || bookCards.size >= 3 || !w?.url || !(Number(w.id) > 0) || String(w.id).includes(':')) continue;
+      if (bookCards.has(ref) || [...bookCards.values()].some((b) => Number(b.id) === Number(w?.id)) || bookCards.size >= 3 || !w?.url || !(Number(w.id) > 0) || String(w.id).includes(':')) continue;
       bookCards.set(ref, { id: Number(w.id), title: w.title, author: w.author ?? null, url: w.url, year: null, description: null,
         cover_url: `https://siftersearch.com/img/covers/${Number(w.id)}` });
       added = true;
@@ -248,7 +249,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     citedWorkCards(core);
     const ret = heldNowAll();
     const t = linkQuotes(fixQuoteSpeakers(restoreElisions(renderRefs(core, { found, works }), ret, { asked: asked0 }).text, ret).text, ret).text;
-    const x = expandTemplates(markQuotes(t, ret).text, { found, works, books: bookCards }, { start: liveWidgets.length });
+    const x = expandTemplates(markQuotes(t, ret).text, { found, works, books: bookCards, shown: shownCards() }, { start: liveWidgets.length });
     for (const w of x.widgets) { liveWidgets.push(w); onEvent({ type: 'widget', widget: w }); }
     return lead + links(x.text, ret) + trail;
   };
@@ -318,7 +319,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const offerless = dropSearchOffer(dropPreamble(shown ?? linked.text).trim());   // the research is his to run, never an offer (11-04 #163)
   // inline templates ({{quote P3}} …) → widget marker + fallback + data, last: the words are the passage's own, never re-grounded (widgets/templates.js)
   const { text: reply, widgets } = shown != null ? { text: offerless.text, widgets: liveWidgets }
-    : ((x) => ({ ...x, text: links(x.text, retrieved) }))(expandTemplates(markQuotes(offerless.text, retrieved).text, { found, works, books: bookCards }));   // quoted words styled apart (Chad 11-04)
+    : ((x) => ({ ...x, text: links(x.text, retrieved) }))(expandTemplates(markQuotes(offerless.text, retrieved).text, { found, works, books: bookCards, shown: shownCards() }));   // quoted words styled apart (Chad 11-04)
   const citations = [...[...works.values()].map((w) => ({ title: w.title, author: w.author, url: w.url, religion: w.religion, document_id: w.id, paragraph_index: null, text: '' })),
     ...retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url, religion: q.religion, document_id: q.doc_id, paragraph_index: q.paragraph_index ?? null, text: String(q.text).slice(0, 300) }))]
     .filter((c) => c.url && reply.includes(c.url));

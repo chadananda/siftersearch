@@ -230,3 +230,17 @@ describe('agent: a cited work shows its book card', () => {
     expect(books[0].books[0]).toMatchObject({ id: 1, title: 'The Kitáb-i-Íqán', cover_url: 'https://siftersearch.com/img/covers/1' });
   });
 });
+
+// one card per work (Chad 11-13: "Iqan" → "two book cards (one inside, one outside the chat)")
+describe('agent: one book card per work', () => {
+  it('book_card showed it → the reply\'s {{book B1}} adds no second card; a short reply cites it once', async () => {
+    let n = 0; const ev = [];
+    const create = async () => (n++ === 0
+      ? { choices: [{ message: { content: '', tool_calls: [{ id: 'a', function: { name: 'book_card', arguments: '{"title":"Iqan"}' } }] }, finish_reason: 'tool_calls' }], usage: {} }
+      : { choices: [{ message: { content: 'The Kitáb-i-Íqán [[B1]] is the Book of Certitude.\n\n{{book B1}}' }, finish_reason: 'stop' }], usage: {} });
+    const bookCard = async () => ({ kind: 'book', book: { id: 1, title: 'The Kitáb-i-Íqán', author: "Bahá'u'lláh", url: 'https://oceanlibrary.com/kitab-i-iqan/' } });
+    const r = await agentAnswer({ messages: [{ role: 'user', content: 'Iqan' }], tools: { ...tools, bookCard }, onEvent: (e) => ev.push(e), create });
+    expect(ev.filter((e) => e.type === 'books')).toHaveLength(1);
+    expect(r.widgets.filter((w) => w.kind === 'book')).toHaveLength(0);
+  });
+});
