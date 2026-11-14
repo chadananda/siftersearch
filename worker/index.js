@@ -22,7 +22,7 @@ import { anisAppRoute } from './anis-app.js';
 import { DISCUSSION_PATH } from './anis/share.js';
 import { d1Dump, d1Edit } from './d1-dump.js';
 import { version as BUILD_VERSION } from '../package.json';
-import { als, evict, installFetchCache, policyFor, cacheKey, serveCached, apiProducer, API_ORIGIN } from './edge-cache.js';
+import { als, evict, installFetchCache, policyFor, cacheKey, serveCached, apiProducer, edgeStoredCc, API_ORIGIN } from './edge-cache.js';
 
 // SSR's own fetches to the API share the edge cache (worker/edge-cache.js), so a render never waits on the tunnel for
 // data the edge already holds.
@@ -215,9 +215,8 @@ export function createExports(manifest) {
               // this cache for FOUR HOURS — /biography showed 645/893 long after the API returned 881/893,
               // and every fix looked like it had failed (2026-08-14). Pinning it here means no dashboard
               // setting can silently outlive the origin's own declaration.
-              const ttl = Number((cc.match(/s-maxage=(\d+)/) || [])[1] || 60);
               const stored = new Response(res.clone().body, res);
-              stored.headers.set('cache-control', `public, max-age=${ttl}, s-maxage=${ttl}`);
+              stored.headers.set('cache-control', edgeStoredCc(cc));   // immutable assets keep theirs (edge HIT → browser keeps it)
               ctx.waitUntil(cache.put(request, stored));
             }
             return toBrowser(res);

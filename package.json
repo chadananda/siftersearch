@@ -85,7 +85,7 @@
     "prod:status": "pm2 status",
     "prod:verify": "node scripts/verify-deployment.js",
     "prod:deploy": "git pull && npm install && pm2 restart siftersearch-api && sleep 3 && npm run prod:verify",
-    "build:widget": "vite build --config vite.voice.config.mjs && vite build --config vite.widget.config.mjs"
+    "build:widget": "vite build --config vite.voice.config.mjs && vite build --config vite.widget.config.mjs && node scripts/anis/anis-shell.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",

@@ -1,6 +1,6 @@
 // Edge SWR cache policy (worker/edge-cache.js): what is cached, what bypasses, the key, and what may be stored.
 import { describe, it, expect } from 'vitest';
-import { policyFor, cacheKey, storable, isCompleteHtml, freshness, sMaxAge } from '../../worker/edge-cache.js';
+import { policyFor, cacheKey, storable, isCompleteHtml, freshness, sMaxAge, edgeStoredCc } from '../../worker/edge-cache.js';
 
 const U = (p) => new URL('https://siftersearch.com' + p);
 const H = (o = {}) => new Headers(o);
@@ -121,5 +121,16 @@ describe('a page GONE at the origin leaves the cache (10-23: an excluded talk mu
     } finally { Date.now = old; }
     expect(l1.size).toBe(0); expect(kv.size).toBe(0);
     delete globalThis.caches;
+  });
+});
+
+describe('edgeStoredCc', () => {
+  it('pins the stored copy to the origin s-maxage', () => {
+    expect(edgeStoredCc('public, max-age=30, s-maxage=120')).toBe('public, max-age=120, s-maxage=120');
+    expect(edgeStoredCc('public, s-maxage=0')).toBe('public, max-age=60, s-maxage=60');
+  });
+  it('an immutable asset keeps its own header (edge hits reach the browser immutable)', () => {
+    const cc = 'public, max-age=31536000, s-maxage=31536000, immutable';
+    expect(edgeStoredCc(cc)).toBe(cc);
   });
 });

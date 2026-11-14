@@ -33,6 +33,9 @@ export const publicLoader = (loader, hash, site, alsoPublic = []) =>
     `var api = new URL(script.src).origin; if (!/^https?:\\/\\/(localhost|127\\.0\\.0\\.1)(:|$)/.test(api) && ${JSON.stringify(alsoPublic)}.indexOf(api) < 0) api = ${JSON.stringify(site)};`);
 // The loader is never kept by a browser: it is 2 KB and the only unversioned piece, so a deploy reaches every page load.
 export const LOADER_CACHE = 'public, no-cache, max-age=0, s-maxage=60';
+// A pinned build (?v=<its hash>) never changes: browsers AND the edge keep it a year (P6 — the edge cached nothing without s-maxage,
+// so every Anís app load waited on tower for the bundle).
+export const PINNED_CACHE = 'public, max-age=31536000, s-maxage=31536000, immutable';
 const SITE_ORIGIN = (process.env.PUBLIC_WIDGET_ORIGIN || 'https://siftersearch.com').replace(/\/$/, '');
 const ALSO_PUBLIC = (process.env.PUBLIC_WIDGET_ORIGINS || 'https://anis.oceanlibrary.com').split(',').map((s) => s.trim().replace(/\/$/, '')).filter(Boolean);
 // The built files are re-read when they change on disk: a push that only rebuilds the bundle reloads no service (the coordinator
@@ -86,7 +89,7 @@ export default async function widgetRoutes(fastify) {
       // A request for exactly this build (?v=<hash>) is immutable; the loader and unversioned requests stay short.
       const pinned = pinnedAsset(file, req.query?.v, hashes);
       return reply.header('content-type', 'application/javascript; charset=utf-8')
-        .header('cache-control', pinned ? 'public, max-age=31536000, immutable' : LOADER_CACHE)
+        .header('cache-control', pinned ? PINNED_CACHE : LOADER_CACHE)
         .header('access-control-allow-origin', '*').send(body);
     });
   }

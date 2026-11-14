@@ -2,7 +2,7 @@
 // deploy was invisible until caches expired (the home page kept an old Anis without the open hook). The loader now
 // points at /widget/sifter-chat.js?v=<content hash>: a new build is a new URL, and that URL can be cached forever.
 import { describe, it, expect } from 'vitest';
-import { versionedLoader, publicLoader, bundleHash, pinnedAsset, LOADER_CACHE } from '../../api/routes/widget.js';
+import { versionedLoader, publicLoader, bundleHash, pinnedAsset, LOADER_CACHE, PINNED_CACHE } from '../../api/routes/widget.js';
 
 describe('widget bundle versioning', () => {
   it('stamps the bundle URL in the loader with the content hash', () => {
@@ -54,5 +54,10 @@ describe('widget bundle versioning', () => {
     expect(pinnedAsset('sifter-chat.js', 'aaa', hashes)).toBe(true);
     expect(pinnedAsset('anis-voice.js', undefined, { 'anis-voice.js': undefined })).toBe(false);
     expect(pinnedAsset('widget.js', 'x', { 'widget.js': 'x' })).toBe(false);
+  });
+  it('a pinned build is kept a year by browsers and the edge (s-maxage), immutable', () => {
+    expect(PINNED_CACHE).toMatch(/\bimmutable\b/);
+    expect(PINNED_CACHE).toMatch(/max-age=31536000/);
+    expect(PINNED_CACHE).toMatch(/s-maxage=31536000/);
   });
 });

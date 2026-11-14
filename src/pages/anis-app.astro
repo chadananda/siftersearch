@@ -3,6 +3,24 @@
 // (manifest, service worker, Apple home-screen tags, safe areas). Served at the host root by worker/anis-app.js.
 // Own head, not Layout: this is Ocean 2.0's assistant, not a SifterSearch page.
 import pkg from '../../package.json';
+// P6: the widget's first view, snapshotted at build (scripts/anis/anis-shell.mjs, run by `npm run build:widget`) — painted from
+// the first byte as declarative shadow DOM; the widget bundle (pinned to the same build, ?v=) mounts over it and removes it.
+import shell from '../widget/anis-shell.json';
+const TOKEN = 'wgt_house_siftersearch';
+const BUNDLE = `/widget/sifter-chat.js?v=${shell.v}`;
+const shellHtml = shell.html.replaceAll('__VERSION__', pkg.version);
+// the loader (/widget.js) inlined: one request fewer before the bundle. Same element, attributes and once-per-page guard.
+const mount = `window.__sifterChatLoader=true;function anisMount(){if(document.querySelector('[data-sifter-chat],sifter-chat'))return;`
+  + `var e=document.createElement('sifter-chat-${shell.v}');e.setAttribute('data-sifter-chat','');`
+  + `var a={token:'${TOKEN}',api:location.origin,name:'Anís',opened:'1',fullscreen:'1',version:'${pkg.version}'};for(var k in a)e.setAttribute(k,a[k]);document.body.appendChild(e)}`
+  + `function anisFail(){var s=document.querySelector('[data-anis-shell]');if(s)s.remove();document.documentElement.classList.remove('js')}`;
+// before the bundle: match the shell to this reader (rail hidden, a conversation open) and keep a question tapped meanwhile
+const prep = `(function(){try{var r=document.querySelector('[data-anis-shell]').shadowRoot;if(!r)return;var t='${TOKEN}',L=localStorage;`
+  + `if(L.getItem('anis-rail')==='0'){var p=r.querySelector('.panel');if(p)p.classList.remove('railed')}`
+  + `var a=L.getItem('anis-thread-active:'+t);if(!a){var ix=JSON.parse(L.getItem('anis-threads:'+t)||'[]');a=ix[0]&&ix[0].id}`
+  + `var m=a?JSON.parse(L.getItem('anis-thread:'+t+':'+a)||'[]'):[];if(m.some&&m.some(function(x){return x&&x.role==='user'})){var w=r.querySelector('.welcome');if(w)w.remove()}`
+  + `r.addEventListener('click',function(e){var c=e.target.closest&&e.target.closest('.wl-card');if(c&&!window.__anisPending){var q=c.querySelector('.wl-q');window.__anisPending=q&&q.textContent;c.disabled=true}})`
+  + `}catch(e){}})()`;
 const ORIGIN = 'https://anis.oceanlibrary.com';
 const title = 'Anís — Ocean AI Research Assistant';
 const description = "Ask Anís about the world's sacred and scholarly texts — answers quoted and cited from the Ocean library.";
@@ -34,6 +52,7 @@ const ld = { '@context': 'https://schema.org', '@type': 'WebApplication', name: 
   <meta name="twitter:title" content={title} />
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={`${ORIGIN}/anis-app/og-1200x630.png`} />
+  <link rel="preload" as="script" href={BUNDLE} fetchpriority="high" />
   <link rel="manifest" href="/anis.webmanifest" />
   <meta name="theme-color" content="#0a162a" />
   <meta name="color-scheme" content="dark" />
@@ -50,12 +69,13 @@ const ld = { '@context': 'https://schema.org', '@type': 'WebApplication', name: 
   <link rel="icon" type="image/png" sizes="192x192" href="/anis-app/icon-192.png" />
   <script type="application/ld+json" set:html={JSON.stringify(ld)} />
   <script is:inline>document.documentElement.classList.add('js')</script>
-  <style>
+  <style is:inline>
     html, body { margin: 0; height: 100%; background: #0a162a; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
     body { min-height: 100dvh; }
     .intro { font: 16px/1.55 system-ui, sans-serif; color: #e6edf6; max-width: 40rem; margin: 0 auto; padding: 3rem 1.25rem; }
     .intro h1 { font: 600 1.6rem/1.25 Georgia, serif; margin: 0 0 .75rem; }
     .intro li { margin: .25rem 0; color: #9fb3cc; }
+    html:not(.js) [data-anis-shell] { display: none; }   /* no JS: the intro, never a dead chat */
     .js .intro { visibility: hidden; }   /* in the HTML for search engines, never painted before the chat opens over it (11-13 "flash of another Anís screen") */
   </style>
 </head>
@@ -72,7 +92,10 @@ const ld = { '@context': 'https://schema.org', '@type': 'WebApplication', name: 
     </ul>
     <noscript><p>Anís needs JavaScript to run.</p></noscript>
   </main>
-  <script is:inline src="/widget.js" data-key="wgt_house_siftersearch" data-name="Anís" data-opened="1" data-fullscreen="1" data-version={pkg.version} async></script>
+  <div data-anis-shell><template shadowrootmode="open" set:html={shellHtml}></template></div>
+  <script is:inline set:html={prep}></script>
+  <script is:inline set:html={mount}></script>
+  <script is:inline src={BUNDLE} async fetchpriority="high" onload="anisMount()" onerror="anisFail()"></script>
   <script is:inline>
     if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('/anis-sw.js', { scope: '/' }).catch(() => {}));
   </script>

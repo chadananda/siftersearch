@@ -87,6 +87,14 @@ export const isCompleteHtml = (text) => /<\/html>\s*$/i.test(text || '');
 /** s-maxage of a Cache-Control header, or null. */
 export const sMaxAge = (cc) => { const m = /s-maxage=(\d+)/.exec(cc || ''); return m ? Number(m[1]) : null; };
 
+/** Cache-Control for the edge's stored copy of a proxied API/widget GET: pinned to the origin's s-maxage (a zone rule must never
+ *  outlive it), except a content-addressed asset (immutable), which keeps its header so edge hits still reach browsers immutable. */
+export const edgeStoredCc = (cc) => {
+  if (/\bimmutable\b/.test(cc || '')) return cc;
+  const ttl = sMaxAge(cc) || 60;
+  return `public, max-age=${ttl}, s-maxage=${ttl}`;
+};
+
 /**
  * May this origin/SSR response be stored? Returns { ok, why, stripCookie }. `text` is the full body; `tainted` = the
  * render saw a failed (5xx / network / timeout) data fetch.

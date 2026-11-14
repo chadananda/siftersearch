@@ -38,7 +38,7 @@ describe('Anís app host', () => {
     const page = fs.readFileSync('src/pages/anis-app.astro', 'utf8');
     for (const t of ['apple-mobile-web-app-capable', 'apple-mobile-web-app-status-bar-style', 'apple-touch-icon', 'viewport-fit=cover', '/anis.webmanifest', '/anis-sw.js'])
       expect(page).toContain(t);
-    expect(page.replace(/data-key="[^"]+"/, '').replace(/^\/\/.*$/gm, '')).not.toMatch(/siftersearch/i);
+    expect(page.replace(/const TOKEN = '[^']+';/, '').replace(/^\/\/.*$/gm, '')).not.toMatch(/siftersearch/i);
   });
   it('the host has its own robots and sitemap, and root icons come from the app\'s files', async () => {
     const robots = await at('/robots.txt').text();
@@ -52,6 +52,18 @@ describe('Anís app host', () => {
   it('the page has structured data and a crawlable heading', () => {
     const page = fs.readFileSync('src/pages/anis-app.astro', 'utf8');
     for (const t of ["'@type': 'WebApplication'", '<h1>', 'summary_large_image', 'og-1200x630.png']) expect(page).toContain(t);
-    expect(page).toContain('data-version={pkg.version}');   // the app shows its build beside the title (Chad 11-13)
+    expect(page).toContain("version:'${pkg.version}'");   // the app shows its build beside the title (Chad 11-13)
+  });
+  it('paints the widget shell from the first byte, pinned to the bundle that is built (P6: rerun `npm run build:widget`)', async () => {
+    const { bundleHash } = await import('../../api/routes/widget.js');
+    const shell = JSON.parse(fs.readFileSync('src/widget/anis-shell.json', 'utf8'));
+    expect(shell.v).toBe(bundleHash(fs.readFileSync('api/static/widget/sifter-chat.js', 'utf8')));
+    expect(shell.html).toMatch(/^<div class="root calm /);              // never animates in
+    expect(shell.html).toContain('class="welcome');
+    expect(shell.html).toContain('role="main"');                        // the page's one main landmark
+    expect(shell.html).not.toMatch(/siftersearch/i);
+    const page = fs.readFileSync('src/pages/anis-app.astro', 'utf8');
+    for (const t of ['<template shadowrootmode="open" set:html={shellHtml}>', 'onload="anisMount()"', "sifter-chat-${shell.v}", 'html:not(.js) [data-anis-shell]'])
+      expect(page).toContain(t);
   });
 });

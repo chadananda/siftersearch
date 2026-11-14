@@ -9,6 +9,7 @@
   // Transcript persists in localStorage per token. Soft WebAudio feedback (synthesized, muteable).
   // token/api from the loader; accent/name/mission are optional per-page overrides (data-* attrs)
   // that tune the widget without touching the DB profile. ONE public domain; the edge worker proxies /api.
+  import { untrack } from 'svelte';
   import { ANIS_SAMPLES, ANIS_WELCOME, pickStarters } from '../lib/anis-samples.js';
   import { headingOf, olItem } from './rich-line.js';
   import { thinkDepth } from './think.js';
@@ -21,6 +22,7 @@
   import SideBySide from '../components/widgets/SideBySide.svelte';
   import { widgetSegments } from '../../api/lib/assistant/widgets/segments.js';
   import { BUILD, tagFor } from './version.js';
+  import { loadConfig, saveConfig, bootConfig } from './boot.js';
   import { plainReply, replyHtml, replySources, referenceList, questionIndex, roundOf, answerTurns, rewind, shareTurns, fromShared } from './reply-actions.js';
   import { openStore, loadMessages, saveMessages, saveIndex, upsertThread, removeThread, pruneThreads, dropThreadData, groupThreads,
     filterThreads, messagesText, threadTitle, firstQuestion, newThreadId, activeKey, addShare, dropShares } from './threads.js';
@@ -211,24 +213,46 @@
     } catch { /* analytics must never break chat */ }
   }
 
+  // P6: render at once from the cached config (or, full screen, defaults) — no network wait before the first paint; the live
+  // config then refreshes cfg + the cache. A refused token (401/403/404) still closes the widget; a network failure after boot does not.
   $effect(() => {
     if (!token) return;
+    const over = (c) => ({ ...c, ...(accent ? { accent } : {}), ...(name ? { name } : {}) });   // per-page overrides win (display + steering only)
+    const mkGreet = (c) => () => { const hello = c.greetings?.length ? c.greetings[Math.floor(Math.random() * c.greetings.length)] : c.greeting;
+      return hello ? [{ role: 'assistant', content: hello, done: true, followups: pickStarters() }] : []; };
+    let started = false;
+    const start = (c) => {
+      started = true; cfg = c; greet = mkGreet(c);
+      { const st = openStore(LS(), token); threads = st.index; setActive(st.active); messages = loadMessages(LS(), token, st.active); }
+      if (!messages.some((m) => m.role === 'user')) messages = greet();   // only a greeting kept → a fresh one (live facts, new starter pills)
+      continueShared();
+      track('widget_load');
+      maybeOfferOnetap();   // a restored transcript may already qualify — don't wait for the next answer
+    };
+    untrack(() => { const boot = bootConfig({ cached: loadConfig(LS(), token), name, accent, fullscreen: isFull }); if (boot) start(boot); });   // reads state: must not subscribe this effect
     fetch(`${api}/api/v1/widget/config/${encodeURIComponent(token)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`config ${r.status}`))))
+      .then((r) => (r.ok ? r.json() : Promise.reject(Object.assign(new Error(`config ${r.status}`), { refused: r.status >= 400 && r.status < 500 }))))
       .then((c) => {
-        cfg = c;
-        // Per-page overrides win over the server profile (display + steering only).
-        if (accent) cfg.accent = accent;
-        if (name) cfg.name = name;
-        { const st = openStore(LS(), token); threads = st.index; setActive(st.active); messages = loadMessages(LS(), token, st.active); }
-        greet = () => { const hello = c.greetings?.length ? c.greetings[Math.floor(Math.random() * c.greetings.length)] : c.greeting;
-          return hello ? [{ role: 'assistant', content: hello, done: true, followups: pickStarters() }] : []; };
-        if (!messages.some((m) => m.role === 'user')) messages = greet();   // only a greeting kept → a fresh one (live facts, new starter pills)
-        continueShared();
-        track('widget_load');
-        maybeOfferOnetap();   // a restored transcript may already qualify — don't wait for the next answer
+        saveConfig(LS(), token, c);
+        if (!started) return start(over(c));
+        cfg = over(c); greet = mkGreet(c);
+        if (!busy && !messages.some((m) => m.role === 'user')) messages = greet();
       })
-      .catch(() => { denied = true; });
+      .catch((e) => { if (!started || e?.refused) denied = true; });
+  });
+
+  // P6 hand-off from the page's static shell ([data-anis-shell], a snapshot of this first view painted from the HTML): mount
+  // calm (no entry animations — the view is already on screen), take a question tapped or text typed in the shell, then drop it.
+  let calm = $state(typeof document !== 'undefined' && !!document.querySelector('[data-anis-shell]'));
+  $effect(() => {
+    if (!cfg || !calm) return;
+    untrack(() => {
+      const sh = document.querySelector('[data-anis-shell]');
+      const typed = sh?.shadowRoot?.querySelector('textarea')?.value?.trim();
+      const q = window.__anisPending; window.__anisPending = null;
+      if (q && !busy) { input = q; send(); } else if (typed && !input) input = typed;
+      requestAnimationFrame(() => requestAnimationFrame(() => { sh?.remove(); setTimeout(() => (calm = false), 800); }));
+    });
   });
 
   const persist = () => { if (activeId) saveMessages(LS(), token, activeId, messages); touchThread(); };
@@ -963,7 +987,7 @@
 {/snippet}
 
 {#if cfg && !denied}
-  <div class="root {cfg.position === 'bottom-left' ? 'left' : 'right'}" class:full={!!fullscreen && fullscreen !== '0'} style="--accent:{cfg.accent}">
+  <div class="root {cfg.position === 'bottom-left' ? 'left' : 'right'}" class:calm class:full={!!fullscreen && fullscreen !== '0'} style="--accent:{cfg.accent}">
     {#if open}
       <section class="panel" class:railed={isFull && railOpen} aria-label="{cfg.name} chat" onkeydown={isolateKey} onkeyup={isolate} onkeypress={isolate} use:contain>
         {#if isFull}
@@ -1003,7 +1027,7 @@
             </div>
           </aside>
         {/if}
-        <div class="main">
+        <div class="main" role={isFull ? 'main' : undefined}>   <!-- full screen it is the page's main content (one landmark); embedded, never -->
         <header>
           {#if isFull}
             <button type="button" class="icon h-menu" aria-label="Conversations" aria-expanded={drawerOpen} onclick={() => (drawerOpen = true)}>{@render ic('menu')}</button>
@@ -1637,6 +1661,7 @@
 
   /* ── Welcome (fullscreen, before the first question): calm, typographic, four example questions by kind ── */
   .welcome { margin: auto; padding: 24px 4px 12px; text-align: center; animation: arrive .5s cubic-bezier(.22,1,.36,1) both; }
+  .root.calm .panel, .root.calm .rule, .root.calm .welcome { animation: none; }   /* mounting over the static shell: already on screen */
   .wl-mark { display: block; width: 44px; height: 44px; margin: 0 auto 14px; color: var(--gold-ink); }
   .wl-mark svg { width: 100%; height: 100%; display: block; }
   .wl-h { margin: 0; font: 600 clamp(26px, 3.4vw, 34px)/1.15 var(--serif); letter-spacing: -.005em; color: #22201b; text-wrap: balance; }
