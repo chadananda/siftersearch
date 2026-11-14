@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 process.env.ANIS_WORK_SUMMARIES = join(tmpdir(), `work-summaries-${process.pid}.json`);
-import { titleOnly, titleAnswer, sectionAnswer, cardFields, workSummary, namedWork } from '../../api/lib/assistant/title-answer.js';
+import { titleOnly, titleAnswer, sectionAnswer, cardFields, editionOf, workSummary, namedWork } from '../../api/lib/assistant/title-answer.js';
 import { anisTurn } from '../../api/lib/assistant/turn.js';
 import { emptyState } from '../../api/lib/assistant/units.js';
 import { makeStrikes } from '../../api/lib/assistant/strikes.js';
@@ -52,13 +52,18 @@ describe('title-answer', () => {
       { onEvent: (e) => sev.push(e), link: async () => 'https://x/y', card: (d) => cardFields(d, { read }) });
     expect(sev[0].book.cover_url).toBe('https://siftersearch.com/img/covers/20925?v=01cb4171cd2d');
   });
-  it('cardFields reads nothing when the row already carries its cover field (even null), and keeps the row on a failed read', async () => {
+  it('cardFields reads nothing when the row already carries its cover and edition fields (even null), and keeps the row on a failed read', async () => {
     const read = vi.fn(async () => { throw new Error('db'); });
-    const has = { id: 1, title: 'T', cover_url: null };
+    const has = { id: 1, title: 'T', cover_url: null, translators: null };
     expect(await cardFields(has, { read })).toBe(has);
     expect(read).not.toHaveBeenCalled();
     const thin = { id: 2, title: 'U' };
     expect(await cardFields(thin, { read })).toBe(thin);
+  });
+  it('editionOf: the copy\'s translators, publisher and year from its catalogue row; nothing recorded → null', () => {
+    expect(editionOf({ translators: JSON.stringify([{ name: 'Shoghi Effendi', basis: 'catalogue' }]), publisher: "Bahá'í Publishing Trust", pub_year: 1974 }))
+      .toEqual({ translators: ['Shoghi Effendi'], publisher: "Bahá'í Publishing Trust", year: 1974, edition: null });
+    expect(editionOf({ translators: '[]' })).toBe(null);
   });
   it('the summary is written once per book, then served from the cache', async () => {
     const doc = { id: 990000001 + Math.floor(Math.random() * 1e6), title: 'T', author: 'A' };

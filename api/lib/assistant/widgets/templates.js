@@ -14,6 +14,7 @@ export function expandTemplates(text, refs, { start = 0 } = {}) {
     data.id = `${kind}-${start + widgets.length + 1}`;
     widgets.push(data);
     return `\n${widgetBlock(data)}\n`;
-  }).replace(/\{\{[^{}\n]*\}\}/g, '').replace(/\n{3,}/g, '\n\n').trim();
+  }).replace(/\{\{\s*book\s+(B\d+)\s*\}\}/g, '[[$1]]')   // a book template inside a sentence ("The library's copy is {{book B1}}.") is its linked title, never a hole
+    .replace(/\{\{[^{}\n]*\}\}/g, '').replace(/\n{3,}/g, '\n\n').trim();
   return { text: out, widgets };
 }

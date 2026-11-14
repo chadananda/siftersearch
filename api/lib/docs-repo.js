@@ -70,7 +70,7 @@ export function scopeSql(scope = 'live') {
 
 const FIELDS = Object.freeze(['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'external_id', 'scope', 'cover_url', 'encumbered',
   'description', 'file_path', 'file_hash', 'paragraph_count', 'source_site', 'source_url', 'duplicate_of', 'deleted_at',
-  'slug', 'created_at', 'updated_at', 'frontmatter', 'purchase_url', 'filename']);
+  'slug', 'created_at', 'updated_at', 'frontmatter', 'purchase_url', 'filename', 'translators', 'publisher', 'pub_year', 'edition']);
 
 function selectList(fields) {
   const asked = (Array.isArray(fields) ? fields : String(fields || '').split(','))

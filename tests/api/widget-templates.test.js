@@ -68,4 +68,7 @@ describe('finishResearch (tower research-tool boundary)', () => {
     expect(out.passages[2].cover_url).toBe('/own.jpg');
     expect(out.work.cover_url).toBe('/c5.jpg');
   });
+  it('a book template inside a sentence becomes its linked-title ref, never a hole (11-13 "The library\'s copy is.")', () => {
+    expect(expandTemplates("The library's copy is {{book B1}}.", { works: new Map(), books: new Map() }).text).toBe("The library's copy is [[B1]].");
+  });
 });

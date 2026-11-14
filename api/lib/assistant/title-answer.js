@@ -70,11 +70,19 @@ export async function titleOnly(text, { find = findWork } = {}) {
 
 /** The card's own fields (cover, year, rights) for a doc row that lacks them: the book fast path's rows come from the title index
  *  (id/title/author/collection), so its cards had no cover (11-11 "Why no book image?" — The Dhammapada, doc 20925, has one). One read by id. */
-const CARD_FIELDS = ['id', 'cover_url', 'year', 'encumbered'];
+const CARD_FIELDS = ['id', 'cover_url', 'year', 'encumbered', 'translators', 'publisher', 'pub_year', 'edition'];
 export async function cardFields(doc, { read = async (id) => (await (await import('../docs-repo.js')).listDocs({ ids: [id], fields: CARD_FIELDS, count: false, limit: 1 })).docs?.[0] } = {}) {
-  if (!doc?.id || 'cover_url' in doc) return doc;
+  if (!doc?.id || ('cover_url' in doc && 'translators' in doc)) return doc;
   const row = await read(doc.id).catch(() => null);
-  return row ? { ...doc, cover_url: row.cover_url ?? null, year: doc.year ?? row.year ?? null, encumbered: doc.encumbered ?? row.encumbered } : doc;
+  return row ? { ...doc, cover_url: row.cover_url ?? null, year: doc.year ?? row.year ?? null, encumbered: doc.encumbered ?? row.encumbered,
+    translators: row.translators ?? null, publisher: row.publisher ?? null, pub_year: row.pub_year ?? null, edition: row.edition ?? null } : doc;
+}
+/** This copy's edition as the catalogue records it (translators, publisher, year) — what "who translated this edition" is answered from. */
+export function editionOf(d) {
+  let tr = [];
+  try { tr = (JSON.parse(d?.translators || '[]') || []).map((t) => (typeof t === 'string' ? t : t?.name)).filter(Boolean); } catch { tr = []; }
+  const e = { translators: tr, publisher: d?.publisher || null, year: d?.pub_year ?? null, edition: d?.edition || null };
+  return e.translators.length || e.publisher || e.year || e.edition ? e : null;
 }
 const absCover = (u) => (u ? (/^https?:/.test(u) ? u : `${SITE}${u}`) : null);
 const coverOf = (d) => absCover(d?.cover_url) ?? sowCoverUrl(d);   // a Star of the West issue: its page 1 scan, in place
@@ -88,7 +96,7 @@ export async function titleAnswer(work, { onEvent = () => {}, links = null, summ
   if (!sum && later) later(d);
   const urlOf = (x) => wl?.get?.(x.id) ?? workUrl(x);
   // cover_url absolute: widgets embed anywhere, and images live on the site, never the api host.
-  const book = { id: d.id, title: d.title, author: d.author || null, year: d.year ?? null, url: urlOf(d) || null, cover_url: coverOf(d), description: sum || null, encumbered: d.encumbered === 1, sufficient: true };   // the card IS the answer where a card can show (widget); text stays for history and other channels
+  const book = { id: d.id, title: d.title, author: d.author || null, year: d.year ?? null, url: urlOf(d) || null, cover_url: coverOf(d), description: sum || null, encumbered: d.encumbered === 1, sufficient: true, edition: editionOf(d) };   // the card IS the answer where a card can show (widget); text stays for history and other channels
   // A bare title asks nothing yet: the card answers, then ONE question invites the real request (Chad 11-10).
   book.follow_up = WORK_FOLLOW_UP;
   onEvent({ type: 'book', book });
