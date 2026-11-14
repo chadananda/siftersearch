@@ -2,6 +2,9 @@
 import { describe, it, expect } from 'vitest';
 import { DOC_PATH, docResponse, docSitemapUrls, PAGE_SIZE } from '../../worker/anis/doc-pages.js';
 import { PREVIEW_PARAGRAPHS } from '../../api/lib/rights/preview.js';
+import { THEME_PREP } from '../../worker/anis/content-widget.js';
+
+const noWidget = (h) => h.replace(THEME_PREP, '').replace(/<script>window\.anisPage=[\s\S]*?<\/script><script>[\s\S]*?<\/script>/, '');
 
 const API = 'https://api.test';
 const BOOK = { id: '8632', title: 'Gate of the Heart', author: 'Nader Saiedi', collection: "Baha'i Books", language: 'en', encumbered: 1,
@@ -79,8 +82,9 @@ describe('copyrighted book: the opening only', () => {
     expect(r.html).toContain('<link rel="canonical" href="https://anis.oceanlibrary.com/doc/gate-of-the-heart-nader-saiedi-8632">');
     const ld = JSON.parse(/<script type="application\/ld\+json">(.*?)<\/script>/.exec(r.html)[1]);
     expect(ld).toMatchObject({ '@type': 'Book', name: 'Gate of the Heart', author: { name: 'Nader Saiedi' }, isAccessibleForFree: false });
-    expect(r.html).toMatch(/href="\/\?ask=[^"]*Gate%20of%20the%20Heart/);
-    expect(r.html).not.toMatch(/siftersearch/i);
+    expect(r.html).toMatch(/href="\/\?ask=[^"]*Gate%20of%20the%20Heart[^"]*" data-anis-ask=/);
+    expect(r.html).toMatch(/window\.anisPage=\{"type":"text","slug":"gate-of-the-heart[^"]*-8632","title":"Gate of the Heart/);
+    expect(noWidget(r.html)).not.toMatch(/siftersearch/i);
   });
 });
 
@@ -97,7 +101,7 @@ describe('original beside the English', () => {
     expect(r.html).toMatch(/@media \(max-width:760px\)\{\.row,\.cols\{grid-template-columns:1fr\}/);
     expect(r.html).toContain('href="https://oceanoflights.org/bab-ahmad/"');
     expect(JSON.parse(/<script type="application\/ld\+json">(.*?)<\/script>/.exec(r.html)[1])).toMatchObject({ '@type': 'CreativeWork', inLanguage: ['ar', 'en'], translator: { name: 'Shoghi Effendi' } });
-    expect(r.html).not.toMatch(/siftersearch/i);
+    expect(noWidget(r.html)).not.toMatch(/siftersearch/i);
   });
 });
 

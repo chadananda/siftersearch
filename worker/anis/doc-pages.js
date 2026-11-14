@@ -4,6 +4,7 @@
 // alignments only, so a crawler never buys one). Index /doc (+ /doc/books, /doc/tablets[/<page>]) from the reports-built
 // catalogue (GET /api/library/doc-pages). Look and head: share.js. Edge-cached by the site Worker; producer contract {res, tainted}.
 import { esc, plain, head, TOP, titleFrom, ORIGIN } from './share.js';
+import { widgetEmbed, askLink } from './content-widget.js';
 import { PREVIEW_PARAGRAPHS } from '../../api/lib/rights/preview.js';
 import { docPageSlug, docIdFromSlug } from '../../api/lib/library/doc-slug.js';
 import { workUrl, oceanoflightsUrl, inventoryUrl } from '../../api/lib/source-links.js';
@@ -16,7 +17,7 @@ const RTL = new Set(['ar', 'fa', 'he', 'ur']);
 const LANG = { ar: 'Arabic', fa: 'Persian', he: 'Hebrew', ur: 'Urdu', en: 'English' };
 const SECTION = { books: { title: 'Book openings', kicker: 'Copyrighted books', blurb: 'The opening pages of books still under copyright, with where to find the whole book.' },
   tablets: { title: 'Originals with their translation', kicker: 'Side by side', blurb: 'Persian and Arabic originals beside their English translation, sentence by sentence.' } };
-const ask = (d) => `/?ask=${encodeURIComponent(`Tell me about “${d.title}”${d.author ? ` by ${d.author}` : ''}: what is it, and what does it teach?`)}`;
+const ask = (d) => `Tell me about “${d.title}”${d.author ? ` by ${d.author}` : ''}: what is it, and what does it teach?`;
 const meta = (m) => { try { return typeof m === 'string' ? JSON.parse(m) : (m || {}); } catch { return {}; } };
 // the collaborator page that holds this text, by the link policy's order; never this library's own reader
 const homeOf = (doc) => { const u = workUrl({ ...doc, id: doc.id }); return u && !/siftersearch\.com/.test(u) ? u : null; };
@@ -69,11 +70,12 @@ ${TOP}
 ${main}
 </main>
 ${FOOT}
+${widgetEmbed(o.text)}
 </body>
 </html>`;
 const person = (name) => (name ? { '@type': 'Person', name } : undefined);
 const byline = (d) => [d.author, d.collection].filter(Boolean).map(esc).join(' · ');
-const cta = (d) => `<aside class="cta" aria-label="Ask"><p>A question about this text?</p><a class="btn" href="${esc(ask(d))}">Ask Anís about this text</a></aside>`;
+const cta = (d) => `<aside class="cta" aria-label="Ask"><p>A question about this text?</p>${askLink('Ask Anís about this text', ask(d), 'btn')}</aside>`;
 
 /** A copyrighted book's opening: at most PREVIEW_PARAGRAPHS paragraphs, whatever the API returned, then where to get the book. */
 export function openingPage(doc, paragraphs) {
@@ -88,7 +90,7 @@ export function openingPage(doc, paragraphs) {
   const body = shown.map((p) => (p.blocktype === 'heading' || (p.heading && !p.text) ? `<h2>${md(p.text || p.heading)}</h2>` : `<p>${md(p.text)}</p>`)).join('\n');
   const get = doc.purchase_url ? `<p><a href="${esc(doc.purchase_url)}" rel="nofollow noopener">Get the whole book</a>${publisher ? ` (published by ${esc(publisher)})` : ''}.</p>`
     : publisher ? `<p>The whole book is published by ${esc(publisher)}.</p>` : '';
-  return page({ type: 'book', title: `${doc.title}${doc.author ? ` — ${doc.author}` : ''} (opening pages)`, description, url, ld }, `<article>
+  return page({ type: 'book', title: `${doc.title}${doc.author ? ` — ${doc.author}` : ''} (opening pages)`, description, url, ld, text: { type: 'text', slug, title: doc.title } }, `<article>
 <p class="crumb"><a href="/doc/books">Book openings</a></p>
 <p class="kicker">The opening pages</p>
 <h1>${esc(doc.title)}</h1>
@@ -124,7 +126,7 @@ export function sbsPage(doc, sbs) {
     ? `<section class="par" id="p${p.n}"><h2 lang="${esc(lang)}" dir="${dir}">${esc(p.rows[0]?.o || '')}</h2></section>`
     : `<section class="par" id="p${p.n}"><p class="n">${p.n}</p>${p.rows.map(row).join('')}</section>`)).join('\n');
   const more = sbs.next_offset != null || (sbs.paragraphs || []).length > SBS_LIMIT;
-  return page({ type: 'article', wide: true, title: `${doc.title}${doc.author ? ` — ${doc.author}` : ''} (${langName} and English)`, description, url, ld }, `<article>
+  return page({ type: 'article', wide: true, title: `${doc.title}${doc.author ? ` — ${doc.author}` : ''} (${langName} and English)`, description, url, ld, text: { type: 'text', slug, title: doc.title } }, `<article>
 <p class="crumb"><a href="/doc/tablets">Originals with their translation</a></p>
 <p class="kicker">${esc(langName)} original · English translation</p>
 <h1>${esc(doc.title)}</h1>
