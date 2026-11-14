@@ -30,3 +30,19 @@ describe('sectionAuthorChange', () => {
       .toEqual([{ name: 'Lord Curzon', role: 'author', basis: 'section' }]);
   });
 });
+
+describe('sectionAuthorChange — quoted voices and structural lines', () => {
+  const UHJ = 'Universal House of Justice', B = 'Bahá’u’lláh';
+  it('a compiler paragraph credited by the book default to Bahá’u’lláh → the House, Bahá’u’lláh kept only as a quoted voice', () => {
+    expect(sectionAuthorChange(JSON.stringify([{ name: B, role: 'author', basis: 'book', unresolved: true }]), UHJ, { quoted: [B] }))
+      .toEqual([{ name: UHJ, role: 'author', basis: 'section' }, { name: B, role: 'quoted', basis: 'section' }]);
+  });
+  it('a quoted voice already present is not added twice; already right → no change', () => {
+    const cur = [{ name: UHJ, role: 'author', basis: 'section' }, { name: B, role: 'quoted', basis: 'window' }];
+    expect(sectionAuthorChange(JSON.stringify(cur), UHJ, { quoted: [B] })).toBeNull();
+  });
+  it('role heading marks a stray heading as structural (no writer)', () => {
+    expect(sectionAuthorChange(JSON.stringify([]), null, { role: 'heading' })).toEqual([{ name: null, role: 'heading', basis: 'section' }]);
+    expect(sectionAuthorChange(JSON.stringify([{ name: null, role: 'heading', basis: 'section' }]), null, { role: 'heading' })).toBeNull();
+  });
+});

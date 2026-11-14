@@ -11,6 +11,7 @@ import { coverageRefreshJob } from './coverage-job.js';
 import { stampVoicesJob } from './stamp-voices-job.js';
 import { stampSiteJob } from './stamp-site-job.js';
 import { docAuthorRestampJob } from './doc-author-restamp-job.js';
+import { stampDocsJob } from './stamp-docs-job.js';
 import { vectorsBackupJob } from './vectors-backup-job.js';
 import { phraseF16BuildJob } from './phrase-f16-build.js';
 
@@ -33,9 +34,10 @@ export const INDEX_REPORTS = {
   'stamp-voices': stampVoicesJob,   // every quoted voice findable by author (Chad 10-19) — after each paragraph-authors run
   'stamp-site': stampSiteJob,
   'doc-author-restamp': docAuthorRestampJob,   // params { ids } — Qdrant author/author_fold/religion from the CURRENT doc rows (payload only)
+  'stamp-docs': stampDocsJob,   // params { docs: [ids] } — restamp author/voices/collection after a section-author fix or a collection move
   'vectors-backup': (p = {}) => vectorsBackupJob(p),   // paid vectors.db stores → /tank/sifter/backups/vectors (storage plan R1); own lane — never blocks indexing   // `site` on every scraped-site point (planning/site-databases-plan.md, Chad 10-20)
 };
 // lanes: phrase indexing alone (measured: one at a time is fastest on the interim SSD); HyPE/concepts/sections beside it;
 // BM25 on /fast in its own lane; coverage re-measures
-export const INDEX_LANES = { index: ['phrase-index', 'phrase-hot-reconcile', 'phrase-hot-fold'], backup: ['vectors-backup'], f16: ['phrase-f16-build'], index2: ['hype-index', 'concept-index', 'section-index', 'hype-hot-reconcile', 'hype-hot-fold'], keyword: ['keyword-fill'], coverage: ['coverage-refresh', 'stamp-voices', 'stamp-site', 'doc-author-restamp'] };
+export const INDEX_LANES = { index: ['phrase-index', 'phrase-hot-reconcile', 'phrase-hot-fold'], backup: ['vectors-backup'], f16: ['phrase-f16-build'], index2: ['hype-index', 'concept-index', 'section-index', 'hype-hot-reconcile', 'hype-hot-fold'], keyword: ['keyword-fill'], coverage: ['coverage-refresh', 'stamp-voices', 'stamp-site', 'doc-author-restamp', 'stamp-docs'] };
 export const INDEX_JOB_NAMES = Object.keys(INDEX_REPORTS);

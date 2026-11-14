@@ -277,7 +277,7 @@ REPORTS['ctai-link'] = ctaiLinkJob;             // 1:1 content_alignment by alig
 REPORTS['carry-verify'] = carryVerifyReport;     // params: { ids, backup? } — enrichment before vs after
 REPORTS['carry-repair'] = carryRepairJob;       // params: { ids } — re-apply the carry from the backup
 REPORTS['reingest-carry'] = reingestCarryJob;   // params: { ids } — re-ingest + carry enrichment to the new rows (backup first)
-REPORTS['section-author'] = sectionAuthorJob;       // params: { docId, from, to, name, apply? } — dry run by default
+REPORTS['section-author'] = sectionAuthorJob;       // params: { docId, from, to, name, force?, quoted?, role?, apply? } — dry run by default
 REPORTS['doc-overlap'] = docOverlapJob;   // params: { ids, level? } — per section: paragraphs held word for word elsewhere
 REPORTS['retire-duplicates'] = retireDuplicatesJob;   // params: { pairs:[{dup,keep,reason}], batch?, apply? } — dry run by default
 // HyPE coverage of a tradition (params { religion? }): paragraphs none / older version / current, by scope × language
