@@ -2,7 +2,10 @@
 // POST /tool/:fn, POST /tools (batch), GET /tool-names. Deps: agent.js agentTools, tool-cache.js. DI: plugin opts { impl }.
 import { requireInternal } from '../lib/auth.js';
 import { toolCache, agentCache, cachedImpl, callScope } from '../lib/assistant/tool-cache.js';
+import { withPrefer } from '../lib/link-prefer.js';
 
+// the edge's turn.prefer, sanitised: a short list of host names (it only reorders links; it never filters what a reader finds)
+const preferOf = (turn) => (Array.isArray(turn?.prefer) ? turn.prefer.filter((h) => typeof h === 'string' && /^[a-z0-9.-]{1,80}$/i.test(h)).slice(0, 8) : null);
 const UNCACHED = ['researchLookup', 'researchCapture'];   // agent.js uses the raw functions for these
 
 // Server pieces the Worker's pure core needs as remote functions (rights, link maps, compiled notes, OceanLibrary range links). Lazy imports.
@@ -59,20 +62,21 @@ export default async function anisToolsRoutes(fastify, opts = {}) {
     if (!opts.impl) Object.assign(cached, edgeExtras);
     return cached;
   };
-  const one = async (impl, fn, args) => {
+  // turn.prefer (the reader's site, set by the edge): every link made inside the call ranks those hosts first (link-prefer.js)
+  const one = async (impl, fn, args, prefer = null) => {
     const t0 = Date.now();
     if (typeof impl[fn] !== 'function') return { error: `unknown tool: ${fn}`, unknown: true };
-    try { const r = await callScope(() => impl[fn](...(Array.isArray(args) ? args : []))); return { out: await finishResearch(encode(r.out), { docsOf, rangeOf }), cache: r.cache, parts: r.parts, ms: Date.now() - t0 }; }
+    try { return await withPrefer(prefer, async () => { const r = await callScope(() => impl[fn](...(Array.isArray(args) ? args : []))); return { out: await finishResearch(encode(r.out), { docsOf, rangeOf }), cache: r.cache, parts: r.parts, ms: Date.now() - t0 }; }); }
     catch (err) { return { error: err.message }; }
   };
   fastify.post('/tool/:fn', { preHandler: requireInternal }, async (request, reply) => {
-    const r = await one(await get(request.body?.turn), request.params.fn, request.body?.args);
+    const turn = request.body?.turn, r = await one(await get(turn), request.params.fn, request.body?.args, preferOf(turn));
     if (r.unknown) return reply.code(404).send({ error: r.error });
     return r;
   });
   fastify.post('/tools', { preHandler: requireInternal }, async (request) => {
-    const impl = await get(request.body?.turn);
-    return { results: await Promise.all((request.body?.calls || []).map(async (c) => { const { unknown, ...r } = await one(impl, c?.fn, c?.args); return r; })) };
+    const turn = request.body?.turn, impl = await get(turn);
+    return { results: await Promise.all((request.body?.calls || []).map(async (c) => { const { unknown, ...r } = await one(impl, c?.fn, c?.args, preferOf(turn)); return r; })) };
   });
   fastify.get('/tool-names', { preHandler: requireInternal }, async () => {
     const impl = await get();

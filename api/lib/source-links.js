@@ -14,6 +14,13 @@ export const SITE = 'https://siftersearch.com';   // the site worker: pages + th
 const TIERS = LINK_SITES.flatMap((s, i) => s.hosts.map((h) => [h, i + 1]));
 const OURS = 'siftersearch.com';
 export const PUBLISHER_TIER = LINK_SITES.length + 1, SIFTER_TIER = LINK_SITES.length + 2;   // consumers compare against these, never against literals
+// The reader's site (`prefer`) when a caller passes none: tower installs a per-call source (lib/link-prefer.js, AsyncLocalStorage) so
+// every linkFor under one Anís tool call ranks the reader's site first without threading it through each search path. Default: none.
+let preferSource = () => null;
+export const usePreferSource = (fn) => { preferSource = typeof fn === 'function' ? fn : () => null; };
+export const readerPrefer = () => preferSource();
+/** 0 when a link's site is one of the reader's (prefer) hosts, else 1 — the first sort key wherever links are compared. */
+export const homeRank = (site, prefer) => (prefer?.length && site && prefer.some((h) => site === h || String(site).endsWith(`.${h}`)) ? 0 : 1);
 
 /** Site tier of a URL: 0 Star of the West on bahai-education.org (the only complete text, Chad 11-11: first for every SoW citation), 1 OceanLibrary, 2 OceanofLights, 3 Phelps collection, 4 BahaiLibrary, 5 another publisher, 6 SifterSearch. */
 export function tierOf(url) {
@@ -74,7 +81,7 @@ export function workUrl(doc) {
  * @param {object} doc  { id|doc_id, source_url, metadata, religion, collection, slug, filename }
  * @returns {{ url, site, tier, paragraph_level, reader_url }}
  */
-export function linkFor(doc, paragraphIndex, { quote = null, prefer = null } = {}) {
+export function linkFor(doc, paragraphIndex, { quote = null, prefer = preferSource() } = {}) {
   const reader = readerUrl(doc, paragraphIndex);
   // Every OceanLibrary paragraph has a para_id (the site copy's id="para_N"); search carries it as external_para_id.
   // Attach it here, once, so no search path can hand out a book-level OceanLibrary link when the paragraph is known.
@@ -116,7 +123,7 @@ export function linkFor(doc, paragraphIndex, { quote = null, prefer = null } = {
     .filter((c) => c.tier < SIFTER_TIER);   // our own address stored as a "source" is not a source
   // Best tier wins; within a tier, a paragraph-level link beats a whole-document one. A deployment's home site(s) (`prefer`: hosts,
   // planning/anis-host-sites-plan.md) rank above every tier when they hold the text; the configured order follows.
-  const home = (c) => (prefer?.length && prefer.some((h) => c.site === h || String(c.site).endsWith(`.${h}`)) ? 0 : 1);
+  const home = (c) => homeRank(c.site, prefer);
   candidates.sort((a, b) => home(a) - home(b) || a.tier - b.tier || Number(paragraphLevel(b.url)) - Number(paragraphLevel(a.url)));
   const best = candidates[0];
   if (!best) return { url: reader, site: OURS, tier: SIFTER_TIER, paragraph_level: true, reader_url: reader };

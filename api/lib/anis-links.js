@@ -13,6 +13,20 @@ const isOwnHost = (h) => !!h && OWN.some((d) => h === d || h.endsWith(`.${d}`));
 /** Our own address (siftersearch.com or the Anís host): never a source, only a fallback. */
 export const isOurs = (u) => { const h = hostOf(u); return isOwnHost(h) || h === ANIS_HOST; };
 
+/**
+ * The reader's site → the hosts linkFor ranks first (`prefer`, Chad 11-14: one fixed order, the site the reader is on first when it
+ * holds the text). The deployment's own home hosts win; else the embedding page's host, when it is a configured collaborator (the
+ * Anís host counts as Ocean Library, its parent). → [host] | null.
+ */
+export function preferFor({ home = null, site = null } = {}) {
+  const own = (Array.isArray(home) ? home : home?.hosts || []).map((h) => String(h).toLowerCase().replace(/^www\./, '')).filter(Boolean);
+  if (own.length) return own;
+  const h = String(site || '').toLowerCase().replace(/:\d+$/, '').replace(/^www\./, '');
+  if (h === ANIS_HOST) return null; // Anís's own app: no site of the reader's, the plain config order
+  const s = h && LINK_SITES.find((x) => x.hosts.some((d) => h === d || h.endsWith(`.${d}`)));
+  return s ? [...s.hosts] : null;
+}
+
 const idOf = (doc) => Number(doc?.document_id ?? doc?.doc_id ?? doc?.id) || null;
 /** The Anís page of a library document (title + author + id; the id alone 301s to it). */
 export function docPage(doc, paragraphIndex = null) {

@@ -234,6 +234,8 @@ function init(){
       chatbotLocation: cfg.chatbotLocation || null, placeholder: cfg.placeholder || 'Ask a question…',
       // the deployment's own description of its readers (free text, e.g. "Bahá'ís and Bahá'í seekers"); Anís reads it, no code maps it
       audience: typeof cfg.audience === 'string' && cfg.audience.trim() ? cfg.audience.trim().slice(0, 300) : null,
+      // the deployment's home site(s): Anís links them first when they hold the text (Chad 11-14; order, never a filter)
+      home: Array.isArray(cfg.home?.hosts) && cfg.home.hosts.length ? { hosts: cfg.home.hosts.filter((h) => typeof h === 'string').slice(0, 8) } : null,
     });
   });
 

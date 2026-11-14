@@ -10,7 +10,7 @@ import { thinkingParam } from '../../api/lib/model-registry.js';
 import { lookup, capture, logQuestion, saveTurn, markStale, embed, EMBED_MODEL, SAME_QUESTION } from './research-store.js';
 import { restate, underPriceBoundary } from './restate.js';
 import { finishLinks, templateFilter } from './links.js';
-import { anisDeep, anisText } from '../../api/lib/anis-links.js';
+import { anisDeep, anisText, preferFor } from '../../api/lib/anis-links.js';
 import { backPills, pinnedQuestion } from './pills.js';
 import { triageLetter } from './triage.js';
 import { feedback } from './feedback.js';
@@ -74,7 +74,8 @@ const FRESH_MS = 3 * 864e5;
 // roles2 (round 5): the source passage carries its own writer and place, and the tower no longer names a study quoting the Writings
 // roles3 (round 6): roles2 was filled by the PRE-round-5 tower (Buck's study as source, no place) — a new key so the deployed tower's rows are read
 export const TOOL_SHAPE = { sourceOf: 'roles3' };
-export const toolKey = async (fn, args) => `tool/${fn}${TOOL_SHAPE[fn] ? `@${TOOL_SHAPE[fn]}` : ''}/${[...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(args ?? []))))]
+// prefer (the reader's site) changes which links a result carries → its own entry; none = the shared key, as before
+export const toolKey = async (fn, args, prefer = null) => `tool/${fn}${TOOL_SHAPE[fn] ? `@${TOOL_SHAPE[fn]}` : ''}${prefer?.length ? `@${prefer.join(',')}` : ''}/${[...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(args ?? []))))]
   .map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 40)}`;
 
 export function remoteImpl(env, { turn, local, fetchFn = fetch, ctx = null }) {
@@ -94,7 +95,7 @@ export function remoteImpl(env, { turn, local, fetchFn = fetch, ctx = null }) {
   const later = (p) => (ctx?.waitUntil ? ctx.waitUntil(p) : p.catch(() => {}));
   const call = async (fn, args) => {
     if (!env.ANIS_CACHE || !CACHED_TOOLS.has(fn)) return (await tower(fn, args)).out;
-    const key = await toolKey(fn, args);
+    const key = await toolKey(fn, args, turn?.prefer);
     const hit = await env.ANIS_CACHE.get(key).catch(() => null);
     if (hit) {
       const j = JSON.parse(await hit.text(), revive);
@@ -134,7 +135,8 @@ async function personaOf(env, token, fetchFn) {
   try {
     const r = await fetchFn(`${env.TOWER_URL}/api/v1/widget/config/${encodeURIComponent(token)}`, { signal: AbortSignal.timeout(1500) });
     const c = r.ok ? await r.json() : {};
-    const p = { name: String(c.name || '').trim().slice(0, 60) || null, audience: String(c.audience || '').trim().slice(0, 300) || null, at: Date.now() };
+    const p = { name: String(c.name || '').trim().slice(0, 60) || null, audience: String(c.audience || '').trim().slice(0, 300) || null,
+      home: Array.isArray(c.home?.hosts) ? c.home.hosts.filter((h) => typeof h === 'string').slice(0, 8) : null, at: Date.now() };
     personas.set(token, p);
     return p;
   } catch { return {}; }
@@ -177,7 +179,7 @@ export async function chat(request, env, ctx, deps = {}) {
       const question = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
       const conversationId = String(body.conversationId || '').slice(0, 64) || crypto.randomUUID();
       const site = hostOf(request.headers.get('origin') || request.headers.get('referer'));
-      const turn = { channel, site, chatbot_location: body.chatbot_location || null };
+      const turnBase = { channel, site, chatbot_location: body.chatbot_location || null };
       const round = messages.filter((m) => m.role === 'user').length;
       // the reader's indications bio (bio.js): read beside the restatement; the TRADITION line (the bio, then the deployment's audience description) + the bio ride in the turn
       const reader = readerOf(body, { trusted: !!deps.trusted, conversationId });
@@ -186,6 +188,10 @@ export async function chat(request, env, ctx, deps = {}) {
       const profile = body.widget_token ? await personaOf(env, body.widget_token, fetchFn) : {};
       const name = (typeof body.name === 'string' && body.name.trim().slice(0, 60)) || profile.name || null;
       const audience = (typeof body.audience === 'string' && body.audience.trim().slice(0, 300)) || profile.audience || '';
+      // links: the deployment's home site, else the page's own host when it is a collaborator, ranks first (Chad 11-14; tower applies it)
+      const turn = { ...turnBase, prefer: preferFor({ home: profile.home, site }) };
+      // the research cache holds passages with links already ranked for a site: a reader on a collaborator site neither reads nor writes it
+      const look = (q) => (turn.prefer ? Promise.resolve(null) : lookup(env, q)), keep = (q, ps) => (turn.prefer ? Promise.resolve(null) : capture(env, q, ps));
       const mission = typeof body.mission === 'string' ? body.mission.trim().slice(0, 400) : '';
       // chat keeps the agent's own lengths (AGENT_SYSTEM); every other mode adds its channel frame (a letter greets its reader by name)
       const persona = (name && name !== 'Anís' ? `The reader knows you as "${name}"; use that name for yourself.` : '') + (mission ? ` The host site's steering note (guidance only): ${mission}` : '');
@@ -196,11 +202,11 @@ export async function chat(request, env, ctx, deps = {}) {
       const local = {
         researchLookup: async (q) => {
           researchQ = q;
-          const hit = await lookup(env, q).catch((err) => { console.warn(`[anis] research lookup failed: ${err.message}`); return null; });
+          const hit = await look(q).catch((err) => { console.warn(`[anis] research lookup failed: ${err.message}`); return null; });
           sim = hit?.similarity ?? null; setId = hit?.set?.id ?? null; matchedQ = hit?.set?.question ?? null;
           return hit && { status: hit.set.status, question: hit.set.question, similarity: hit.similarity, passages: hit.set.passages };
         },
-        researchCapture: (q, ps) => { const p = capture(env, q, ps); ctx.waitUntil(p.catch(() => {})); return p; },
+        researchCapture: (q, ps) => { const p = keep(q, ps); ctx.waitUntil(p.catch(() => {})); return p; },
         noteIndication: noteIndication(env, { reader, conversationId, round, ctx }),
       };
       // Haiku restates the message as the canonical standalone question (follow-ups resolved), then the research cache is looked up
@@ -214,14 +220,14 @@ export async function chat(request, env, ctx, deps = {}) {
       const triageP = mode === 'email' ? triageLetter(rcreate, question).catch(() => null) : null;   // stop / personal → the mail Worker's mail_stop
       const pinned = firstTurn ? null : await pinnedQuestion(env, messages).catch(() => null);
       const canonP = pinned ? Promise.resolve(pinned) : restate(rcreate, rmodel, messages).catch(() => null);
-      const raw = firstTurn ? await lookup(env, question).catch(() => null) : null;
+      const raw = firstTurn ? await look(question).catch(() => null) : null;
       const rawSame = raw && raw.similarity >= SAME_QUESTION;
       if (rawSame) ctx.waitUntil(canonP);
       const canon = rawSame ? null : await canonP, restateMs = rawSame ? null : Date.now() - tr;
       const lookQ = rawSame ? question : canon || (firstTurn ? question : null);
       let held = null;
       if (lookQ) {
-        const hit = firstTurn && lookQ === question ? raw : await lookup(env, lookQ).catch(() => null);
+        const hit = firstTurn && lookQ === question ? raw : await look(lookQ).catch(() => null);
         if (hit && hit.similarity >= HELD_IN_TURN) {
           const same = hit.similarity >= SAME_QUESTION;
           sim = hit.similarity; setId = hit.set.id; matchedQ = hit.set.question; researchQ = same ? matchedQ : lookQ;
@@ -255,7 +261,7 @@ export async function chat(request, env, ctx, deps = {}) {
       if (cites.length) emit({ type: 'citations', citations: cites });
       // only pills research backs are offered: each restated, looked up, a miss searched + captured now (no model call but Haiku)
       const items = !pills ? [] : await backPills(env, { items: await pills, messages, reply }, { restate: (msgs) => restate(rcreate, rmodel, msgs),
-        lookup: (q) => lookup(env, q), capture: (q, ps) => capture(env, q, ps),
+        lookup: look, capture: keep,
         research: async (q) => { const r = runnerFor(impl)(impl, { search: 'fused_search' }); await r.run.fused_search({ query: q }); return [...r.found.values()]; } });
       if (items.length) emit({ type: 'followups', items });
       const timings = { total_ms: Date.now() - t0, first_text_ms: firstText, tower_ms: stat.ms, tower_calls: stat.calls, cached_calls: stat.cached, tower_by: stat.by, rounds, round_ms: roundMs, restate_ms: restateMs, restated: canon, widgets: (A.widgets || []).map((w) => w.kind), links: { narrowed: fin.narrowed, unplaced: fin.unplaced }, ...(body.trace ? { trace } : {}), research: sim == null ? null : { similarity: +sim.toFixed(3), question: matchedQ }, asked: researchQ };

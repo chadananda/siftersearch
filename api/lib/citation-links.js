@@ -2,7 +2,7 @@
 // Anís, search and the API): an identical copy on OceanLibrary (range link) beats Ocean of Lights (page + range) beats
 // Phelps beats bahai-library beats siftersearch. linkFor ranks the found copy's own addresses; this looks across copies.
 // Deps: copies-repo (injectable), source-links.
-import { linkFor } from './source-links.js';
+import { linkFor, homeRank, readerPrefer } from './source-links.js';
 import { encodeMarker } from './ool-range.js';
 
 // The SAME WORK only: the bahai-library copy of Gleanings → OceanLibrary's Gleanings; "Bahá'í World Faith" quoting those words
@@ -20,8 +20,11 @@ const arabicScript = (t) => { const s = String(t || ''); const a = (s.match(/[\u
 const rtlLang = (l) => /^(ar|fa|ur|ara|per|fas)/i.test(String(l || ''));
 
 export async function betterCopyLinks(items, opts = {}) {
-  const { copies } = opts;
-  const need = (items || []).filter((x) => x?.id && x.link && x.link.tier > 1);
+  const { copies } = opts, prefer = opts.prefer ?? readerPrefer();
+  // the reader's site first (Chad 11-14: one fixed order, the site the reader is on first when it holds the text), then the tier
+  const rank = (l) => [homeRank(l.site, prefer), l.tier];
+  const beats = (a, b) => { const [ha, ta] = rank(a), [hb, tb] = rank(b); return ha !== hb ? ha < hb : ta < tb; };
+  const need = (items || []).filter((x) => x?.id && x.link && (x.link.tier > 1 || (prefer?.length && homeRank(x.link.site, prefer) > 0)));
   if (!need.length) return new Map();
   const find = copies || (await import('./repos/copies-repo.js')).identicalCopies;
   const byId = await find(need.map((x) => x.id));
@@ -30,13 +33,14 @@ export async function betterCopyLinks(items, opts = {}) {
     let best = null;
     for (const c of byId.get(Number(x.id)) || []) {
       if (x.title && !sameWork(x.title, c.title)) continue;
-      const l = linkFor({ ...c, id: c.doc_id }, c.paragraph_index, { quote: x.quote || null });
-      if (l.tier < (best?.tier ?? x.link.tier) || (best && l.tier === best.tier && l.paragraph_level && !best.paragraph_level)) best = { ...l, title: c.title || null };
+      const l = linkFor({ ...c, id: c.doc_id }, c.paragraph_index, { quote: x.quote || null, prefer });
+      if (beats(l, best || x.link) || (best && !beats(best, l) && l.paragraph_level && !best.paragraph_level)) best = { ...l, title: c.title || null };
     }
-    if (best && best.tier < x.link.tier) { out.set(Number(x.id), best); continue; }
+    if (best && beats(best, x.link)) { out.set(Number(x.id), best); continue; }
     // no identical copy (our copy adds "[11.12]" markers, spacing…): the SAME WORK on OceanLibrary + the words → the output
     // pass finds the paragraph by its opening words and writes the range (ocean-links.js, OCEAN_BOOK_QUOTE)
-    if (x.link.tier > 1 && x.title && (x.quote || x.text)) {
+    // (never over the reader's own site)
+    if (x.link.tier > 1 && homeRank(x.link.site, prefer) > 0 && x.title && (x.quote || x.text)) {
       const works = await (opts.olWorks || (await import('./repos/copies-repo.js')).oceanLibraryWorks)().catch(() => []);
       // the SAME LANGUAGE too: an Arabic original titled like its English compilation ("Gleanings") was sent to the English
       // book on OceanLibrary (Chad 10-12: "the link for the Arabic is to the english of oceanlibrary.com")

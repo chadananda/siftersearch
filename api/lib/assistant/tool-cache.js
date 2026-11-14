@@ -1,6 +1,7 @@
 // The agent's tool-result cache (Chad 11-12: strategies stay the cached, measured layer). In-process LRU keyed by name + canonical JSON args,
 // TTL 6 h, 5000 entries. Never caches an error or an empty result (a deadline's fallback is []). callScope() tallies hit/miss per tool call.
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { currentPrefer } from '../link-prefer.js';
 
 export const TTL_MS = 6 * 3600 * 1000, MAX_ENTRIES = 5000;
 const scope = new AsyncLocalStorage();
@@ -14,7 +15,8 @@ export function toolCache({ ttl = TTL_MS, max = MAX_ENTRIES, now = Date.now } = 
   const totals = { hits: 0, misses: 0 };
   /** fn wrapped: same name + args within the TTL → the stored value (not recomputed). */
   const wrap = (name, fn) => async (...args) => {
-    const key = `${name}:${canonicalJson(args)}`, e = m.get(key), t = now(), s = scope.getStore();
+    // results carry links ranked for the reader's site (link-prefer.js): one cache entry per site, never another site's order
+    const pf = currentPrefer(), key = `${name}${pf ? `@${pf.join(',')}` : ''}:${canonicalJson(args)}`, e = m.get(key), t = now(), s = scope.getStore();
     if (e && t - e.at < ttl) { m.delete(key); m.set(key, e); totals.hits++; if (s) s.hit++; return e.v; }
     totals.misses++; if (s) s.miss++;
     const v = await fn(...args);   // a throw passes through: nothing stored
