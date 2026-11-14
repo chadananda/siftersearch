@@ -30,7 +30,7 @@ vr = [(40.0, 40.4)]          # speech on the remaster only
 heard = lambda a, b: a <= 50 <= b    # whisper hears a word near 50 s
 q = quiet.decide(80.0, words, vo, vr, heard, lambda a, b: -40.0)
 print(json.dumps(q))`);
-    expect(q.version).toBe(2); expect(q.fade).toBe(0.25);
+    expect(q.version).toBe(3); expect(q.fade).toBe(0.2);
     expect(q.spans.every((s) => s.b - s.a >= 2)).toBe(true);
     for (const s of q.spans) { expect(s.a < 20 && s.b > 19.5).toBe(false); expect(s.a < 40.9 && s.b > 39.5).toBe(false); expect(s.a < 50 && s.b > 50).toBe(false); }
     expect(q.vad_kept).toBeGreaterThan(0); expect(q.vad_kept_s).toBeGreaterThan(0);

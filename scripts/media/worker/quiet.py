@@ -3,13 +3,19 @@
 #   no transcript word (original/remaster ASR, realign) within PAD_S, gaps < BRIDGE_S bridged, stretch >= MIN_S; Silero VAD (faster-whisper ships it, ONNX, offline) finds no
 #   speech >= VAD_MIN_S in it on the ORIGINAL and the REMASTER (speech splits the stretch, the kept speech padded VAD_PAD_S); whisper (asr_check) hears no word in it on the ORIGINAL.
 # Stretches the VAD or whisper rescue are kept and reported (vad_kept / asr_kept), never cut. prove() re-checks the final spans (the guard's check on what is published).
-# Pure core: speech_spans, quiet_spans, split_by_vad, decide, prove, gain. CLI: quiet.py <audio> <quiet.json> <out.flac>
+# v3 (Chad 11-14: whisper hallucinates words over music/static, which protected them): a word longer than WORD_MAX_S or in a run of >= RUN_MIN identical tokens is no evidence (words_of);
+# a per-second sound map of the ORIGINAL (rms dB, spectral flatness, 300-3400 Hz share) finds sustained tonal music (-> enhanced/sound.json, a hint for the content stage); remaster seconds with
+# no valid word within STATIC_PAD_S that are static (flat + loud) or >= JUMP_DB louder than the original are silenced (reason 'static' / 'louder'), fade RAMP_S.
+# Pure core: speech_spans, quiet_spans, split_by_vad, valid_words, sound_map, music_spans, static_spans, decide, prove, gain. CLI: quiet.py <audio> <quiet.json> <out.flac>
 import json, os, subprocess, sys
 
-PAD_S, BRIDGE_S, MIN_S, RAMP_S = 0.5, 1.0, 2.0, 0.25
+PAD_S, BRIDGE_S, MIN_S, RAMP_S = 0.5, 1.0, 2.0, 0.2
 VAD_MIN_S, VAD_PAD_S = 0.2, 0.5
 LOUD_DB = -45.0          # a stretch the restorer left louder than this was audible noise
-VERSION = 2
+WORD_MAX_S, RUN_MIN = 1.5, 3
+STATIC_PAD_S, STATIC_FLAT, STATIC_DB, JUMP_DB = 0.5, 0.35, -38.0, 8.0
+MUSIC_FLAT, MUSIC_DB, MUSIC_MIN_S = 0.05, -30.0, 1
+VERSION = 3
 
 
 def speech_spans(words, pad=PAD_S, bridge=BRIDGE_S):
@@ -48,9 +54,10 @@ def split_by_vad(stretches, vad, min_s=MIN_S, pad=VAD_PAD_S, vad_min=VAD_MIN_S):
     return pieces, rescued
 
 
-def decide(dur, words, vad_orig, vad_rem, asr_check=None, loud=None):
-    """The careful rule → quiet.json. words [(s, e)]; vad_* [(s, e)] speech segments of the original / the remaster; asr_check(a, b) → True when whisper hears a word on the ORIGINAL
-    in [a, b] (the caller pads); loud(a, b) → rms dB of the remaster there. Pure given its inputs."""
+def decide(dur, words, vad_orig, vad_rem, asr_check=None, loud=None, orig=None, rem=None, sound_out=None):
+    """The careful rule → quiet.json. words [(s, e)] (valid ones, see words_of); vad_* [(s, e)] speech segments of the original / the remaster; asr_check(a, b) → True when whisper hears a word on the ORIGINAL
+    in [a, b] (the caller pads); loud(a, b) → rms dB of the remaster there. v3: with orig/rem (audio paths) also silences static seconds of the remaster (static_spans, whisper's say-so does not
+    protect them) and, with sound_out, writes the original's sound map + music spans there (enhanced/sound.json). Pure given its inputs, apart from the two decodes and that file."""
     cand = quiet_spans(speech_spans(words), dur)
     cut, vk = split_by_vad(cand, vad_orig); cut, vk2 = split_by_vad(cut, vad_rem)
     rescued = vk + vk2
@@ -58,9 +65,20 @@ def decide(dur, words, vad_orig, vad_rem, asr_check=None, loud=None):
     for a, b in cut:
         if asr_check and asr_check(max(0.0, a - PAD_S), min(dur, b + PAD_S)): asr_kept.append([round(a, 2), round(b, 2)]); continue
         db = loud(a, b) if loud else None
-        spans.append({'a': round(a, 2), 'b': round(b, 2), 'db': None if db is None else round(float(db), 1)})
+        spans.append({'a': round(a, 2), 'b': round(b, 2), 'db': None if db is None else round(float(db), 1), 'reason': 'quiet'})
+    static, music = [], []
+    if orig and rem:
+        omap, rmap = sound_map(orig), sound_map(rem)
+        static = [dict(s, a=s['a'], b=min(s['b'], round(dur, 2)), db=None) for s in static_spans(rmap, omap, words) if s['a'] < dur]
+        for s in static: s['db'] = max((m['db'] for m in rmap if s['a'] <= m['t'] < s['b']), default=None)
+        music = music_spans(omap, words)
+        if sound_out: json.dump({'version': VERSION, 'dur': round(dur, 2), 'seconds': omap, 'music': [[a, b] for a, b in music]}, open(sound_out, 'w'))
+    spans = sorted(spans + static, key=lambda s: (s['a'], s['b']))
+    union, end = 0.0, 0.0
+    for s in spans: union += max(0.0, s['b'] - max(s['a'], end)); end = max(end, s['b'])
     ls = [s for s in spans if s['db'] is not None and s['db'] > LOUD_DB]
-    return {'version': VERSION, 'fade': RAMP_S, 'dur': round(dur, 2), 'spans': spans, 'silenced_s': round(sum(s['b'] - s['a'] for s in spans), 1),
+    return {'version': VERSION, 'fade': RAMP_S, 'dur': round(dur, 2), 'spans': spans, 'silenced_s': round(union, 1),
+            'static_spans': static, 'static_s': round(sum(s['b'] - s['a'] for s in static), 1), 'music_spans': [[a, b] for a, b in music],
             'loud_stretches': len(ls), 'loud_silenced_s': round(sum(s['b'] - s['a'] for s in ls), 1),
             'vad_kept': len(rescued), 'vad_kept_s': round(sum(e - s for s, e in rescued), 1), 'asr_kept': asr_kept, 'asr_kept_s': round(sum(b - a for a, b in asr_kept), 1),
             'rule': {'pad': PAD_S, 'bridge': BRIDGE_S, 'min': MIN_S, 'vad_min': VAD_MIN_S, 'vad_pad': VAD_PAD_S}}
@@ -70,10 +88,11 @@ def prove(q, words, vad_orig, vad_rem):
     """What the guard checks on the audio as published: no transcript word and no VAD speech (>= VAD_MIN_S) inside any silenced span (the fade ramps stay inside it). → [] or the violations. Pure."""
     bad = []
     for s in q.get('spans', []):
-        a, b = s['a'], s['b']
+        a, b = s['a'], s['b']; pad = STATIC_PAD_S if s.get('reason') in ('static', 'louder') else 0.0
         for w0, w1 in words:
-            if w0 is not None and w1 is not None and w0 < b and w1 > a: bad.append(['word', a, b, w0, w1])
-        for name, vad in (('vad_orig', vad_orig), ('vad_rem', vad_rem)):
+            if w0 is not None and w1 is not None and w0 < b + pad and w1 > a - pad: bad.append(['word', a, b, w0, w1])
+        # VAD fires on music and static; a static span is judged by valid words only
+        for name, vad in (() if pad else (('vad_orig', vad_orig), ('vad_rem', vad_rem))):
             for v0, v1 in vad:
                 if v1 - v0 >= VAD_MIN_S and v0 < b and v1 > a: bad.append([name, a, b, v0, v1])
     return bad
@@ -93,14 +112,71 @@ def gain(t, quiet, dur, ramp=RAMP_S):
     return g
 
 
+def valid_words(ws):
+    """[(s, e, token)] → the same minus hallucinations: words longer than WORD_MAX_S and runs of >= RUN_MIN identical tokens (token None never forms a run). Pure."""
+    ws = sorted((w for w in ws if w[0] is not None and w[1] is not None and w[1] >= w[0]), key=lambda w: (w[0], w[1]))
+    ws = [w for w in ws if w[1] - w[0] <= WORD_MAX_S]
+    norm = lambda t: ''.join(c for c in (t or '').lower() if c.isalnum()) or None
+    out, i = [], 0
+    while i < len(ws):
+        j = i + 1
+        while norm(ws[i][2]) and j < len(ws) and norm(ws[j][2]) == norm(ws[i][2]): j += 1
+        if j - i < RUN_MIN: out += ws[i:j]
+        i = j
+    return out
+
+
 def words_of(work, realign=None, *asrs):
-    """(s, e) of every transcript word: work.json paragraphs, the realign times, and each asr json (segments[].words[] with s/e)."""
-    ws = [(w.get('s'), w.get('e')) for p in work.get('paragraphs', []) for w in (p.get('words') or [])]
-    for v in ((realign or {}).get('times') or {}).values():
-        ws += [(x[0], x[1]) for x in v if x]
-    for a in asrs:
-        ws += [(w.get('s'), w.get('e')) for g in (a or {}).get('segments', []) for w in (g.get('words') or [])]
-    return ws
+    """(s, e) of every VALID transcript word (valid_words, per source): work.json paragraphs, the realign times, and each asr json (segments[].words[] with s/e)."""
+    srcs = [[(w.get('s'), w.get('e'), w.get('w')) for p in work.get('paragraphs', []) for w in (p.get('words') or [])],
+            [(x[0], x[1], None) for v in ((realign or {}).get('times') or {}).values() for x in v if x]]
+    srcs += [[(w.get('s'), w.get('e'), w.get('w')) for g in (a or {}).get('segments', []) for w in (g.get('words') or [])] for a in asrs]
+    return [(s, e) for src in srcs for s, e, _ in valid_words(src)]
+
+
+def sound_map(path, sr=16000):
+    """Per-second features of path → [{'t', 'db', 'flat', 'band'}]: rms dB, flatness (geometric/arithmetic mean over 16 log-spaced bands 100-7800 Hz of the second's mean power: speech ~0.03, hiss/static 0.4-0.9), share of power in 300-3400 Hz. One decode."""
+    import numpy as np
+    x = np.frombuffer(subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-i', path, '-ac', '1', '-ar', str(sr), '-f', 'f32le', '-'], capture_output=True, check=True).stdout, dtype='<f4')
+    n, win = 512, np.hanning(512); fr = np.fft.rfftfreq(n, 1 / sr); band = (fr >= 300) & (fr <= 3400); edges = np.geomspace(100, 7800, 17); out = []
+    for i in range(len(x) // sr + (1 if len(x) % sr > sr // 2 else 0)):
+        c = x[i * sr:(i + 1) * sr]
+        db = 10 * float(np.log10(float(np.mean(np.square(c))) + 1e-12)) if len(c) else -120.0
+        if len(c) < n: out.append({'t': i, 'db': round(db, 1), 'flat': 1.0, 'band': 0.0}); continue
+        P = np.mean(np.abs(np.fft.rfft(c[:len(c) // n * n].reshape(-1, n) * win, axis=1)) ** 2, axis=0) + 1e-20
+        B = np.array([P[(fr >= a) & (fr < b)].sum() + 1e-20 for a, b in zip(edges[:-1], edges[1:])])
+        out.append({'t': i, 'db': round(db, 1), 'flat': round(float(np.exp(np.mean(np.log(B))) / np.mean(B)), 3), 'band': round(float(P[band].sum() / P.sum()), 3)})
+    return out
+
+
+def _runs(flags, min_n=1):
+    out, i = [], 0
+    while i < len(flags):
+        if not flags[i]: i += 1; continue
+        j = i
+        while j < len(flags) and flags[j]: j += 1
+        if j - i >= min_n: out.append((i, j))
+        i = j
+    return out
+
+
+def _near_word(a, b, words, pad):
+    return any(w0 < b + pad and w1 > a - pad for w0, w1 in words)
+
+
+def music_spans(omap, words, pad=STATIC_PAD_S):
+    """Sustained (>= MUSIC_MIN_S s) tonal + loud seconds of the ORIGINAL with no valid word within pad → [(a, b)]. A hint for the content stage, never a silencing rule. Pure."""
+    return [(float(a), float(b)) for a, b in _runs([m['flat'] < MUSIC_FLAT and m['db'] > MUSIC_DB and not _near_word(m['t'], m['t'] + 1, words, pad) for m in omap], MUSIC_MIN_S)]
+
+
+def static_spans(rmap, omap, words, pad=STATIC_PAD_S):
+    """Remaster seconds with no valid word within pad that are static (flat > STATIC_FLAT and louder than STATIC_DB) or >= JUMP_DB louder than the original → [{'a','b','reason'}], runs merged. Pure."""
+    om = {m['t']: m for m in omap}; flags = []
+    for m in rmap:
+        st = m['flat'] > STATIC_FLAT and m['db'] > STATIC_DB
+        jump = m['t'] in om and m['db'] - om[m['t']]['db'] >= JUMP_DB and m['db'] > STATIC_DB
+        flags.append(None if _near_word(m['t'], m['t'] + 1, words, pad) or not (st or jump) else ('static' if st else 'louder'))
+    return [{'a': float(a), 'b': float(b), 'reason': 'static' if 'static' in flags[a:b] else 'louder'} for a, b in _runs([f is not None for f in flags])]
 
 
 def vad_segments(path):
