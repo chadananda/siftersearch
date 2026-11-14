@@ -368,15 +368,14 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
         passages: s.passages };
     },
     trace: (p) => passages('source_trace', { paragraph_id: p.id, text: String(p.text) }),
-    // quotation_candidates (the sourcehunt strategy): the origin, the certain original (else the top possible one), up to 3 works quoting it;
-    // the original is labelled for the writer, and only offered when the reader quoted exactly (Chad 11-02)
+    // quotation_candidates (the sourcehunt strategy): the origin, the certain original (else the top possible one), up to 3 works quoting it.
+    // Each keeps its ROLE (source | original | possible_original | cited_by | holder | near); tool-runner's sourceAnswer decides what the
+    // writer sees (Chad 11-14: the source passage + the original tablet's one line; no citing works, no neighbours)
     sourceOf: async (quotation) => {
-      const tag = (label) => (isExactQuote(quotation) ? ` (${label})` : ` (${label} — give only if the reader asked for it)`);
       // the tool returns scored candidates only; the holds judgement is this fixed second step (judge.holds, one call): a candidate that does not hold the quoted sentence drops
       const cands = await passages('quotation_candidates', { quotation });
       const judged = (await (await import('./judges.js')).judgeHolds({ quotation, passages: cands }).catch(() => null))?.passages ?? cands;
-      return judged.map(({ role, ...p }) => shape({ ...p,
-        title: `${p.title}${role === 'original' ? tag('original') : role === 'possible_original' ? tag('possible original') : ''}` }));
+      return judged.map((p) => shape(p));
     },
     web: async (query) => { const r = await runTool('web_search', { query }, ctx); return r.text ? { text: r.text, citations: r.citations.map((url) => ({ url })) } : null; },
   }, { search: [], probe: [], searchBy: [], writings: [], originals: [], translationsOf: null, work: null, around: [], original: [], translation: [], wordStudy: null });

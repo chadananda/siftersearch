@@ -46,6 +46,28 @@ export function fitLengths(want, room) {
   }
   return want.map((w) => Math.min(w, Math.max(200, level)));
 }
+// A SOURCE ANSWER (Chad 11-14 "Let your vision be world-embracing": "showing where the UHJ cited it or published it in other compilations is a
+// waste of time"; "if the source is Gleanings, just the passage from Gleanings would have been sufficient … 'This passage is quoted from the
+// Tablet of …' and link to that tablet in Oceanoflights.org"; "Two links."): of quotation_candidates' finds the writer gets the source passage
+// alone, with the one line to write under it — the source linked to its paragraph, and, only when the original is certain AND named, that tablet
+// linked to its Ocean of Lights page: "From [Gleanings…](…), quoting [the Lawḥ-i-…](…)." The original's own text never reaches the writer.
+// Works citing it, further holders and near passages are dropped while a source holds; with no source, at most two near passages, each
+// marked as not the quoted words. Passages without roles (an older server) pass through as before. Pure.
+export function sourceLine(source, original = null) {
+  const link = (label, url) => (url ? `[${label}](${url})` : label);
+  const t = String(original?.title || '').trim(), the = /^the\s/i.test(t) ? '' : 'the ';
+  const tablet = original && t && !/^untitled\b/i.test(t) && original.source_url ? `, quoting ${the}${link(t, original.source_url)}` : '';
+  return `From ${link(String(source.title || 'the source').trim(), source.source_url)}${tablet}.`;
+}
+export function sourceAnswer(list = []) {
+  const ps = (list || []).filter(Boolean);
+  if (!ps.some((p) => p.role)) return ps;
+  const source = ps.find((p) => p.role === 'source');
+  if (!source) return ps.filter((p) => p.role === 'holder' || p.role === 'near').slice(0, 2)
+    .map((p) => ({ ...p, note: 'NOT the quoted words — a near passage; say plainly that no published source holds the exact wording' }));
+  const orig = ps.find((p) => p.role === 'original' && p.document_id !== source.document_id);
+  return [{ ...source, note: `SOURCE — the answer is this passage as its card ({{quote ref}}), then this ONE line exactly as it stands: ${sourceLine(source, orig)}` }];
+}
 /** The library tools behind refs: P# passages, W# web answers, B# works. Shared by research() and the agent (agent.js). */
 export function toolRunner(impl, { search: searchName = 'combined_search', fallback = {} } = {}) {
   const found = new Map();   // ref → passage
@@ -207,7 +229,7 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
       return show((await impl.trace(p)).map((x) => add(x)));
     },
     quotation_candidates: async ({ quotation }) => {
-      const r = show((await impl.sourceOf(quotation)).map((x) => add(x)));
+      const r = show(sourceAnswer(await impl.sourceOf(quotation)).map((x) => add(x)));
       return r === '(nothing)' ? `no published source found for that wording — ${searchName} with its most distinctive phrase; if that finds nothing either, say plainly that the library holds no source for it` : r;
     },
     web_search: async ({ query }) => {

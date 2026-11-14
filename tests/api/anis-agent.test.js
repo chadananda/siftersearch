@@ -114,26 +114,72 @@ describe('source questions', async () => {
     expect(r.reply).toContain('(https://oceanlibrary.com/gleanings?paraId=p117)');
     expect(r.reply).toContain('https://oceanoflights.org/maqsud#p4');
   });
-  it('sourceOf: origin, an uncertain candidate as "(possible original)", citedBy capped at 3', async () => {
+  it('sourceOf: every find keeps its role (source, possible_original, cited_by capped at 3); titles carry no tags', async () => {
     const cit = (i) => ({ title: `Work ${i}`, author: 'A', url: `https://oceanlibrary.com/w${i}`, rangeUrl: `https://oceanlibrary.com/w${i}#p1`, paragraphs: i, documentId: 10 + i });
     const { sourceOf } = libraryTools({ search: async () => ({}), sourceHunt: hunt({ tablet: { certain: false, candidates: [{ text: 'لوح مقصود', title: 'Lawh-i-Maqsud', url: 'https://oceanoflights.org/lm' }] }, citedBy: [1, 2, 3, 4, 5].map(cit) }) });
     const out = await sourceOf(Q);
-    expect(out.map((p) => p.title)).toEqual(['Gleanings from the Writings of Bahá’u’lláh', 'Lawh-i-Maqsud (possible original)', 'Work 1', 'Work 2', 'Work 3']);
+    expect(out.map((p) => p.title)).toEqual(['Gleanings from the Writings of Bahá’u’lláh', 'Lawh-i-Maqsud', 'Work 1', 'Work 2', 'Work 3']);
+    expect(out.map((p) => p.role)).toEqual(['source', 'possible_original', 'cited_by', 'cited_by', 'cited_by']);
     expect(out[0].source_url).toContain('paraId=p117');
     expect(out[2].source_url).toBe('https://oceanlibrary.com/w1#p1');
-    expect(out[2].text).toMatch(/quotes it/);
   });
-  it('an inexact ask labels the original optional; an exact quotation does not', async () => {
+  it('a certain original keeps role "original" for an exact or inexact ask', async () => {
     const h = hunt({ tablet: { certain: true, text: 'لوح', title: 'Lawh-i-Maqsud', url: 'https://oceanoflights.org/lm', documentId: 4 } });
     const { sourceOf } = libraryTools({ search: async () => ({}), sourceHunt: h });
-    expect((await sourceOf('religion science two wings bird'))[1].title).toMatch(/give only if the reader asked/);
-    expect((await sourceOf(Q))[1].title).toBe('Lawh-i-Maqsud (original)');
+    expect((await sourceOf('religion science two wings bird'))[1]).toMatchObject({ title: 'Lawh-i-Maqsud', role: 'original' });
+    expect((await sourceOf(Q))[1]).toMatchObject({ title: 'Lawh-i-Maqsud', role: 'original' });
   });
   it('exact vs inexact and the ask for the original are told apart', () => {
     expect(isExactQuote(`Is "${Q}" from Bahá'u'lláh?`)).toBe(true);
     expect(isExactQuote('religion science two wings bird quote')).toBe(false);
     expect(asksForOriginal('what is the Persian original of the two wings quote')).toBe(true);
     expect(asksForOriginal('religion science two wings bird quote')).toBe(false);
+  });
+  // Chad 11-14 "Let your vision be world-embracing": one line + the Gleanings passage + the original tablet's line + Gleanings' card; no citing works
+  const SA = [
+    { id: 1, text: `${Q}.`, title: 'Gleanings from the Writings of Bahá’u’lláh', author: "Bahá'u'lláh", source_url: 'https://oceanlibrary.com/gleanings?paraId=p117', document_id: 3, role: 'source' },
+    { id: 2, text: 'لوح مقصود', title: 'Lawḥ-i-Maqṣúd', author: "Bahá'u'lláh", source_url: 'https://oceanoflights.org/maqsud#p4', document_id: 4, language: 'ar', role: 'original' },
+    { id: 3, text: 'Citing work', title: 'A letter of the Universal House of Justice', author: 'Universal House of Justice', source_url: 'https://oceanlibrary.com/uhj#p2', document_id: 5, role: 'cited_by' },
+    { id: 4, text: 'The paragraph before.', title: 'Gleanings from the Writings of Bahá’u’lláh', author: "Bahá'u'lláh", source_url: 'https://oceanlibrary.com/gleanings?paraId=p116', document_id: 3, role: 'near' },
+    { id: 5, text: `${Q} (another copy).`, title: 'The Fountain of Wisdom', author: "Bahá'u'lláh", source_url: 'https://oceanlibrary.com/fow#p9', document_id: 6, role: 'holder' }];
+  it('sourceAnswer: the source alone, with its "From …, quoting …" line (two links); citing works, holders, neighbours and the original text dropped', async () => {
+    const { sourceAnswer, sourceLine } = await import('../../api/lib/assistant/tool-runner.js');
+    const out = sourceAnswer(SA);
+    expect(out.map((p) => p.id)).toEqual([1]);
+    expect(out[0].note).toContain('From [Gleanings from the Writings of Bahá’u’lláh](https://oceanlibrary.com/gleanings?paraId=p117), quoting the [Lawḥ-i-Maqṣúd](https://oceanoflights.org/maqsud#p4).');
+    // the tablet only when known: untitled, unlinked or merely possible → the source link alone
+    for (const o of [{ ...SA[1], title: 'Untitled' }, { ...SA[1], source_url: null }, { ...SA[1], role: 'possible_original' }])
+      expect(sourceAnswer([SA[0], o])[0].note).toContain('From [Gleanings from the Writings of Bahá’u’lláh](https://oceanlibrary.com/gleanings?paraId=p117).');
+    expect(sourceLine(SA[0], { ...SA[1], title: 'The Tablet of Wisdom' })).toBe('From [Gleanings from the Writings of Bahá’u’lláh](https://oceanlibrary.com/gleanings?paraId=p117), quoting [The Tablet of Wisdom](https://oceanoflights.org/maqsud#p4).');
+    // no source → at most two near passages, marked
+    const none = sourceAnswer(SA.slice(1));
+    expect(none.map((p) => p.id)).toEqual([4, 5]);
+    expect(none[0].note).toMatch(/^NOT the quoted words/);
+    // an older server (no roles) passes through
+    expect(sourceAnswer(SA.map(({ role, ...p }) => p))).toHaveLength(5);
+  });
+  it('a source answer carries its book card by code, and the writer sees only the source and the original', async () => {
+    const cards = [], seen = [];
+    const bookCard = async ({ title }) => ({ kind: 'work', doc: { id: 3 }, book: { id: 3, title, author: "Bahá'u'lláh", url: 'https://oceanlibrary.com/gleanings', cover_url: 'https://siftersearch.com/img/covers/3' } });
+    const create = async (p) => { seen.push(p.messages.filter((m) => m.role === 'tool').map((m) => m.content).join('\n'));
+      return seen.length === 1 ? { choices: [{ message: { content: '', tool_calls: [{ id: 'a', function: { name: 'quotation_candidates', arguments: JSON.stringify({ quotation: Q }) } }] } }] }
+        : { choices: [{ message: { content: `{{quote P1}}\n\nFrom [Gleanings from the Writings of Bahá’u’lláh](https://oceanlibrary.com/gleanings?paraId=p117), quoting the [Lawḥ-i-Maqṣúd](https://oceanoflights.org/maqsud#p4).` } }] }; };
+    const r = await agentAnswer({ messages: [{ role: 'user', content: `Where does "${Q}" come from?` }], tools: { ...T, sourceOf: async () => SA, bookCard },
+      onEvent: (e) => { if (e.type === 'books') cards.push(e.books); }, create });
+    expect(cards.at(-1)).toEqual([expect.objectContaining({ id: 3, title: 'Gleanings from the Writings of Bahá’u’lláh' })]);
+    expect(seen[1]).toContain('[B1] is the book this passage is in');
+    expect(seen[1]).not.toMatch(/Universal House of Justice|Fountain of Wisdom|paragraph before|لوح/);
+    expect(r.widgets.map((w) => w.kind)).toContain('quote');
+    expect(r.reply).toContain('(https://oceanlibrary.com/gleanings?paraId=p117)');
+    expect(r.reply).toContain('https://oceanoflights.org/maqsud#p4');
+  });
+  it('no book_card lookup: the source work still gets its card, cover by document id', async () => {
+    const cards = [];
+    const { bookCard, ...noCard } = T;
+    const r = await agentAnswer({ messages: [{ role: 'user', content: `Where does "${Q}" come from?` }], tools: { ...noCard, sourceOf: async () => SA },
+      onEvent: (e) => { if (e.type === 'books') cards.push(e.books); }, create: scriptedSource(`[[B1]]: "${Q}" [[P1]]`) });
+    expect(cards.at(-1)?.[0]).toMatchObject({ id: 3, url: 'https://oceanlibrary.com/gleanings', cover_url: 'https://siftersearch.com/img/covers/3' });
+    expect(r.reply).toContain('(https://oceanlibrary.com/gleanings)');
   });
   it('whole_lookup reads the whole prayer a found passage belongs to (11-12: the Short Obligatory Prayer lost its last line)', async () => {
     const whole = vi.fn(async () => ({ passages: [{ id: 8, text: 'I bear witness, O my God…', document_id: 3, paragraph_index: 4 }, { id: 9, text: 'There is none other God but Thee, the Help in Peril, the Self-Subsisting.', document_id: 3, paragraph_index: 5 }] }));

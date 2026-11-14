@@ -44,7 +44,7 @@ TOOLS — use them before answering; call several at once when they are independ
 - talk_search: a TALK, lecture or recording in the media library, by speaker, topic or title (any spelling). When the reader asks for a talk, answer with the talk — the reader sees its card; write its title in italics (never in quotation marks) and its speaker, no [[ref]], no URL — and no passages unless they ask. Talks are library documents: use this, never document_search, for a recording.
 - work_notes_lookup: sourced lines on a core work's importance — only when the reader asks ABOUT a book (its importance, what it is); never when they only ask for it.
 - fused_search: passages. Phrase the query in the words the texts would use. When the reader wants one writer's words ("where does 'Abdu'l-Bahá say…"), set author to that writer and leave the name out of the query. Try another wording before concluding anything is missing.
-- SOURCE QUESTIONS (a reader gives a quotation, or asks where words come from, who said them, whether they are authentic): call quotation_candidates first, with fused_search on the distinctive phrase in parallel. The answer is ONE line naming the author and the work, then the passage quoted from its BEST published source (the author's own book, e.g. Gleanings, over a compilation or a letter that cites it). Nothing else: no other copies or spelling variants, no letters or secondary works that cite it, no neighbouring passages, no commentary — each only when the reader asks. The original (Persian/Arabic/tablet) only when asked for. INEXACT ask (keywords, a paraphrase, "the X quote"): the same, plus at most one similar passage when the match is uncertain; if no published source holds the words, say so plainly — never attribute from memory. Quote the located sentence with at most one sentence either side, verbatim, with no "…" inside a quotation (keep the source's own spelling, even a typo); wording variants between copies go in a separate line, never stitched into the quote.
+- SOURCE QUESTIONS (a reader gives a quotation, or asks where words come from, who said them, whether they are authentic): call quotation_candidates FIRST and ALONE; fused_search the distinctive phrase only when it finds no source. The answer is the SOURCE passage as its card ({{quote P#}}) — the reader also sees the book's card — then the one "From …" line the tool gives, exactly as given (it links the source and, when known, the original tablet). Nothing else: no introduction, no other copies or spelling variants, no letters, compilations or secondary works that cite it, no neighbouring passages, no commentary — each only when the reader asks. Original-language text only when asked for. If the reader named a different author, one short line saying who wrote it. No source holds the words → say so plainly, with at most one near passage marked as such; never attribute from memory.
 - context_lookup, quotation_candidates (where a quotation comes from), original_lookup, translation_lookup, rendering_lookup, source_trace (a letter or scholar stating a teaching → the primary passages), web_search (last resort; label it as from the web, never as scripture).
 
 WRITING:
@@ -159,6 +159,29 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     bookCards.set(ref, b);
     onEvent({ type: 'books', books: [...bookCards.values()].slice(0, 3) });   // the card shows the moment the work is found (Chad 11-13), not after the reply
     return `[${ref}] ${b.title}${b.author ? ` — ${b.author}` : ''}${r.kind === 'section' ? ` (a section of ${b.section?.of})` : ''}${b.description ? `\n${clip(b.description, 400)}` : ''}\n${editionLine(b.edition)}\nThe reader sees its card; write [[${ref}]] where you name it.`;
+  };
+  // A SOURCE ANSWER CARRIES ITS BOOK (Chad 11-14: "why no book image for Gleanings?" — "we are trying to promote reading"): the work holding the
+  // source passage quotation_candidates found gets its card by code, never by the agent's choice; the agent is told the [B#] to name it with.
+  // book_card's own lookup (cover, edition); failing that, the work from the passage (cover by doc id). One card per work.
+  const qc = run.quotation_candidates;
+  if (qc) run.quotation_candidates = async (a) => {
+    const before = new Set(found.keys()), out = await qc(a);
+    const src = [...found].find(([ref, p]) => !before.has(ref) && p.role === 'source')?.[1];
+    if (!src || !(Number(src.document_id) > 0) || [...bookCards.values()].some((b) => Number(b.id) === Number(src.document_id))) return out;
+    let line = null;
+    if (run.book_card && src.title) {
+      const r = await run.book_card({ title: src.title, author: src.author || null }).catch(() => null);
+      const ref = /^\[(B\d+)\]/.exec(String(r || ''))?.[1];
+      if (ref) line = `[${ref}] is the book this passage is in: the reader sees its card; write nothing more about it (the From line names the work).`;
+    }
+    if (!line && bookCards.size < 3) {
+      const url = String(src.source_url || '').replace(/[?#].*$/, '') || null;
+      const ref = addWork({ id: Number(src.document_id), title: src.title, author: src.author || null, url, religion: src.religion ?? null });
+      bookCards.set(ref, { id: Number(src.document_id), title: src.title, author: src.author ?? null, url, year: null, description: null, cover_url: `https://siftersearch.com/img/covers/${Number(src.document_id)}` });
+      onEvent({ type: 'books', books: [...bookCards.values()].slice(0, 3) });
+      line = `[${ref}] is the book this passage is in: the reader sees its card; write nothing more about it (the From line names the work).`;
+    }
+    return line ? `${out}\n\n${line}` : out;
   };
   // a talk (media library): its card is shown to the reader (the turn's `talks`); the agent gets the facts, never a ref or a URL to write
   const talks = new Map();
