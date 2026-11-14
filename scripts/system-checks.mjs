@@ -232,6 +232,23 @@ if (db) {
   } catch (e) { add('AI spend 24h', true, 'warn', `query failed: ${e.message}`); }
 }
 
+// ── 4-watch. Paid work burning money without working (Chad 11-14) — the `spend-watch` ops REPORT (never a direct query).
+// failing/loop/spike → CRITICAL (the critical path mails [ACTION] once, with the stop lever); cap-pace → warn (weekly). A missing or >90 min old
+// report is "unknown since <as_of>", never re-quoted numbers.
+try {
+  const url = 'http://127.0.0.1:7839/api/admin/ops/reports/spend-watch';
+  const r = await http(`${url}/latest`, { headers: H, timeout: 15000 });
+  const rep = r.status === 200 ? JSON.parse(r.body) : null;
+  fetch(url, { method: 'POST', headers: { ...H, 'content-type': 'application/json' }, body: '{}', signal: AbortSignal.timeout(8000) }).catch(() => {});   // refresh for next time (the queue dedupes)
+  const sw = rep?.result, asOf = sw?.as_of, ageMin = asOf ? (Date.now() - Date.parse(asOf)) / 60000 : Infinity;
+  if (!sw || !(ageMin <= 90)) add('Spend watch', false, 'warn', `spend-watch unknown since ${asOf || 'never'}`);
+  else {
+    const bad = (sw.findings || []).filter((f) => f.kind !== 'cap-pace'), pace = (sw.findings || []).filter((f) => f.kind === 'cap-pace');
+    add('Spend watch', !bad.length, 'critical', bad.length ? bad.map((f) => `${f.caller || '(no caller)'} ${f.kind} $${f.rate_usd_h}/h: ${f.evidence} — do: ${f.action}`).join(' · ') + ` (as of ${asOf})` : `ok · $${sw.totals?.usd_1h}/1h $${sw.totals?.usd_today} today (as of ${asOf})`);
+    if (pace.length) add('Spend pace vs cap', false, 'warn', pace.map((f) => `${f.caller || '(no caller)'}: ${f.evidence}`).join(' · ') + ` (as of ${asOf})`);
+  }
+} catch (e) { add('Spend watch', false, 'warn', `spend-watch unknown (${e.message})`); }
+
 // ── 4a. Media lane liveness + progress (Chad 10-31: the queue pass stopped ~50 min, nothing noticed) — api/lib/media/loop-health.js:
 // each loop section judged by its own measured cadence, plus work-progress checks; CRITICAL only when talks stop being completed
 {

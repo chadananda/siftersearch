@@ -92,6 +92,29 @@ export async function pipelineSpendByBook(deps) {
     .sort((a, b) => b.usd - a.usd);
 }
 
+/** Per caller over the last `hours` hours: usd, calls, failures, distinct documents, the most-hit document (spend-watch, 11-14). */
+export async function callerWindow(hours = 2) {
+  const w = [`-${Number(hours)} hours`];
+  const rows = await queryAll(`SELECT COALESCE(caller, '') AS caller, COUNT(*) AS calls, ROUND(SUM(estimated_cost_usd), 4) AS usd, SUM(success = 0) AS failures,
+      COUNT(DISTINCT document_id) AS docs, MIN(timestamp) AS first, MAX(timestamp) AS last
+    FROM ai_usage WHERE timestamp > datetime('now', ?) GROUP BY COALESCE(caller, '')`, w, 'ai-usage:caller-window');
+  const hot = await queryAll(`SELECT COALESCE(caller, '') AS caller, document_id, COUNT(*) AS n, ROUND(SUM(estimated_cost_usd), 4) AS usd
+    FROM ai_usage WHERE timestamp > datetime('now', ?) AND document_id IS NOT NULL GROUP BY COALESCE(caller, ''), document_id HAVING COUNT(*) >= 10`, w, 'ai-usage:caller-hot-docs');
+  return rows.map((r) => {
+    const top = hot.filter((h) => h.caller === r.caller).sort((a, b) => b.n - a.n)[0];
+    return { ...r, max_doc_calls: top?.n || 0, max_doc_id: top?.document_id ?? null, max_doc_usd: top?.usd || 0 };
+  });
+}
+
+/** Per caller: median usd of the hours it was active over the last `days` days — the "typical hour" a spike is judged against. */
+export async function callerHourlyBaseline(days = 7) {
+  const rows = await queryAll(`SELECT COALESCE(caller, '') AS caller, strftime('%Y-%m-%d %H', timestamp) AS hr, SUM(estimated_cost_usd) AS usd
+    FROM ai_usage WHERE timestamp > datetime('now', ?) GROUP BY COALESCE(caller, ''), hr`, [`-${Number(days)} days`], 'ai-usage:hourly-baseline');
+  const by = {};
+  for (const r of rows) (by[r.caller] ||= []).push(r.usd || 0);
+  return Object.fromEntries(Object.entries(by).map(([c, v]) => { v.sort((a, b) => a - b); return [c, { median_usd_h: v[Math.floor(v.length / 2)], active_hours: v.length }]; }));
+}
+
 /** Highest ai_usage id (the rowid — instant). */
 export async function maxUsageId() {
   return Number((await queryOne('SELECT MAX(id) m FROM ai_usage', [], 'spend-ledger:top'))?.m) || 0;
