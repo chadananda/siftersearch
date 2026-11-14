@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-14T16:49:39.395Z",
+  "generated": "2026-11-14T17:16:39.974Z",
   "entries": [
+    {
+      "hash": "9df30b2a2",
+      "date": "2026-11-14",
+      "type": "Other",
+      "description": "Bio source links underlined (accessibility 100)",
+      "scope": null
+    },
     {
       "hash": "bc429547a",
       "date": "2026-11-14",
@@ -756,17 +763,17 @@
       "type": "Other",
       "description": "Under SEARCH_QDRANT=only, multiIndexSearch without meili:false runs the flat Qdrant form — the retired Meili main layer had been routing to qdrantClassic, a whole nested multiIndexSearch (two fan-outs, rankings and hydrations per search; chat executeSearch and the Anís agent called it that way)",
       "scope": null
-    },
-    {
-      "hash": "1d83e1c17",
-      "date": "2026-11-01",
-      "type": "Other",
-      "description": "Canon and authoritative passes start with the first wave instead of after it (canon p50 788 ms, its own query 15–105 ms); query embedding stamped as 'embed' in the trace so a slow layer splits into Gemini vs Qdrant",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-11-14": [
+      {
+        "hash": "9df30b2a2",
+        "date": "2026-11-14",
+        "type": "Other",
+        "description": "Bio source links underlined (accessibility 100)",
+        "scope": null
+      },
       {
         "hash": "bc429547a",
         "date": "2026-11-14",
@@ -1545,13 +1552,6 @@
         "date": "2026-11-01",
         "type": "Other",
         "description": "Under SEARCH_QDRANT=only, multiIndexSearch without meili:false runs the flat Qdrant form — the retired Meili main layer had been routing to qdrantClassic, a whole nested multiIndexSearch (two fan-outs, rankings and hydrations per search; chat executeSearch and the Anís agent called it that way)",
-        "scope": null
-      },
-      {
-        "hash": "1d83e1c17",
-        "date": "2026-11-01",
-        "type": "Other",
-        "description": "Canon and authoritative passes start with the first wave instead of after it (canon p50 788 ms, its own query 15–105 ms); query embedding stamped as 'embed' in the trace so a slow layer splits into Gemini vs Qdrant",
         "scope": null
       }
     ]
