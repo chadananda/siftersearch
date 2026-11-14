@@ -7,6 +7,7 @@ import Layout from '../../layouts/Layout.astro';
 import SiteNav from '../../components/anis/SiteNav.astro';
 import ReportError from '../../components/anis/ReportError.astro';
 import { isAnisHost } from '../../lib/anis-host.js';
+import { remasterOnly } from '../../lib/media.js';
 import MediaPlayer from '../../components/media/MediaPlayer.svelte';
 import SeriesNav from '../../components/media/SeriesNav.astro';
 import { seriesNavigation } from '../../lib/media-series.js';
@@ -44,6 +45,8 @@ if (movedTo && /^[\w-]+$/.test(movedTo)) return Astro.redirect(`/media/${encodeU
 if (!item) Astro.response.status = 404;
 Astro.response.headers.set('Cache-Control', item ? 'public, s-maxage=120, stale-while-revalidate=300' : 'public, s-maxage=60');
 
+const anis = isAnisHost(Astro.url);
+if (anis && item?.audio) item.audio = remasterOnly(item.audio);   // the original is never sent to an Anís page
 if (item) index = await getIndex;
 if (index) index = safeIndex(index);
 const me = index?.items?.find((x) => x.s === item?.slug);
@@ -96,9 +99,9 @@ const ld = item ? [{
         <div style={`--tint:${eraVar(item.year)}`}>
           <TalkHero {item} speakerKey={me?.k || null} />
           <SeriesNav {series} slug={item.slug} />
-          <MediaPlayer client:load {item} {initialRange} {related} speakerKey={me?.k || null} {speakersByKey} />
+          <MediaPlayer client:load {item} {initialRange} {related} speakerKey={me?.k || null} {speakersByKey} originals={!anis} />
           <SeriesNav {series} slug={item.slug} compact />
-          {isAnisHost(Astro.url) && <ReportError kind="media" slug={item.slug} />}
+          {anis && <ReportError kind="media" slug={item.slug} />}
         </div>
       ) : (
         <section class="py-24 text-center">

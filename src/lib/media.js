@@ -61,6 +61,13 @@ export function picture(url, w, h = w, { photo = true } = {}) {
 export const mediaFile = (slug, name) => `/api/media/${encodeURIComponent(slug)}/file/${String(name).split('/').map(encodeURIComponent).join('/')}`;
 
 /** A cached page and refreshed talk API are safe to combine only when they share a published item revision. */
+/** The audio record without the original copy's URLs: the Anís host never plays or exposes the original (Chad 11-14). */
+export function remasterOnly(audio) {
+  if (!audio) return audio;
+  const { original_url, original_ogg, ...rest } = audio;
+  return rest;
+}
+
 export function sameMediaRevision(pageVersion, apiVersion) {
   const page = Number(pageVersion), fresh = Number(apiVersion);
   return Number.isSafeInteger(page) && page > 0 && page === fresh;

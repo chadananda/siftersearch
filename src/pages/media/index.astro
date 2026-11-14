@@ -5,6 +5,7 @@
 // whole index as you type. ?q= ?p= ?era= ?speaker= are honoured on the server too, so shared links render filtered.
 import { resolveCollection } from '../../lib/media-collection.js';
 import Layout from '../../layouts/Layout.astro';
+import { isAnisHost } from '../../lib/anis-host.js';
 import SiteNav from '../../components/anis/SiteNav.astro';
 import ListeningRoom from '../../components/media/listening/ListeningRoom.svelte';
 import OnAir from '../../components/media/listening/OnAir.svelte';
@@ -105,7 +106,7 @@ const listLd = {
         <p class="my-16 rounded-2xl bg-radio-panel px-6 py-10 text-center text-radio-ink-soft">The Fireside Room could not reach the library just now ({fetchError}). Please try again in a moment.</p>
       ) : (
         <>
-        <a href="/media/remaster" class="remaster-link mb-2 ml-auto flex w-fit cursor-pointer items-center gap-1.5 rounded-full border border-radio-line bg-radio-paper px-3 py-1 font-dial text-xs font-semibold uppercase tracking-[0.14em] text-radio-amber hover:border-radio-brass hover:bg-radio-panel">Hear the remastering: before &amp; after <span aria-hidden="true">→</span></a>
+        {!isAnisHost(Astro.url) && <a href="/media/remaster" class="remaster-link mb-2 ml-auto flex w-fit cursor-pointer items-center gap-1.5 rounded-full border border-radio-line bg-radio-paper px-3 py-1 font-dial text-xs font-semibold uppercase tracking-[0.14em] text-radio-amber hover:border-radio-brass hover:bg-radio-panel">Hear the remastering: before &amp; after <span aria-hidden="true">→</span></a>}
         <div class="room"><OnAir client:load highlights={initial.highlights} speakersByKey={heroSpeakers} stats={initial.stats} importProgress={progress} /></div>
         <div class="room mt-8"><RestoredStrip client:visible initial={restored} /></div>
         <div class="room mt-8"><ProcessStrip client:visible {progress} {live} /></div>

@@ -8,7 +8,7 @@
   import { media } from '../../lib/api.js';
   import { audioReady, audioWarmPath } from '../../lib/media-ready.js';
   import { liveRefresh } from '../../lib/live-data.js';
-  import { flattenWords, flattenOriginalStarts, mapTime, wordAt, youtubeAtTime, picture, sameMediaRevision } from '../../lib/media.js';
+  import { flattenWords, flattenOriginalStarts, remasterOnly, mapTime, wordAt, youtubeAtTime, picture, sameMediaRevision } from '../../lib/media.js';
   import { rangeFrom, formatTime, rangeParam } from '../../../api/lib/media/range.js';
   import MediaTranscript from './MediaTranscript.svelte';
   import MediaWaveform from './MediaWaveform.svelte';
@@ -20,11 +20,12 @@
   import { SITE } from '../../lib/share.js';
   import { eraVar, duration as dur } from '../../lib/media-listing.js';
 
-  let { item, initialRange = null, related = [], speakerKey = null, speakersByKey = {} } = $props();
+  let { item, initialRange = null, related = [], speakerKey = null, speakersByKey = {}, originals = true } = $props();   // originals=false (Anís host): no Original A/B, no original URLs
 
   const level = item.rights?.playback || 'search';
   let updatedTalkAvailable = $state(false);
-  let audioInfo = $state(item.audio), s0paras = $state(item.paragraphs);
+  const audioOf = (a) => (originals ? a : remasterOnly(a));
+  let audioInfo = $state(audioOf(item.audio)), s0paras = $state(item.paragraphs);
   const canPlay = $derived(!updatedTalkAvailable && ((level === 'full' && !!audioInfo && audioInfo.sync_ready !== false) || (level === 'clips' && !!item.clip_url)));
   const duration = Number(item.duration_s) || 0;
   // the contents list: the topic subheaders (each a #slug anchor), else the coarser chapters
@@ -45,7 +46,7 @@
   const remasterShort = $derived(audioInfo?.remaster_tier === 'light' ? 'Clean' : gain ? `Rem ~${gain.percent}%` : 'Rem');
   const remasterTitle = $derived(gain ? `Estimated improvement from before-and-after audio checks: ${gain.quality_before} → ${gain.quality_after} out of 100, measured on ${gain.samples} matching excerpts.` : 'Compare the processed listening copy with the original');
 
-  const hasOriginal = $derived(level === 'full' && !!audioInfo?.remastered && !!(audioInfo.original_url || audioInfo.original_ogg));
+  const hasOriginal = $derived(originals && level === 'full' && !!audioInfo?.remastered && !!(audioInfo.original_url || audioInfo.original_ogg));
   const starts0 = $derived(hasOriginal ? flattenOriginalStarts(s0paras) : null);
   let copy = $state('main');                   // 'main' | 'original': which copy the <audio> holds
   let loaded = '';                             // the URL in the <audio> (audio.src is absolute; compare by ours)
@@ -391,7 +392,7 @@
       // SSR HTML and the refreshed API payload must be one transcript/audio snapshot. Never pair
       // a fresh immutable audio URL with word timings from older cached HTML.
       if (!sameMediaRevision(item.version, d.version)) { updatedTalkAvailable = true; audio?.pause(); return; }
-      if (d.audio) { audioInfo = d.audio; s0paras = d.paragraphs; }
+      if (d.audio) { audioInfo = audioOf(d.audio); s0paras = d.paragraphs; }
     }, {every:60_000, idle:false, initial:{version:item.version,summary:item.summary,audio:item.audio},
       same:(a,b)=>a.version===b.version && a.summary===b.summary && JSON.stringify(a.audio)===JSON.stringify(b.audio)});
     cleanups.push(stopMetadata);
