@@ -4,7 +4,7 @@ import { toolRunner, TOOL_CHARS } from './tool-runner.js';
 import { workNotes as workNotesLookup, asPassage, SAME_QUESTION } from './tool-defs.js';
 import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
 import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence, contentAbsence, emptyInWork, conflictClaims, danglingOpens, askedSource, unappliedCorrection, dropSearchedNote, dropRebuildPreamble, fixCounts, wantsTable, dropSourceSpeculation, dropLinkDebris, duplicateRows, noteDuplicateRows, recapitalise, pointsAbove, dropAbovePointer, unlinkSiteRoots, rebuildsTable, isRebuildMeta } from './lint.js';
-import { DEPTH, hasDepth, dropDepth, dropOffers, deHead, liveDeHead, firstQuoted, leadSource, leadAsk } from './reply-form.js';
+import { DEPTH, hasDepth, dropDepth, dropOffers, deHead, liveDeHead, firstQuoted, leadSource, leadAsk, reorderQuotes } from './reply-form.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
 import { expandTemplates, mendTemplates, blockquoteCards } from './widgets/templates.js';
@@ -389,7 +389,8 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   let gate = null, live = '', rawLive = '', liveHeads = null;
   // the reply's form, for timings (worker/anis): never in the reader's text. heads = section heads turned into prose; lead/first = the
   // first draft's quotation order (leadSource) and its first quoted passage; rewritten = the one form rewrite ran (lead source only)
-  const form = { heads: 0, lead: null, first: null, depth: false, offers: 0, rewritten: false, rewroteFor: null };
+  // leadAfter = the order still wrong after the rewrite; reordered = code then moved whole quotation blocks (reorderQuotes)
+  const form = { heads: 0, lead: null, first: null, depth: false, offers: 0, rewritten: false, rewroteFor: null, leadAfter: null, reordered: false };
   const liveWidgets = [];
   const carded = new Set();   // passages already shown in a card this turn (widgets/templates.js: one card per passage)
   const heldNowAll = () => [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
@@ -575,6 +576,11 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
       // question asked for that source (askedLead). Section heads are never rewritten: code turns them into prose (deHead, below and live)
       const lead = formed ? null : askedLead(leadSource(final, found), found, asked0.at(-1));
       if (!formed) { form.lead = lead; form.first = firstQuoted(final, found); }
+      else if (form.lead) {   // the rewrite ran: still out of order → move whole blocks when nothing refers across them, else keep it
+        form.leadAfter = leadSource(final, found);
+        const moved = form.leadAfter && reorderQuotes(final, found);
+        if (moved) { final = moved.text; form.reordered = true; }
+      }
       if (lead && round < maxRounds - 1 && calls < maxCalls) {
         formed = true; gate = false; streamed = false;
         preForm = final;

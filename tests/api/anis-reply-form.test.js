@@ -1,7 +1,7 @@
 // Reply form checks (Chad 11-14, Reddit rounds 3–4): offers → pills, section heads → prose by code unless the agent chose depth, core text quoted first. Form only, never intent.
 import { describe, it, expect } from 'vitest';
 import { sourceTier } from '../../api/lib/assistant/source-tier.js';
-import { DEPTH, hasDepth, dropDepth, dropOffers, isInvite, isOfferSentence, runInHeads, deHead, liveDeHead, firstQuoted, quotedRefs, leadSource, leadAsk, offerPill, withOfferPill } from '../../api/lib/assistant/reply-form.js';
+import { DEPTH, hasDepth, dropDepth, dropOffers, isInvite, isOfferSentence, runInHeads, deHead, liveDeHead, firstQuoted, quotedRefs, leadSource, leadAsk, reorderQuotes, offerPill, withOfferPill } from '../../api/lib/assistant/reply-form.js';
 
 const B = 'Bahá’í';
 const WRIT = { author: 'Bahá’u’lláh', religion: B, title: 'Gleanings from the Writings of Bahá’u’lláh', collection: 'Core Tablets' };
@@ -98,6 +98,47 @@ describe('quotations in rank order: talks and pilgrim notes above every institut
   });
 });
 
+// the round-5 replies after their rewrite (wt tmp round5), cut to their paragraph frame: the prose verbatim where it joins the blocks
+describe('reorderQuotes: whole blocks move only when nothing refers across them (round 5)', () => {
+  const P = (author, title, extra = {}) => ({ author, religion: B, title, ...extra });
+  it('1fuszlx: the Guardian’s lead-in says "frames it the same way" → the draft stays', () => {
+    const found = new Map([['P14', P('Universal House of Justice', 'Messages from the Universal House of Justice: 1986-2001')], ['P3', P('Shoghi Effendi', 'Messages to Canada')], ['P1', P('Bahá’u’lláh', 'Gleanings from the Writings of Bahá’u’lláh')]]);
+    const t = 'The short answer is no.\n\nOn that conduct, the House of Justice says plainly:\n\n{{quote P14}}\n\nShoghi Effendi frames it the same way. The condemnation *"does not mean that people so afflicted must not be helped"* [[P3]]. Bahá\'u\'lláh\'s general rule applies to all dealings:\n\n{{quote P1}}\n\nThere is also a protection on privacy.';
+    expect(leadSource(t, found)).toMatchObject({ first: 'P14', firstTier: 'house' });
+    expect(reorderQuotes(t, found)).toBe(null);
+  });
+  it('197utk7: a chained argument ("For that reason…", "He also describes…", "His claim…") → the draft stays', () => {
+    const found = new Map([['P1', P('‘Abdu’l-Bahá', 'Selections from the Writings of ‘Abdu’l-Bahá')], ['P2', P('‘Abdu’l-Bahá', 'The Promulgation of Universal Peace')],
+      ['P3', P('‘Abdu’l-Bahá', 'Some Answered Questions')], ['P4', P('‘Abdu’l-Bahá', 'Divine Philosophy')], ['P5', P('‘Abdu’l-Bahá', 'Selections from the Writings of ‘Abdu’l-Bahá')]]);
+    const t = ['The principle comes first. Science and religion are not two rival authorities but two kinds of one inquiry.', '{{quote P1}}',
+      'For that reason, \'Abdu\'l-Bahá states that a belief which contradicts established science is superstition. In a talk recorded in *The Promulgation of Universal Peace*, He says:', '{{quote P2}}',
+      'The sharpest test is biology. In *Some Answered Questions*, \'Abdu\'l-Bahá denies that man was ever an animal species that turned into another one:', '{{quote P3}}',
+      'His claim is that the human species is distinct and original. A talk recorded in *Divine Philosophy* repeats the point:', '{{quote P4}}',
+      'He also describes the stages of the embryo as an analogy for gradual development through many forms:', '{{quote P5}}'].join('\n\n');
+    expect(leadSource(t, found)).toMatchObject({ firstTier: 'reported' });
+    expect(reorderQuotes(t, found)).toBe(null);
+  });
+  it('1g330j9: Shoghi Effendi’s cards ahead of Bahá’u’lláh pass (one written core); the House quoted inline before Him is flagged, but inline words never move', () => {
+    const found = new Map([['P14', P('Shoghi Effendi', 'A Chaste and Holy Life')], ['P13', P('Shoghi Effendi', 'The Light of Divine Guidance')], ['P10', P('Shoghi Effendi', 'Lights of Guidance')],
+      ['P18', P('Universal House of Justice', 'To Set the World in Order')], ['P3', P('Bahá’u’lláh', 'Epistle to the Son of the Wolf')]]);
+    const t = 'The rule on sexual expression is stated plainly:\n\n{{quote P14}}\n\nSex is not treated as unclean:\n\n{{quote P13}}\n\nThe limit is one of proportion:\n\n{{quote P10}}\n\nThe House of Justice adds that society has exalted sexuality *"to a level of importance far beyond its proper place in our lives."* [[P18]]\n\nBahá\'u\'lláh tells monks to leave their cloisters: *"He that secludeth himself in his house is indeed as one dead."* [[P3]]';
+    expect(leadSource(t, found)).toMatchObject({ first: 'P18', core: 'P3', firstTier: 'house', coreTier: 'writings' });
+    expect(leadSource(t.replace(/\n\nThe House of Justice adds[^\n]*/, ''), found)).toBe(null);   // the Guardian’s three cards before Bahá’u’lláh: in order
+    expect(reorderQuotes(t, found)).toBe(null);
+  });
+  it('blocks that stand alone trade places with their lead-ins; inline quotations and other prose stay put', () => {
+    const found = new Map([['P2', P('Universal House of Justice', 'Messages from the Universal House of Justice: 1986-2001')], ['P5', P('Shoghi Effendi', 'Pilgrimage (Extracts)', { book_author: 'May Maxwell', collection: 'Pilgrim Notes' })], ['P1', P('Bahá’u’lláh', 'Gleanings from the Writings of Bahá’u’lláh')]]);
+    const t = 'The short answer is no.\n\nThe House of Justice says plainly:\n\n{{quote P2}}\n\nMay Maxwell recalls the Guardian’s words:\n\n{{quote P5}}\n\nThe welcome is open to all.\n\nBahá’u’lláh writes:\n\n{{quote P1}}\n\nKindness comes first.';
+    const r = reorderQuotes(t, found);
+    expect(r.order).toEqual(['P1', 'P5', 'P2']);
+    expect(r.text).toBe('The short answer is no.\n\nBahá’u’lláh writes:\n\n{{quote P1}}\n\nMay Maxwell recalls the Guardian’s words:\n\n{{quote P5}}\n\nThe welcome is open to all.\n\nThe House of Justice says plainly:\n\n{{quote P2}}\n\nKindness comes first.');
+    expect(leadSource(r.text, found)).toBe(null);
+    // a moved block whose next paragraph leans on it (a block that keeps its place keeps its follower), or prose pointing "above", keeps the draft
+    expect(reorderQuotes(t.replace('Kindness comes first.', 'This is the heart of it.'), found)).toBe(null);
+    expect(reorderQuotes(t.replace('Kindness comes first.', 'The passages above agree.'), found)).toBe(null);
+  });
+});
+
 describe('section heads become prose (round 3: 7 replies, round 4: 197utk7); real lists and bold quotations stay', () => {
   it('bold run-ins become the paragraph’s first sentence; a lone bold head joins the paragraph after it', () => {
     const r = deHead('The question assumes a frame.\n\n**Sexism.** The Writings hold equality.\n\n**Homophobia:** Prejudice is ruled out.\n\n**Transphobia**\n\nNo text addresses it directly.');
@@ -140,6 +181,13 @@ describe('section heads become prose (round 3: 7 replies, round 4: 197utk7); rea
 });
 
 describe('first-person offers (1j4m76y, rounds 3 and 4)', () => {
+  it('a conditional lead-in is part of the offer: "If you tell me how that sits with you, I can say more about … or about …" (18t1bhn, round 5)', () => {
+    const t = "The beliefs do differ. If you tell me how that sits with you, I can say more about how Bahá'ís are asked to treat others, or about what the Writings say on the oneness of humanity and the dignity of every soul.";
+    const r = dropOffers(t);
+    expect(r.text).toBe('The beliefs do differ.');
+    expect(offerPill(r.offers[0])).toBe("Tell me more about how Bahá'ís are asked to treat others");
+    expect(dropOffers('If God wills, I can only hope. Next.').offers).toEqual([]);   // not an offer
+  });
   it('"I can set out how … traditions answer" leaves the prose and becomes a pill', () => {
     const o = 'I can set out how the Christian or Islamic traditions answer your question, if that would help.';
     expect(isOfferSentence(o)).toBe(true);
@@ -261,6 +309,36 @@ describe('agent: one rewrite for form, offers kept for the pills', () => {
     expect(seen).toHaveLength(2);
     expect(seen[1].messages.at(-1).content).toMatch(/in this order: P\d \(the Writings\), P\d \(a House of Justice letter\)/);
     expect(r.agent.form).toMatchObject({ rewritten: true, rewroteFor: 'lead', first: { tier: 'house' } });
+  });
+  // round 5: the rewrite complied in 1 of 6 → when it still quotes out of order, code moves whole blocks (reorderQuotes)
+  const twoCards = async (second) => {
+    const HOUSE = { id: 911, title: 'Messages from the Universal House of Justice: 1986-2001', author: 'Universal House of Justice', religion: B, source_url: 'https://oceanlibrary.com/uhj#p1', text: 'To regard homosexuals with prejudice and disdain would be entirely against the spirit of Bahá’í Teachings.' };
+    const GL = { id: 912, title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh', religion: B, source_url: 'https://oceanlibrary.com/gleanings#p13', text: 'Show forbearance and benevolence and love to one another.' };
+    const seen = [];
+    const r = await agentAnswer({ messages: [{ role: 'user', content: 'Do Bahá’ís support LGBTQ people?' }], tools: { search: async () => [] },
+      held: { same: true, status: 'candidate', question: 'Do Bahá’ís support LGBTQ people?', passages: [HOUSE, GL] },
+      create: async (p) => { seen.push(p);
+        const turn = p.messages.findLast((m) => m.role === 'user' && /HELD/.test(m.content))?.content || '';
+        const ref = (t) => turn.match(new RegExp(`(P\\d+)[^\\n]*${t}`))?.[1];
+        const h = ref('Messages from'), gl = ref('Gleanings');
+        return say(seen.length === 1 ? `The short answer is no.\n\nThe House of Justice says plainly:\n\n{{quote ${h}}}\n\nBahá’u’lláh’s rule applies to all dealings:\n\n{{quote ${gl}}}` : second(h, gl)); } });
+    return { r, seen };
+  };
+  it('the rewrite still quotes the House first → code moves the whole blocks, each with its lead-in (1fuszlx, round 5)', async () => {
+    const { r, seen } = await twoCards((h, gl) => `The short answer is no.\n\nOn conduct, the House of Justice says plainly:\n\n{{quote ${h}}}\n\nBahá’u’lláh’s rule applies to all dealings:\n\n{{quote ${gl}}}\n\nBahá’ís are asked for kindness.`);
+    expect(seen).toHaveLength(2);
+    expect(r.agent.form).toMatchObject({ rewritten: true, reordered: true, leadAfter: { firstTier: 'house', coreTier: 'writings' } });
+    const at = (t) => r.reply.indexOf(t);
+    expect(at('Show forbearance')).toBeGreaterThan(-1);
+    expect(at('rule applies to all dealings')).toBeLessThan(at('Show forbearance'));
+    expect(at('Show forbearance')).toBeLessThan(at('the House of Justice says plainly'));
+    expect(at('the House of Justice says plainly')).toBeLessThan(at('prejudice and disdain'));
+    expect(r.reply.trim()).toMatch(/kindness\.$/);
+  });
+  it('…but a block the prose leans on stays where the writer put it (nothing dangles)', async () => {
+    const { r } = await twoCards((h, gl) => `The House of Justice says plainly:\n\n{{quote ${h}}}\n\nThis rests on Bahá’u’lláh’s own rule:\n\n{{quote ${gl}}}`);
+    expect(r.agent.form).toMatchObject({ rewritten: true, reordered: false, leadAfter: { firstTier: 'house' } });
+    expect(r.reply.indexOf('prejudice and disdain')).toBeLessThan(r.reply.indexOf('Show forbearance'));
   });
   it('a plain reply is not rewritten; a closing offer leaves the prose and is returned for the pills', async () => {
     const seen = [];

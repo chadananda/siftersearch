@@ -3,7 +3,7 @@
 // turned into plain prose by code (deHead; a rewrite cleared 5 of 17 at +10 s); quotations in rank order (the Writings and
 // Shoghi Effendi, then talks and pilgrim notes, then the House and every other body, then commentary). Pure. Deps: lint, source-tier.
 import { isSearchOffer, isOffer } from './lint.js';
-import { sourceTier, rankOf } from './source-tier.js';
+import { sourceTier, rankOf, TIER_ORDER } from './source-tier.js';
 
 /** The agent starts its reply with this when IT decides the reader asked for depth or research (its judgement, never a keyword test).
  *  Stripped before anything is shown, as NOT_FOUND is. Without it the reply is a short answer: no run-in section heads. */
@@ -20,7 +20,8 @@ const NUDGE = /^\s*(?:just\s+(?:ask|say|let\s+me\s+know)|let\s+me\s+know|happy\s
 export const isInvite = (s) => INVITE.test(unquote(s));
 // A FIRST-PERSON OFFER of more (1j4m76y: "I can set out how the Christian or Islamic traditions answer your question."): Anís speaks of the
 // texts, not of what it could do next — "I could not find…" and "I can only say…" are not offers
-const I_OFFER = /^\s*(?:and\s+|so\s+)?I\s+(?:can|could)(?:\s+also)?\s+(?!not\b|only\b|never\b|n['’]t\b|see\s+why\b)[a-z]/i;
+// "If you tell me how that sits with you, I can say more about …" (18t1bhn round 5): a conditional lead-in is part of the offer
+const I_OFFER = /^\s*(?:if\s+[^,.!?]{1,80},\s*)?(?:and\s+|so\s+)?I\s+(?:can|could)(?:\s+also)?\s+(?!not\b|only\b|never\b|n['’]t\b|see\s+why\b)[a-z]/i;
 const I_CLAUSE = /^([\s\S]*?\S)\s*[,;]?\s+(?:and|but|so)\s+(I\s+(?:can|could)(?:\s+also)?\s+(?!not\b|only\b|never\b)[a-z][^.!?]*)([.!?]+)(\s*)$/i;
 export const isFirstPersonOffer = (s) => I_OFFER.test(unquote(s));
 export const isOfferSentence = (s) => isSearchOffer(s) || isOffer(s) || isInvite(s) || isFirstPersonOffer(s);
@@ -146,8 +147,10 @@ export function quotedRefs(text) {
 // Rank order of quotations (Chad 11-14): the Writings, Shoghi Effendi, a compilation of the Writings, then talks and pilgrim notes
 // (a Central Figure's words as recorded) — above every administrative body, the House included — then commentary. TIER_ORDER
 // (source-tier.js) by whole tier: the talk-before-pilgrim half step is not worth a rewrite. Nabíl's narrative keeps its place in
-// a story (scenes run in time order), and a passage with no Bahá'í tier (another tradition, the web) is not ranked.
-const tierOf = (p) => { const t = sourceTier(p); return t && t !== 'narrative' ? Math.floor(rankOf(p)) : null; };
+// a story (scenes run in time order), and a passage with no Bahá'í tier (another tradition, the web) is not ranked. The Writings
+// and Shoghi Effendi are one written core: either may lead (round 5: 3 of 6 rewrites were only the Guardian first, none complied).
+const CORE = TIER_ORDER.indexOf('writings');
+const tierOf = (p) => { const t = sourceTier(p); return !t || t === 'narrative' ? null : t === 'guardian' ? CORE : Math.floor(rankOf(p)); };
 /** → { first, core, firstTier, coreTier, order, tiers } when a quoted passage comes before one of higher rank (`first` before
  *  `core`); `order` is every ranked quotation in rank order (ties keep the reply's order); else null. `found`: Map ref → passage.
  *  Order only — never what is quoted. */
@@ -170,6 +173,45 @@ export function firstQuoted(text, found) {
 const KIND = { writings: 'the Writings', guardian: 'Shoghi Effendi', compilation: 'a compilation of the Writings', reported: 'a talk or pilgrim’s note', house: 'a House of Justice letter', secondary: 'commentary or an institution’s letter' };
 const kindOf = (t) => KIND[t] || 'another source';
 export const leadAsk = ({ first, core, firstTier, coreTier, order = [core, first], tiers = {} }) => `(note from the library, not the reader) ${first} (${kindOf(firstTier)}) is quoted before ${core} (${kindOf(coreTier)}). Write the reply again with the quotations in this order: ${order.map((r) => `${r} (${kindOf(tiers[r])})`).join(', ')}. Keep a quotation only if it adds something. Say nothing in the reply about this order.`;
+
+// ---- the fallback when the rewrite kept the wrong order (round 5: complied in 1 of 6) ----
+// Whole quotation blocks trade places, each with its lead-in paragraph (one ending ":"), only when nothing refers across them:
+// a lead-in or the paragraph after a moved block that opens on a back-reference ("This…", "There he…", "Shoghi Effendi frames it
+// the same way") keeps the draft. Inline quotations never move; the result must pass leadSource or the draft stays. Pure.
+const BACK = /^\s*[*_]*(?:(?:on|in|for|to|with|of|by|from|at) (?:this|that|these|those|it|him|them)\b|this|that|these|those|there|here|he|she|it|they|his|her|its|their|both|such|so|thus|likewise|similarly|again|in (?:it|this|that)|the same)\b/i;
+const REFER = /\b(?:the same way|same point|as above|above|below|also|too|again|likewise|as well|that passage|this passage|these passages|the passage)\b/i;
+const quoteBlock = (s) => /^\s*\{\{\s*quote:?[^}]*\}\}\s*$/.test(s) || s.split('\n').every((l) => /^\s*>/.test(l));
+/** → { text, order } with the ranked quotation blocks in rank order, or null (keep the draft). `found`: Map ref → passage. */
+export function reorderQuotes(text, found) {
+  const paras = String(text || '').split(/\n{2,}/), get = (r) => found?.get?.(r);
+  if (/\b(?:quoted|passage|words) (?:above|below)\b|\bas above\b/i.test(text)) return null;
+  const units = [];   // { from, to, ref, tier }: paragraphs from..to (lead-in + block)
+  paras.forEach((p, i) => {
+    if (!quoteBlock(p)) return;
+    const refs = quotedRefs(p).filter((r) => get(r) && tierOf(get(r)) != null);
+    if (refs.length !== 1) return;
+    const lead = i > 0 && !quoteBlock(paras[i - 1]) && /:[*_]*\s*$/.test(paras[i - 1]) && !units.some((u) => u.to === i - 1);
+    units.push({ from: lead ? i - 1 : i, to: i, ref: refs[0], tier: tierOf(get(refs[0])) });
+  });
+  const sorted = units.map((u, k) => [u, k]).sort((a, b) => a[0].tier - b[0].tier || a[1] - b[1]).map(([u]) => u);
+  if (sorted.every((u, k) => u === units[k])) return null;
+  for (let k = 0; k < units.length; k++) {
+    if (sorted[k] === units[k]) continue;
+    const u = sorted[k];
+    if (u.from < u.to && (BACK.test(paras[u.from]) || REFER.test(paras[u.from]))) return null;   // its lead-in leans on what came before
+    const after = paras[units[k].to + 1];
+    if (after != null && !quoteBlock(after) && (BACK.test(after) || /\babove\b/i.test(after))) return null;   // the next paragraph leans on the block it loses
+    const own = paras[u.to + 1];
+    if (own != null && !quoteBlock(own) && BACK.test(own)) return null;   // …or on this one, which leaves it
+  }
+  const out = []; let k = 0;
+  for (let i = 0; i < paras.length;) {
+    const slot = units.find((u) => u.from === i);
+    if (slot) { const u = sorted[k++]; out.push(...paras.slice(u.from, u.to + 1)); i = slot.to + 1; } else out.push(paras[i++]);
+  }
+  const t = out.join('\n\n');
+  return leadSource(t, found) ? null : { text: t, order: sorted.map((u) => u.ref) };
+}
 
 // ---- the offer becomes a pill ----
 const STOP = new Set('about also could deeper further more into like would what which their there these those this that with from have your just tell some show share explain look further other bahá bahai faith writings teachings'.split(' '));
