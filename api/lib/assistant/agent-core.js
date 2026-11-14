@@ -620,7 +620,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     books: [...bookCards].filter(([ref]) => works.get(ref)?.url && reply.includes(works.get(ref).url)).map(([, b]) => b) }, cardDocs ? { docs: cardDocs } : {})).catch(() => cards);
   const tally = steps.reduce((t, x) => ({ ...t, [x.cache]: (t[x.cache] || 0) + 1 }), {});
   return { reply, raw: final, offers, talks: [...talks.values()].slice(0, 3), retrieved: cited, citations, steps, usage, cards, widgets, streamed, widgetsShown: shown != null,
-    agent: { steps, searches: librarySearches(steps, canonical), nudged, cache: tally, ...(cache ? { store: cache.stats() } : {}) },
+    agent: { steps, searches: librarySearches(steps, canonical), nudged, formed, cache: tally, ...(cache ? { store: cache.stats() } : {}) },
     quotes_removed: guarded.removed, quotes_recredited: speakers.fixed || 0, quotes_linked: linked.linked || 0,
     quotes_restored: whole.restored, offers_dropped: offerless.dropped,
     timings: { first_tool_ms: firstToolMs, total_ms: Date.now() - t0 } };
