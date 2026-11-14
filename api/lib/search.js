@@ -5,7 +5,7 @@
  */
 
 import { copyKey, publisherRank } from './search/copy-key.js';
-import { foldVerbatim, isVerbatimQuery, isQuestion } from './search/verbatim.js';
+import { exactLead } from './search/verbatim.js';
 import { MeiliSearch } from 'meilisearch';
 import { config } from './config.js';
 import { logger } from './logger.js';
@@ -1549,7 +1549,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
 
   // Qdrant layers: hits carry paragraph_id + doc_id only → stubs, filled by the fetch below. The phrase layer
   // also returns the matched span so callers can highlight the phrase, not the whole paragraph.
-  const { keyFactor, doctrinalFactor, queryDomain, aboutTalks, talksAfterCore, writingsCompilation } = await import('./search/doctrinal-rank.js');
+  const { keyFactor, doctrinalFactor, queryDomain, aboutTalks, talksAfterCore, writingsCompilation, isTalk } = await import('./search/doctrinal-rank.js');
   // TALKS are supplementary (Chad 10-31) unless the search is FOR talks: the media shelf, one speaker, or a question about talks
   const talksAsked = !!(options.talks || filters.collection || filters.author || aboutTalks(query));
   // doctrine (default) or law / administration — the House is primary only on the latter (Chad 10-23); 'talks' weighs talks neutrally
@@ -1697,17 +1697,15 @@ async function multiIndexSearchRun(query, options, qcalls) {
   }
   // A passage containing the query verbatim leads, ahead of diversity (known-item test 10-16: exact matches were demoted).
   // …but a QUESTION is not a quotation, and a low-authority copy never leads on the strength of the words alone (10-20)
-  if (isVerbatimQuery(query) && !isQuestion(query)) {
-    const q = foldVerbatim(query);
-    const exact = sortedDeduped.filter((e) => (e._factor ?? 1) >= 1 && foldVerbatim(e.paragraph?.text).includes(q));
-    if (exact.length) {
-      const ids = new Set(exact.map((e) => e.paragraph?.id));
-      finalEntries = [...exact, ...finalEntries.filter((e) => !ids.has(e.paragraph?.id))].slice(0, limit);
-    }
-  }
+  // …a talk holding the exact words joins them, after the weighty ones (Chad 11-13: transcripts are fully searchable)
+  const exact = exactLead(sortedDeduped, query, { textOf: (e) => e.paragraph?.text, factorOf: (e) => e._factor, isTalk: (e) => isTalk(e.paragraph?.collection) });
+  const lead = (list) => { const ids = new Set(exact.map((e) => e.paragraph?.id)); return [...exact, ...list.filter((e) => !ids.has(e.paragraph?.id))].slice(0, limit); };
+  if (exact.length) finalEntries = lead(finalEntries);
 
-  // talks after the doctrinal core, at most 2 of a window — supplementary, never the answer's lead (Chad 10-31)
+  // talks after the doctrinal core, at most 2 of a window — supplementary, never the answer's lead (Chad 10-31) — except a
+  // talk the reader quoted, which keeps its lead
   if (!talksAsked) finalEntries = talksAfterCore(finalEntries, sortedDeduped, { max: 2 });
+  if (!talksAsked && exact.some((e) => isTalk(e.paragraph?.collection))) finalEntries = lead(finalEntries);
 
   tallySourceStats(finalEntries);   // win-share telemetry — see SOURCE_STATS above
   // no engine highlighted a hydrated hit (SQLite) → the query terms are marked, as Meili's _formatted did — top-k only

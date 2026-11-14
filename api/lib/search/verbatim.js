@@ -27,6 +27,15 @@ export function verbatimLead(entries, query, textOf) {
   return lead.length ? [...lead, ...rest] : entries;
 }
 
+/** The entries that lead a search on a quotation: weighty passages (factor ≥ 1) holding the words verbatim, then TALKS holding
+ *  them — a talk is a library document with a fully searchable transcript (Chad 11-13), so its own exact words find it even
+ *  though talks weigh 0.4 (10-31). Other low-weight copies (scraped sites) still never lead on the words alone (10-20). Pure. */
+export function exactLead(entries, query, { textOf, factorOf, isTalk }) {
+  if (!isVerbatimQuery(query) || isQuestion(query)) return [];
+  const q = foldVerbatim(query), has = (e) => foldVerbatim(textOf(e)).includes(q);
+  return [...entries.filter((e) => (factorOf(e) ?? 1) >= 1 && has(e)), ...entries.filter((e) => (factorOf(e) ?? 1) < 1 && isTalk(e) && has(e))];
+}
+
 /** The content words of a text: folded (no diacritics), Latin letters only, longer than three letters (forensics' word test). Pure. */
 export const contentWords = (s) => new Set(String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
   .split(/[^a-z]+/).filter((w) => w.length > 3));
