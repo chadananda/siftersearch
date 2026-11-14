@@ -10,6 +10,7 @@ import SiteNav from '../../components/anis/SiteNav.astro';
 import ReportError from '../../components/anis/ReportError.astro';
 import { isAnisHost, anisHref, capName, ANIS_ORIGIN } from '../../lib/anis-host.js';
 import { bioRoute, bioJsonLd, bioView, REL_LABEL } from '../../lib/bio-route.js';
+import { libraryPaths, resolveLibraryPaths, docOfPath } from '../../lib/library-paths.js';
 
 const API = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 // key = slug | an old slug | a numeric id → the API resolves it; only the current slug renders, the rest 301 to it
@@ -36,8 +37,10 @@ try {
 } catch { /* rendered as unavailable below */ }
 
 const t = p?.timeline || null;
-// cited claims only on the Anís host: a source must link somewhere public there (anisHref)
-const { events, relGroups, journeys, footnotes, life } = bioView(p, anis ? { linkable: anisHref } : {});
+// cited claims only on the Anís host: a source must link somewhere public there (anisHref); a library reader source counts
+// once resolved to its document (→ a collaborator or /doc)
+const docOf = anis && p ? docOfPath(await resolveLibraryPaths(libraryPaths(Object.values(t?.sources || {}).map((s) => s.url)), { api: API })) : undefined;
+const { events, relGroups, journeys, footnotes, life } = bioView(p, anis ? { linkable: (u) => anisHref(u, { docOf }) } : {});
 const name = capName(p?.name);
 const aliases = (p?.aliases || []).filter((a) => typeof a === 'string' && a !== p?.name).slice(0, 6);
 const title = p ? `${name}${life ? ` (${life})` : ''} — life and sources${anis ? ' — Anís' : ''}` : 'Biography';

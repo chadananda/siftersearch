@@ -1,0 +1,1489 @@
+{
+ "the-bab": {
+  "id": 1247551,
+  "name": "the Báb",
+  "death": {
+   "cause": "executed by firing squad",
+   "place": "Tabríz",
+   "year": 1850,
+   "martyr": true,
+   "source": "God Passes By"
+  },
+  "timeline": {
+   "sources": {
+    "f20": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_160&selectionString=dawn-breakers-prod-version_en_75.0~dawn-breakers-prod-version_en_75.846"
+    },
+    "f21": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_160&selectionString=dawn-breakers-prod-version_en_75.0~dawn-breakers-prod-version_en_75.846"
+    },
+    "f22": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_160&selectionString=dawn-breakers-prod-version_en_75.0~dawn-breakers-prod-version_en_75.846"
+    },
+    "f30": {
+     "source": "The Báb - The Herald of the Days",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/h-m-balyuzi_the-bab-the-herald-of-the-days#p141"
+    },
+    "f31": {
+     "source": "The Báb - The Herald of the Days",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/h-m-balyuzi_the-bab-the-herald-of-the-days#p141"
+    },
+    "f37": {
+     "source": "The Chosen Highway",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/lady-sara-blomfield_the-chosen-highway#p966"
+    },
+    "f38": {
+     "source": "The Bab: The Herald of the Day of Days",
+     "url": "https://bahai-library.com/balyuzi_bab_herald_days?paraId=h164"
+    },
+    "f40": {
+     "source": "Khadíjih Bagum - The Wife of the Báb",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/h-m-balyuzi_khadijih-bagum-the-wife-of-the-bab#p22"
+    },
+    "f41": {
+     "source": "Khadíjih Bagum - The Wife of the Báb",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/h-m-balyuzi_khadijih-bagum-the-wife-of-the-bab#p22"
+    },
+    "f43": {
+     "source": "The Bab: The Herald of the Day of Days",
+     "url": "https://bahai-library.com/balyuzi_bab_herald_days?paraId=h173"
+    },
+    "f44": {
+     "source": "The Bab: The Herald of the Day of Days",
+     "url": "https://bahai-library.com/balyuzi_bab_herald_days?paraId=h177"
+    },
+    "f56": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_187&selectionString=dawn-breakers-prod-version_en_7w.0~dawn-breakers-prod-version_en_7w.1643"
+    },
+    "f57": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_187&selectionString=dawn-breakers-prod-version_en_7w.0~dawn-breakers-prod-version_en_7w.1643"
+    },
+    "f58": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_187&selectionString=dawn-breakers-prod-version_en_7w.0~dawn-breakers-prod-version_en_7w.1643"
+    },
+    "f59": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_232&selectionString=dawn-breakers-prod-version_en_95.0~dawn-breakers-prod-version_en_95.409"
+    },
+    "f60": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_232&selectionString=dawn-breakers-prod-version_en_95.0~dawn-breakers-prod-version_en_95.409"
+    },
+    "f61": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_233&selectionString=dawn-breakers-prod-version_en_96.0~dawn-breakers-prod-version_en_96.894"
+    },
+    "f71": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_241&selectionString=dawn-breakers-prod-version_en_9e.0~dawn-breakers-prod-version_en_9e.2854"
+    },
+    "f89": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_273&selectionString=dawn-breakers-prod-version_en_aa.0~dawn-breakers-prod-version_en_aa.851"
+    },
+    "f90": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_281&selectionString=dawn-breakers-prod-version_en_ai.0~dawn-breakers-prod-version_en_ai.1341"
+    },
+    "f91": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_281&selectionString=dawn-breakers-prod-version_en_ai.0~dawn-breakers-prod-version_en_ai.1341"
+    },
+    "f107": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_296&selectionString=dawn-breakers-prod-version_en_ax.0~dawn-breakers-prod-version_en_ax.2229"
+    },
+    "f108": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_296&selectionString=dawn-breakers-prod-version_en_ax.0~dawn-breakers-prod-version_en_ax.2229"
+    },
+    "f109": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_250&selectionString=dawn-breakers-prod-version_en_9n.0~dawn-breakers-prod-version_en_9n.1182"
+    },
+    "f111": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_250&selectionString=dawn-breakers-prod-version_en_9n.0~dawn-breakers-prod-version_en_9n.1182"
+    },
+    "f112": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_309&selectionString=dawn-breakers-prod-version_en_ba.0~dawn-breakers-prod-version_en_ba.4537"
+    },
+    "f113": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_309&selectionString=dawn-breakers-prod-version_en_ba.0~dawn-breakers-prod-version_en_ba.4537"
+    },
+    "f119": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_384&selectionString=dawn-breakers-prod-version_en_dd.0~dawn-breakers-prod-version_en_dd.801"
+    },
+    "f121": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_385&selectionString=dawn-breakers-prod-version_en_de.0~dawn-breakers-prod-version_en_de.368"
+    },
+    "f122": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_385&selectionString=dawn-breakers-prod-version_en_de.0~dawn-breakers-prod-version_en_de.368"
+    },
+    "f131": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_404&selectionString=dawn-breakers-prod-version_en_dx.0~dawn-breakers-prod-version_en_dx.732"
+    },
+    "f132": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_404&selectionString=dawn-breakers-prod-version_en_dx.0~dawn-breakers-prod-version_en_dx.732"
+    },
+    "f133": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_404&selectionString=dawn-breakers-prod-version_en_dx.0~dawn-breakers-prod-version_en_dx.732"
+    },
+    "f134": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_402&selectionString=dawn-breakers-prod-version_en_dv.0~dawn-breakers-prod-version_en_dv.978"
+    },
+    "f135": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_402&selectionString=dawn-breakers-prod-version_en_dv.0~dawn-breakers-prod-version_en_dv.978"
+    },
+    "f136": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_402&selectionString=dawn-breakers-prod-version_en_dv.0~dawn-breakers-prod-version_en_dv.978"
+    },
+    "f137": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_402&selectionString=dawn-breakers-prod-version_en_dv.0~dawn-breakers-prod-version_en_dv.978"
+    },
+    "f139": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_402&selectionString=dawn-breakers-prod-version_en_dv.0~dawn-breakers-prod-version_en_dv.978"
+    },
+    "f140": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_402&selectionString=dawn-breakers-prod-version_en_dv.0~dawn-breakers-prod-version_en_dv.978"
+    },
+    "f141": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_402&selectionString=dawn-breakers-prod-version_en_dv.0~dawn-breakers-prod-version_en_dv.978"
+    },
+    "f142": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_423&selectionString=dawn-breakers-prod-version_en_eg.0~dawn-breakers-prod-version_en_eg.1511"
+    },
+    "f145": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_554&selectionString=dawn-breakers-prod-version_en_i3.0~dawn-breakers-prod-version_en_i3.884"
+    },
+    "f152": {
+     "source": "God Passes By",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_23&selectionString=god_passes_by_ocean_en-bluz.0~god_passes_by_ocean_en-bluz.1888"
+    },
+    "f158": {
+     "source": "God Passes By",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_37&selectionString=god_passes_by_ocean_en_3s.0~god_passes_by_ocean_en_3s.365"
+    },
+    "f159": {
+     "source": "God Passes By",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_37&selectionString=god_passes_by_ocean_en_3s.0~god_passes_by_ocean_en_3s.365"
+    },
+    "f160": {
+     "source": "God Passes By",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_37&selectionString=god_passes_by_ocean_en_3s.0~god_passes_by_ocean_en_3s.365"
+    },
+    "f167": {
+     "source": "God Passes By",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_561&selectionString=god_passes_by_ocean_en_ic.0~god_passes_by_ocean_en_ic.918"
+    },
+    "f180": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_448&selectionString=dawn-breakers-prod-version_en_f5.0~dawn-breakers-prod-version_en_f5.3014"
+    },
+    "f181": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_457&selectionString=dawn-breakers-prod-version_en_fe.0~dawn-breakers-prod-version_en_fe.302"
+    },
+    "f182": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_459&selectionString=dawn-breakers-prod-version_en_fg.0~dawn-breakers-prod-version_en_fg.1512"
+    },
+    "f183": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_459&selectionString=dawn-breakers-prod-version_en_fg.0~dawn-breakers-prod-version_en_fg.1512"
+    },
+    "f187": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_638&selectionString=dawn-breakers-prod-version_en_kf.0~dawn-breakers-prod-version_en_kf.1291"
+    },
+    "f188": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_638&selectionString=dawn-breakers-prod-version_en_kf.0~dawn-breakers-prod-version_en_kf.1291"
+    },
+    "f191": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1114&selectionString=dawn-breakers-prod-version_en_xn.0~dawn-breakers-prod-version_en_xn.737"
+    },
+    "f192": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1137&selectionString=dawn-breakers-prod-version_en_ya.0~dawn-breakers-prod-version_en_ya.963"
+    },
+    "f200": {
+     "source": "Ẓuhúru'l-Ḥaqq Vol 4 (Early Baha'u'llah)",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/mirza-asadullah_zuhurul-haqq-vol-4-early-bahaullah_fa#p191"
+    },
+    "f229": {
+     "source": "Black Pearls: The African Household Slaves of a Nineteenth Century Iranian Merchant Family",
+     "url": "https://bahai-library.com/armstrong-ingram_black_pearls"
+    },
+    "f243": {
+     "source": "Edward Granville Browne and The Bahá’í Faith",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/h-m-balyuzi_edward-granville-browne-and-the-bahai-faith#p72"
+    },
+    "f244": {
+     "source": "God Passes By",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_446&selectionString=god_passes_by_ocean_en_f5.0~god_passes_by_ocean_en_f5.630"
+    }
+   },
+   "events": [
+    {
+     "year": 1819,
+     "title": "Birth in Shíráz",
+     "cites": [
+      "f20",
+      "f21",
+      "f22",
+      "f243"
+     ]
+    },
+    {
+     "year": 1823,
+     "title": "Schooling under Shaykh ‘Ábid",
+     "cites": [
+      "f30",
+      "f31",
+      "f37"
+     ]
+    },
+    {
+     "year": 1828,
+     "title": "Orphaned and reared by uncle",
+     "cites": [
+      "f38",
+      "f89"
+     ]
+    },
+    {
+     "year": 1830,
+     "title": "Childhood companionship with Khadíjih Bagum",
+     "cites": [
+      "f40",
+      "f41"
+     ]
+    },
+    {
+     "year": 1832,
+     "title": "Merchant in Búshihr and visit to Siyyid Káẓim",
+     "cites": [
+      "f43",
+      "f44"
+     ]
+    },
+    {
+     "year": 1843,
+     "title": "Travel to Najaf and Shíráz",
+     "cites": [
+      "f56",
+      "f57"
+     ]
+    },
+    {
+     "year": 1844,
+     "title": "Declaration of Mission to Mullá Ḥusayn",
+     "cites": [
+      "f58",
+      "f59",
+      "f61",
+      "f71",
+      "f109",
+      "f167"
+     ]
+    },
+    {
+     "year": 1844,
+     "title": "Appointment of the Letters of the Living",
+     "cites": [
+      "f112",
+      "f113",
+      "f119"
+     ]
+    },
+    {
+     "year": 1844,
+     "title": "Pilgrimage to Mecca and Medina",
+     "cites": [
+      "f122",
+      "f133",
+      "f134",
+      "f135",
+      "f140",
+      "f141",
+      "f158",
+      "f159"
+     ]
+    },
+    {
+     "year": 1844,
+     "title": "Composition of Ṣaḥífiy-i-Baynu’l-Ḥaramayn",
+     "cites": [
+      "f142"
+     ]
+    },
+    {
+     "year": 1845,
+     "title": "Arrest and return to Shíráz",
+     "cites": [
+      "f180",
+      "f181",
+      "f182",
+      "f183"
+     ]
+    },
+    {
+     "year": 1847,
+     "title": "Imprisonment in Máh-Kú",
+     "cites": [
+      "f187",
+      "f188"
+     ]
+    },
+    {
+     "year": 1849,
+     "title": "Imprisonment in Chihríq",
+     "cites": [
+      "f191",
+      "f192"
+     ]
+    },
+    {
+     "year": 1850,
+     "title": "Martyrdom in Tabríz",
+     "cites": [
+      "f152",
+      "f200",
+      "f244"
+     ]
+    }
+   ],
+   "relationships": [
+    {
+     "type": "family",
+     "who": "Siyyid Muḥammad-Riḍá",
+     "cites": [
+      "f21"
+     ]
+    },
+    {
+     "type": "family",
+     "who": "Ḥájí Mírzá Siyyid ‘Alí",
+     "cites": [
+      "f89",
+      "f139"
+     ]
+    },
+    {
+     "type": "family",
+     "who": "Khadíjih Bagum",
+     "cites": [
+      "f90",
+      "f137",
+      "f145",
+      "f229"
+     ]
+    },
+    {
+     "type": "family",
+     "who": "Aḥmad",
+     "cites": [
+      "f91"
+     ]
+    },
+    {
+     "type": "companion",
+     "who": "Mullá Ḥusayn",
+     "cites": [
+      "f59",
+      "f107",
+      "f111",
+      "f121",
+      "f167"
+     ]
+    },
+    {
+     "type": "companion",
+     "who": "Quddús",
+     "cites": [
+      "f108",
+      "f131",
+      "f132",
+      "f136",
+      "f160"
+     ]
+    },
+    {
+     "type": "teacher",
+     "who": "Shaykh ‘Ábid",
+     "cites": [
+      "f30",
+      "f37"
+     ]
+    },
+    {
+     "type": "teacher",
+     "who": "Siyyid Káẓim-i-Rashtí",
+     "cites": [
+      "f44",
+      "f60"
+     ]
+    },
+    {
+     "type": "captor",
+     "who": "Ḥusayn Khán-i-Ájúdán-Báshí",
+     "cites": [
+      "f180"
+     ]
+    }
+   ],
+   "journeys": [
+    {
+     "year": "1819",
+     "place": "Shíráz",
+     "cites": [
+      "f20"
+     ]
+    },
+    {
+     "year": "c. 1832",
+     "place": "Búshihr",
+     "cites": [
+      "f43",
+      "f133"
+     ]
+    },
+    {
+     "year": "c. 1832",
+     "place": "Karbilá",
+     "cites": [
+      "f44"
+     ]
+    },
+    {
+     "year": "1843",
+     "place": "Najaf",
+     "cites": [
+      "f56"
+     ]
+    },
+    {
+     "year": "1844",
+     "place": "Mecca",
+     "cites": [
+      "f140"
+     ]
+    },
+    {
+     "year": "1844",
+     "place": "Medina",
+     "cites": [
+      "f158"
+     ]
+    },
+    {
+     "year": "1847",
+     "place": "Máh-Kú",
+     "cites": [
+      "f187"
+     ]
+    },
+    {
+     "year": "1849",
+     "place": "Chihríq",
+     "cites": [
+      "f192"
+     ]
+    },
+    {
+     "year": "1850",
+     "place": "Tabríz",
+     "cites": [
+      "f200"
+     ]
+    }
+   ]
+  }
+ },
+ "quddus": {
+  "id": 1247552,
+  "name": "Quddús",
+  "death": {
+   "cause": "martyred with extreme cruelty",
+   "place": "Bárfurúsh",
+   "year": 1849,
+   "martyr": true,
+   "source": "God Passes By"
+  },
+  "timeline": {
+   "sources": {
+    "f2": {
+     "source": "Ẓuhúru'l-Ḥaqq Vol 3 (Babi Biographies)",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/mirza-asadullah_zuhurul-haqq-vol-3-babi-biographies_ar#p557"
+    },
+    "f3": {
+     "source": "Ẓuhúru'l-Ḥaqq Vol 3 (Babi Biographies)",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/mirza-asadullah_zuhurul-haqq-vol-3-babi-biographies_ar#p557"
+    },
+    "f4": {
+     "source": "Ẓuhúru'l-Ḥaqq Vol 3 (Babi Biographies)",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/mirza-asadullah_zuhurul-haqq-vol-3-babi-biographies_ar#p557"
+    },
+    "f5": {
+     "source": "Ẓuhúru'l-Ḥaqq Vol 3 (Babi Biographies)",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/mirza-asadullah_zuhurul-haqq-vol-3-babi-biographies_ar#p557"
+    },
+    "f6": {
+     "source": "Ẓuhúru'l-Ḥaqq Vol 3 (Babi Biographies)",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/mirza-asadullah_zuhurul-haqq-vol-3-babi-biographies_ar#p557"
+    },
+    "f7": {
+     "source": "Quddús",
+     "url": "https://bahai-library.com/villar_quddus_biography"
+    },
+    "f8": {
+     "source": "Quddús",
+     "url": "https://bahai-library.com/villar_quddus_biography"
+    },
+    "f9": {
+     "source": "Quddús",
+     "url": "https://bahai-library.com/villar_quddus_biography"
+    },
+    "f11": {
+     "source": "Ẓuhúru'l-Ḥaqq Vol 3 (Babi Biographies)",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/mirza-asadullah_zuhurul-haqq-vol-3-babi-biographies_ar#p629"
+    },
+    "f12": {
+     "source": "The Bab: The Herald of the Day of Days",
+     "url": "https://bahai-library.com/balyuzi_bab_herald_days?paraId=h193"
+    },
+    "f14": {
+     "source": "The Bab: The Herald of the Day of Days",
+     "url": "https://bahai-library.com/balyuzi_bab_herald_days?paraId=h191"
+    },
+    "f15": {
+     "source": "Quddús",
+     "url": "https://bahai-library.com/villar_quddus_biography"
+    },
+    "f16": {
+     "source": "Quddús",
+     "url": "https://bahai-library.com/villar_quddus_biography"
+    },
+    "f17": {
+     "source": "Quddús",
+     "url": "https://bahai-library.com/villar_quddus_biography"
+    },
+    "f18": {
+     "source": "Quddús",
+     "url": "https://bahai-library.com/villar_quddus_biography"
+    },
+    "f19": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_267&selectionString=dawn-breakers-prod-version_en_a4.0~dawn-breakers-prod-version_en_a4.1209"
+    },
+    "f20": {
+     "source": "Social Basis of the Bábí Upheavals in Írán (1848-1953): A Preliminary Analysis'"
+    },
+    "f24": {
+     "source": "Quddús",
+     "url": "https://bahai-library.com/villar_quddus_biography"
+    },
+    "f25": {
+     "source": "Quddús",
+     "url": "https://bahai-library.com/villar_quddus_biography"
+    },
+    "f30": {
+     "source": "Personal Experiences of Manners, Customs, Habits, Religious and Social Life in Persia",
+     "url": "https://siftersearch.com/library/bahai/pilgrim-notes/rev-isaac-adams-m-d_personal-experiences-of-manners-customs-habits-religious-and-social-life#p1846"
+    },
+    "f32": {
+     "source": "Ẓuhúru'l-Ḥaqq Vol 3 (Babi Biographies)",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/mirza-asadullah_zuhurul-haqq-vol-3-babi-biographies_ar#p700"
+    },
+    "f33": {
+     "source": "Ẓuhúru'l-Ḥaqq Vol 3 (Babi Biographies)",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/mirza-asadullah_zuhurul-haqq-vol-3-babi-biographies_ar#p700"
+    },
+    "f34": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_394&selectionString=dawn-breakers-prod-version_en_dn.0~dawn-breakers-prod-version_en_dn.627"
+    },
+    "f35": {
+     "source": "God Passes By",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_31&selectionString=god_passes_by_ocean_en-bluf.0~god_passes_by_ocean_en-bluf.1435"
+    },
+    "f36": {
+     "source": "God Passes By",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_31&selectionString=god_passes_by_ocean_en-bluf.0~god_passes_by_ocean_en-bluf.1435"
+    },
+    "f37": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_404&selectionString=dawn-breakers-prod-version_en_dx.0~dawn-breakers-prod-version_en_dx.732"
+    },
+    "f38": {
+     "source": "God Passes By",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_31&selectionString=god_passes_by_ocean_en-bluf.0~god_passes_by_ocean_en-bluf.1435"
+    },
+    "f39": {
+     "source": "History of the Báb",
+     "url": "https://bahai-library.com/shahrokh_history_bab"
+    },
+    "f40": {
+     "source": "Release the Sun",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/william-sears_release-the-sun#p36"
+    },
+    "f41": {
+     "source": "Edward Granville Browne and The Bahá’í Faith",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/h-m-balyuzi_edward-granville-browne-and-the-bahai-faith#p147"
+    },
+    "f42": {
+     "source": "Concealment and Revelation in Bahá’u’lláh's Book of the River"
+    },
+    "f43": {
+     "source": "The Trial of Mullá 'Alí Bastámí: A Combined Sunní-Shí'í Fatwá against The Báb",
+     "url": "https://siftersearch.com/library/bahai/papers/moojan-momen_the-trial-of-mulla-ali-bastami-a-combined-sunni-shii-fatwa-against-the-bab#p11"
+    },
+    "f44": {
+     "source": "Release the Sun",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/william-sears_release-the-sun#p36"
+    },
+    "f45": {
+     "source": "Release the Sun",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/william-sears_release-the-sun#p181"
+    },
+    "f46": {
+     "source": "Báb und Bábís",
+     "url": "https://bahai-library.com/vambery_wanderungen_erlebnisse_persien"
+    },
+    "f47": {
+     "source": "Írán: Provinces of Mázandarán and Gurgán",
+     "url": "https://bahai-library.com/momen_encyclopedia_mazandaran"
+    },
+    "f48": {
+     "source": "History of the Báb",
+     "url": "https://bahai-library.com/shahrokh_history_bab"
+    },
+    "f49": {
+     "source": "History of the Báb",
+     "url": "https://bahai-library.com/shahrokh_history_bab"
+    },
+    "f51": {
+     "source": "Ẓuhúru'l-Ḥaqq Vol 2 (The Bab)",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/mirza-asadullah_zuhurul-haqq-vol-2-the-bab_ar#p570"
+    },
+    "f57": {
+     "source": "Pilgrimage, with translations of Tablets by Bahá'u'lláh and 'Abdu'l-Bahá",
+     "url": "https://siftersearch.com/library/bahai/pilgrim-notes/ali-kuli-khan_pilgrimage-with-translations-of-tablets-by-bahaullah-and-abdul-baha#p81"
+    },
+    "f58": {
+     "source": "Pilgrimage, with translations of Tablets by Bahá'u'lláh and 'Abdu'l-Bahá",
+     "url": "https://siftersearch.com/library/bahai/pilgrim-notes/ali-kuli-khan_pilgrimage-with-translations-of-tablets-by-bahaullah-and-abdul-baha#p81"
+    },
+    "f64": {
+     "source": "Ẓuhúru'l-Ḥaqq Vol 2 (The Bab)",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/mirza-asadullah_zuhurul-haqq-vol-2-the-bab_ar#p527"
+    },
+    "f65": {
+     "source": "Ẓuhúru'l-Ḥaqq Vol 2 (The Bab)",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/mirza-asadullah_zuhurul-haqq-vol-2-the-bab_ar#p531"
+    },
+    "f67": {
+     "source": "Quddús",
+     "url": "https://bahai-library.com/villar_quddus_biography"
+    },
+    "f68": {
+     "source": "Quddús",
+     "url": "https://bahai-library.com/villar_quddus_biography"
+    },
+    "f69": {
+     "source": "Quddús",
+     "url": "https://bahai-library.com/villar_quddus_biography"
+    },
+    "f71": {
+     "source": "Quddús",
+     "url": "https://bahai-library.com/villar_quddus_biography"
+    },
+    "f76": {
+     "source": "Quddús",
+     "url": "https://bahai-library.com/villar_quddus_biography"
+    },
+    "f77": {
+     "source": "Quddús",
+     "url": "https://bahai-library.com/villar_quddus_biography"
+    },
+    "f80": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_740&selectionString=dawn-breakers-prod-version_en_n9.0~dawn-breakers-prod-version_en_n9.1398"
+    },
+    "f81": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_739&selectionString=dawn-breakers-prod-version_en_n8.0~dawn-breakers-prod-version_en_n8.1504"
+    },
+    "f82": {
+     "source": "God Passes By",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_78&selectionString=god_passes_by_ocean_en_4x.0~god_passes_by_ocean_en_4x.864"
+    },
+    "f83": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_749&selectionString=dawn-breakers-prod-version_en_ni.0~dawn-breakers-prod-version_en_ni.1234"
+    },
+    "f84": {
+     "source": "Mr Faizi and Mr Furútan in Australia: The Yerrinbool tapes",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/graham-hassall_mr-faizi-and-mr-furutan-in-australia-the-yerrinbool-tapes#p135"
+    },
+    "f85": {
+     "source": "Mr Faizi and Mr Furútan in Australia: The Yerrinbool tapes",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/graham-hassall_mr-faizi-and-mr-furutan-in-australia-the-yerrinbool-tapes#p135"
+    },
+    "f86": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_829&selectionString=dawn-breakers-prod-version_en_pq.0~dawn-breakers-prod-version_en_pq.1219"
+    },
+    "f91": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_998&selectionString=dawn-breakers-prod-version_en_uf.0~dawn-breakers-prod-version_en_uf.1260"
+    },
+    "f92": {
+     "source": "God Passes By",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_86&selectionString=god_passes_by_ocean_en_55.0~god_passes_by_ocean_en_55.854"
+    },
+    "f95": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_994&selectionString=dawn-breakers-prod-version_en_ub.0~dawn-breakers-prod-version_en_ub.1101"
+    },
+    "f96": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_994&selectionString=dawn-breakers-prod-version_en_ub.0~dawn-breakers-prod-version_en_ub.1101"
+    },
+    "f97": {
+     "source": "God Passes By",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_103&selectionString=god_passes_by_ocean_en_5m.0~god_passes_by_ocean_en_5m.1954"
+    },
+    "f98": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_829&selectionString=dawn-breakers-prod-version_en_pq.0~dawn-breakers-prod-version_en_pq.1219"
+    },
+    "f100": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1023&selectionString=dawn-breakers-prod-version_en_v4.0~dawn-breakers-prod-version_en_v4.372"
+    },
+    "f101": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1032&selectionString=dawn-breakers-prod-version_en_vd.0~dawn-breakers-prod-version_en_vd.640"
+    },
+    "f104": {
+     "source": "Memorials of the Faithful",
+     "url": "https://oceanlibrary.com/memorials-of-the-faithful_abdul-baha/?paraId=para_709&selectionString=abdu-l-baha-memorials-of-the-faithful_en_od.0~abdu-l-baha-memorials-of-the-faithful_en_od.570"
+    },
+    "f105": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_816&selectionString=dawn-breakers-prod-version_en_pd.0~dawn-breakers-prod-version_en_pd.637"
+    },
+    "f106": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_998&selectionString=dawn-breakers-prod-version_en_uf.0~dawn-breakers-prod-version_en_uf.1260"
+    },
+    "f107": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_996&selectionString=dawn-breakers-prod-version_en_ud.0~dawn-breakers-prod-version_en_ud.889"
+    },
+    "f108": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1001&selectionString=dawn-breakers-prod-version_en_ui.0~dawn-breakers-prod-version_en_ui.1167"
+    },
+    "f109": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1003&selectionString=dawn-breakers-prod-version_en_uk.0~dawn-breakers-prod-version_en_uk.859"
+    },
+    "f111": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1006&selectionString=dawn-breakers-prod-version_en_un.0~dawn-breakers-prod-version_en_un.630"
+    },
+    "f112": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1006&selectionString=dawn-breakers-prod-version_en_un.0~dawn-breakers-prod-version_en_un.630"
+    },
+    "f113": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1006&selectionString=dawn-breakers-prod-version_en_un.0~dawn-breakers-prod-version_en_un.630"
+    },
+    "f114": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1015&selectionString=dawn-breakers-prod-version_en_uw.0~dawn-breakers-prod-version_en_uw.615"
+    },
+    "f117": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1036&selectionString=dawn-breakers-prod-version_en_vh.0~dawn-breakers-prod-version_en_vh.654"
+    },
+    "f118": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1035&selectionString=dawn-breakers-prod-version_en_vg.0~dawn-breakers-prod-version_en_vg.1716"
+    },
+    "f121": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_992&selectionString=dawn-breakers-prod-version_en_u9.0~dawn-breakers-prod-version_en_u9.880"
+    },
+    "f124": {
+     "source": "Social Basis of the Bábí Upheavals in Írán (1848-1953): A Preliminary Analysis'"
+    },
+    "f128": {
+     "source": "Release the Sun",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/william-sears_release-the-sun#p104"
+    },
+    "f129": {
+     "source": "Social Basis of the Bábí Upheavals in Írán (1848-1953): A Preliminary Analysis'"
+    },
+    "f130": {
+     "source": "Social Basis of the Bábí Upheavals in Írán (1848-1953): A Preliminary Analysis'"
+    },
+    "f137": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1068&selectionString=dawn-breakers-prod-version_en_wd.0~dawn-breakers-prod-version_en_wd.1325"
+    },
+    "f138": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1078&selectionString=dawn-breakers-prod-version_en_wn.0~dawn-breakers-prod-version_en_wn.718"
+    },
+    "f139": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil?paraId=para_1139"
+    },
+    "f140": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1086&selectionString=dawn-breakers-prod-version_en_wv.0~dawn-breakers-prod-version_en_wv.914"
+    },
+    "f141": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1086&selectionString=dawn-breakers-prod-version_en_wv.0~dawn-breakers-prod-version_en_wv.914"
+    },
+    "f142": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1096&selectionString=dawn-breakers-prod-version_en_x5.0~dawn-breakers-prod-version_en_x5.860"
+    },
+    "f143": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1098&selectionString=dawn-breakers-prod-version_en_x7.0~dawn-breakers-prod-version_en_x7.1273"
+    },
+    "f144": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1092&selectionString=dawn-breakers-prod-version_en_x1.0~dawn-breakers-prod-version_en_x1.668"
+    },
+    "f145": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1135&selectionString=dawn-breakers-prod-version_en_y8.0~dawn-breakers-prod-version_en_y8.883"
+    },
+    "f147": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1351&selectionString=dawn-breakers-prod-version_en_148.0~dawn-breakers-prod-version_en_148.695"
+    },
+    "f150": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1137&selectionString=dawn-breakers-prod-version_en_ya.0~dawn-breakers-prod-version_en_ya.963"
+    },
+    "f151": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1140&selectionString=dawn-breakers-prod-version_en_yd.0~dawn-breakers-prod-version_en_yd.1245"
+    },
+    "f152": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1137&selectionString=dawn-breakers-prod-version_en_ya.0~dawn-breakers-prod-version_en_ya.963"
+    },
+    "f153": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1140&selectionString=dawn-breakers-prod-version_en_yd.0~dawn-breakers-prod-version_en_yd.1245"
+    },
+    "f154": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1086&selectionString=dawn-breakers-prod-version_en_wv.0~dawn-breakers-prod-version_en_wv.914"
+    },
+    "f156": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1084&selectionString=dawn-breakers-prod-version_en_wt.0~dawn-breakers-prod-version_en_wt.746"
+    },
+    "f157": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1108&selectionString=dawn-breakers-prod-version_en_xh.0~dawn-breakers-prod-version_en_xh.416"
+    },
+    "f158": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1114&selectionString=dawn-breakers-prod-version_en_xn.0~dawn-breakers-prod-version_en_xn.737"
+    },
+    "f161": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1153&selectionString=dawn-breakers-prod-version_en_yq.0~dawn-breakers-prod-version_en_yq.249"
+    },
+    "f165": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1078&selectionString=dawn-breakers-prod-version_en_wn.0~dawn-breakers-prod-version_en_wn.718"
+    },
+    "f166": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1117&selectionString=dawn-breakers-prod-version_en_xq.0~dawn-breakers-prod-version_en_xq.896"
+    },
+    "f167": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1114&selectionString=dawn-breakers-prod-version_en_xn.0~dawn-breakers-prod-version_en_xn.737"
+    },
+    "f168": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1114&selectionString=dawn-breakers-prod-version_en_xn.0~dawn-breakers-prod-version_en_xn.737"
+    },
+    "f188": {
+     "source": "Release the Sun",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/william-sears_release-the-sun#p119"
+    },
+    "f190": {
+     "source": "Gate of the Heart: Understanding the Writings of the Báb",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/nader-saiedi_gate-of-the-heart-understanding-the-writings-of-the-bab#p1234"
+    },
+    "f191": {
+     "source": "Robe of Light: The Persian Years of the Supreme Prophet Bahá'u'lláh 1817-1853",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/david-s-ruhe_robe-of-light-the-persian-years-of-the-supreme-prophet-bahaullah-1817-1853#p196"
+    },
+    "f194": {
+     "source": "Release the Sun",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/william-sears_release-the-sun#p129"
+    },
+    "f196": {
+     "source": "The Báb - The Herald of the Days",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/h-m-balyuzi_the-bab-the-herald-of-the-days#p680"
+    },
+    "f200": {
+     "source": "Robe of Light: The Persian Years of the Supreme Prophet Bahá'u'lláh 1817-1853",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/david-s-ruhe_robe-of-light-the-persian-years-of-the-supreme-prophet-bahaullah-1817-1853#p1185"
+    },
+    "f201": {
+     "source": "Robe of Light: The Persian Years of the Supreme Prophet Bahá'u'lláh 1817-1853",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/david-s-ruhe_robe-of-light-the-persian-years-of-the-supreme-prophet-bahaullah-1817-1853#p1185"
+    },
+    "f204": {
+     "source": "Robe of Light: The Persian Years of the Supreme Prophet Bahá'u'lláh 1817-1853",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/david-s-ruhe_robe-of-light-the-persian-years-of-the-supreme-prophet-bahaullah-1817-1853#p1185"
+    },
+    "f205": {
+     "source": "Robe of Light: The Persian Years of the Supreme Prophet Bahá'u'lláh 1817-1853",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/david-s-ruhe_robe-of-light-the-persian-years-of-the-supreme-prophet-bahaullah-1817-1853#p1185"
+    },
+    "f206": {
+     "source": "Robe of Light: The Persian Years of the Supreme Prophet Bahá'u'lláh 1817-1853",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/david-s-ruhe_robe-of-light-the-persian-years-of-the-supreme-prophet-bahaullah-1817-1853#p1185"
+    },
+    "f207": {
+     "source": "The Bábís of Nayriz: History and Documents",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/ahang-rabbani_the-babis-of-nayriz-history-and-documents-2#p1159"
+    },
+    "f208": {
+     "source": "Robe of Light: The Persian Years of the Supreme Prophet Bahá'u'lláh 1817-1853",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/david-s-ruhe_robe-of-light-the-persian-years-of-the-supreme-prophet-bahaullah-1817-1853#p1185"
+    },
+    "f209": {
+     "source": "Bahá’u’lláh -- The King of Glory",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/h-m-balyuzi_bahaullah-the-king-of-glory#p225"
+    },
+    "f210": {
+     "source": "A Glimpse of Glory: Stories of the Life of Bahá’u’lláh",
+     "url": "https://bahai-library.com/shahrokh_glimpse_glory"
+    },
+    "f211": {
+     "source": "Robe of Light: The Persian Years of the Supreme Prophet Bahá'u'lláh 1817-1853",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/david-s-ruhe_robe-of-light-the-persian-years-of-the-supreme-prophet-bahaullah-1817-1853#p1185"
+    },
+    "f212": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1926&selectionString=dawn-breakers-prod-version_en_1k7.0~dawn-breakers-prod-version_en_1k7.1650"
+    },
+    "f213": {
+     "source": "Concealment and Revelation in Bahá'u'lláh's Book of the River",
+     "url": "https://siftersearch.com/library/bahai/papers/nader-saiedi_concealment-and-revelation-in-bahaullahs-book-of-the-river#p90"
+    },
+    "f214": {
+     "source": "Concealment and Revelation in Bahá'u'lláh's Book of the River",
+     "url": "https://siftersearch.com/library/bahai/papers/nader-saiedi_concealment-and-revelation-in-bahaullahs-book-of-the-river#p90"
+    },
+    "f215": {
+     "source": "Edward Granville Browne and The Bahá’í Faith",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/h-m-balyuzi_edward-granville-browne-and-the-bahai-faith#p351"
+    },
+    "f222": {
+     "source": "Edward Granville Browne and The Bahá’í Faith",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/h-m-balyuzi_edward-granville-browne-and-the-bahai-faith#p224"
+    },
+    "f224": {
+     "source": "Personal Reminiscences of the Bábí Insurrection at Zanjan in 1850",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/aqa-abdul-ahad_personal-reminiscences-of-the-babi-insurrection-at-zanjan-in-1850#p46"
+    },
+    "f228": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_524&selectionString=dawn-breakers-prod-version_en_h9.0~dawn-breakers-prod-version_en_h9.799"
+    },
+    "f229": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_738&selectionString=dawn-breakers-prod-version_en_n7.0~dawn-breakers-prod-version_en_n7.782"
+    },
+    "f231": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_845&selectionString=dawn-breakers-prod-version_en_q6.0~dawn-breakers-prod-version_en_q6.937"
+    },
+    "f234": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_923&selectionString=dawn-breakers-prod-version_en_sc.0~dawn-breakers-prod-version_en_sc.339"
+    },
+    "f241": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_526&selectionString=dawn-breakers-prod-version_en_hb.0~dawn-breakers-prod-version_en_hb.1169"
+    },
+    "f244": {
+     "source": "The Dawn-Breakers",
+     "url": "https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_738&selectionString=dawn-breakers-prod-version_en_n7.0~dawn-breakers-prod-version_en_n7.782"
+    },
+    "f252": {
+     "source": "Ẓuhúru'l-Ḥaqq Vol 9 (Shoghi Effendi)",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/mirza-asadullah_zuhurul-haqq-vol-9-shoghi-effendi_ar#p379"
+    },
+    "f253": {
+     "source": "The Revelation of Bahá’u’lláh vol. 2",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/adib-taherzadeh_the-revelation-of-bahaullah-vol-2#p3847"
+    }
+   },
+   "events": [
+    {
+     "year": 1821,
+     "title": "Birth and early life",
+     "cites": [
+      "f7",
+      "f8",
+      "f9",
+      "f20",
+      "f35",
+      "f38",
+      "f124",
+      "f145",
+      "f241",
+      "f244"
+     ]
+    },
+    {
+     "year": 1834,
+     "title": "Education and training",
+     "cites": [
+      "f16",
+      "f17",
+      "f18",
+      "f129",
+      "f130"
+     ]
+    },
+    {
+     "year": 1840,
+     "title": "Return to Zanján and moral reform",
+     "cites": [
+      "f2",
+      "f3",
+      "f4",
+      "f5",
+      "f6"
+     ]
+    },
+    {
+     "year": 1843,
+     "title": "Preaching in Karbala and search for the promised One",
+     "cites": [
+      "f15",
+      "f18",
+      "f30",
+      "f32",
+      "f33",
+      "f35",
+      "f36",
+      "f45",
+      "f57",
+      "f58"
+     ]
+    },
+    {
+     "year": 1844,
+     "title": "Recognition of the Báb and appointment as a Letter of the Living",
+     "cites": [
+      "f35",
+      "f36",
+      "f38",
+      "f41",
+      "f42",
+      "f43",
+      "f97",
+      "f200",
+      "f208",
+      "f211",
+      "f214"
+     ]
+    },
+    {
+     "year": 1844,
+     "title": "Pilgrimage to Mecca and meeting with Mullá Sadiq",
+     "cites": [
+      "f12",
+      "f14",
+      "f37",
+      "f39",
+      "f40",
+      "f44",
+      "f48",
+      "f49"
+     ]
+    },
+    {
+     "year": 1844,
+     "title": "Return to Bárfurúsh and building the Bábí community",
+     "cites": [
+      "f47",
+      "f64",
+      "f65",
+      "f76",
+      "f77",
+      "f80",
+      "f81",
+      "f228",
+      "f229",
+      "f231"
+     ]
+    },
+    {
+     "year": 1847,
+     "title": "Teaching the Bábí Faith and prophesied meeting with the Báb",
+     "cites": [
+      "f82",
+      "f83",
+      "f84",
+      "f85"
+     ]
+    },
+    {
+     "year": 1848,
+     "title": "Gathering of Badasht",
+     "cites": [
+      "f92",
+      "f97",
+      "f104",
+      "f128"
+     ]
+    },
+    {
+     "year": 1848,
+     "title": "Journey to the Fort of Shaykh Ṭabarsí",
+     "cites": [
+      "f86",
+      "f91",
+      "f98",
+      "f106",
+      "f109",
+      "f121"
+     ]
+    },
+    {
+     "year": 1848,
+     "title": "Incarceration in the home of Mírzá Muḥammad-Taqí",
+     "cites": [
+      "f95",
+      "f96",
+      "f107"
+     ]
+    },
+    {
+     "year": 1848,
+     "title": "Leadership at the Fort of Shaykh Ṭabarsí",
+     "cites": [
+      "f46",
+      "f100",
+      "f101",
+      "f108",
+      "f111",
+      "f112",
+      "f113",
+      "f114",
+      "f117",
+      "f118",
+      "f143",
+      "f144",
+      "f196"
+     ]
+    },
+    {
+     "year": 1849,
+     "title": "Naw-Rúz and siege conditions",
+     "cites": [
+      "f140",
+      "f141",
+      "f142",
+      "f154",
+      "f156",
+      "f166"
+     ]
+    },
+    {
+     "year": 1849,
+     "title": "Negotiations and departure from the fort",
+     "cites": [
+      "f157",
+      "f158",
+      "f167",
+      "f168"
+     ]
+    },
+    {
+     "year": 1849,
+     "title": "Martyrdom in Bárfurúsh",
+     "cites": [
+      "f139",
+      "f147",
+      "f150",
+      "f151",
+      "f152",
+      "f153",
+      "f190",
+      "f191",
+      "f194",
+      "f207",
+      "f209",
+      "f210",
+      "f212"
+     ]
+    },
+    {
+     "year": 1849,
+     "title": "Posthumous station and legacy",
+     "cites": [
+      "f200",
+      "f201",
+      "f204",
+      "f205",
+      "f206",
+      "f213",
+      "f222",
+      "f224",
+      "f252",
+      "f253"
+     ]
+    }
+   ],
+   "relationships": [
+    {
+     "type": "teacher",
+     "who": "The Báb",
+     "cites": [
+      "f12",
+      "f14",
+      "f34",
+      "f41",
+      "f82",
+      "f234"
+     ]
+    },
+    {
+     "type": "teacher",
+     "who": "Siyyid Káẓim-i-Rashtí",
+     "cites": [
+      "f15",
+      "f18",
+      "f35",
+      "f36"
+     ]
+    },
+    {
+     "type": "companion",
+     "who": "Mullá Ḥusayn-i-Bushrú'í",
+     "cites": [
+      "f11",
+      "f64",
+      "f67",
+      "f69",
+      "f80",
+      "f81",
+      "f105",
+      "f161",
+      "f188",
+      "f215"
+     ]
+    },
+    {
+     "type": "companion",
+     "who": "Ṭáhirih",
+     "cites": [
+      "f51",
+      "f68",
+      "f128"
+     ]
+    },
+    {
+     "type": "teacher",
+     "who": "Mullá Muhammad Hamzih Shariatmadar",
+     "cites": [
+      "f16",
+      "f24"
+     ]
+    },
+    {
+     "type": "teacher",
+     "who": "Mullá Jafar",
+     "cites": [
+      "f17"
+     ]
+    },
+    {
+     "type": "companion",
+     "who": "Mírzá Muḥammad-Báqir-i-Qá'iní",
+     "cites": [
+      "f65",
+      "f71",
+      "f137",
+      "f138",
+      "f165"
+     ]
+    },
+    {
+     "type": "companion",
+     "who": "Mullá Sadiq",
+     "cites": [
+      "f40",
+      "f44"
+     ]
+    },
+    {
+     "type": "captor",
+     "who": "Ḥusayn Khán",
+     "cites": [
+      "f44"
+     ]
+    },
+    {
+     "type": "captor",
+     "who": "Mírzá Muḥammad-Taqíy-i-Juvayníy-i-Sabzivárí",
+     "cites": [
+      "f96"
+     ]
+    },
+    {
+     "type": "family",
+     "who": "Maryam",
+     "cites": [
+      "f25"
+     ]
+    }
+   ],
+   "journeys": [
+    {
+     "year": "c. 1821",
+     "place": "Barfurúsh (Babul)",
+     "cites": [
+      "f7",
+      "f9"
+     ]
+    },
+    {
+     "year": "c. 1840",
+     "place": "Zanján",
+     "cites": [
+      "f3",
+      "f6"
+     ]
+    },
+    {
+     "year": "c. 1840",
+     "place": "Mashhad",
+     "cites": [
+      "f17"
+     ]
+    },
+    {
+     "year": "c. 1840",
+     "place": "Karbala",
+     "cites": [
+      "f18",
+      "f32"
+     ]
+    },
+    {
+     "year": "1844",
+     "place": "Búshihr",
+     "cites": [
+      "f37",
+      "f49"
+     ]
+    },
+    {
+     "year": "1844",
+     "place": "Jaddih",
+     "cites": [
+      "f37"
+     ]
+    },
+    {
+     "year": "1844",
+     "place": "Mecca",
+     "cites": [
+      "f48"
+     ]
+    },
+    {
+     "year": "1844-1846",
+     "place": "Bárfurúsh",
+     "cites": [
+      "f47"
+     ]
+    },
+    {
+     "year": "1847",
+     "place": "Mázindarán",
+     "cites": [
+      "f84",
+      "f85"
+     ]
+    },
+    {
+     "year": "1848",
+     "place": "Badasht",
+     "cites": [
+      "f128"
+     ]
+    },
+    {
+     "year": "1848-1849",
+     "place": "Fort of Shaykh Ṭabarsí",
+     "cites": [
+      "f19",
+      "f46",
+      "f106",
+      "f188",
+      "f196"
+     ]
+    },
+    {
+     "year": "1849",
+     "place": "Bárfurúsh (Bábul)",
+     "cites": [
+      "f191"
+     ]
+    }
+   ]
+  }
+ }
+}

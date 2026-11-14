@@ -53,7 +53,7 @@ describe('/bio on the Anís host', () => {
     expect(page).toMatch(/anisPage=\{p \? \{ type: 'person'/);
     expect(page).toMatch(/<ReportError kind="bio"/);
     expect(page).toMatch(/p\.summary && !anis &&/);   // the stored summary is uncited prose
-    expect(page).toMatch(/bioView\(p, anis \? \{ linkable: anisHref \}/);
+    expect(page).toMatch(/bioView\(p, anis \? \{ linkable: \(u\) => anisHref\(u, \{ docOf \}\) \}/);   // reader-link sources resolve first (library-paths.js)
   });
   it('cited claims only on the Anís host: a claim with no linkable source is dropped; elsewhere all render', () => {
     const v = bioView(PERSON, { linkable: anisHref });

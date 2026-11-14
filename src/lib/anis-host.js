@@ -2,6 +2,7 @@
 // the host itself is the flag (Astro.url). Path map Anís URL ⇄ Astro route (/bio ⇄ /biography, /discuss ⇄ /dialogue), the
 // canonical rule, and the link/URL pass over a rendered page (anisHtml) so nothing on the Anís host points at siftersearch.com.
 import { anisUrl } from '../../api/lib/anis-links.js';
+import { libraryPaths, resolveLibraryPaths, docOfPath } from './library-paths.js';
 
 export const ANIS_HOST = 'anis.oceanlibrary.com';
 export const ANIS_ORIGIN = `https://${ANIS_HOST}`;
@@ -32,8 +33,9 @@ const ON_ANIS = /^\/($|media(\/|$)|bio(\/|$)|discuss(\/|$)|doc(\/|$)|d\/|api\/|_
 /**
  * A link on a page rendered on the Anís host → where it points there: a page the host serves keeps its path; anything else
  * goes through the Anís link policy (anisUrl: /document/<id> → /doc or a collaborator, search → the app); null = no Anís page.
+ * docOf(url) → the document a /library/<reader path> link names (library-paths.js), so that link routes too.
  */
-export function anisHref(href) {
+export function anisHref(href, { docOf } = {}) {
   const h = String(href ?? '');
   if (!h || /^(#|\?|mailto:|tel:|javascript:|data:)/i.test(h) || h.startsWith('//')) return h;
   const abs = SITE.test(h);
@@ -41,7 +43,7 @@ export function anisHref(href) {
   const u = new URL(h, 'https://siftersearch.com');
   const p = anisPath(u.pathname);
   if (ON_ANIS.test(p)) { const rel = `${p}${u.search}${u.hash}`; return abs ? `${ANIS_ORIGIN}${rel}` : rel; }
-  return anisUrl(u.href) || null;
+  return anisUrl(u.href, { doc: docOf?.(u.href) }) || null;
 }
 
 /** A name that opens a title, heading or list entry: first letter capitalised ("the Báb" → "The Báb"); mid-sentence uses keep the stored form. */
@@ -56,31 +58,36 @@ const unattr = (s) => s.replace(/&/g, '&amp;');
  * A page rendered on the Anís host → its links and absolute URLs re-pointed: <a href> through anisHref (a siftersearch-only
  * link loses its href and keeps its text), other src/href/action attributes the same way, and absolute siftersearch.com URLs
  * in text (JSON-LD, og:image, island props) to the Anís origin. → { html, dropped } (the dropped links, for tests and logs).
+ * docOf: as anisHref (reader links → their documents).
  */
-export function anisHtml(html) {
+export function anisHtml(html, { docOf } = {}) {
   const dropped = [];
+  const link = (h) => anisHref(h, { docOf });
   let out = String(html).replace(/(<a\b[^>]*?)\shref="([^"]*)"/g, (m, pre, v) => {
-    const to = anisHref(attr(v));
+    const to = link(attr(v));
     if (to === null) { dropped.push(attr(v)); return pre; }
     return `${pre} href="${unattr(to)}"`;
   });
   out = out.replace(/(<(?!a\b)[a-z][\w-]*\b[^>]*?)\s(href|src|action)="([^"]*)"/g, (m, pre, a, v) => {
-    const to = anisHref(attr(v));
+    const to = link(attr(v));
     return to === null ? m : `${pre} ${a}="${unattr(to)}"`;
   });
   // absolute URLs anywhere else (JSON-LD, meta content, island props), plain or URL-encoded (share links); one with no Anís
   // page → the Anís app, as the link policy does for HTML (anisText)
-  out = out.replace(/https?:\/\/(?:www\.)?siftersearch\.com(\/[^\s"'<>&\\]*)?/g, (m, p = '/') => anisHref(`https://siftersearch.com${p}`) ?? `${ANIS_ORIGIN}/`);
+  out = out.replace(/https?:\/\/(?:www\.)?siftersearch\.com(\/[^\s"'<>&\\]*)?/g, (m, p = '/') => link(`https://siftersearch.com${p}`) ?? `${ANIS_ORIGIN}/`);
   out = out.replace(/https?%3A%2F%2F(?:www\.)?siftersearch\.com((?:%2F|%3F|%23)[^\s"'<>&]*)?/gi, (m, p = '') => {
     let path; try { path = decodeURIComponent(p) || '/'; } catch { return m; }
-    return encodeURIComponent(anisHref(`https://siftersearch.com${path}`) ?? `${ANIS_ORIGIN}/`);
+    return encodeURIComponent(link(`https://siftersearch.com${path}`) ?? `${ANIS_ORIGIN}/`);
   });
   out = out.replace(/SifterSearch Media/g, 'Anís');   // the brand in JSON-LD and island props
   return { html: out, dropped };
 }
 
-/** An Astro response rendered for the Anís host → the same, re-pointed: a redirect's Location through anisHref, a page through anisHtml. */
-export async function anisResponse(res) {
+/**
+ * An Astro response rendered for the Anís host → the same, re-pointed: a redirect's Location through anisHref, a page through
+ * anisHtml, its reader links (/library/…) first resolved to their documents in one call (resolve: library-paths.js, injectable).
+ */
+export async function anisResponse(res, { resolve = resolveLibraryPaths } = {}) {
   const headers = new Headers(res.headers);
   const loc = headers.get('location');
   if (loc && res.status >= 300 && res.status < 400) {
@@ -88,7 +95,10 @@ export async function anisResponse(res) {
     return new Response(null, { status: res.status, headers });
   }
   if (!/text\/html/.test(headers.get('content-type') || '')) return res;
-  const { html } = anisHtml(await res.text());
+  const text = await res.text();
+  const paths = libraryPaths(text);
+  const docOf = paths.length ? docOfPath(await resolve(paths)) : undefined;
+  const { html } = anisHtml(text, { docOf });
   headers.delete('content-length');
   return new Response(html, { status: res.status, headers });
 }
