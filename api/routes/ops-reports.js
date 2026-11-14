@@ -39,6 +39,21 @@ export default async function opsReportRoutes(fastify) {
     const have = await slugsFor(ids);
     return { minted, with_slug: have.size, total: ids.length, left: ids.length - have.size };
   });
+  // ONE DOC'S source_url, set or cleared (null) through docs-repo → the single writer ('docs-repo:set-source-url'); attributed: `by` is
+  // required and the change (before → after, by, reason) is logged. For links the source-url-mismatch report finds bound to another book.
+  fastify.post('/ops/docs/:id/source-url', { preHandler: requireInternal }, async (req) => {
+    const id = Number(req.params.id), b = req.body || {}, url = b.source_url ?? null, by = String(b.by || '').trim();
+    const bad = (m) => Object.assign(new Error(m), { statusCode: 400 });
+    if (!Number.isInteger(id) || id <= 0) throw bad('doc id must be a positive integer');
+    if (!by) throw bad('by (who is making the change) is required');
+    if (!('source_url' in b)) throw bad('source_url is required (null clears it)');
+    if (url !== null) { let u; try { u = new URL(String(url)); } catch { throw bad('source_url must be an https URL or null'); } if (u.protocol !== 'https:') throw bad('source_url must be an https URL or null'); }
+    const r = await (await import('../lib/docs-repo.js')).setDocSourceUrl(id, url);
+    if (!r.changed) throw Object.assign(new Error(`no live doc ${id}`), { statusCode: 404 });
+    const change = { doc_id: id, before: r.before, after: url, by, reason: String(b.reason || '').slice(0, 300) || null };
+    (await import('../lib/logger.js')).logger.info(change, 'docs: source_url changed');
+    return { ok: true, ...change };
+  });
   // Dewey email allowlist (ops.mjs dewey-allow add|remove|list): pre-approve addresses; verified sign-ins get dewey_access
   fastify.get('/ops/dewey-allow', { preHandler: requireInternal }, async () => ({ allowlist: await (await import('../lib/repos/contributors-repo.js')).list() }));
   fastify.post('/ops/dewey-allow', { preHandler: requireInternal }, async (req) => (await import('../lib/repos/contributors-repo.js')).allow(req.body?.email, req.body?.note || null));

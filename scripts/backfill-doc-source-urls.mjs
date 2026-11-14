@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// WARNING: binds source_url by exact title only — UNSAFE (bound Taherzadeh's "Revelation" 429/430/432 to the KJV Apocalypse); audit with ops report source-url-mismatch.
 // Backfill source_url for locally-ingested docs that have an OceanLibrary.com
 // equivalent in the DB (matched by exact title). Sets source_url on the local
 // doc so search results cite the canonical OL URL instead of siftersearch.com/document/[id].

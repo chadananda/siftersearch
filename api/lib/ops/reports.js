@@ -82,6 +82,7 @@ import { translationAudit, originalAudit, workFamilyCoverage } from '../repos/al
 import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
 import { driveWearReport } from './drive-wear.js';
 import { anisJevTimeoutsReport } from './anis-jev-timeouts.js';
+import { sourceUrlMismatchReport } from './source-url-mismatch.js';
 
 export const REPORTS = {
   /** SMART writes/day per NVMe/SSD vs the previous sample + percentage_used; queues the weekly-email item. params: { store } */
@@ -94,6 +95,9 @@ export const REPORTS = {
   'media-descriptions': mediaDescriptionsJob,
   /** Anís turns per day whose Jev call timed out, by call and outcome, and what the backup decided (fail-open rate). params: { days } */
   'anis-jev-timeouts': (params) => anisJevTimeoutsReport(params),
+  /** Live docs whose OceanLibrary source_url names another book (title-only backfill; card-text otherBook rule): id, title, author,
+   *  source_url, slug + counts by slug. Fix one with POST /api/admin/ops/docs/:id/source-url. params: { limit } */
+  'source-url-mismatch': (params) => sourceUrlMismatchReport(params),
   /** The Anís audits as a ranked strategy work queue (also /admin/anis#threads). params: { days } */
   async 'strategy-gaps'({ days = 30 } = {}) { return { days, ...strategyGaps(auditsSince(days)) }; },
   /** Books search cannot tier (religion missing or a numeric author): rows to fix in the library. params: { scope, limit } */

@@ -224,6 +224,25 @@ export async function setDocAuthor(docId, author) {
   return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
 }
 
+/** Live docs whose source_url is an OceanLibrary page: { id, title, author, source_url }, by id, a page at a time (afterId).
+ *  The source-url-mismatch report checks each link names the doc's own book (scripts/backfill-doc-source-urls.mjs bound by title alone). */
+export async function oceanLinkedDocs({ afterId = 0, limit = 2000 } = {}) {
+  return queryAll(`SELECT id, title, author, source_url FROM docs WHERE deleted_at IS NULL AND id > ?
+    AND (source_url LIKE 'https://oceanlibrary.com/%' OR source_url LIKE 'https://www.oceanlibrary.com/%') ORDER BY id LIMIT ?`,
+  [Number(afterId) || 0, Math.min(5000, Number(limit) || 2000)], 'docs-repo:ocean-linked');
+}
+
+/** Set or clear (null) a document's source_url; its paragraphs re-sync, as search hits carry the link. Live docs only. Returns the old
+ *  value so the caller can log the change. Used by POST /api/admin/ops/docs/:id/source-url (a link bound to another book). */
+export async function setDocSourceUrl(docId, url) {
+  const id = Number(docId), next = url == null || url === '' ? null : String(url).trim();
+  const before = await queryOne('SELECT source_url FROM docs WHERE id = ? AND deleted_at IS NULL', [id], 'docs-repo:source-url-before');
+  if (!before) return { changed: 0, before: null };
+  const r = await query('UPDATE docs SET source_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL', [next, id], 'docs-repo:set-source-url');
+  await query('UPDATE content SET synced = 0 WHERE doc_id = ? AND deleted_at IS NULL', [id], 'docs-repo:set-source-url-resync');
+  return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0, before: before.source_url ?? null };
+}
+
 /** A page's document: a DUPLICATE copy that answered a lookup (it holds the slug) yields to its canonical, with the same fields
  *  (10-21: /library/bahai/shoghi-effendi/shoghi-effendi_bahai-administration served #16278, a duplicate of #20880). */
 export async function canonicalForPage(doc, fields, { get = getDoc } = {}) {
