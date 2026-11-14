@@ -4,7 +4,9 @@
 // index (related talks, speaker key; optional) at request time, so the whole transcript paints before hydration.
 // ?t=754 / ?t=754-812 is read here (the #t= fragment only on the client). Canonical is /media/<slug>.
 import Layout from '../../layouts/Layout.astro';
-import NavBar from '../../components/common/NavBar.svelte';
+import SiteNav from '../../components/anis/SiteNav.astro';
+import ReportError from '../../components/anis/ReportError.astro';
+import { isAnisHost } from '../../lib/anis-host.js';
 import MediaPlayer from '../../components/media/MediaPlayer.svelte';
 import SeriesNav from '../../components/media/SeriesNav.astro';
 import { seriesNavigation } from '../../lib/media-series.js';
@@ -80,14 +82,14 @@ const ld = item ? [{
 }] : [];
 ---
 
-<Layout {title} {description} {image} type={item ? 'article' : 'website'} noindex={!item}>
+<Layout {title} {description} {image} type={item ? 'article' : 'website'} noindex={!item} anisPage={item ? { type: 'talk', slug: item.slug, title: item.title } : null}>
   <Fragment slot="head">
     <link rel="preload" as="font" type="font/woff2" href="/fonts/gloock-latin.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/big-shoulders-latin.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/libre-caslon-normal-400-latin.woff2" crossorigin />
     {ld.map((x) => <script type="application/ld+json" set:html={JSON.stringify(x)} />)}
   </Fragment>
-  <NavBar client:idle currentPage="media" />
+  <SiteNav currentPage="media" />
   <main class="listening-room bg-radio-room text-radio-ink">
     <div class="mx-auto w-full max-w-6xl px-4 pb-28 pt-4 sm:px-6 lg:px-8 lg:pt-8">
       {item ? (
@@ -96,6 +98,7 @@ const ld = item ? [{
           <SeriesNav {series} slug={item.slug} />
           <MediaPlayer client:load {item} {initialRange} {related} speakerKey={me?.k || null} {speakersByKey} />
           <SeriesNav {series} slug={item.slug} compact />
+          {isAnisHost(Astro.url) && <ReportError kind="media" slug={item.slug} />}
         </div>
       ) : (
         <section class="py-24 text-center">

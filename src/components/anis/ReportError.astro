@@ -1,0 +1,29 @@
+---
+// "Report an error" on an Anís-host page (Chad 11-14): the reader's note → POST /api/chat/feedback (the Anís feedback store,
+// D1 anis_feedback; anonymous readers — the talk feedback route takes signed-in users only). conversation_id =
+// <kind>-<slug>-<time><random>, unique per report so two never overwrite each other (≤ 64 chars), round 1, vote down.
+const { kind, slug = '' } = Astro.props;
+const id = `${kind}-${slug}`.slice(0, 48);
+---
+<details class="anis-report">
+  <summary>Report an error</summary>
+  <form data-report={id}>
+    <label for="anis-rq">What is wrong on this page?</label>
+    <textarea id="anis-rq" name="q" maxlength="300" rows="3" required></textarea>
+    <button type="submit">Send</button>
+    <p role="status"></p>
+  </form>
+</details>
+<script is:inline>{`{const f=document.querySelector('form[data-report]');f.onsubmit=async(e)=>{e.preventDefault();const s=f.querySelector('[role=status]');
+try{const r=await fetch('/api/chat/feedback',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({conversation_id:f.dataset.report+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),round:1,vote:'down',question:f.q.value})});
+s.textContent=r.ok?'Thank you. We will check it.':'Could not send. Please try again.';if(r.ok)f.q.value=''}catch{s.textContent='Could not send. Please try again.'}}}`}</script>
+
+<style>
+  .anis-report { margin: 2rem 0 0; max-width: 46rem; font-size: .9rem; color: var(--text-secondary); }
+  .anis-report summary { cursor: pointer; color: var(--text-muted); }
+  .anis-report summary:hover { color: var(--text-primary); }
+  .anis-report form { display: grid; gap: .5rem; margin-top: .75rem; }
+  .anis-report textarea { width: 100%; padding: .6rem .75rem; border-radius: .5rem; border: 1px solid var(--border-subtle); background: var(--surface-1); color: var(--text-primary); font: inherit; }
+  .anis-report button { justify-self: start; padding: .4rem 1rem; border-radius: 999px; border: 0; background: var(--accent); color: var(--surface-solid); font-weight: 600; }
+  .anis-report [role='status'] { margin: 0; color: var(--text-muted); min-height: 1.2em; }
+</style>

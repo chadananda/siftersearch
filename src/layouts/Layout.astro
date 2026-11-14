@@ -1,6 +1,9 @@
 ---
 import { SEO } from 'astro-seo';
 import SiteFooter from '../components/common/SiteFooter.astro';
+import AnisWidget from '../components/AnisWidget.astro';
+import { isAnisHost, anisPath, anisTitle, ANIS_ORIGIN } from '../lib/anis-host.js';
+import { THEME_PREP } from '../../worker/anis/content-widget.js';
 
 interface Props {
   title: string;
@@ -12,25 +15,31 @@ interface Props {
   anis?: boolean;     // Anís's chat button — on every public page (Chad 10-10)
   app?: { manifest: string; icon: string; name: string; color: string };   // an installable app on its own (Dewey: /dewey/manifest.webmanifest)
   canonical?: string; // the page's ONE canonical URL (absolute or site path). Pages never emit their own <link rel="canonical">.
+  anisPage?: { type: string; slug?: string; title: string };   // on anis.oceanlibrary.com: the widget's page context
 }
 
 const siteUrl = 'https://siftersearch.com';
-const siteName = 'SifterSearch';
+// rendered on anis.oceanlibrary.com (worker/index.js → src/lib/anis-host.js): Anís chrome, the reader's theme, Anís canonical
+const anisHost = isAnisHost(Astro.url);
+const siteName = anisHost ? 'Ocean 2.0' : 'SifterSearch';
 
 const {
-  title,
-  description = 'Search thousands of sacred texts from world religions with AI-powered semantic search. Explore Baha\'i writings, pilgrim notes, and interfaith literature instantly.',
+  title: pageTitle,
+  description: pageDescription = 'Search thousands of sacred texts from world religions with AI-powered semantic search. Explore Baha\'i writings, pilgrim notes, and interfaith literature instantly.',
   // /og-image.png has never existed in public/, so every page that did not pass an
   // explicit hero shipped an og:image that 404s — no preview card on any share.
   // icon-512 is a stopgap that at least resolves; a real 1200x630 card is wanted.
-  image = '/icon-512.png',
+  image = null,
   type = 'website',
   noindex = false,
   footer = true,
   anis = true,
   app = null,
-  canonical = null
+  canonical = null,
+  anisPage = null
 } = Astro.props;
+const title = anisHost ? anisTitle(pageTitle) : pageTitle;
+const description = anisHost ? anisTitle(pageDescription) : pageDescription;
 
 // The ONE canonical (+ og:url): the page's explicit canonical, else the current path. Trailing slash dropped (except
 // the root) so /a/b/ and /a/b name one URL — the sitemap lists them without it. tests/frontend/canonical-single.test.js
@@ -38,9 +47,11 @@ const canonicalUrl = (() => {
   const u = new URL(canonical || Astro.url.pathname, siteUrl);
   u.search = ''; u.hash = '';
   if (u.pathname.length > 1) u.pathname = u.pathname.replace(/\/+$/, '');
+  // on the Anís host every page is canonical there (/biography → /bio, /dialogue → /discuss): its links and URLs all stay on it
+  if (anisHost) return ANIS_ORIGIN + anisPath(u.pathname);
   return u.href;
 })();
-const imageUrl = new URL(image, siteUrl).href;
+const imageUrl = anisHost ? new URL(image || '/anis-app/og-1200x630.png', ANIS_ORIGIN).href : new URL(image || '/icon-512.png', siteUrl).href;
 
 // Structured data for the website (SearchAction for sitelinks searchbox)
 const websiteSchema = {
@@ -72,7 +83,7 @@ const organizationSchema = {
 ---
 
 <!doctype html>
-<html lang="en" data-theme="dark" style="background:#0a162a;color:#e6edf6;">
+<html lang="en" data-theme={anisHost ? undefined : 'dark'} style={anisHost ? undefined : 'background:#0a162a;color:#e6edf6;'}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -81,6 +92,8 @@ const organizationSchema = {
          the footer (margin-top:auto) sits at the bottom of short pages (Chad 10-10).
          body must be transparent so the LiquidBackground canvas (z-index:-10) shows through. -->
     <style>html{background:#0a162a;color:#e6edf6;}body{background:transparent;color:#e6edf6;margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;}</style>
+    <!-- Anís host: light or dark from the system, then the reader's stored choice (THEME_PREP), before first paint -->
+    {anisHost && <Fragment set:html={THEME_PREP + '<style>html:root{background:light-dark(#fff,#0a162a);color:light-dark(#0f172a,#e6edf6)}html:root body{color:inherit}</style>'} />}
 
     <!-- SEO Component handles: title, description, canonical, OG, Twitter -->
     <SEO
@@ -110,7 +123,7 @@ const organizationSchema = {
       }}
       twitter={{
         card: "summary_large_image",
-        site: "@siftersearch",
+        site: anisHost ? undefined : "@siftersearch",
         title: title,
         description: description,
         image: imageUrl,
@@ -119,12 +132,12 @@ const organizationSchema = {
     />
 
     <!-- Structured Data (JSON-LD) -->
-    <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />
-    <script type="application/ld+json" set:html={JSON.stringify(organizationSchema)} />
+    {!anisHost && <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />}
+    {!anisHost && <script type="application/ld+json" set:html={JSON.stringify(organizationSchema)} />}
 
-    <link rel="icon" type="image/svg+xml" href="/ocean.svg" />
-    <link rel="apple-touch-icon" href={app?.icon || '/apple-touch-icon.png'} />
-    <link rel="manifest" href={app?.manifest || '/manifest.webmanifest'} />
+    {anisHost ? <link rel="icon" type="image/png" sizes="32x32" href="/anis-app/favicon-32.png" /> : <link rel="icon" type="image/svg+xml" href="/ocean.svg" />}
+    <link rel="apple-touch-icon" href={anisHost ? '/anis-app/apple-touch-icon.png' : app?.icon || '/apple-touch-icon.png'} />
+    <link rel="manifest" href={anisHost ? '/anis.webmanifest' : app?.manifest || '/manifest.webmanifest'} />
     {app && <meta name="mobile-web-app-capable" content="yes" />}
     {app && <meta name="apple-mobile-web-app-capable" content="yes" />}
     {app && <meta name="apple-mobile-web-app-title" content={app.name} />}
@@ -142,8 +155,9 @@ const organizationSchema = {
   </head>
   <body>
     <slot />
-    {footer && <SiteFooter />}
-    {anis && <script is:inline src="https://siftersearch.com/widget.js" data-key="wgt_house_siftersearch" data-name="Anís" async></script>}
+    {footer && !anisHost && <SiteFooter />}
+    {anis && !anisHost && <script is:inline src="https://siftersearch.com/widget.js" data-key="wgt_house_siftersearch" data-name="Anís" async></script>}
+    {anisHost && <AnisWidget {...(anisPage || { type: 'page', title })} />}
     <script>
     import { startHoverPrefetch } from '../lib/hover-prefetch.js';
     startHoverPrefetch();

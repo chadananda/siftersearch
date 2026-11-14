@@ -5,7 +5,7 @@
 // whole index as you type. ?q= ?p= ?era= ?speaker= are honoured on the server too, so shared links render filtered.
 import { resolveCollection } from '../../lib/media-collection.js';
 import Layout from '../../layouts/Layout.astro';
-import NavBar from '../../components/common/NavBar.svelte';
+import SiteNav from '../../components/anis/SiteNav.astro';
 import ListeningRoom from '../../components/media/listening/ListeningRoom.svelte';
 import OnAir from '../../components/media/listening/OnAir.svelte';
 import RestoredStrip from '../../components/media/listening/RestoredStrip.svelte';
@@ -98,7 +98,7 @@ const listLd = {
     {heroPic && <link rel="preload" as="image" href={heroPic.src} imagesrcset={heroPic.srcset} />}
     <script type="application/ld+json" set:html={JSON.stringify(listLd)} />
   </Fragment>
-  <NavBar client:idle currentPage="media" />
+  <SiteNav currentPage="media" />
   <main class="listening-room bg-radio-room text-radio-ink">
     <div class="mx-auto w-full max-w-7xl px-4 pb-28 pt-4 sm:px-6 lg:px-8 lg:pt-8">
       {fetchError && !items.length ? (

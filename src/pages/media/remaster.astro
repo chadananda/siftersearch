@@ -2,7 +2,7 @@
 // /media/remaster — unlisted before/after demo of recovered talks (noindex, out of the sitemap; linked from /media).
 // Static data (src/lib/remaster-demo.js): the SSR view is complete; a tiny inline script pauses the other players.
 import Layout from '../../layouts/Layout.astro';
-import NavBar from '../../components/common/NavBar.svelte';
+import SiteNav from '../../components/anis/SiteNav.astro';
 import { CLIPS, audioUrl } from '../../lib/remaster-demo.js';
 
 export const prerender = false;
@@ -18,7 +18,7 @@ const description = 'Historic talks recovered from worn tape: hear each recordin
     <link rel="preload" as="font" type="font/woff2" href="/fonts/gloock-latin.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/big-shoulders-latin.woff2" crossorigin />
   </Fragment>
-  <NavBar client:idle currentPage="media" />
+  <SiteNav currentPage="media" />
   <main class="remaster bg-radio-room text-radio-ink">
     <div class="mx-auto w-full max-w-4xl px-4 pb-28 pt-6 sm:px-6 lg:pt-10">
       <a href="/media" class="font-dial text-sm font-semibold uppercase tracking-[0.24em] text-radio-brass hover:text-radio-amber">← The Fireside Room</a>

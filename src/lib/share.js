@@ -1,6 +1,7 @@
 // Share links for a page (moment pages, talk pages): X, Facebook, WhatsApp, email — plain URLs, no SDKs or trackers.
 // Pure; tested in tests/api/media-listing.test.js.
-export const SITE = 'https://siftersearch.com';
+// on the Anís host (the same pages render there, src/lib/anis-host.js) links shared from the browser carry the Anís URL
+export const SITE = globalThis.location?.hostname === 'anis.oceanlibrary.com' ? 'https://anis.oceanlibrary.com' : 'https://siftersearch.com';
 
 /** Canonical path of a moment's page. */
 export const momentPath = (slug, key) => `/media/${encodeURIComponent(slug)}/m/${encodeURIComponent(key)}`;

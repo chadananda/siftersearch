@@ -1,0 +1,49 @@
+---
+// The Anís top bar on siftersearch's designed pages rendered on anis.oceanlibrary.com (in place of NavBar): the logo in the
+// corner (opens the app, which resumes the reader's conversation), the content sections, and the light/dark toggle
+// (src/widget/prefs.js: system → light → dark, stored as anis-theme; Layout applies it before first paint).
+const { current = '' } = Astro.props;
+// [section, path, label, short label on a phone]
+const NAV = [['media', '/media', 'Talks', 'Talks'], ['bio', '/bio', 'Biographies', 'Bios'], ['discuss', '/discuss', 'Discussions', 'Discuss'], ['doc', '/doc', 'Library', 'Library']];
+const ICON = {
+  system: ['M4 4h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z', 'M8 20h8', 'M12 16v4'],
+  light: ['M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8z', 'M12 2v2', 'M12 20v2', 'm4.9 4.9 1.4 1.4', 'm17.7 17.7 1.4 1.4', 'M2 12h2', 'M20 12h2', 'm6.3 17.7-1.4 1.4', 'm19.1 4.9-1.4 1.4'],
+  dark: ['M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.6 6.6 0 0 0 10.7 10.7z'],
+};
+---
+<header class="anis-top">
+  <a class="anis-brand" href="/" data-anis-back aria-label="Anís — open the research assistant">
+    <img src="/anis-app/icon-192.png" alt="" width="28" height="28" />
+    <span>Anís</span>
+  </a>
+  <nav aria-label="Sections">
+    {NAV.map(([k, href, label, short]) => <a href={href} aria-current={k === current ? 'page' : undefined} aria-label={label}><span class="long">{label}</span><span class="short" aria-hidden="true">{short}</span></a>)}
+  </nav>
+  <button class="anis-theme" type="button" data-anis-theme="system" aria-label="Theme: system">
+    {Object.entries(ICON).map(([k, ds]) => (
+      <svg data-t={k} viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{ds.map((d) => <path d={d} />)}</svg>
+    ))}
+  </button>
+  <script is:inline>{`(function(){var b=document.querySelector('[data-anis-theme]'),K='anis-theme',T=['system','light','dark'];
+function cur(){try{var t=localStorage.getItem(K);return T.indexOf(t)>0?t:'system'}catch(e){return 'system'}}
+function show(t){b.setAttribute('data-anis-theme',t);b.setAttribute('aria-label','Theme: '+t)}
+show(cur());b.addEventListener('click',function(){var t=T[(T.indexOf(cur())+1)%3];
+try{if(t==='system')localStorage.removeItem(K);else localStorage.setItem(K,t)}catch(e){}
+if(t==='system')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);show(t)})})()`}</script>
+</header>
+
+<style>
+  .anis-top { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: .75rem; padding: .5rem 1rem;
+    background: var(--surface-0-alpha); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-subtle); }
+  .anis-brand { display: inline-flex; align-items: center; gap: .5rem; color: var(--text-primary); text-decoration: none; font-weight: 600; font-size: 1.05rem; }
+  .anis-brand img { border-radius: .4rem; }
+  nav { display: flex; gap: .25rem; margin-left: auto; overflow-x: auto; scrollbar-width: none; }
+  nav a { color: var(--text-secondary); text-decoration: none; padding: .35rem .6rem; border-radius: .4rem; font-size: .9rem; white-space: nowrap; }
+  nav a:hover, nav a[aria-current='page'] { color: var(--text-primary); background: var(--surface-2); }
+  .anis-theme { display: inline-grid; place-items: center; width: 2.25rem; height: 2.25rem; border: 0; border-radius: .5rem; background: transparent; color: var(--text-secondary); }
+  .anis-theme:hover { background: var(--surface-2); color: var(--text-primary); }
+  .anis-theme svg { display: none; }
+  .anis-theme[data-anis-theme='system'] svg[data-t='system'], .anis-theme[data-anis-theme='light'] svg[data-t='light'], .anis-theme[data-anis-theme='dark'] svg[data-t='dark'] { display: block; }
+  nav .short { display: none; }
+  @media (max-width: 30rem) { .anis-top { gap: .5rem; padding: .5rem .75rem; } .anis-brand span { display: none; } nav a { padding: .35rem .45rem; font-size: .85rem; } nav .long { display: none; } nav .short { display: inline; } }
+</style>

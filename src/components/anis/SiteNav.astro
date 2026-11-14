@@ -1,0 +1,10 @@
+---
+// The page's top bar: siftersearch's NavBar, or the Anís bar when the page renders on anis.oceanlibrary.com (src/lib/anis-host.js).
+import NavBar from '../common/NavBar.svelte';
+import AnisHeader from './AnisHeader.astro';
+import { isAnisHost } from '../../lib/anis-host.js';
+const { currentPage = '' } = Astro.props;
+const anis = isAnisHost(Astro.url);
+const SECTION = { media: 'media', biography: 'bio', dialogue: 'discuss' };
+---
+{anis ? <AnisHeader current={SECTION[currentPage] || currentPage} /> : <NavBar client:idle currentPage={currentPage} />}

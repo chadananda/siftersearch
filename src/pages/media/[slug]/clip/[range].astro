@@ -3,7 +3,7 @@
 // no database row), canonical, SSR. The words come from the talk's clean transcript; the page is the moment page's
 // (MomentView, kind 'clip'); og:image = GET /api/media/<slug>/card/<startMs>-<endMs>.jpg (edge-cached).
 import Layout from '../../../../layouts/Layout.astro';
-import NavBar from '../../../../components/common/NavBar.svelte';
+import SiteNav from '../../../../components/anis/SiteNav.astro';
 import MomentView from '../../../../components/media/MomentView.svelte';
 import { relatedTalks, safeIndex } from '../../../../lib/media-listing.js';
 import { SITE } from '../../../../lib/share.js';
@@ -47,7 +47,7 @@ const ld = ok ? { '@context': 'https://schema.org', '@type': 'Quotation', text, 
     <link rel="preload" as="font" type="font/woff2" href="/fonts/big-shoulders-latin.woff2" crossorigin />
     {ld && <script type="application/ld+json" set:html={JSON.stringify(ld)} />}
   </Fragment>
-  <NavBar client:idle currentPage="media" />
+  <SiteNav currentPage="media" />
   <main class="listening-room bg-radio-room text-radio-ink">
     <div class="mx-auto w-full max-w-6xl px-4 pb-28 pt-4 sm:px-6 lg:px-8 lg:pt-8">
       {ok ? (
