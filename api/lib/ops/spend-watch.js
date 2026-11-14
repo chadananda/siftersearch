@@ -30,7 +30,6 @@ export function assessSpend({ window, baseline = {}, spentToday = {}, now = Date
       if (projected > cap) out.push({ caller: w.caller, kind: 'cap-pace', usd: r2(w.usd), rate_usd_h: r2(w.usd), evidence: `group "${g}" at $${r2(spent)} today, $${r2(w.usd)}/h projects to $${r2(projected)} vs cap $${cap}`, action: `The cap will stop it; raise or slow it deliberately. ${lever(w.caller)}` });
     }
   }
-  // TODO(pods): GPU pod findings (idle/stuck RunPod spend) plug in here once the siftersearch-media live-RunPod reader exists.
   return out;
 }
 
@@ -41,5 +40,11 @@ export async function spendWatchReport() {
   for (const [c, usd] of Object.entries(byCaller)) { const g = groupOf(c); spentToday[g] = (spentToday[g] || 0) + usd; }
   const findings = assessSpend({ window: { w2, w1 }, baseline, spentToday });
   const sum = (rows) => r2(rows.reduce((n, x) => n + (x.usd || 0), 0));
-  return { as_of: new Date().toISOString(), window_hours: 2, findings, totals: { usd_1h: sum(w1), usd_2h: sum(w2), usd_today: r2(Object.values(byCaller).reduce((n, x) => n + x, 0)) } };
+  // GPU pods: RunPod's live list (media/live-pods.js, the one source /media and the system-checks pod alert read). Shown here as
+  // spend only — the pod alert already alarms idle pods, so no finding (one problem, one mail). Unknown stays unknown, never a guess.
+  const { podSnapshot } = await import('../media/live-pods.js');
+  const p = await podSnapshot();
+  const gpu = { state: p.state, as_of: new Date(p.as_of).toISOString(), unknown_since: p.unknown_since ? new Date(p.unknown_since).toISOString() : null,
+    usd_per_hr: p.usd_per_hr, pods: (p.pods || []).length, idle: (p.pods || []).filter((x) => (x.idle_min ?? 0) >= 15).map((x) => ({ name: x.name, idle_min: x.idle_min, cost_per_hr: x.cost_per_hr })) };
+  return { as_of: new Date().toISOString(), window_hours: 2, findings, totals: { usd_1h: sum(w1), usd_2h: sum(w2), usd_today: r2(Object.values(byCaller).reduce((n, x) => n + x, 0)), gpu } };
 }

@@ -240,13 +240,14 @@ try {
   const r = await http(`${url}/latest`, { headers: H, timeout: 15000 });
   const rep = r.status === 200 ? JSON.parse(r.body) : null;
   fetch(url, { method: 'POST', headers: { ...H, 'content-type': 'application/json' }, body: '{}', signal: AbortSignal.timeout(8000) }).catch(() => {});   // refresh for next time (the queue dedupes)
+  const gpuLine = (g) => !g ? 'not reported' : g.state !== 'ok' ? `unknown since ${g.unknown_since || g.as_of}` : `${g.pods} pod(s) $${g.usd_per_hr ?? 0}/h as of ${g.as_of}`;
   const sw = rep?.result, asOf = sw?.as_of, ageMin = asOf ? (Date.now() - Date.parse(asOf)) / 60000 : Infinity;
   if (!sw || !(ageMin <= 90)) add('Spend watch', false, 'warn', `spend-watch unknown since ${asOf || 'never'}`);
   else {
     // only NOT-WORKING spend alarms (failing, loop); a spike or cap pace on working calls is readers being served → weekly
     const NOT_WORKING = new Set(['failing', 'loop']);
     const bad = (sw.findings || []).filter((f) => NOT_WORKING.has(f.kind)), pace = (sw.findings || []).filter((f) => !NOT_WORKING.has(f.kind));
-    add('Spend watch', !bad.length, 'critical', bad.length ? bad.map((f) => `${f.caller || '(no caller)'} ${f.kind} $${f.rate_usd_h}/h: ${f.evidence} — do: ${f.action}`).join(' · ') + ` (as of ${asOf})` : `ok · $${sw.totals?.usd_1h}/1h $${sw.totals?.usd_today} today (as of ${asOf})`);
+    add('Spend watch', !bad.length, 'critical', bad.length ? bad.map((f) => `${f.caller || '(no caller)'} ${f.kind} $${f.rate_usd_h}/h: ${f.evidence} — do: ${f.action}`).join(' · ') + ` (as of ${asOf})` : `ok · $${sw.totals?.usd_1h}/1h $${sw.totals?.usd_today} today · GPU ${gpuLine(sw.totals?.gpu)} (as of ${asOf})`);
     if (pace.length) add('Spend pace', false, 'warn', pace.map((f) => `${f.caller || '(no caller)'} ${f.kind}: ${f.evidence}`).join(' · ') + ` (as of ${asOf})`);
   }
 } catch (e) { add('Spend watch', false, 'warn', `spend-watch unknown (${e.message})`); }
