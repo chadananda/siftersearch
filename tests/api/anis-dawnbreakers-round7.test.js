@@ -7,11 +7,11 @@ import { readFileSync } from 'node:fs';
 import { createSentenceGate, linkQuotes, dropUnverified, rowWithout } from '../../api/lib/assistant/quotes.js';
 import { sourceTier, coreFirst, byTier, isNarrative, TIER_ORDER } from '../../api/lib/assistant/source-tier.js';
 import { toolRunner } from '../../api/lib/assistant/researcher.js';
-import { cleanCardText, isPdfDump, readableTitle, isSiteRoot, holdsPhrase } from '../../api/lib/assistant/widgets/card-text.js';
+import { cleanCardText, isPdfDump, readableTitle, isSiteRoot, holdsPhrase, cleanUrl } from '../../api/lib/assistant/widgets/card-text.js';
 import { fromRefs as quoteFrom } from '../../api/lib/assistant/widgets/quote.js';
 import { fromRefs as sceneFrom } from '../../api/lib/assistant/widgets/scene.js';
 import { expandTemplates, blockquoteCards } from '../../api/lib/assistant/widgets/templates.js';
-import { dropDanglingLeadIn, dropCutOff, unholdTexts, dropNarration, unbackedAbsence, absenceClaims, unappliedCorrection, correctedRows, dropUncheckedDisclaimer, dropSearchedNote, numberedRows, rebuildsTable, dropRebuildPreamble } from '../../api/lib/assistant/lint.js';
+import { dropDanglingLeadIn, dropCutOff, unholdTexts, dropNarration, unbackedAbsence, absenceClaims, unappliedCorrection, correctedRows, dropUncheckedDisclaimer, dropSearchedNote, numberedRows, rebuildsTable, dropRebuildPreamble, fixCounts, dropSourceSpeculation, dropLinkDebris, noteDuplicateRows, duplicateRows, recapitalise, isNarration, pointsAbove, dropAbovePointer } from '../../api/lib/assistant/lint.js';
 import { HISTORY_WORKS, nameVariants } from '../../api/lib/assistant/history-sweep.js';
 import { agentAnswer, AGENT_SYSTEM, renderRefs } from '../../api/lib/assistant/agent-core.js';
 
@@ -356,5 +356,82 @@ describe('7 · round-7 live replay (7d)', () => {
     expect(rowWithout(row, ['the stars themselves bowed before the gate of Shíráz in that hour'])).toBe('| 4 | Mullá ‘Alíy-i-Basṭámí | A Letter of the Living. He died in prison. | GPB |');
     const d = dropUnverified(`Intro line here.\n\n| # | Name | Who | Src |\n|---|---|---|---|\n${row}\n| 5 | X | Y. | Z |`, []);
     expect(numberedRows(d.text).map((x) => x.n)).toEqual([4, 5]);
+  });
+});
+
+// Round 7e (11-14 live): srcr7d sent no card yet said "in the passage quoted above" (the trace re-found a HELD passage and the dedup dropped
+// its source role); iqanr7d said "fourteen" over 13 rows, ended with an offer, guessed the glossary "may have mixed up the two"; the t4 email
+// turn left "585))" link debris and gave rows 6 and 8 one description unremarked; presume-baseline leaked (P55), a lowercase "these sources",
+// and a footnote arrow inside a file-name link.
+const W = 'Let your vision be world-embracing, rather than confined to your own self.';
+describe('8 · round-7e live evidence', () => {
+  const tools = { search: async () => [], writings: async () => [], translationsOf: async () => new Map(), searchIn: async () => [],
+    sourceOf: async () => [{ ...GLEAN_261, role: 'source' }] };
+  const HELD = { same: true, status: 'answered', question: `Where does "${W}" come from?`, passages: [GLEAN_261] };
+  const trace = (final) => { const seen = []; let n = 0; return { seen, create: async (p) => { seen.push(p);
+    return n++ === 0 ? { choices: [{ message: { content: '', tool_calls: [{ id: 'a', function: { name: 'quotation_candidates', arguments: JSON.stringify({ quotation: W }) } }] } }] } : final(p); } }; };
+  it('srcr7d: a trace that re-finds a held passage still makes it THE source — its card and its "From …" note', async () => {
+    const { create, seen } = trace(() => ({ choices: [{ message: { content: 'These words are from Gleanings.\n\n{{quote P1}}' } }] }));
+    const r = await agentAnswer({ messages: [{ role: 'user', content: `Where does "${W}" come from?` }], tools, held: HELD, create });
+    const told = seen[1].messages.filter((m) => m.role === 'tool').map((m) => m.content).join('\n');
+    expect(told).toMatch(/From \[Gleanings from the Writings of Bahá’u’lláh/);
+    expect(r.widgets.map((w) => w.kind)).toContain('quote');
+  });
+  it('srcr7d: with no card above, the prose never points at "the passage quoted above" (whole reply and streamed)', async () => {
+    const said = 'These words come from *Gleanings from the Writings of Bahá’u’lláh*, in the passage quoted above.';
+    expect(pointsAbove(said)).toBe(true);
+    expect(dropAbovePointer(said)).toBe('These words come from *Gleanings from the Writings of Bahá’u’lláh*.');
+    const r = await agentAnswer({ messages: [{ role: 'user', content: 'Where is that from?' }], tools: { ...tools, sourceOf: async () => [] }, create: async () => ({ choices: [{ message: { content: said } }] }) });
+    expect(r.reply).not.toMatch(/quoted above/);
+    const ev = [], parts = said.match(/[\s\S]{1,9}/g);
+    await agentAnswer({ messages: [{ role: 'user', content: 'Where is that from?' }], tools: { ...tools, sourceOf: async () => [] }, onEvent: (e) => ev.push(e),
+      create: async () => ({ async *[Symbol.asyncIterator]() { for (const c of parts) yield { choices: [{ delta: { content: c } }] }; yield { choices: [], usage: {} }; } }) });
+    expect(ev.filter((e) => e.type === 'text').map((e) => e.content).join('')).not.toMatch(/quoted above/);
+  });
+  it('iqanr7d: the count is stated once, from the rendered rows', () => {
+    const intro = 'In the Kitáb-i-Íqán, Bahá’u’lláh names fourteen of the learned who attained His Court.';
+    expect(fixCounts(intro, 13).text).toMatch(/names 13 of the learned|names thirteen of the learned/);
+    expect(fixCounts('Bahá’u’lláh names fourteen of them.\n\nThat is the list, which gives thirteen rows.', 13).text).not.toMatch(/rows/);
+    expect(fixCounts(intro, null).text).not.toMatch(/fourteen/);
+  });
+  it('iqanr7d: an offer paragraph is narration (pills carry offers); the t4 ask for an address stays', () => {
+    expect(isNarration('I can read it with you and prepare a side-by-side document of the two translations, if you would like.')).toBe(true);
+    expect(isNarration('Would you like me to prepare a side-by-side document?')).toBe(true);
+    expect(isNarration('Please tell me where to send this document and it will go out.')).toBe(false);
+  });
+  it('iqanr7d row 8: no guess at how a source erred — one clause says the sources cannot separate them', () => {
+    const cell = 'Named in the Spanish glossary. The glossary may have mixed up the two men, since Nabíl describes Kandí the same way.';
+    const out = dropSourceSpeculation(cell).text;
+    expect(out).not.toMatch(/mixed up/);
+  });
+  it('t4: a rewritten link leaves no "585))" debris; whole links survive', () => {
+    const l5 = 'The passage in the Íqán reads: "…and others, well nigh four hundred in number, whose names are all inscribed upon the \'Guarded Tablet\' of God." 585))';
+    expect(dropLinkDebris(l5).text).toBe('The passage in the Íqán reads: "…and others, well nigh four hundred in number, whose names are all inscribed upon the \'Guarded Tablet\' of God."');
+    const ok = 'See [The Kitáb-i-Íqán](https://oceanlibrary.com/kitab-i-iqan_bahaullah/?paraId=para_260&selectionString=a0.0~a0.585)) and more.';
+    expect(dropLinkDebris('See ([The Kitáb-i-Íqán](https://oceanlibrary.com/k?p=1)).').text).toBe('See ([The Kitáb-i-Íqán](https://oceanlibrary.com/k?p=1)).');
+    expect(dropLinkDebris(ok).text).toMatch(/\[The Kitáb-i-Íqán\]\(https:\/\/oceanlibrary\.com\/kitab-i-iqan_bahaullah\/\?paraId=para_260&selectionString=a0\.0~a0\.585\)/);
+  });
+  const R6 = "| 6 | Mullá Mihdíy-i-Ḵhu’í | A close companion of Bahá'u'lláh and teacher of the children of His household. He was martyred at Ṭabarsí. | Spanish Íqán glossary ([Libro de Certeza](https://bahai-library.com/bahaullah_libro_certeza_iqan&chapter=all)) |";
+  const R8 = "| 8 | Mullá Mihdíy-i-Kandí | A close companion of Bahá'u'lláh and tutor to the children of His household. He was at Ṭabarsí, where Quddús permitted him to meet a messenger from Kand. | The Dawn-Breakers, note 152 ([The Dawn-Breakers](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1404)) |";
+  it('t4 rows 6/8: one description for two men → row 6 says the glossary matches Nabíl\'s Kandí, identity unconfirmed (whole and streamed)', () => {
+    const whole = noteDuplicateRows(`${R6}\n| 7 | X | Y. | Z |\n${R8}`);
+    const r6 = whole.split('\n')[0];
+    expect(r6).toMatch(/matches the one the sources give for Mullá Mihdíy-i-Kandí \(row 8\), so his identity is unconfirmed/);
+    expect(whole.split('\n')[2]).toBe(R8);
+    const dup = duplicateRows();
+    expect(dup(R6)).toBe(R6);
+    expect(dup(R8)).toMatch(/identity is unconfirmed|do not separate/);
+  });
+  it('presume-baseline: raw (P55) markers never show; a lowercase "these sources" after a drop is recapitalised', () => {
+    const t = renderRefs('Marriage is between a man and a woman ([Gleanings](https://oceanlibrary.com/gleanings-from-the-writings-of-bahaullah/x)) (P55). It is the foundation (P2).', { found: new Map([['P2', GLEAN_261], ['P55', GLEAN_261]]), works: new Map() });
+    expect(t).not.toMatch(/\(P\d+\)/);
+    expect(recapitalise('He says so. these sources don\'t engage that question.')).toBe('He says so. These sources don\'t engage that question.');
+    expect(recapitalise('| 5 | X | these sources do not say | Z |')).toBe('| 5 | X | These sources do not say | Z |');
+  });
+  it('presume-baseline: a footnote arrow never rides in a URL, and a file-name title reads as the tablet', () => {
+    expect(cleanUrl('https://oceanoflights.org/bahaullah-st-015-en/).%20%E2%86%91')).toBe('https://oceanoflights.org/bahaullah-st-015-en/');
+    expect(cleanUrl('https://oceanoflights.org/bahaullah-st-015-en/ ↑')).toBe('https://oceanoflights.org/bahaullah-st-015-en/');
+    expect(cleanUrl('https://oceanlibrary.com/x?p=1')).toBe('https://oceanlibrary.com/x?p=1');
+    expect(readableTitle('bahaullah-st-015_en')).toBe('A Tablet of Bahá’u’lláh');
   });
 });

@@ -50,3 +50,6 @@ export const holdsPhrase = (text, phrase) => {
   const parts = String(phrase || '').split(/\.\.\.|…/).map((x) => foldW(x).join(' ')).filter((x) => x.split(' ').length >= 2);
   return parts.length > 0 && parts.every((x) => hay.includes(` ${x} `));
 };
+/** A link that swallowed the page's footnote arrow (round 7e, presume-baseline: `https://oceanoflights.org/bahaullah-st-015-en/).%20%E2%86%91`) → the page's
+ *  own address. Only a tail holding the arrow (↑, encoded or not) is cut. Pure. */
+export const cleanUrl = (u) => (u == null ? u : String(u).replace(/(?:[).,;\s]|%20|%29)*(?:%E2%86%91|↑)[\s\S]*$/i, '') || u);

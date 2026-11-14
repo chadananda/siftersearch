@@ -605,11 +605,17 @@ const LIBRARY_DENIAL = /\bthe library (?:does not|doesn['’]t|did not|didn['’
 // DELIVERY TALK (round 7d, Íqán turn 4: "I have no email address for you yet, so please send the one you would like this document delivered
 // to."): the system turns the reply into a PDF and sends it, or asks for the address itself (pdf/documents.js) — the writer never speaks of it.
 const DELIVERY = /\bI (?:have|hold|do not have|don['’]t have) (?:no |not )?(?:an? |your )?e-?mail address\b|\b(?:send|give|tell) me (?:the|an|your) (?:e-?mail )?address\b|\bthe one you would like\b[^.!?\n]{0,60}\b(?:sent|delivered|emailed)\b|\b(?:cannot|can['’]t|am unable to|am not able to) (?:send|e-?mail|deliver)\b|\bI(?:['’]ll| will) (?:e-?mail|send|deliver) (?:it|this|the (?:table|document|pdf)|you)\b/i;
-export const isNarration = (s) => { const t = String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '); return NARRATION.test(t) || PLAN.test(t) || LIBRARY_DENIAL.test(t) || DELIVERY.test(t.trim()); };
+// AN OFFER (round 7e, iqanr7d: "I can read it with you and prepare a side-by-side document … if you would like."): offers are the follow-up
+// pills' job (Chad 11-12: minimal replies + follow-up pills), never a sentence of the reply. A request for what the system needs ("Please tell me
+// where to send this document") is not an offer.
+const OFFER = /\bI (?:can|could)\b[^.!?\n]{0,240}\b(?:if|should) you (?:would |'d |’d )?(?:like|wish|want|prefer)\b|^\s*(?:would you like|shall I|do you want me|should I)\b[^.!?\n]{0,240}\?\s*$|\bI(?:['’]d| would) be (?:glad|happy) to\b|\bI am happy to\b|\bI['’]m happy to\b/i;
+export const isOffer = (s) => OFFER.test(String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '));
+export const isNarration = (s) => { const t = String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '); return NARRATION.test(t) || PLAN.test(t) || LIBRARY_DENIAL.test(t) || DELIVERY.test(t.trim()) || OFFER.test(t); };
 /** "the text I hold" / "the passages I have" (dbp:002 "**What is not settled by the text I hold**") → "these sources": the reader sees texts, not
  *  what Anís holds. Outside blockquotes. Pure. */
 export const unholdTexts = (text) => String(text || '').split('\n').map((l) => (/^\s*>/.test(l) ? l
-  : l.replace(/\b(?:the|these|my) (?:texts?|passages?|sources?|excerpts?|material) (?:I (?:hold|have(?: here)?|can see|was given|am holding)|in hand|available to me)\b/gi, 'these sources'))).join('\n');
+  : l.replace(/\b(?:the|these|my) (?:texts?|passages?|sources?|excerpts?|material) (?:I (?:hold|have(?: here)?|can see|was given|am holding)|in hand|available to me)\b/gi,
+    (m, at, all) => (/(?:^|[.!?]["”’)*_]*\s+|\|\s*)$/.test(all.slice(0, at)) ? 'These sources' : 'these sources')))).join('\n');   // a sentence start stays capitalised (round 7e: "these sources do not say")
 
 // LAYOUT AROUND CARDS (Dawn-Breakers battery 11-14, 6 of 10 replies). A LEAD-IN — a line whose last sentence ends in ":" ("Shoghi Effendi
 // sets the scene:") — must be followed by what it introduces: a card (widget marker or template), a blockquote, a list or a table. When
@@ -775,3 +781,112 @@ export function dropRebuildPreamble(text) {
 }
 /** The reply rewrites the conversation's table: it has ≥2 numbered rows and an earlier reply had a numbered table. */
 export const rebuildsTable = (messages = [], text = '') => numberedRows(text).length >= 2 && messages.some((m) => m.role === 'assistant' && numberedRows(typeof m.content === 'string' ? m.content : '').length >= 2);
+
+// ── ROUND 7e (live replays srcr7d, iqanr7d, Íqán t4, presume-baseline) ──
+const NUMW = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
+const NUM = String.raw`(\d{1,3}|${NUMW.slice(3).join('|')}|twenty[- ](?:one|two|three|four|five|six|seven|eight|nine)|thirty)`;
+const numVal = (w) => { const x = String(w).toLowerCase(); if (/^\d+$/.test(x)) return Number(x); const i = NUMW.indexOf(x); if (i >= 0) return i; const m = /^twenty[- ](\w+)$/.exec(x); return m ? 20 + NUMW.indexOf(m[1]) : x === 'thirty' ? 30 : null; };
+const numWord = (n, like) => { const w = n <= 20 ? NUMW[n] : String(n); return /^\d/.test(like) ? String(n) : /^[A-Z]/.test(like) ? w[0].toUpperCase() + w.slice(1) : w; };
+const COUNT_VERB = new RegExp(String.raw`\b(names|lists|mentions|records|counts|gives)\s+${NUM}(\s+of\s+them)?\b`, 'gi');
+const OF_THE = new RegExp(String.raw`\bof the ${NUM}\b(\s+(?=[a-z]))?`, 'gi');
+const ROWS_META = new RegExp(String.raw`\b${NUM}\s+rows?\b|\brows?\s+(?:in all|in total)\b`, 'i');
+/** COUNT ONCE, FROM THE ROWS (round 7e, iqanr7d: "The Íqán names fourteen of them", 13 rows, "which gives thirteen rows"). In prose (never in a
+ *  table, list or blockquote): a sentence counting the table's rows goes; "names N (of them)" takes the rendered row count `n`; "of the N" → "of
+ *  them". n = null (the table not yet written, streamed): the number leaves the claim ("names them") — it is never stated before it is known.
+ *  Counts under three are left alone ("two of them"). Pure. */
+export function fixCounts(text, n = null) {
+  let changed = 0;
+  const out = String(text || '').split('\n').map((line) => {
+    if (/^\s*(?:>|\||[-*+]\s|\d+[.)]\s)/.test(line) || !line.trim()) return line;
+    const sents = line.match(/[^.!?]+(?:[.!?…]+["”’)*_]*|$)\s*/g) || [line];
+    const before = changed;
+    const kept = sents.filter((x) => !(ROWS_META.test(x.replace(/\([^)]*\)/g, ' ')) && ++changed)).map((x) => x
+      .replace(COUNT_VERB, (m, verb, num, them) => { const v = numVal(num); if (v == null || v < 3 || v === n) return m; changed++; return n ? `${verb} ${numWord(n, num)}${them || ''}` : `${verb} ${them ? 'them' : 'the'}`; })
+      .replace(OF_THE, (m, num, noun) => { const v = numVal(num); if (v == null || v < 3 || v === n) return m; changed++; return noun ? 'of these ' : 'of them'; }));
+    return changed === before ? line : kept.join('').trimEnd();
+  }).join('\n');
+  return { text: changed ? out.replace(/\n{3,}/g, '\n\n') : String(text || ''), changed };
+}
+/** A table, list or reply expected to carry a numbered table (the question asks for one, or the conversation has one). */
+export const wantsTable = (asked = '', priorTable = false) => priorTable || /\b(?:table|chart|list|tabulate)\b/i.test(String(asked));
+
+// SPECULATION ABOUT A SOURCE'S ERROR (round 7e, iqanr7d row 8: "…, so the glossary may have mixed up the two."): when the sources do not separate
+// two people, the reply says so in a clause and stops; a guess at how a source went wrong goes — the clause, or its whole sentence. Pure.
+const SPEC_VERB = String.raw`(?:may|might|could|must|probably|likely|perhaps|possibly)(?:\s+well)?(?:\s+have)?\s+(?:mixed\s+up|confused|conflated|merged|misattributed|mistaken|misread|garbled|muddled|swapped)`;
+const SPEC_CLAUSE = new RegExp(String.raw`,?\s*(?:so|and|which (?:suggests|means)|suggesting(?: that)?|perhaps because)\s+(?:the|this|that|its|their)\s+[^.!?|]{0,60}?\b${SPEC_VERB}\b[^.!?|]*`, 'gi');
+const SPEC_SENT = new RegExp(String.raw`\b${SPEC_VERB}\b`, 'i');
+export function dropSourceSpeculation(text) {
+  let dropped = 0;
+  const out = String(text || '').split('\n').map((line) => {
+    if (/^\s*>/.test(line) || !SPEC_SENT.test(line)) return line;
+    const cut = line.replace(SPEC_CLAUSE, () => { dropped++; return ''; });
+    if (!SPEC_SENT.test(cut)) return cut;
+    return cut.split(/(?<=\|)/).map((cell) => { const sents = cell.match(/[^.!?|]+(?:[.!?…]+["”’)*_]*|$)\s*|\|/g) || [cell];
+      return sents.filter((x) => !(SPEC_SENT.test(x.replace(/[“"][^”"]{0,600}[”"]/g, ' ')) && ++dropped)).join(''); }).join('');
+  });
+  return { text: dropped ? out.join('\n') : String(text || ''), dropped };
+}
+
+/** ORPHANED LINK PIECES (round 7e, Íqán t4: `…of God." 585))` — a sentence drop split a link at the dots inside its URL): what a removed
+ *  link leaves behind — a "](" fragment, a token closing two or more parentheses that never opened — goes; whole links stay. Pure. */
+export function dropLinkDebris(text) {
+  let fixed = 0;
+  const out = String(text || '').split('\n').map((line) => {
+    if (!/\)\)|\]\(/.test(line)) return line;
+    const keep = [];
+    let t = line.replace(/\[[^\]\n]*\]\((?:[^()\s]|\([^()\s]*\))*\)/g, (m) => { keep.push(m); return `\u0000${keep.length - 1}\u0000`; });
+    t = t.replace(/\s*[^\s()\u0000]*\]\([^\s\u0000]*/g, () => { fixed++; return ''; })
+      .replace(/(^|\s)[^\s(\u0000]*\){2,}(?=[.,;:]?(?:\s|$))/g, (m, sp) => { if ((t.match(/\(/g) || []).length >= (t.match(/\)/g) || []).length) return m; fixed++; return sp; });
+    return t.replace(/\u0000(\d+)\u0000/g, (m, i) => keep[Number(i)]).replace(/\s+([.,;:])/g, '$1').replace(/ {2,}/g, ' ').trimEnd();
+  });
+  return { text: fixed ? out.join('\n') : String(text || ''), fixed };
+}
+
+/** ONE DESCRIPTION, TWO ROWS (round 7e, Íqán t4: row 6 Mullá Mihdíy-i-Khu'í, from the glossary, and row 8 Mullá Mihdíy-i-Kandí, from Nabíl, both
+ *  "a close companion of Bahá'u'lláh and teacher/tutor to the children of His household"). Two rows sharing a description is a contradiction the
+ *  reply names: the glossary row says its description matches the other's and its identity is unconfirmed; when the glossary row came first
+ *  (already shown, streamed), the later row says so. A row that already names the other man is left alone. Stateful per reply: rows in order. */
+const rowWords = (cell) => foldL(String(cell || '').replace(/\[[^\]]*\]\([^)]*\)/g, ' ').replace(/https?:\/\/\S+/g, ' ')).match(/[\p{L}\p{N}]+/gu) || [];
+const grams = (ws, k = 5) => { const g = new Set(); for (let i = 0; i + k <= ws.length; i++) { const x = ws.slice(i, i + k); if (x.filter((w) => w.length >= 4).length >= 3) g.add(x.join(' ')); } return g; };
+const GLOSSARY = /glossar|libro de certeza/i;
+export function duplicateRows() {
+  const seen = [];
+  return (line) => {
+    if (!/^\s*\|/.test(line) || /^\s*\|[\s:|-]+\|?\s*$/.test(line)) return line;
+    const cells = line.split('|');
+    if (cells.length < 5 || !/^\s*\d{1,3}\b/.test(cells[1] || '')) return line;
+    const n = Number(/\d+/.exec(cells[1])[0]), name = cells[2].trim().replace(/\*\*/g, ''), who = cells[3], src = cells.slice(4).join('|');
+    const me = { n, name, keys: nameKeys(name), g: grams(rowWords(who)), gloss: GLOSSARY.test(src) && !/Dawn-Breakers|Nabíl|Nabil/i.test(src) };
+    const other = seen.find((o) => o.keys.join(' ') !== me.keys.join(' ') && [...me.g].some((x) => o.g.has(x)));
+    seen.push(me);
+    if (!other) return line;
+    const named = (o, cell) => o.keys.length && o.keys.every((k) => foldL(cell).includes(k));
+    if (named(other, who)) return line;
+    if (me.gloss && !other.gloss) {   // this row rests on the glossary: its copied description goes, the contradiction stands in its place
+      const sents = who.trim().match(/[^.!?]+(?:[.!?]+["”’)*_]*(?:\s*\([^)]*\))?|$)\s*/g) || [who];
+      const rest = sents.filter((x) => ![...grams(rowWords(x))].some((g) => other.g.has(g))).join('').trim();
+      cells[3] = ` The glossary's description of him matches the one the sources give for ${other.name} (row ${other.n}), so his identity is unconfirmed.${rest ? ` ${rest}` : ''} `;
+      return cells.join('|');
+    }
+    const note = other.gloss ? `The glossary gives ${other.name} (row ${other.n}) this same description, so ${other.name}'s identity is unconfirmed.`
+      : `${other.name} (row ${other.n}) carries the same description; the sources do not separate the two.`;
+    cells[3] = ` ${who.trim().replace(/\s*$/, '')} ${note} `;
+    return cells.join('|');
+  };
+}
+/** The whole reply (not streamed): the note goes on the glossary row wherever it stands — rows read in order, or in reverse when the glossary row came first. */
+export const noteDuplicateRows = (text) => { const lines = String(text || '').split('\n'), fwd = lines.map(duplicateRows());
+  if (!fwd.some((l, i) => l !== lines[i] && /this same description/.test(l))) return fwd.join('\n');
+  const g = duplicateRows(); return [...lines].reverse().map(g).reverse().join('\n'); };
+
+/** A sentence start in a table cell or prose left lowercase by a drop before it (round 7e: "…roll ([…](…)). these sources do not say") → capitalised.
+ *  Only after a full stop that ends a sentence (not "e.g.", "cf.", "p.", "vol.", an initial). Pure. */
+export const recapitalise = (text) => String(text || '').split('\n').map((l) => (/^\s*>/.test(l) ? l
+  : l.replace(/(^|\|\s+|(?<!\b(?:e\.g|i\.e|cf|p|pp|vol|ca|c|no|nos|ed|eds|tr|St|Mr|Mrs|Dr|[A-Z]))[.!?]["”’)*_]*\s+)(these|this|the|they|there|it|he|she|his|her|nothing|no|none|both|neither)\b/g,
+    (m, pre, w) => (pre.startsWith('|') && !/^\|\s+$/.test(pre) ? m : pre + w[0].toUpperCase() + w.slice(1))))).join('\n');
+
+/** "…in the passage quoted above." with nothing above (round 7e, srcr7d: the card never came) → the pointer goes; the sentence stays. The caller
+ *  calls this only when no card or blockquote precedes. Pure. */
+const ABOVE = /,?\s*(?:in|from|as|see)\s+(?:the|this)\s+(?:passage|words|quotation|text|card|lines?)\s+(?:quoted|shown|cited|given|set out)\s+above\b|\s*\((?:quoted|shown|see) above\)|,?\s*(?:quoted|shown|cited) above\b/gi;
+export const pointsAbove = (text) => { ABOVE.lastIndex = 0; const r = ABOVE.test(String(text || '')); ABOVE.lastIndex = 0; return r; };
+export const dropAbovePointer = (text) => String(text || '').replace(ABOVE, '').replace(/\s+([.,;:])/g, '$1');

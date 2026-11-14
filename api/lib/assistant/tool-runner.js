@@ -7,7 +7,7 @@ import { canonicalTradition } from './tradition-name.js';
 import { translationLabel } from './tool-defs.js';
 import { part } from './tool-cache.js';
 import { HISTORY_NAMES, sweepHistory } from './history-sweep.js';
-import { isSiteRoot } from './widgets/card-text.js';
+import { isSiteRoot, cleanUrl } from './widgets/card-text.js';
 import { imagesForPassages, imagesNote } from '../illustrations.js';
 
 export const PASSAGE_CHARS = 4000;   // = prompt.js PASSAGE_CHARS (a passage's shown length)
@@ -100,9 +100,12 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
   const add = (p0, web = false) => {
     if (!p0?.text) return null;
     // a bare site root is no place in the work (Íqán r6: "[Ẓuhúru'l-Ḥaqq](https://oceanoflights.org/)"): the passage's own deep link when it has one
-    const p = isSiteRoot(p0.source_url) && p0.url && !isSiteRoot(p0.url) ? { ...p0, source_url: p0.url } : p0;
+    const p1 = isSiteRoot(p0.source_url) && p0.url && !isSiteRoot(p0.url) ? { ...p0, source_url: p0.url } : p0;
+    const p = p1.source_url && cleanUrl(p1.source_url) !== p1.source_url ? { ...p1, source_url: cleanUrl(p1.source_url) } : p1;   // a swallowed footnote arrow (round 7e)
     const dup = [...found.values()].find((x) => (p.id && x.id === p.id) || (x.text === p.text && x.title === p.title));
-    if (dup) return dup.ref;
+    // a held passage the trace names as the SOURCE (round 7e, srcr7d: research held ¶261 → the trace's copy was a dup without its role/note,
+    // so neither the agent nor code knew it was the source) takes the trace's role and note
+    if (dup) { if (p.role === 'source' && dup.role !== 'source') found.set(dup.ref, { ...dup, role: 'source', ...(p.note ? { note: p.note } : {}) }); return dup.ref; }
     const ref = web ? `W${++wn}` : `P${++pn}`;
     found.set(ref, { ...p, ref });
     return ref;

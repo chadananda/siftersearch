@@ -4,6 +4,7 @@
 
 import { quoteSpans, containsQuote, foldText } from '../quote-text.js';
 import { citeLabel } from '../refs/place.js';
+import { readableTitle, cleanUrl } from './widgets/card-text.js';   // a file-name title reads as a title; a swallowed footnote arrow leaves the link (round 7e)
 import { foldVerbatim } from '../search/verbatim.js';
 import { encodeMarker } from '../ool-range.js';
 
@@ -321,7 +322,7 @@ export function completeIntroducedQuotes(text, passages) {
     if (!missing) { out.push(p); continue; }
     const q = namedPassage(p, passages);
     if (q) {
-      const link = q.citation_url && !p.includes(q.citation_url) ? ` ([${citeLabel(q.source_title || 'source', q.place)}](${q.citation_url}))` : '';
+      const link = q.citation_url && !p.includes(q.citation_url) ? ` ([${citeLabel(readableTitle(q.source_title) || q.source_title || 'source', q.place)}](${cleanUrl(q.citation_url)}))` : '';
       out.push(p.trimEnd(), `> ${passageExcerpt(q.text)}${link}`);
       completed++;
       continue;
@@ -349,7 +350,7 @@ export function linkQuotes(text, passages) {
     const hits = pool.filter((p) => containsQuote(p.text, words));
     return hits.length && !hits.some((p) => near.includes(p.citation_url)) ? hits[0] : null;
   };
-  const link = (p) => `[${citeLabel(p.source_title || 'source', p.place)}](${p.citation_url})`;
+  const link = (p) => `[${citeLabel(readableTitle(p.source_title) || p.source_title || 'source', p.place)}](${cleanUrl(p.citation_url)})`;
   // blockquotes: consecutive "> " lines; the line after the block may carry the attribution
   const lines = src.split('\n');
   const out = [];

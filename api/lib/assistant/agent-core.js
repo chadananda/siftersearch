@@ -3,7 +3,7 @@
 import { toolRunner, TOOL_CHARS } from './tool-runner.js';
 import { workNotes as workNotesLookup, asPassage, SAME_QUESTION } from './tool-defs.js';
 import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
-import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence, unappliedCorrection, dropSearchedNote, dropRebuildPreamble, rebuildsTable, isRebuildMeta } from './lint.js';
+import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence, unappliedCorrection, dropSearchedNote, dropRebuildPreamble, fixCounts, wantsTable, dropSourceSpeculation, dropLinkDebris, duplicateRows, noteDuplicateRows, recapitalise, pointsAbove, dropAbovePointer, rebuildsTable, isRebuildMeta } from './lint.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
 import { expandTemplates, blockquoteCards } from './widgets/templates.js';
@@ -140,7 +140,9 @@ const shortTitle = (t) => (t.length > 70 ? t.replace(/\s*\([^()]*\)\s*$/, '') : 
 /** [[P3]] / [[P3, P5]] / [[B1]] (single brackets too) → links from what the tools returned; any other ref is dropped. Pure. */
 export function renderRefs(text, { found, works }) {
   const G = /\[\[?([PW]\d+(?:\s*[,;]\s*[PW]\d+)*)\]\]?(?!\()/.source;
-  let t = String(text || '');
+  // a bare place marker the writer typed as "(P55)" (round 7e, presume-baseline): right after a citation it is that citation again → gone;
+  // elsewhere it is the ref → its link (an unknown ref then goes, as any)
+  let t = String(text || '').replace(/(\))?[ \t]*\((P\d+(?:\s*[,;]\s*P\d+)*)\)(?!\()/g, (m, close, list) => (close ? close : ` [[${list}]]`));
   // "[[P1]] [[P2]]" / "[[P1]], [[P2]]" → "[[P1, P2]]": one citation, never "( (a), (b))" (11-12 prayer across two paragraphs)
   for (let prev = null; prev !== t;) { prev = t; t = t.replace(new RegExp(`${G}\\s*[,;]?\\s*${G}`, 'g'), '[[$1, $2]]'); }
   // "*Selections…* [[B1]]": the title written out AND its ref → the ref alone (one linked title, never twice; 11-12 Arabic student)
@@ -250,7 +252,9 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   if (qc) run.quotation_candidates = async (a) => {
     const before = new Set(found.keys()), out = await qc(a);
     // the source card must hold the words asked (round 7d, srcr7): of the new 'source' passages, the one containing the quotation; none → no source card
-    const fresh = [...found].filter(([ref, p]) => !before.has(ref) && p.role === 'source');
+    // new to the turn, or a held passage the trace just named its source (round 7e, srcr7d: held research already had ¶261)
+    const named = new Set([...String(out).matchAll(/\[(P\d+)\]/g)].map((m) => m[1]));
+    const fresh = [...found].filter(([ref, p]) => (!before.has(ref) || named.has(ref)) && p.role === 'source');
     const hit = fresh.find(([, p]) => holdsPhrase(p.text, a?.quotation)) || (String(a?.quotation || '').trim() ? null : fresh[0]), src = hit?.[1];
     if (hit && !source) source = { ref: hit[0], doc: Number(src.document_id) || null };
     if (!src || !(Number(src.document_id) > 0) || [...bookCards.values()].some((b) => Number(b.id) === Number(src.document_id))) return out;
@@ -445,6 +449,23 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     const t = unholdTexts(dropCutOff(dropDanglingLeadIn(core, { final: false }).text).text);
     return t.trim() ? lead + t + trail : '';
   };
+  // ROUND 7e, per piece and on the whole reply: no guess at a source's error, no orphaned link pieces, a sentence start capitalised after a drop,
+  // two rows with one description named as such, and the count stated from the rows actually rendered (lint.js)
+  const tableWanted = wantsTable(asked0.at(-1) || '', priorTable);
+  const dupLive = duplicateRows();
+  let rowsLive = 0;
+  let bqLive = false;
+  const ABOVE_SPLIT = /\b(?:quoted|shown|cited) above\b/i;
+  const tidyLive = (piece) => {
+    const lines = dropLinkDebris(dropSourceSpeculation(piece).text).text.split('\n').map(dupLive);
+    rowsLive += lines.filter((l) => /^\s*\|\s*\d{1,3}\b/.test(l)).length;
+    const said = lines.join('\n'), carded0 = bqLive || liveWidgets.some((w) => ['quote', 'scene'].includes(w.kind)) || /^\s*>/m.test(said.split(ABOVE_SPLIT)[0]);
+    if (/^\s*>/m.test(said)) bqLive = true;
+    const t = recapitalise(!carded0 && pointsAbove(said) ? dropAbovePointer(said) : said);
+    return rowsLive >= 2 ? fixCounts(t, rowsLive).text : tableWanted ? fixCounts(t, null).text : t;
+  };
+  const tidyWhole = (text) => { const t = recapitalise(noteDuplicateRows(dropLinkDebris(dropSourceSpeculation(text).text).text)), n = numberedRows(t).length;
+    return n >= 2 ? fixCounts(t, n).text : t; };
   const finishLive = (s) => {
     const [, lead, core0, trail] = String(s).match(/^(\s*)([\s\S]*?)(\s*)$/);
     if (!core0) return s;
@@ -456,7 +477,8 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     const t = linkQuotes(fixQuoteSpeakers(restoreElisions(renderRefs(core, { found, works }), ret, { asked: asked0 }).text, ret).text, ret).text;
     const x = expandTemplates(markQuotes(t, ret).text, { found, works, books: bookCards, shown: shownCards(), carded, subject: subj }, { start: liveWidgets.length });
     for (const w of x.widgets) { liveWidgets.push(w); onEvent({ type: 'widget', widget: w }); }
-    return settleLayout(lead + links(heldOnly(x.text, ret), ret) + trail);
+    const done = settleLayout(lead + links(heldOnly(x.text, ret), ret) + trail);
+    return done.trim() ? tidyLive(done) : done;
   };
   const onText = (t) => {
     if (t.includes(NOT_FOUND)) { gate = false; return; }   // a not-found draft may be nudged into another round: never shown
@@ -564,7 +586,8 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const shown = streamed && live.trim() ? live : null;
   const offerless = dropSearchOffer(dropPreamble(shown ?? linked.text).trim());   // the research is his to run, never an offer (11-04 #163)
   // inline templates ({{quote P3}} …) → widget marker + fallback + data, last: the words are the passage's own, never re-grounded (widgets/templates.js)
-  const tidy = (x) => (shown != null ? x : { ...x, text: unholdTexts(dropCutOff(dropDanglingLeadIn(x.text).text).text) });   // the streamed reply was tidied piece by piece
+  const above = (x) => (pointsAbove(x.text) && !(x.widgets || []).some((w) => ['quote', 'scene'].includes(w.kind)) && !/^\s*>/m.test(x.text) ? { ...x, text: dropAbovePointer(x.text) } : x);
+  const tidy = (x) => (shown != null ? x : above({ ...x, text: tidyWhole(unholdTexts(dropCutOff(dropDanglingLeadIn(x.text).text).text)) }));   // the streamed reply was tidied piece by piece
   const { text: reply, widgets } = tidy(shown != null ? { text: offerless.text, widgets: liveWidgets }
     : ((x) => ({ ...x, text: links(heldOnly(x.text, retrieved), retrieved) }))(expandTemplates(markQuotes(offerless.text, retrieved).text, { found, works, books: bookCards, shown: shownCards(), carded, subject: subj })));   // quoted words styled apart (Chad 11-04)
   const citations = [...[...works.values()].map((w) => ({ title: w.title, author: w.author, url: w.url, religion: w.religion, document_id: w.id, paragraph_index: null, text: '' })),
