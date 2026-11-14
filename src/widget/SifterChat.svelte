@@ -18,6 +18,8 @@
   import SideBySide from '../components/widgets/SideBySide.svelte';
   import { widgetSegments } from '../../api/lib/assistant/widgets/segments.js';
   import { BUILD, tagFor } from './version.js';
+  import { openStore, loadMessages, saveMessages, saveIndex, upsertThread, removeThread, pruneThreads, dropThreadData, groupThreads,
+    filterThreads, messagesText, threadTitle, firstQuestion, newThreadId, activeKey } from './threads.js';
   let { token = '', api = 'https://siftersearch.com', accent = '', name = '', mission = '', opened = '', samples = '', fullscreen = '', version = '' } = $props();   // version: shown beside the title (the Anís app passes its build, Chad 11-13); never part of the name the model uses
   // sample-questions menu (header icon; one showcase question per strategy): on by default (Chad 11-10); a host turns it off with
   // samples="off"/"false", a reader with ?anis-samples=0 (remembered on this browser; ?anis-samples brings it back)
@@ -41,6 +43,24 @@
   // launch bubble, message avatars and the watermark. Keeps the widget self-contained.
   const OCEAN_D = "M229.617 107.844h63.729c32.707 19.893 70.235 49.342 68.85 92.254 2.409 20.614-.603 40.628-7.23 59.5 14.578-3.727 28.01-6.01 39.997-6.01a43.446 43.446 0 0 1 24.756 6.13 27.385 27.385 0 0 1 11.445 23.018v2.405c-.663 14.965-10.361 28.188-23.914 40.629-10.12 9.315-19.095 15.625-28.01 21.695 1.928-.06 4.338-.36 6.145-.36a81.006 81.006 0 0 1 26.383 3.305 26.573 26.573 0 0 1 10.54 6.49 19.81 19.81 0 0 1 5.422 13.704 38.165 38.165 0 0 1-6.505 20.255 43.166 43.166 0 0 1-6.024 7.692 16.882 16.882 0 0 1-11.926 5.41 13.864 13.864 0 0 1-10.963-5.41c-2.71-3.546-3.072-7.332-3.072-9.436v-.54c0-2.044 1.204-3.788 2.108-5.59-1.205-.12-1.023-.3-2.83-.3-10.843 0-27.71 1.503-50.418 4.688-22.95 3.185-37.887 6.07-44.211 8.174l-.725.18a15.393 15.393 0 0 1-7.95 0c-3.252-.902-6.024-2.944-7.831-5.409-3.313-4.447-3.494-9.195-3.494-11.9a20.51 20.51 0 0 1 1.566-7.814 19.11 19.11 0 0 1 5.543-8.233 36.208 36.208 0 0 1 7.287-4.809c5-2.584 11.506-5.047 19.336-7.511a243.488 243.488 0 0 0 56.621-32.455c15.54-11.84 20.481-20.795 21.686-27.106-.904-.18-1.687-.662-6.807-.662-5.542 0-15.119 1.683-28.31 5.77-7.108 2.283-12.71 4.268-17.047 5.95a256.849 256.849 0 0 1-37.346 43.874c-21.504 23.92-47.586 43.272-76.68 57.035h-72.523c-20.54-13.943-41.14-29.569-52.465-52.527-4.88-9.015-9.639-18.031-14.156-27.227V260.38a199.873 199.873 0 0 1 25.119 36.963c8.794-51.146 36.323-95.322 61.32-139.436-37.044 25.062-54.092 66.654-74.572 104.758-5.903-24.04 9.938-46.038 22.588-64.91 32.045-37.022 66.38-75.666 114.568-89.91zm63.127 12.861v.06c-37.587 2.164-78.006 11.84-104.932 40.268-47.131 54.177-67.366 126.62-55.115 197.31 23.673 16.95 51.02 38.766 81.68 26.024 37.105-14.364 66.862-42.611 87.342-76.869a14.013 14.013 0 0 1-2.951-3.365c-1.928-3.186-2.652-6.972-2.05-10.578a22.862 22.862 0 0 1 3.495-11.3 22.695 22.695 0 0 1 9.879-8.413l.601-.24h.061l1.023-.602a114.014 114.014 0 0 0 4.096-2.523l.121-.122.24-.119 4.338-2.765a225.208 225.208 0 0 0 10.541-41.59c3.795-37.383 4.82-90.992-38.369-105.176zm-46.984 72.48h.06c23.065-.835 45.091 9.593 59.03 27.948-4.518 35.58-18.371 68.515-31.924 101.33-13.433.721-26.986 1.323-40.479 2.164a3207.925 3207.925 0 0 1 26.926-36.902c-13.432-4.448-26.805-8.835-40.178-13.643 7.048-12.32 14.457-24.581 21.926-36.842l-4.879-16.648c-15.42 2.704-30.9 4.99-46.38 7.574 12.107 25.483 25.057 50.723 33.189 77.95-10.481 0-20.902 0-31.323.12a94.64 94.64 0 0 0 52.225 43.274c-47.405 3.966-77.342-39.307-84.148-82.219l18.431-.121c-5.722-13.222-14.094-29.989-.3-41.649 16.974-19.906 41.637-31.664 67.824-32.335zm149.261 72.663a146.69 146.69 0 0 0-21.082 1.923 223.95 223.95 0 0 0-24.394 5.83h-.182a6.15 6.15 0 0 1-6.806-2.644 1.443 1.443 0 0 0-.18-.24c-.482-.541-.904-.541-1.506-.541-.207.033-.41.094-.601.18a65.533 65.533 0 0 0-4.82 2.404c-3.013 1.743-7.23 4.326-12.53 7.812-2.169 1.383-4.336 2.705-6.625 3.967l-.963.482v-.12l-.182.18a11.57 11.57 0 0 0-2.289 1.382l.06-.12-.24.241a9.27 9.27 0 0 0-.904.781l-.12.18a9.725 9.725 0 0 0-2.712 6.912l-.119.72a3.419 3.419 0 0 0 .3 2.405c.663 1.022 1.265.9 1.808.9a20.018 20.018 0 0 0 8.673-4.086 145.181 145.181 0 0 1 24.094-9.375l3.434-1.082c3.493-1.081 6.746-2.044 9.758-2.765a141.65 141.65 0 0 1 15.902-3.186c3.894-.509 7.83-.61 11.746-.3 1.412.06 2.82.201 4.217.421a15.08 15.08 0 0 1 6.324 2.405h.121a11.792 11.792 0 0 1 3.193 3.244l.059.06c.262.538.465 1.102.604 1.684.201.664.322 1.35.36 2.043a27.082 27.082 0 0 1-.421 4.627 35.647 35.647 0 0 1-3.312 9.496 64.663 64.663 0 0 1-6.807 9.918 108.934 108.934 0 0 1-17.108 15.746c-18.25 14.003-38.25 25.482-59.453 34.076-3.674 1.142-7.227 2.405-10.841 3.787-2.53.902-5.06 2.103-7.53 3.305a32.053 32.053 0 0 0-4.818 3.127c-.466.397-.89.84-1.266 1.322-.368.47-.654.998-.844 1.563a5.99 5.99 0 0 1-.24.6c-.421 1.021-.601 2.164-.601 3.245-.013.888.068 1.774.24 2.645.145.71.432 1.385.844 1.982.293.462.742.804 1.265.963a3.02 3.02 0 0 0 1.506-.06h.059c2.048-.661 4.519-1.322 7.47-2.043a277.898 277.898 0 0 1 10.059-2.104 882.727 882.727 0 0 1 44.936-6.611c8.673-1.082 17.347-1.803 26.021-2.404 3.614-.24 6.928-.301 9.94-.301a48.48 48.48 0 0 1 7.83.48c1.955.25 3.851.84 5.601 1.744.82.428 1.57.975 2.229 1.623a6.064 6.064 0 0 1 1.867 4.026v.422a9.539 9.539 0 0 1-.963 4.326 25.058 25.058 0 0 1-3.313 4.928c-.06.12-.242.3-.242.601v.602c.023.346.084.689.182 1.021.053.342.176.669.361.961.482.601.844.602 1.205.602.904 0 2.229-.782 3.313-1.864a32.522 32.522 0 0 0 4.217-5.529 34.165 34.165 0 0 0 3.433-7.031 23.033 23.033 0 0 0 1.203-6.611v-.121a9.458 9.458 0 0 0-.119-1.622v-.06c-.18-.721-.422-1.503-.844-2.104l-.24-.3-.06-.121c-.181-.361-.482-.66-.783-.961l-.362-.301a18.5 18.5 0 0 0-4.517-2.705l-.844-.42-1.205-.301a71.342 71.342 0 0 0-10.12-1.803l-.843-.119h-.602c-1.867-.18-3.854-.24-5.902-.3l-3.615-.061-2.711.06c-7.121.19-14.233.631-21.322 1.323l-3.916.359a6.024 6.024 0 0 1-6.446-4.207 5.508 5.508 0 0 1-.361-1.982c.008-.613.109-1.221.3-1.803l.061-.121.06-.24c.197-.495.46-.96.784-1.383l.361-.48c.362-.369.766-.691 1.205-.962l.301-.181 11.145-6.49a215.357 215.357 0 0 0 42.404-34.98 68.227 68.227 0 0 0 6.205-8.234 41.24 41.24 0 0 0 5-11.718v-.06c.254-1.188.415-2.394.48-3.606v-2.045a21.228 21.228 0 0 0-.421-3.965 12.678 12.678 0 0 0-5.3-8.416l-.482-.42-.603-.3c-.756-.451-1.54-.853-2.348-1.202l-.904-.361a24.918 24.918 0 0 0-3.674-1.141 58.193 58.193 0 0 0-10.24-.963z";
 
+  // thin-line icons (Lucide-like, 1.75 stroke, currentColor): name → path data
+  const ICON = {
+    pen: ['M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6', 'M18.4 2.6a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z'],
+    rail: ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', 'M9 3v18'],
+    menu: ['M4 7h16', 'M4 12h16', 'M4 17h10'],
+    search: ['M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14z', 'm20 20-3.6-3.6'],
+    history: ['M3 12a9 9 0 1 0 3-6.7L3 8', 'M3 3v5h5', 'M12 7.5V12l3 2'],
+    more: ['M5 12h.01', 'M12 12h.01', 'M19 12h.01'],
+    rename: ['M12 20h9', 'M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z'],
+    pin: ['M12 17v5', 'M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.8a2 2 0 0 0-1.1-1.8l-1.8-.9A2 2 0 0 1 15 10.8V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z'],
+    share: ['M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7', 'm16 6-4-4-4 4', 'M12 2v13'],
+    trash: ['M3 6h18', 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6', 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'],
+    x: ['M6 6l12 12', 'M18 6 6 18'],
+    user: ['M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2', 'M12 3a4 4 0 1 0 0 8a4 4 0 1 0 0-8z'],
+  };
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '');
+  const reveal = (node) => { queueMicrotask(() => node.scrollIntoView?.({ block: 'nearest' })); };
+  const focusSel = (node) => { node.focus(); node.select(); };
   let cfg = $state(null);
   let open = $state(!!opened);   // `opened` = handed over open by the previous build's self-update
   let denied = $state(false);
@@ -61,7 +81,84 @@
   let muted = $state(false);
   try { muted = localStorage.getItem('sifter-chat-mute') === '1'; } catch { /* private mode */ }
 
-  const storeKey = () => `sifter-chat:${token}`;
+  // ── Threads (Chad 11-13): many conversations, each its own transcript and its own conversationId at the edge
+  // (threads.js). The fullscreen app shows them in a left rail (a drawer on a phone); the floating widget in an overlay.
+  let threads = $state([]);            // [{id, title, updated, pinned?}] newest first
+  let activeId = $state('');
+  let railOpen = $state(true);         // fullscreen, wide: the rail shown (remembered)
+  let drawerOpen = $state(false);      // fullscreen, narrow: the rail as a drawer
+  let histOpen = $state(false);        // floating widget: the list as an overlay
+  let tq = $state('');                 // search box
+  let menuFor = $state('');            // thread whose ⋯ menu is open
+  let renaming = $state(''), renameText = $state('');
+  let confirmDel = $state('');
+  const LS = () => { try { return localStorage; } catch { return { getItem: () => null, setItem() {}, removeItem() {} }; } };
+  try { railOpen = localStorage.getItem('anis-rail') !== '0'; } catch { /* private mode */ }
+  const isFull = $derived(!!fullscreen && fullscreen !== '0');
+  const shownThreads = $derived(groupThreads(filterThreads(threads, tq, (id) => (id === activeId ? messagesText(messages) : messagesText(loadMessages(LS(), token, id))))));
+  function setActive(id) { activeId = id; try { localStorage.setItem(activeKey(token), id); } catch { /* ok */ } }
+  // record the active thread in the index (it joins the list with its first question)
+  function touchThread() {
+    const q = firstQuestion(messages);
+    if (!q || !activeId) return;
+    const prev = threads.find((t) => t.id === activeId);
+    const { index, dropped } = pruneThreads(upsertThread(threads, { id: activeId, title: prev?.title || threadTitle(q), updated: Date.now() }));
+    dropped.forEach((id) => dropThreadData(LS(), token, id));
+    threads = index;
+    saveIndex(LS(), token, threads);
+  }
+  function closeLists() { drawerOpen = false; histOpen = false; menuFor = ''; renaming = ''; confirmDel = ''; }
+  function selectThread(id) {
+    if (busy) return;
+    closeLists();
+    if (id === activeId) return;
+    setActive(id);
+    messages = loadMessages(LS(), token, id);
+    if (!messages.some((m) => m.role === 'user')) messages = greet();
+    errorMsg = ''; onetap = onetap === 'offer' ? 'hidden' : onetap;
+    scroll();
+  }
+  function railToggle() { railOpen = !railOpen; try { localStorage.setItem('anis-rail', railOpen ? '1' : '0'); } catch { /* ok */ } }
+  function renameStart(t) { menuFor = ''; renaming = t.id; renameText = t.title; }
+  function renameSave() {
+    const title = renameText.replace(/\s+/g, ' ').trim().slice(0, 120);
+    if (renaming && title) { threads = threads.map((t) => (t.id === renaming ? { ...t, title } : t)); saveIndex(LS(), token, threads); }
+    renaming = '';
+  }
+  function togglePin(t) { menuFor = ''; threads = threads.map((x) => (x.id === t.id ? { ...x, pinned: !x.pinned } : x)); saveIndex(LS(), token, threads); }
+  function deleteThread(id) {
+    confirmDel = ''; menuFor = '';
+    threads = removeThread(threads, id); saveIndex(LS(), token, threads); dropThreadData(LS(), token, id);
+    if (id === activeId) newConversation();
+  }
+  // a click anywhere outside the open ⋯ menu closes it (composedPath: the widget lives in a shadow root)
+  $effect(() => {
+    if (!menuFor) return;
+    const away = (e) => { if (!e.composedPath().some((n) => n.classList?.contains('tr-menu') || n.classList?.contains('tr-more'))) menuFor = ''; };
+    window.addEventListener('pointerdown', away, true);
+    return () => window.removeEventListener('pointerdown', away, true);
+  });
+  // the drawer: focus moves in, Tab stays in, Esc / a swipe to the left closes it
+  let drawerEl = $state(null);
+  $effect(() => { if (drawerOpen && drawerEl) queueMicrotask(() => drawerEl.querySelector('.tl-new')?.focus()); });
+  function trapTab(e) {
+    if (e.key !== 'Tab' || !drawerOpen || !drawerEl) return;
+    const f = [...drawerEl.querySelectorAll('button:not([disabled]), input, [tabindex="0"]')].filter((n) => n.offsetParent !== null);
+    if (!f.length) return;
+    const root = drawerEl.getRootNode(), at = root.activeElement;
+    if (e.shiftKey && at === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && at === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+  }
+  let swipeX = null;
+  const swipeStart = (e) => { swipeX = e.touches[0].clientX; };
+  const swipeEnd = (e) => { if (swipeX != null && e.changedTouches[0].clientX - swipeX < -60) drawerOpen = false; swipeX = null; };
+  // shortcuts inside the panel: ⌘/Ctrl+Shift+O → a new conversation; Esc closes the innermost layer first
+  function shortcut(e) {
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'o' || e.key === 'O')) { e.preventDefault(); if (!busy) newConversation(); return true; }
+    if (e.key === 'Escape' && (menuFor || renaming || confirmDel)) { menuFor = ''; renaming = ''; confirmDel = ''; return true; }
+    if (e.key === 'Escape' && (drawerOpen || histOpen)) { drawerOpen = false; histOpen = false; return true; }
+    return false;
+  }
 
   // Per-visitor session id (client-generated, persisted) — groups events into "conversations" for analytics.
   const sid = (() => {
@@ -91,7 +188,7 @@
         // Per-page overrides win over the server profile (display + steering only).
         if (accent) cfg.accent = accent;
         if (name) cfg.name = name;
-        try { messages = JSON.parse(localStorage.getItem(storeKey()) || '[]'); } catch { messages = []; }
+        { const st = openStore(LS(), token); threads = st.index; setActive(st.active); messages = loadMessages(LS(), token, st.active); }
         greet = () => { const hello = c.greetings?.length ? c.greetings[Math.floor(Math.random() * c.greetings.length)] : c.greeting;
           return hello ? [{ role: 'assistant', content: hello, done: true, followups: pickStarters() }] : []; };
         if (!messages.some((m) => m.role === 'user')) messages = greet();   // only a greeting kept → a fresh one (live facts, new starter pills)
@@ -101,7 +198,7 @@
       .catch(() => { denied = true; });
   });
 
-  const persist = () => { try { localStorage.setItem(storeKey(), JSON.stringify(messages.slice(-40))); } catch { /* private mode */ } };
+  const persist = () => { if (activeId) saveMessages(LS(), token, activeId, messages); touchThread(); };
   const scroll = () => queueMicrotask(() => { if (bodyEl) bodyEl.scrollTop = bodyEl.scrollHeight; });
 
   // ── Sound: two synthesized notes, nothing else. Quiet, warm, muteable. No audio files. ──────────
@@ -169,7 +266,13 @@
     return t.startsWith(d) ? t.slice(d.length).trimStart() : text;
   }
   let greet = () => [];
-  function newConversation() { messages = greet(); persist(); errorMsg = ''; resetOpen = false; }
+  // a new thread: a fresh id (the edge keeps it apart), the greeting; it joins the list with its first question
+  function newConversation() {
+    if (busy) return;
+    setActive(newThreadId()); messages = greet(); errorMsg = ''; resetOpen = false; closeLists(); tq = '';
+    if (onetap === 'offer') onetap = 'hidden';
+    setTimeout(() => inputEl?.focus(), 50);
+  }
   async function startOver() {
     try { await fetch(`${api}/api/v1/companion`, { method: 'DELETE', credentials: 'include' }); } catch { /* local reset still happens */ }
     try { localStorage.removeItem(`sifter-chat-sid:${token}`); } catch { /* private mode */ }
@@ -228,6 +331,7 @@
     statusText = ''; serverStatus = false; stopStatus();
     { let i = 0; statusTimer = setInterval(() => { if (!serverStatus && Date.now() - t0 > 3500) statusText = WAITING[i++ % WAITING.length]; }, 2200); }
     messages = [...messages, { role: 'user', content: text }, { role: 'assistant', content: '', citations: [], pending: true }];
+    persist();   // the question is kept (and the thread listed) even if the answer never comes
     busy = true;
     phase = 'research';
     sndSend();
@@ -242,7 +346,7 @@
         method: 'POST',
         credentials: 'include',   // the anonymous session cookie IS the visitor's companion identity
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ messages: history, widget_token: token,
+        body: JSON.stringify({ messages: history, widget_token: token, conversationId: activeId,
           ...(name ? { name } : {}), ...(mission ? { mission } : {}),
           ...(cfg?.chatbotLocation ? { chatbot_location: cfg.chatbotLocation } : {}) }),
       });
@@ -417,7 +521,12 @@
   function onKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
   // The panel is its own world: keys and wheel/touch never reach the host page (whose shortcuts, e.g. Space = play/pause,
   // can't see inside the shadow root and would act on keys typed here). Escape closes the panel here, since it no longer bubbles.
-  function isolateKey(e) { if (e.key === 'Escape') { if (sampleOpen) sampleOpen = false; else open = false; } e.stopPropagation(); }
+  function isolateKey(e) {
+    if (shortcut(e)) { e.stopPropagation(); return; }
+    if (e.key === 'Escape') { if (sampleOpen) sampleOpen = false; else open = false; }
+    trapTab(e);
+    e.stopPropagation();
+  }
   const isolate = (e) => e.stopPropagation();
   function contain(node) {   // Svelte attaches wheel/touchmove passively; preventDefault needs a non-passive listener
     node.addEventListener('wheel', containWheel, { passive: false });
@@ -492,12 +601,58 @@
     return () => window.removeEventListener('pointerdown', away, true);
   });
   $effect(() => {
-    const esc = (e) => { if (e.key !== 'Escape') return; if (sampleOpen) sampleOpen = false; else if (open) open = false; };
+    const esc = (e) => { if (open && shortcut(e)) return; if (e.key !== 'Escape') return; if (sampleOpen) sampleOpen = false; else if (open) open = false; };
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
   });
 </script>
 
+{#snippet ic(name, cls = '')}
+  <svg class="ic {cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{#each ICON[name] as d}<path {d} />{/each}</svg>
+{/snippet}
+{#snippet threadList()}
+  <label class="tl-search">
+    {@render ic('search')}
+    <input type="search" placeholder="Search conversations" bind:value={tq} aria-label="Search conversations" autocomplete="off" spellcheck="false" />
+  </label>
+  <nav class="tl" aria-label="Conversation history">
+    {#each shownThreads as g (g.label)}
+      <h3 class="tl-g">{g.label}</h3>
+      <ul>
+        {#each g.items as t (t.id)}
+          <li class="tr" class:on={t.id === activeId} class:open={menuFor === t.id}>
+            {#if renaming === t.id}
+              <input class="tr-edit" bind:value={renameText} use:focusSel onblur={renameSave} aria-label="Conversation title" maxlength="120"
+                onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); renameSave(); } else if (e.key === 'Escape') { e.stopPropagation(); renaming = ''; } }} />
+            {:else if confirmDel === t.id}
+              <div class="tr-confirm" role="group" aria-label="Delete this conversation?">
+                <span>Delete?</span>
+                <button type="button" class="tr-no" onclick={() => (confirmDel = '')}>Cancel</button>
+                <button type="button" class="tr-yes" use:reveal onclick={() => deleteThread(t.id)}>Delete</button>
+              </div>
+            {:else}
+              <button type="button" class="tr-main" aria-current={t.id === activeId ? 'page' : undefined} disabled={busy && t.id !== activeId} title={t.title} onclick={() => selectThread(t.id)}>
+                {#if t.pinned}{@render ic('pin', 'tr-pin')}{/if}<span class="tr-t">{t.title}</span>
+              </button>
+              <button type="button" class="tr-more" aria-label="Options for “{t.title}”" aria-haspopup="menu" aria-expanded={menuFor === t.id} onclick={() => (menuFor = menuFor === t.id ? '' : t.id)}>{@render ic('more', 'dots')}</button>
+              {#if menuFor === t.id}
+                <div class="tr-menu" role="menu" use:reveal>
+                  <button type="button" role="menuitem" onclick={() => renameStart(t)}>{@render ic('rename')}Rename</button>
+                  <button type="button" role="menuitem" onclick={() => togglePin(t)}>{@render ic('pin')}{t.pinned ? 'Unpin' : 'Pin'}</button>
+                  <button type="button" role="menuitem" disabled title="Sharing arrives soon">{@render ic('share')}Share</button>
+                  <hr />
+                  <button type="button" role="menuitem" class="danger" onclick={() => { menuFor = ''; confirmDel = t.id; }}>{@render ic('trash')}Delete</button>
+                </div>
+              {/if}
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    {:else}
+      <p class="tl-empty">{tq.trim() ? 'No conversation matches.' : 'Your conversations will gather here.'}</p>
+    {/each}
+  </nav>
+{/snippet}
 {#snippet qcard(card, body)}
   <figure class="qcard">
     {#if card.cover_url}
@@ -576,14 +731,59 @@
 {#if cfg && !denied}
   <div class="root {cfg.position === 'bottom-left' ? 'left' : 'right'}" class:full={!!fullscreen && fullscreen !== '0'} style="--accent:{cfg.accent}">
     {#if open}
-      <section class="panel" aria-label="{cfg.name} chat" onkeydown={isolateKey} onkeyup={isolate} onkeypress={isolate} use:contain>
+      <section class="panel" class:railed={isFull && railOpen} aria-label="{cfg.name} chat" onkeydown={isolateKey} onkeyup={isolate} onkeypress={isolate} use:contain>
+        {#if isFull}
+          <div class="scrim" class:on={drawerOpen} aria-hidden="true" onclick={() => (drawerOpen = false)}></div>
+          <aside class="rail" class:drawer={drawerOpen} bind:this={drawerEl} aria-label="Conversations" ontouchstart={swipeStart} ontouchend={swipeEnd}>
+            <div class="rail-top">
+              <button type="button" class="tl-new" disabled={busy} onclick={newConversation} title="New conversation ({isMac ? '⇧⌘O' : 'Ctrl+Shift+O'})">
+                {@render ic('pen')}<span>New conversation</span><kbd>{isMac ? '⇧⌘O' : '⌃⇧O'}</kbd>
+              </button>
+              <button type="button" class="ricon r-collapse" onclick={railToggle} aria-label="Hide conversations" title="Hide conversations">{@render ic('rail')}</button>
+              <button type="button" class="ricon r-close" onclick={() => (drawerOpen = false)} aria-label="Close conversations">{@render ic('x')}</button>
+            </div>
+            {@render threadList()}
+            <div class="rail-foot">
+              {#if connectedEmail}
+                <button type="button" class="who" onclick={() => (profileOpen = !profileOpen)} aria-expanded={profileOpen} title={connectedEmail}>
+                  {#if connectedPic}<img class="who-pic" src={connectedPic} alt="" referrerpolicy="no-referrer" />{:else}<span class="who-pic">{initial(connectedEmail)}</span>{/if}
+                  <span class="who-t">{connectedEmail}</span>
+                </button>
+                {#if profileOpen}
+                  <div class="who-menu" role="menu">
+                    <div class="who-note">Receiving research summaries</div>
+                    <button type="button" role="menuitem" onclick={disconnectOnetap}>Disconnect</button>
+                  </div>
+                {/if}
+              {:else}
+                <button type="button" class="who quiet" onclick={() => { drawerOpen = false; profileClick(); }} title="Get research summaries by email">
+                  <span class="who-pic">{@render ic('user')}</span><span class="who-t">Connect</span>
+                </button>
+              {/if}
+              <button type="button" class="ricon" aria-label={muted ? 'Unmute sounds' : 'Mute sounds'} aria-pressed={muted} onclick={toggleMute} title={muted ? 'Unmute' : 'Mute'}>
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 9.5v5h3.5L13 19V5L7.5 9.5H4z" />
+                  {#if muted}<path d="M16.5 9.5 21 14M21 9.5 16.5 14"/>{:else}<path d="M16.5 9a4.2 4.2 0 0 1 0 6M18.8 6.8a7.5 7.5 0 0 1 0 10.4"/>{/if}
+                </svg>
+              </button>
+            </div>
+          </aside>
+        {/if}
+        <div class="main">
         <header>
+          {#if isFull}
+            <button type="button" class="icon h-menu" aria-label="Conversations" aria-expanded={drawerOpen} onclick={() => (drawerOpen = true)}>{@render ic('menu')}</button>
+            {#if !railOpen}<button type="button" class="icon h-rail" aria-label="Show conversations" title="Show conversations" onclick={railToggle}>{@render ic('rail')}</button>{/if}
+          {/if}
           <a class="roundel" href="https://oceanlibrary.com" target="_blank" rel="noopener" title="Open Ocean 2.0" aria-label="Open Ocean 2.0 (oceanlibrary.com) in a new tab"><svg viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" d={OCEAN_D}/></svg></a>
           <span class="titles">
             <span class="title">{cfg.name}{#if version}<span class="ver" title={BUILD ? `widget ${BUILD}` : null}>v{version}</span>{/if}</span>
             <span class="subtitle">Ocean companion</span>
           </span>
           <span class="hbtns">
+            {#if !isFull}
+              <button type="button" class="icon" aria-label="Conversations" aria-expanded={histOpen} title="Conversations" onclick={() => { histOpen = !histOpen; menuFor = ''; }}>{@render ic('history')}</button>
+            {/if}
             {#if showSamples}
               <button bind:this={sampleBtn} class="icon" aria-label="Sample questions" aria-haspopup="menu" aria-expanded={sampleOpen} disabled={busy} onclick={() => (sampleOpen = !sampleOpen)} title="Sample questions">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/></svg>
@@ -599,7 +799,7 @@
                 </div>
               {/if}
             {/if}
-            <button class="icon profile" aria-label={connectedEmail ? `Account: ${connectedEmail}` : 'Connect for email summaries'} aria-expanded={profileOpen} onclick={profileClick} title={connectedEmail ? connectedEmail : 'Connect'}>
+            <button class="icon profile hide-railed" aria-label={connectedEmail ? `Account: ${connectedEmail}` : 'Connect for email summaries'} aria-expanded={profileOpen} onclick={profileClick} title={connectedEmail ? connectedEmail : 'Connect'}>
               {#if connectedEmail && connectedPic}
                 <img class="pavatar" src={connectedPic} alt="" referrerpolicy="no-referrer" />
               {:else}
@@ -624,7 +824,7 @@
                 <button class="pdisc" role="menuitem" onclick={startOver} title="Forget what this companion has learned about you, then start fresh">Start over (forget me)</button>
               </div>
             {/if}
-            <button class="icon" aria-label={muted ? 'Unmute sounds' : 'Mute sounds'} aria-pressed={muted} onclick={toggleMute} title={muted ? 'Unmute' : 'Mute'}>
+            <button class="icon hide-railed" aria-label={muted ? 'Unmute sounds' : 'Mute sounds'} aria-pressed={muted} onclick={toggleMute} title={muted ? 'Unmute' : 'Mute'}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 9.5v5h3.5L13 19V5L7.5 9.5H4z" fill="currentColor" stroke="none"/>
                 {#if muted}<path d="M16 8.5 21 15M21 8.5 16 15"/>{:else}<path d="M16.5 9a4.2 4.2 0 0 1 0 6M18.8 6.8a7.5 7.5 0 0 1 0 10.4"/>{/if}
@@ -638,6 +838,16 @@
         <div class="rule" aria-hidden="true"></div>
         <div class="bodywrap">
           <svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" d={OCEAN_D}/></svg>
+          {#if histOpen && !isFull}
+            <div class="hist" role="dialog" aria-label="Conversations">
+              <div class="hist-top">
+                <span class="hist-t">Conversations</span>
+                <button type="button" class="hist-new" disabled={busy} onclick={newConversation}>{@render ic('pen')}New</button>
+                <button type="button" class="ricon" aria-label="Close conversations" onclick={() => (histOpen = false)}>{@render ic('x')}</button>
+              </div>
+              {@render threadList()}
+            </div>
+          {/if}
           <div class="body" bind:this={bodyEl} role="log" aria-live="polite">
             {#each messages as m, mi}
               <div class="msg {m.role}" class:done={m.done}>
@@ -733,6 +943,7 @@
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 11.2 20.2 3.4c.8-.4 1.6.5 1.2 1.3l-7.8 16.8c-.4.8-1.6.7-1.9-.2l-2-6.6a1 1 0 0 0-.7-.7l-6.6-2c-.9-.3-.9-1.5 0-1.9z" transform="rotate(3 12 12)"/></svg>
           </button>
         </footer>
+        </div>
       </section>
     {:else}
       <button class="bubble-btn" aria-label="Open {cfg.name} chat" aria-expanded="false" onclick={togglePanel}>
@@ -755,6 +966,10 @@
     --quote: #6b4a2b;   /* = global.css --quote / quote-style.js QUOTE_INK */
     --accent-deep: color-mix(in srgb, var(--accent) 72%, #14273a);
     --halo: color-mix(in srgb, var(--accent) 28%, transparent);
+    /* the conversations rail / history overlay */
+    --rail-bg: #f4f0e7; --rail-card: #fffdf8; --rail-ink: #2a2620; --rail-muted: #8b806c; --rail-line: #e5ddcb;
+    --rail-hover: rgba(110, 84, 30, .065); --rail-hover2: rgba(110, 84, 30, .11); --gold-ink: #a8822c; --danger: #b03a2e;
+    --menu-shadow: 0 14px 34px -10px rgba(40, 28, 8, .3), 0 2px 6px rgba(40, 28, 8, .08);
   }
   .root.right { right: 20px; }
   .root.left { left: 20px; align-items: flex-start; }
@@ -817,7 +1032,7 @@
     width: min(720px, calc(100vw - 40px)); height: min(760px, calc(100vh - 96px));
     background: linear-gradient(178deg, #fdfcf8, #f7f3ec);
     color: #24211c; border-radius: 16px; overflow: hidden;
-    display: flex; flex-direction: column;
+    display: flex; flex-direction: row;
     overscroll-behavior: contain;
     box-shadow: 0 18px 60px rgba(15, 25, 40, .30), 0 4px 16px rgba(15, 25, 40, .18);
     animation: rise .42s cubic-bezier(.22,1,.36,1);
@@ -1076,11 +1291,132 @@
   .send:active:not(:disabled) { transform: scale(.92); }
   .send:disabled { opacity: .38; cursor: default; }
 
+  /* ── Threads: the rail (fullscreen), the drawer (fullscreen, narrow), the overlay (floating widget) ── */
+  .main { position: relative; flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+  .ic { width: 18px; height: 18px; display: block; flex: none; }
+  .icon .ic { width: 100%; height: 100%; }
+  .dots { stroke-width: 2.8; }
+  .rail { display: none; }
+  .root.full .rail { display: flex; flex-direction: column; flex: none; width: 272px; min-height: 0; background: var(--rail-bg); color: var(--rail-ink);
+    border-right: 1px solid var(--rail-line); font-size: 13.5px; }
+  .scrim { display: none; }
+  .rail-top { display: flex; align-items: center; gap: 4px; min-height: 66px; padding: 13px 8px 10px 12px; }
+  .tl-new { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 10px 0 12px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--rail-line); background: var(--rail-card); color: var(--rail-ink); font: 500 13.5px/1 system-ui, -apple-system, 'Segoe UI', sans-serif;
+    box-shadow: 0 1px 2px rgba(60, 40, 10, .05); transition: border-color .15s, box-shadow .15s; }
+  .tl-new .ic { color: var(--gold-ink); }
+  .tl-new span { white-space: nowrap; }
+  .tl-new kbd { margin-left: auto; font: 500 11px/1 system-ui, -apple-system, sans-serif; letter-spacing: .06em; color: var(--rail-muted); opacity: 0; transition: opacity .15s; }
+  .tl-new:hover:not(:disabled) { border-color: color-mix(in srgb, var(--gold) 55%, var(--rail-line)); box-shadow: 0 2px 8px -2px rgba(60, 40, 10, .12); }
+  .tl-new:hover kbd, .tl-new:focus-visible kbd { opacity: 1; }
+  .tl-new:disabled, .hist-new:disabled { opacity: .55; cursor: default; }
+  .ricon { flex: none; width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--rail-muted); cursor: pointer; transition: background .15s, color .15s; }
+  .ricon:hover { background: var(--rail-hover); color: var(--rail-ink); }
+  .r-close { display: none; }
+  .tl-search { display: flex; align-items: center; gap: 8px; height: 34px; margin: 0 12px 4px; padding: 0 10px; border-radius: 9px; cursor: text;
+    background: var(--rail-hover); color: var(--rail-muted); border: 1px solid transparent; transition: border-color .15s, background .15s; }
+  .tl-search:focus-within { background: var(--rail-card); border-color: color-mix(in srgb, var(--accent) 40%, var(--rail-line)); }
+  .tl-search .ic { width: 15px; height: 15px; }
+  .tl-search input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; outline: 0; background: none; color: var(--rail-ink);
+    font: 13.5px/1 system-ui, -apple-system, 'Segoe UI', sans-serif; -webkit-appearance: none; appearance: none; }
+  .tl-search input::placeholder { color: var(--rail-muted); }
+  .tl-search input::-webkit-search-cancel-button { -webkit-appearance: none; }
+  .tl { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 2px 8px 14px; scrollbar-width: thin; scrollbar-color: var(--rail-hover2) transparent; }
+  .tl ul { list-style: none; margin: 0; padding: 0; }
+  .tl-g { margin: 18px 10px 6px; font: 600 10.5px/1 system-ui, -apple-system, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--rail-muted); }
+  .tl-g:first-child { margin-top: 12px; }
+  .tr { position: relative; display: flex; align-items: center; border-radius: 8px; transition: background .12s; }
+  .tr + .tr { margin-top: 1px; }
+  .tr:hover, .tr.open { background: var(--rail-hover); }
+  .tr.on { background: var(--rail-card); box-shadow: inset 2px 0 0 var(--gold), 0 0 0 1px var(--rail-line), 0 1px 3px rgba(60, 40, 10, .06); }
+  .tr-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 8px 2px 8px 11px; border: 0; border-radius: 8px; background: none; cursor: pointer;
+    color: inherit; text-align: left; font: 400 13.5px/1.3 system-ui, -apple-system, 'Segoe UI', sans-serif; }
+  .tr-main:disabled { cursor: default; opacity: .6; }
+  .tr.on .tr-main { font-weight: 560; }
+  .tr-t { min-width: 0; overflow: hidden; white-space: nowrap; -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent); mask-image: linear-gradient(90deg, #000 82%, transparent); }
+  .tr-pin { width: 12px; height: 12px; color: var(--gold-ink); }
+  .tr-more { flex: none; width: 28px; height: 28px; margin-right: 4px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 6px; background: none;
+    color: var(--rail-muted); cursor: pointer; opacity: 0; transition: opacity .12s, background .12s; }
+  .tr-more .ic { width: 16px; height: 16px; }
+  .tr:hover .tr-more, .tr.on .tr-more, .tr.open .tr-more, .tr-more:focus-visible { opacity: 1; }
+  .tr-more:hover, .tr.open .tr-more { background: var(--rail-hover2); color: var(--rail-ink); }
+  @media (hover: none) { .tr-more { opacity: .8; } }
+  .tr-menu { position: absolute; right: 4px; top: calc(100% + 4px); z-index: 10; min-width: 172px; padding: 5px; border-radius: 11px;
+    background: var(--rail-card); border: 1px solid var(--rail-line); box-shadow: var(--menu-shadow); animation: fadeup .16s ease both; }
+  .tr-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 7px; background: none; cursor: pointer;
+    color: var(--rail-ink); text-align: left; font: 13px/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif; }
+  .tr-menu .ic { width: 16px; height: 16px; color: var(--rail-muted); }
+  .tr-menu button:hover:not(:disabled), .tr-menu button:focus-visible { background: var(--rail-hover); outline: none; }
+  .tr-menu button:disabled { opacity: .42; cursor: default; }
+  .tr-menu .danger, .tr-menu .danger .ic { color: var(--danger); }
+  .tr-menu hr { margin: 4px 6px; border: 0; border-top: 1px solid var(--rail-line); }
+  .tr-edit { flex: 1; min-width: 0; margin: 2px; padding: 6px 9px; border: 1px solid var(--accent); border-radius: 7px; outline: 0; background: var(--rail-card); color: var(--rail-ink);
+    font: 13.5px/1.3 system-ui, -apple-system, 'Segoe UI', sans-serif; box-shadow: 0 0 0 3px var(--halo); }
+  .tr-confirm { flex: 1; display: flex; align-items: center; gap: 4px; padding: 4px 4px 4px 11px; font: 13px/1.2 system-ui, -apple-system, sans-serif; }
+  .tr-confirm span { flex: 1; color: var(--danger); font-weight: 560; }
+  .tr-no, .tr-yes { border: 0; border-radius: 6px; padding: 6px 10px; cursor: pointer; font: 600 12px/1 system-ui, -apple-system, sans-serif; }
+  .tr-no { background: none; color: var(--rail-muted); }
+  .tr-no:hover { color: var(--rail-ink); background: var(--rail-hover); }
+  .tr-yes { background: var(--danger); color: #fff; }
+  .tr-yes:hover { filter: brightness(1.08); }
+  .tl-empty { margin: 22px 14px; font-family: var(--serif); font-style: italic; font-size: 14.5px; line-height: 1.5; color: var(--rail-muted); }
+  .rail-foot { position: relative; display: flex; align-items: center; gap: 4px; padding: 10px 8px 12px 10px; border-top: 1px solid var(--rail-line); }
+  .who { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 5px 8px; border: 0; border-radius: 9px; background: none; cursor: pointer;
+    color: var(--rail-ink); text-align: left; font: 13px/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif; }
+  .who:hover { background: var(--rail-hover); }
+  .who-pic { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; object-fit: cover;
+    background: linear-gradient(140deg, var(--accent), var(--accent-deep)); color: #fff; font: 600 12px/1 system-ui, sans-serif; }
+  .who.quiet { color: var(--rail-muted); }
+  .who.quiet:hover { color: var(--rail-ink); }
+  .who.quiet .who-pic { background: none; color: inherit; box-shadow: inset 0 0 0 1px var(--rail-line); }
+  .who.quiet .who-pic .ic { width: 15px; height: 15px; }
+  .who-t { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .who-menu { position: absolute; left: 10px; right: 10px; bottom: calc(100% + 6px); z-index: 10; padding: 11px 12px; border-radius: 11px;
+    background: var(--rail-card); border: 1px solid var(--rail-line); box-shadow: var(--menu-shadow); animation: fadeup .16s ease both; }
+  .who-note { font: 12px/1.3 system-ui, sans-serif; color: var(--rail-muted); margin-bottom: 8px; }
+  .who-menu button { border: 1px solid var(--rail-line); background: none; color: var(--rail-ink); border-radius: 999px; padding: 5px 12px; font: 12px/1 system-ui, sans-serif; cursor: pointer; }
+  .who-menu button:hover { border-color: var(--danger); color: var(--danger); }
+  /* the floating widget: the same list as a sheet over the conversation */
+  .hist { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; background: var(--rail-bg); color: var(--rail-ink);
+    animation: histin .24s cubic-bezier(.22, 1, .36, 1) both; }
+  @keyframes histin { from { opacity: 0; transform: translateY(-8px); } }
+  .hist-top { display: flex; align-items: center; gap: 6px; padding: 14px 10px 10px 18px; }
+  .hist-t { flex: 1; font-family: var(--serif); font-size: 18px; font-weight: 600; letter-spacing: .005em; }
+  .hist-new { display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px 0 10px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--rail-line); background: var(--rail-card); color: var(--rail-ink); font: 500 13px/1 system-ui, -apple-system, sans-serif; }
+  .hist-new .ic { width: 16px; height: 16px; color: var(--gold-ink); }
+  .hist-new:hover:not(:disabled) { border-color: color-mix(in srgb, var(--gold) 55%, var(--rail-line)); }
+  .hist .tl { padding: 2px 10px 16px; }
+  .hist .tl-search { margin: 0 14px 4px; }
+  @media (min-width: 900px) {
+    .root.full .panel:not(.railed) .rail, .h-menu { display: none; }
+    .root.full .panel.railed .hide-railed { display: none; }
+    /* the reading column: centred, a comfortable measure, beside the rail */
+    .root.full .body > *, .root.full footer { width: 100%; max-width: 860px; margin-inline: auto; }
+  }
+  @media (max-width: 899px) {
+    .h-rail, .r-collapse { display: none; }
+    .r-close { display: grid; }
+    .root.full .rail { position: fixed; inset: 0 auto 0 0; z-index: 40; width: min(320px, 86vw);
+      padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+      transform: translateX(-102%); visibility: hidden; box-shadow: 0 0 0 1px var(--rail-line), 24px 0 60px -20px rgba(10, 16, 28, .45);
+      transition: transform .3s cubic-bezier(.22, 1, .36, 1), visibility 0s linear .3s; }
+    .root.full .rail.drawer { transform: none; visibility: visible; transition: transform .3s cubic-bezier(.22, 1, .36, 1); }
+    .root.full .scrim { display: block; position: fixed; inset: 0; z-index: 39; background: rgba(12, 16, 24, .36); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+      opacity: 0; pointer-events: none; transition: opacity .25s; }
+    .root.full .scrim.on { opacity: 1; pointer-events: auto; }
+    .h-menu { margin-left: -6px; }
+  }
 
   /* ── Dark: deep ink, warm text, lifted links, same gold. ── */
   @media (prefers-color-scheme: dark) {
     .sample-list { background: #1e293b; color: #e2e8f0; }
-    .root { --quote: #dcc4a0; --panel-bg: #11151a; }
+    .root { --quote: #dcc4a0; --panel-bg: #11151a;
+      --rail-bg: #0c1014; --rail-card: #1a2029; --rail-ink: #e6e2d8; --rail-muted: #858d9b; --rail-line: #232a35;
+      --rail-hover: rgba(255, 255, 255, .045); --rail-hover2: rgba(255, 255, 255, .085); --gold-ink: var(--gold); --danger: #e0786b;
+      --menu-shadow: 0 16px 40px -10px rgba(0, 0, 0, .6), 0 2px 6px rgba(0, 0, 0, .3); }
+    .tl-new, .tr.on { box-shadow: none; }
+    .tr.on { box-shadow: inset 2px 0 0 var(--gold), 0 0 0 1px var(--rail-line); }
     .panel { background: linear-gradient(178deg, #14181e, #0e1217); color: #e9e6dd; }
     .watermark { color: #b9c8dd; opacity: .045; }
     .msg.assistant .bubble { background: #1b212a; border-color: #2b3442; color: #e9e6dd; box-shadow: none; }
@@ -1120,7 +1456,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .bubble-btn, .panel, .msg, .rule { animation: none; }
+    .bubble-btn, .panel, .msg, .rule, .hist, .tr-menu { animation: none; }
+    .root.full .rail { transition: none; }
     .stage { animation: none; color: #9a8f7a; background: none; }
     .caret { animation: none; opacity: .75; }
   }
