@@ -43,8 +43,8 @@ describe('Anís app host', () => {
   it('the host has its own robots and sitemap, and root icons come from the app\'s files', async () => {
     const robots = await at('/robots.txt').text();
     expect(robots).toContain('Disallow: /api/');
-    expect(robots).toContain('Sitemap: https://anis.oceanlibrary.com/sitemap.xml');
-    expect(await at('/sitemap.xml').text()).toContain('<loc>https://anis.oceanlibrary.com/</loc>');
+    expect(robots).toContain('Sitemap: https://anis.oceanlibrary.com/anis-sitemap.xml');
+    expect(await at('/anis-sitemap.xml').text()).toContain('<loc>https://anis.oceanlibrary.com/</loc>');
     const asked = [];
     await anisAppRoute(new URL('https://anis.oceanlibrary.com/favicon.ico'), { ASSETS: { fetch: (u) => { asked.push(String(u)); return new Response('x'); } } });
     expect(asked).toEqual(['https://anis.oceanlibrary.com/anis-app/favicon.ico']);

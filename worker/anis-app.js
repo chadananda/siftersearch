@@ -61,8 +61,8 @@ export function assetLinks(env = {}) {
 }
 
 const ORIGIN = 'https://anis.oceanlibrary.com';
-// the host's own robots and sitemap (not the main site's): the app page is the one page to index; /api and the widget are not pages
-export const ROBOTS = `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /widget\n\nSitemap: ${ORIGIN}/sitemap.xml\n`;
+// the host's own robots and sitemap (not the main site's); anis-sitemap.xml because Workers Assets _redirects sends /sitemap.xml to the site index before the Worker runs: the app page is the one page to index; /api and the widget are not pages
+export const ROBOTS = `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /widget\n\nSitemap: ${ORIGIN}/anis-sitemap.xml\n`;
 export const SITEMAP = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${ORIGIN}/</loc><changefreq>weekly</changefreq></url></urlset>\n`;
 // browsers and search engines ask for these at the root; the files live with the app's icons
 const ROOT_ICONS = { '/favicon.ico': '/anis-app/favicon.ico', '/apple-touch-icon.png': '/anis-app/apple-touch-icon.png', '/apple-touch-icon-precomposed.png': '/anis-app/apple-touch-icon.png' };
@@ -75,7 +75,7 @@ export function anisAppRoute(url, env) {
   if (p === '/anis-sw.js') return new Response(SW, { headers: { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache', 'service-worker-allowed': '/' } });
   if (p === '/.well-known/assetlinks.json') return Response.json(assetLinks(env), { headers: { 'cache-control': 'public, max-age=3600' } });
   if (p === '/robots.txt') return new Response(ROBOTS, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'public, max-age=3600' } });
-  if (p === '/sitemap.xml') return new Response(SITEMAP, { headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=3600' } });
+  if (p === '/anis-sitemap.xml') return new Response(SITEMAP, { headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=3600' } });
   if (ROOT_ICONS[p] && env?.ASSETS) return env.ASSETS.fetch(new URL(ROOT_ICONS[p], url));
   if (p === '/' || p === APP_PAGE) return APP_PAGE;
   return null;
