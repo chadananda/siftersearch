@@ -93,6 +93,8 @@ describe('archives repo', () => {
     const [b, a] = await repo.listItems('i1');
     await repo.decideItems([a.id, b.id], { decision: 'approve' });
     expect((await repo.itemsToImport('i1')).map((x) => x.id)).toEqual([b.id, a.id]);
+    expect((await repo.itemsToImport('i1', { ids: [a.id] })).map((x) => x.id)).toEqual([a.id]);
+    expect(await repo.itemsToImport('i1', { ids: [] })).toEqual([]);
     await repo.markImported(b.id, 'media:/m/b.mp3');
     await repo.markImported(a.id, 'dewey:abc');
     expect(await repo.itemsToImport('i1')).toEqual([]);

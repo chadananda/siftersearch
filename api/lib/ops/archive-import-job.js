@@ -92,7 +92,7 @@ async function fillLinks(driveId, { media, dewey, record }) {
   return linked;
 }
 
-export async function archiveImportJob({ drive: driveId, limit = 200 } = {}, deps = {}) {
+export async function archiveImportJob({ drive: driveId, limit = 200, ids = null } = {}, deps = {}) {
   const { queue = (await import('../repos/ops-report-repo.js')).enqueue, sha = sha256Of, now = () => new Date().toISOString(), check = checkHoldings, byIsbn = docsByIsbn,
     mdOf = mdFor, mkrow = async (d, rel, f) => { try { upsertFile(d, { path: rel, ...f }); } catch { /* no collection yet: the backfill creates the row */ } },
     media = deps.media || await import('../repos/media-repo.js'), dewey = deps.dewey || await import('../repos/dewey-repo.js'), dirs = {} } = deps;
@@ -105,7 +105,7 @@ export async function archiveImportJob({ drive: driveId, limit = 200 } = {}, dep
   // a skipped item stays "approved, not imported", so each page starts after the ones passed over
   let off = 0, done = 0;
   for (;;) {
-    const batch = await itemsToImport(drive.id, { limit: 200, offset: off });
+    const batch = await itemsToImport(drive.id, { limit: 200, offset: off, ids });   // ids: import only these approved items
     let moved = 0;
     for (const it of batch) {
       if (done >= limit) break;

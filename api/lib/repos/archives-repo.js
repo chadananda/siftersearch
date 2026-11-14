@@ -130,9 +130,10 @@ export async function answerInfo(id, answer) {
   await query('UPDATE intake_items SET info_answer = ?, decision = NULL, decision_note = NULL, decided_by = NULL, decided_at = NULL, updated_at = ? WHERE id = ?', [answer, now(), id], 'archives:item-answer');
 }
 /** Approved and not yet imported (step 8), best score first. */
-export async function itemsToImport(driveId, { limit = 100, offset = 0 } = {}) {
-  const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND decision = 'approve' AND imported_at IS NULL ORDER BY score DESC, id LIMIT ? OFFSET ?`,
-    [driveId, Math.min(Number(limit) || 100, 1000), Math.max(Number(offset) || 0, 0)], 'archives:items-to-import');
+export async function itemsToImport(driveId, { limit = 100, offset = 0, ids = null } = {}) {
+  const only = Array.isArray(ids) ? ids.map(Number).filter(Number.isInteger) : null;   // just these items: one approved book without the drive's whole backlog
+  const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND decision = 'approve' AND imported_at IS NULL${only ? ` AND id IN (${only.map(() => '?').join(',') || 'NULL'})` : ''} ORDER BY score DESC, id LIMIT ? OFFSET ?`,
+    [driveId, ...(only || []), Math.min(Number(limit) || 100, 1000), Math.max(Number(offset) || 0, 0)], 'archives:items-to-import');
   return rows.map(parseItem);
 }
 /** Books and scans nobody has decided yet (main section, catalogued new or unsure): the dry run's 'undecided' scope, so dedup + the library check run before anyone reviews value. */
