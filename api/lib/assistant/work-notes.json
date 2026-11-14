@@ -591,9 +591,10 @@
      "angle": "purpose",
      "source_title": "The Revelation of Bahá’u’lláh vol. 3",
      "source_author": "Adib Taherzadeh",
-     "url": "https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos",
-     "source_url": "https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos",
-     "tier": 2
+     "url": null,
+     "source_url": null,
+     "tier": 2,
+     "document_id": 431
     },
     {
      "quote": "The Lawh-i-Qad Ihtaraqa'l-Mukhlisun is one of Bahá'u'lláh's most celebrated Tablets; it is possessed of great powers, and the believers often recite it at times of difficulties and suffering.",
@@ -601,9 +602,10 @@
      "angle": "significance",
      "source_title": "The Revelation of Bahá’u’lláh vol. 3",
      "source_author": "Adib Taherzadeh",
-     "url": "https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos",
-     "source_url": "https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos",
-     "tier": 3
+     "url": null,
+     "source_url": null,
+     "tier": 3,
+     "document_id": 431
     },
     {
      "quote": "The Fire Tablet is in Arabic rhyming verse; it moves the heart when chanted in the original language.",
@@ -611,9 +613,10 @@
      "angle": "impression",
      "source_title": "The Revelation of Bahá’u’lláh vol. 3",
      "source_author": "Adib Taherzadeh",
-     "url": "https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos",
-     "source_url": "https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos",
-     "tier": 3
+     "url": null,
+     "source_url": null,
+     "tier": 3,
+     "document_id": 431
     }
    ]
   },
@@ -1433,9 +1436,10 @@
      "angle": "station",
      "source_title": "The Revelation of Bahá’u’lláh vol. 2",
      "source_author": "Shoghi Effendi",
-     "url": "https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos",
-     "source_url": "https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos",
-     "tier": 1
+     "url": null,
+     "source_url": null,
+     "tier": 1,
+     "document_id": 430
     }
    ]
   },

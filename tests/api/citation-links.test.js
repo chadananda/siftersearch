@@ -38,4 +38,10 @@ describe('same work on OceanLibrary under another title (no identical copy)', ()
     expect(m.get(9).url).toMatch(/^https:\/\/oceanlibrary\.com\/fountain-of-wisdom_bahaullah#~q=/);
     expect(m.get(9).title).toBe('Fountain of Wisdom');   // the name shown is the publication the link opens
   });
+  it('a title that is only a prefix of another book is not the work: "Revelation" (KJV) never links Taherzadeh (live 11-14, docs 429-432)', async () => {
+    const own = linkFor({ id: 430, religion: "Baha'i", collection: "Baha'i Books" }, 12);
+    const olWorks = async () => [{ id: 912530, title: 'Revelation', external_id: 'the-apocalypse-of-john-nt_en', source_url: 'https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos', language: 'en' }];
+    const m = await betterCopyLinks([{ id: 7, title: 'The Revelation of Bahá’u’lláh vol. 2', text: 'Bahá’u’lláh revealed the Tablet', link: own }], { copies: async () => new Map(), olWorks });
+    expect(m.has(7)).toBe(false);
+  });
 });

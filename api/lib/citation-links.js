@@ -4,6 +4,7 @@
 // Deps: copies-repo (injectable), source-links.
 import { linkFor, homeRank, readerPrefer } from './source-links.js';
 import { encodeMarker } from './ool-range.js';
+import { otherBook } from './assistant/widgets/card-text.js';
 
 // The SAME WORK only: the bahai-library copy of Gleanings → OceanLibrary's Gleanings; "Bahá'í World Faith" quoting those words
 // stays Bahá'í World Faith (10-12: a row naming one publication must not link another).
@@ -45,7 +46,10 @@ export async function betterCopyLinks(items, opts = {}) {
       // the SAME LANGUAGE too: an Arabic original titled like its English compilation ("Gleanings") was sent to the English
       // book on OceanLibrary (Chad 10-12: "the link for the Arabic is to the english of oceanlibrary.com")
       const rtl = arabicScript(x.quote || x.text);
-      const w = works.find((d) => (sameWork(x.title, d.title) || sameWork(x.title, bookIdWork(d.external_id))) && rtl === rtlLang(d.language));
+      // a title match whose OceanLibrary address names another book is not the work (11-14: "Revelation", the KJV Apocalypse, is a
+      // prefix of "The Revelation of Bahá’u’lláh vol. 1" → every Taherzadeh passage linked to kjv-apocalypse); the book id is proof itself
+      const w = works.find((d) => (sameWork(x.title, bookIdWork(d.external_id)) || (sameWork(x.title, d.title) && !otherBook(d.source_url, x.title)))
+        && rtl === rtlLang(d.language));
       if (w) out.set(Number(x.id), { url: `${String(w.source_url).replace(/[?#].*$/, '')}#~q=${encodeMarker(String(x.quote || x.text).slice(0, 2000))}`,
         site: 'oceanlibrary.com', tier: 1, paragraph_level: true, reader_url: x.link.reader_url, title: w.title });
     }

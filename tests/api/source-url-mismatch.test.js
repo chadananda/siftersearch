@@ -97,3 +97,16 @@ describe('POST /api/admin/ops/docs/:id/source-url', () => {
     expect(await repo.setDocSourceUrl(700, '')).toMatchObject({ changed: 1, before: 'https://bahai-library.com/taherzadeh_revelation' });
   });
 });
+
+describe('work-notes.json (compiled Anís notes) carries no link to another book', () => {
+  it('every note url/source_url names its own work (11-14: Taherzadeh vols 2-3 → kjv-apocalypse, from the same-work prefix bug)', async () => {
+    const fs = await import('node:fs');
+    const { otherBook } = await import('../../api/lib/assistant/widgets/card-text.js');
+    const bad = [];
+    const walk = (o) => { if (Array.isArray(o)) o.forEach(walk); else if (o && typeof o === 'object') {
+      for (const k of ['url', 'source_url']) if (typeof o[k] === 'string' && otherBook(o[k], o.source_title || o.title, o.source_author || o.author)) bad.push(`${o.source_title || o.title} → ${o[k]}`);
+      Object.values(o).forEach(walk); } };
+    walk(JSON.parse(fs.readFileSync(new URL('../../api/lib/assistant/work-notes.json', import.meta.url), 'utf8')));
+    expect(bad).toEqual([]);
+  });
+});
