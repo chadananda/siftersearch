@@ -3,6 +3,7 @@
 import { agentAnswer } from '../../api/lib/assistant/agent-core.js';
 import { toolRunner } from '../../api/lib/assistant/tool-runner.js';
 import { followupsWith } from '../../api/lib/assistant/followups-core.js';
+import { withOfferPill } from '../../api/lib/assistant/reply-form.js';
 import { formPass } from '../../api/lib/assistant/lint.js';
 import { toNative, fromNative, chunksOf } from '../../api/lib/anthropic-native.js';
 import { modelFor } from '../../api/lib/model-roles.js';
@@ -260,7 +261,8 @@ export async function chat(request, env, ctx, deps = {}) {
       const cites = citations.slice(0, 8).map((q) => ({ document_id: q.document_id, paragraph_index: q.paragraph_index, text: q.text, title: q.title, author: q.author, religion: q.religion, url: q.url }));
       if (cites.length) emit({ type: 'citations', citations: cites });
       // only pills research backs are offered: each restated, looked up, a miss searched + captured now (no model call but Haiku)
-      const items = !pills ? [] : await backPills(env, { items: await pills, messages, reply }, { restate: (msgs) => restate(rcreate, rmodel, msgs),
+      // an offer the reply made (dropped from the prose, reply-form.js) is a pill when none of the three takes it up (Chad 11-14)
+      const items = !pills ? [] : await backPills(env, { items: withOfferPill(await pills, A.offers || []), messages, reply }, { restate: (msgs) => restate(rcreate, rmodel, msgs),
         lookup: look, capture: keep,
         research: async (q) => { const r = runnerFor(impl)(impl, { search: 'fused_search' }); await r.run.fused_search({ query: q }); return [...r.found.values()]; } });
       if (items.length) emit({ type: 'followups', items });

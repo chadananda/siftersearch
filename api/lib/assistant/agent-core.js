@@ -4,6 +4,7 @@ import { toolRunner, TOOL_CHARS } from './tool-runner.js';
 import { workNotes as workNotesLookup, asPassage, SAME_QUESTION } from './tool-defs.js';
 import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
 import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence, unappliedCorrection, dropSearchedNote, dropRebuildPreamble, fixCounts, wantsTable, dropSourceSpeculation, dropLinkDebris, duplicateRows, noteDuplicateRows, recapitalise, pointsAbove, dropAbovePointer, unlinkSiteRoots, rebuildsTable, isRebuildMeta } from './lint.js';
+import { DEPTH, hasDepth, dropDepth, dropOffers, runInHeads, headsAsk, leadSource, leadAsk } from './reply-form.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
 import { expandTemplates, mendTemplates, blockquoteCards } from './widgets/templates.js';
@@ -112,6 +113,7 @@ WRITING:
 - A question about a person or an event ("who was Ṭáhirih", "tell me about Badasht") is ALWAYS answered in scenes — this is its short form: one opening sentence, then 3–5 scenes in order — who they were, the turning points, the end — each a line {{scene "Conference of Badasht" "1848: the old law is set aside" P4 P5}}: a short title, one line of your own, then the 1–2 passages (from the research held when there is some; the Writings or Shoghi Effendi first — God Passes By, Memorials of the Faithful) that record that moment, shown whole. A sentence or two of yours between scenes at most. Never only a paraphrase with a citation after it.
 - LENGTH is your judgment, from the question and the reader (what they have indicated: a newcomer, a researcher, a study-class tutor) — never a word count. Give the shortest answer that is complete for THAT reader; what you leave out is offered as follow-up questions under the reply, so detail the reader did not ask for (rulings, side stories, every source's variant) waits for them. A newcomer's story question gets the plain story: 2–3 scenes, one short passage each; a researcher's gets the detail and the sources they asked for.
 - A why / how / isn't-it question (a challenge, doubt or objection, often from someone outside the Faith or outside this conversation) is answered in a few short paragraphs: the presumption named if it carries one, the direct answer, and the one or two passages that settle it, the strongest core passage first. No section headings, no numbered survey of every angle. More passages, rulings, history and counter-objections go in the follow-up questions, not the prose, unless the reader asked for depth or research.
+- When the reader asked for depth or research (your judgement of what they asked, nothing else), start the reply with ${DEPTH}; sections with heads are then allowed. Without it the reply has no section heads and no bold run-in heads ("**Sexism.** …"): plain short paragraphs. Never offer more in the prose ("I can go deeper…", "You are welcome to ask…") — the follow-up questions under the reply carry every offer.
 - Otherwise the shortest complete answer; more only on request (follow-up questions are offered under every reply). A short question gets 1–3 sentences; a request for a book gets its link and one or two sourced lines on it; a study question gets the passages that carry it, quoted, and nothing the reader did not ask for. A follow-up, objection or comparison in a conversation answers that one point: a direct sentence or two, then the 2–3 passages that settle it — never a fresh survey of the topic or of what earlier replies covered.
 - A word or vocabulary question (an Arabic or Persian term, a title, a phrase): rendering_lookup on it in Arabic script, then show it at work in one or two passages — the original line and its published English, each with its ref — and say how Shoghi Effendi renders it. Grammar or etymology you add yourself is marked in two words ("my reading"), never a paragraph about your sources. An original is quoted exactly as its passage gives it — never add vowel marks or change a letter; word-by-word glosses go in italics, never in quotation marks.
 - Documents and email: when the reader asks for something printed, saved or emailed, write the content itself — the system turns your reply into a PDF and emails it (asking for the address if it has none). Never say you cannot send email or make a document, and never describe the delivery yourself. A heading or label over a passage names what that passage itself says — a passage on fasting is never labelled as one on prayer.
@@ -342,7 +344,8 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     return show(notes.slice(0, 5).map((n, i) => add({ id: `note:${work}:${i}`, text: n.quote, title: n.source_title,
       author: n.speaker || n.source_author, source_url: n.url, religion: "Baha'i" })), 600);
   };
-  const convo = convoWindow(messages);
+  // an earlier reply never carries the depth marker back (it is this turn's choice, never a precedent the next turn copies)
+  const convo = convoWindow(messages).map((m) => (m.role === 'assistant' && typeof m.content === 'string' && hasDepth(m.content) ? { ...m, content: dropDepth(m.content) } : m));
   // a turn inside a conversation answers its one new point (11-12: a follow-up objection came back as a 550–700-word survey)
   const followUp = convo.some((m) => m.role === 'assistant') ? `\n\nTHIS TURN CONTINUES A CONVERSATION. The reader has read your earlier replies: answer only the new point, in about 150–250 words — a direct answer, then the 2–3 passages that settle it. Do not repeat or re-survey what earlier replies covered; more is offered under the reply. The one exception: when the reader asks you to compile, revise, send, email or tabulate what was built earlier (\"email me the final table\", \"put it in a document\"), build it IN FULL from the earlier replies above: take the LATEST table row by row, keep every row and its number (1…N, none missing, none merged — each person's facts stay in his own row), apply only the reader's corrections and any new research to the rows they concern — no new survey, no thinner version, and never claim something was not built or is not held when it is in this conversation. When the reader corrects a row (\"#11 is the brother of…\"), check the correction against the passages: where a passage supports it, APPLY it — the row names that person in the reader's sense and the other reading is one short note at most; never restate the reader's correction in other words. Never say an earlier reply was cut off, incomplete or wrong unless a passage you hold now shows it.` : '';
   const msgs = [{ role: 'system', content: frame ? `${AGENT_SYSTEM}${followUp}\n\nTHIS CHANNEL'S REPLY FRAME (it governs length and tone; it overrides the lengths above): ${frame}` : `${AGENT_SYSTEM}${followUp}` }, ...convo];
@@ -350,7 +353,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const turnNote = [firstVisit ? FIRST_VISIT : null, reader, heldText].filter(Boolean).join('\n\n');
   if (turnNote) { const u = msgs.findLastIndex((m) => m.role === 'user'); msgs[u] = { ...msgs[u], content: `${msgs[u].content}\n\n---\n${turnNote}` }; }
   const steps = [], usage = { in: 0, out: 0 };
-  let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false, capped = false, replanned = false, circled = false, drifted = false, absent = false, corrected = false;
+  let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false, capped = false, replanned = false, circled = false, drifted = false, absent = false, corrected = false, formed = false;
   // the answering round streams a sentence at a time; only sentences whose quotations are in a passage held are shown
   const asked0 = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const held0 = () => [...found.values()].map((p) => ({ ...p, source_title: p.title }));
@@ -473,7 +476,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const finishLive = (s) => {
     const [, lead, core0, trail] = String(s).match(/^(\s*)([\s\S]*?)(\s*)$/);
     if (!core0) return s;
-    const c1 = dropSearchedNote(dropNarration(blockquoteCards(sourceOnly(mendTemplates(core0, { found, works, books: bookCards, shown: shownCards(), carded, subject: subj })), found, carded)).text), d = dropUncheckedDisclaimer(c1);
+    const c1 = dropSearchedNote(dropOffers(dropNarration(blockquoteCards(sourceOnly(mendTemplates(dropDepth(core0), { found, works, books: bookCards, shown: shownCards(), carded, subject: subj })), found, carded)).text, { allowEmpty: true }).text), d = dropUncheckedDisclaimer(c1);
     const core = (d.dropped ? d.text : isUncheckedDisclaimer(c1) ? '' : c1).trim();   // a released piece that is only the disclaimer (lint never empties a text)
     if (!core) return '';
     citedWorkCards(core);
@@ -537,6 +540,14 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
         msgs.push({ role: 'assistant', content: final }, { role: 'user', content: driftAsk(drift) });
         continue;
       }
+      // REPLY FORM (reply-form.js, Chad 11-14 Reddit round 3) → once, the writer rewrites: run-in section heads in a reply the agent did not mark
+      // [[DEPTH]]; a talk / pilgrim note / House letter / commentary quoted ahead of a written core passage the same reply quotes
+      const heads = formed || hasDepth(final) ? [] : runInHeads(final), lead = formed ? null : leadSource(final, found);
+      if ((heads.length || lead) && round < maxRounds - 1 && calls < maxCalls) {
+        formed = true; gate = false; streamed = false;
+        msgs.push({ role: 'assistant', content: final }, { role: 'user', content: [heads.length ? headsAsk(heads) : '', lead ? leadAsk(lead) : ''].filter(Boolean).join('\n\n') });
+        continue;
+      }
       // an answer that ends on a plan ("I'll check…") or is only narration is unfinished: once, the agent writes it from what it holds, with no tools
       if (!replanned && (endsOnPlan(final) || (final.trim() && !dropNarration(final).text.trim()))) {
         replanned = true; capped = true; gate = false; streamed = false;   // the replay replaces anything shown
@@ -574,12 +585,13 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     calls += tcs.length;
     for (const { tc, out } of outs) msgs.push({ role: 'tool', tool_call_id: tc.id, content: clip(out, TOOL_CHARS) });
   }
-  final = final.replaceAll(NOT_FOUND, '').trim();
+  final = dropDepth(final.replaceAll(NOT_FOUND, '')).trim();
+  const { text: offerFree, offers } = dropOffers(final);   // offers are the pills' (worker/anis withOfferPill), never the prose's
   citedWorkCards(final);   // a short reply never streamed: the work it names still gets its card (idempotent after a stream)
   // code does the grounding: refs → links, unverifiable quotations out, speakers fixed, quotations linked, no preamble
   const retrieved = [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
   sourceCarded = false; skipped = false;   // the whole reply is one text again (a non-streamed or replayed reply carries its own card)
-  const opened = rebuildsTable(messages, final) ? dropRebuildPreamble(final).text : final;   // a rebuilt table opens with the table (round 7d)
+  const opened = rebuildsTable(messages, offerFree) ? dropRebuildPreamble(offerFree).text : offerFree;   // a rebuilt table opens with the table (round 7d)
   const rendered = renderRefs(dropUncheckedDisclaimer(dropSearchedNote(dropNarration(blockquoteCards(sourceOnly(mendTemplates(opened, { found, works, books: bookCards, shown: shownCards(), carded, subject: subj })), found, carded)).text)).text, { found, works });
   const asked = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const whole = restoreElisions(rendered, retrieved, { asked });   // a "…" bridging the passage's own words → its contiguous words (11-04 #161/#138)
@@ -607,7 +619,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   if (reply && cardsFn) cards = await Promise.resolve().then(() => cardsFn({ reply, passages: cited.filter((q) => fromStrategy.has(q.ref)),
     books: [...bookCards].filter(([ref]) => works.get(ref)?.url && reply.includes(works.get(ref).url)).map(([, b]) => b) }, cardDocs ? { docs: cardDocs } : {})).catch(() => cards);
   const tally = steps.reduce((t, x) => ({ ...t, [x.cache]: (t[x.cache] || 0) + 1 }), {});
-  return { reply, raw: final, talks: [...talks.values()].slice(0, 3), retrieved: cited, citations, steps, usage, cards, widgets, streamed, widgetsShown: shown != null,
+  return { reply, raw: final, offers, talks: [...talks.values()].slice(0, 3), retrieved: cited, citations, steps, usage, cards, widgets, streamed, widgetsShown: shown != null,
     agent: { steps, searches: librarySearches(steps, canonical), nudged, cache: tally, ...(cache ? { store: cache.stats() } : {}) },
     quotes_removed: guarded.removed, quotes_recredited: speakers.fixed || 0, quotes_linked: linked.linked || 0,
     quotes_restored: whole.restored, offers_dropped: offerless.dropped,
