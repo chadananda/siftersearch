@@ -1,6 +1,34 @@
 {
-  "generated": "2026-11-14T00:58:54.861Z",
+  "generated": "2026-11-14T01:32:05.708Z",
   "entries": [
+    {
+      "hash": "da4eba409",
+      "date": "2026-11-13",
+      "type": "Other",
+      "description": "Yes/no allowed only when the model marks it closed and the answer span is verified",
+      "scope": null
+    },
+    {
+      "hash": "65eb72d4a",
+      "date": "2026-11-13",
+      "type": "Other",
+      "description": "No yes/no questions in any tier (seeker exemption removed, prompt asks for the open form)",
+      "scope": null
+    },
+    {
+      "hash": "a4e30d925",
+      "date": "2026-11-13",
+      "type": "Other",
+      "description": "CURRENT_VERSION 206 (edge mirror tables)",
+      "scope": null
+    },
+    {
+      "hash": "b67863fdd",
+      "date": "2026-11-13",
+      "type": "Other",
+      "description": "Anís review tabs + /_d1/edit",
+      "scope": null
+    },
     {
       "hash": "91e758321",
       "date": "2026-11-13",
@@ -707,17 +735,38 @@
       "type": "Other",
       "description": "The edge Worker modules tower also imports (worker/queue/core.js, worker/dewey-upload.js) are runtime code. 10-31: e14c272f changed only worker/queue/core.js (the queue core behind the LAN queue and the pod plan) and was pulled \"touching no runtime code — no reload\", so siftersearch-media kept the old plan. A test walks api/ and scripts/ for imports of worker/ and fails on any not listed",
       "scope": null
-    },
-    {
-      "hash": "90da35e71",
-      "date": "2026-10-31",
-      "type": "Other",
-      "description": "A re-transcription off the worker never erases measured coverage, and a talk can be sent through the worker chain again (media-cloud-order mode 'whole', explicit ids only). 10-31: the tower-side transcribe redo of 1947 wrote asr.coverage null, the publish gate read \"not measured = no problem\" and published a 221-word transcript of a 58-min talk whose worker measurement had 259 holes. Now such a redo records coverage {unmeasured} and publishing blocks until a whole redo measures it in the worker. Tests cover both",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-11-13": [
+      {
+        "hash": "da4eba409",
+        "date": "2026-11-13",
+        "type": "Other",
+        "description": "Yes/no allowed only when the model marks it closed and the answer span is verified",
+        "scope": null
+      },
+      {
+        "hash": "65eb72d4a",
+        "date": "2026-11-13",
+        "type": "Other",
+        "description": "No yes/no questions in any tier (seeker exemption removed, prompt asks for the open form)",
+        "scope": null
+      },
+      {
+        "hash": "a4e30d925",
+        "date": "2026-11-13",
+        "type": "Other",
+        "description": "CURRENT_VERSION 206 (edge mirror tables)",
+        "scope": null
+      },
+      {
+        "hash": "b67863fdd",
+        "date": "2026-11-13",
+        "type": "Other",
+        "description": "Anís review tabs + /_d1/edit",
+        "scope": null
+      },
       {
         "hash": "91e758321",
         "date": "2026-11-13",
@@ -1447,13 +1496,6 @@
         "date": "2026-10-31",
         "type": "Other",
         "description": "The edge Worker modules tower also imports (worker/queue/core.js, worker/dewey-upload.js) are runtime code. 10-31: e14c272f changed only worker/queue/core.js (the queue core behind the LAN queue and the pod plan) and was pulled \"touching no runtime code — no reload\", so siftersearch-media kept the old plan. A test walks api/ and scripts/ for imports of worker/ and fails on any not listed",
-        "scope": null
-      },
-      {
-        "hash": "90da35e71",
-        "date": "2026-10-31",
-        "type": "Other",
-        "description": "A re-transcription off the worker never erases measured coverage, and a talk can be sent through the worker chain again (media-cloud-order mode 'whole', explicit ids only). 10-31: the tower-side transcribe redo of 1947 wrote asr.coverage null, the publish gate read \"not measured = no problem\" and published a 221-word transcript of a 58-min talk whose worker measurement had 259 holes. Now such a redo records coverage {unmeasured} and publishing blocks until a whole redo measures it in the worker. Tests cover both",
         "scope": null
       }
     ]
