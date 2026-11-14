@@ -414,14 +414,15 @@
     if (results.every(Boolean)) { threads = dropShares(threads, t.id); saveIndex(LS(), token, threads); toast('Unpublished'); }
     else toast('Could not unpublish. Please try again.');
   }
-  // the app opened from a shared discussion (/?from=<slug>, the page's "Continue" button): a new thread that holds it
+  // the app opened from a shared discussion (/?from=<slug>, the /d/ page's "Continue" button) or a published one
+  // (/?discuss=<slug>, worker/anis/discuss.js): a new thread that holds it
   async function continueShared() {
     if (!isFull || typeof location === 'undefined') return;
-    const slug = new URLSearchParams(location.search).get('from');
+    const q = new URLSearchParams(location.search), kind = q.has('discuss') ? 'discuss' : 'from', slug = q.get(kind);
     if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)+$/.test(slug)) return;
-    try { const u = new URL(location.href); u.searchParams.delete('from'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } catch { /* ok */ }
+    try { const u = new URL(location.href); u.searchParams.delete(kind); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } catch { /* ok */ }
     try {
-      const r = await fetch(`${api}/api/chat/share/${slug}`);
+      const r = await fetch(`${api}/api/chat/${kind === 'discuss' ? 'discuss' : 'share'}/${slug}`);
       const d = r.ok ? await r.json() : null, ms = fromShared(d);
       if (!ms.length) throw new Error('empty');
       setActive(newThreadId()); messages = ms; errorMsg = '';

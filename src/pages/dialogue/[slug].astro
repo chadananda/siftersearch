@@ -44,6 +44,7 @@ const related = allPublished
 const allRecent = [...allPublished].sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
 
 const linkableTags = data.tags;
+// canonical: the same discussion on the Anís host (worker/anis/discuss.js, Chad 11-14); this page stays for siftersearch readers
 
 // Schema.org structured data
 const articleSchema = {
@@ -108,6 +109,7 @@ const TOPIC_LABELS: Record<string, string> = {
   description={sq(data.description)}
   image={data.hero_image ? heroUrl(data.hero_image) : '/icon-512.png'}
   type="article"
+  canonical={`https://anis.oceanlibrary.com/discuss/${slug}`}
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />

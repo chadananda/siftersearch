@@ -11,7 +11,7 @@ export const DISCUSSION_PATH = /^\/d\/([a-z0-9]+(?:-[a-z0-9]+)+)\/?$/;
 export const LIMITS = { turns: 40, turnChars: 30000, totalChars: 90000, title: 120, summary: 240 };
 const DRAFT_TTL = 864e5;
 
-const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+export const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const line = (s, n) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, n);
 
 // ── deterministic scrub ──────────────────────────────────────────────────────────────────────────────────────
@@ -117,9 +117,9 @@ export async function sanitize(turns, ask) {
 }
 
 // ── the public page ──────────────────────────────────────────────────────────────────────────────────────────
-const fmtDate = (ms) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+export const fmtDate = (ms) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 // the answer's markdown as page HTML; every heading inside an answer is an h3 (the question is the h2: a sequential outline)
-const answerHtml = (md) => replyHtml(String(md || '').replace(/<!--[\s\S]*?-->/g, '')).replace(/<(\/?)h[1-6]\b/g, '<$1h3');
+export const answerHtml = (md) => replyHtml(String(md || '').replace(/<!--[\s\S]*?-->/g, '')).replace(/<(\/?)h[1-6]\b/g, '<$1h3');
 export const plain = (md) => String(md || '').replace(/<!--[\s\S]*?-->/g, '').replace(/\{\{[^}]*\}\}/g, '').replace(/!?\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[*_>#|`]/g, '').replace(/\s+/g, ' ').trim();
 
 /** JSON-LD DiscussionForumPosting: the first question is the posting, each answer and later question a comment. */
@@ -175,7 +175,7 @@ footer .wrap{padding-top:18px;padding-bottom:28px;font:14px/1.7 var(--sans);colo
 footer p{margin:0 0 6px}
 @media (max-width:520px){body{font-size:16.5px}main.wrap{padding-top:28px}.a{padding:14px 16px}.brand small{display:none}}`;
 
-const head = (o) => `<!doctype html>
+export const head = (o) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -191,7 +191,7 @@ ${o.canonical ? `<link rel="canonical" href="${esc(o.canonical)}">` : '<meta nam
 <link rel="apple-touch-icon" href="/anis-app/apple-touch-icon.png">
 ${o.extra || ''}<style>${CSS}</style>
 </head>`;
-const TOP = `<header class="top"><div class="wrap"><a class="brand" href="/"><span class="mark" aria-hidden="true">A</span>Anís <small>Ocean AI Research Assistant</small></a><a class="ask" href="/">Ask a question</a></div></header>`;
+export const TOP = `<header class="top"><div class="wrap"><a class="brand" href="/"><span class="mark" aria-hidden="true">A</span>Anís <small>Ocean AI Research Assistant</small></a><a class="ask" href="/">Ask a question</a></div></header>`;
 const FOOT = `<footer><div class="wrap"><p>Shared by a reader from Anís, the Ocean AI Research Assistant of Ocean 2.0. Personal details are removed before a discussion is published.</p><p>Answers quote and link their sources — read each passage in its context in the <a href="https://oceanlibrary.com/">Ocean Library</a>.</p></div></footer>`;
 
 /** The public discussion page: server-rendered, no script but JSON-LD, inline CSS, light + dark. */

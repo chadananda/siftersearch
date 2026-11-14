@@ -32,7 +32,7 @@ export const MANIFEST = {
 };
 
 // The app shell works offline (last copy of the page and its static files); chat, /api and /widget stay network-only so
-// a reader never sees a stale answer or an old widget build.
+// a reader never sees a stale answer or an old widget build. Discussion pages (/d/, /discuss) are pages of their own, never stored as '/'.
 export const SW = `const C = 'anis-app-v1';
 self.addEventListener('install', (e) => { self.skipWaiting(); e.waitUntil(caches.open(C).then((c) => c.addAll(['/', '/anis-app/icon-192.png']))); });
 self.addEventListener('activate', (e) => e.waitUntil((async () => {
@@ -41,7 +41,7 @@ self.addEventListener('activate', (e) => e.waitUntil((async () => {
 })()));
 self.addEventListener('fetch', (e) => {
   const u = new URL(e.request.url);
-  if (e.request.method !== 'GET' || u.origin !== location.origin || /^\\/(api|widget|d)\\//.test(u.pathname) || u.pathname === '/widget.js') return;
+  if (e.request.method !== 'GET' || u.origin !== location.origin || /^\\/(api|widget|d|discuss)(\\/|$)/.test(u.pathname) || u.pathname === '/widget.js') return;
   if (e.request.mode === 'navigate') {
     e.respondWith(fetch(e.request).then((r) => { if (r.ok) { const c = r.clone(); caches.open(C).then((x) => x.put('/', c)); } return r; })
       .catch(() => caches.match('/')));
@@ -63,7 +63,10 @@ export function assetLinks(env = {}) {
 const ORIGIN = 'https://anis.oceanlibrary.com';
 // the host's own robots and sitemap (not the main site's); anis-sitemap.xml because Workers Assets _redirects sends /sitemap.xml to the site index before the Worker runs: the app page is the one page to index; /api and the widget are not pages
 export const ROBOTS = `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /widget\n\nSitemap: ${ORIGIN}/anis-sitemap.xml\n`;
-export const SITEMAP = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${ORIGIN}/</loc><changefreq>weekly</changefreq></url></urlset>\n`;
+// + the published discussions (worker/anis/discuss.js discussSitemapUrls, added by the site Worker)
+const urlXml = (u) => `<url><loc>${u.loc}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ''}${u.changefreq ? `<changefreq>${u.changefreq}</changefreq>` : ''}</url>`;
+export const sitemapXml = (extra = []) => `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${[{ loc: `${ORIGIN}/`, changefreq: 'weekly' }, ...extra].map(urlXml).join('')}</urlset>\n`;
+export const SITEMAP = sitemapXml();
 // browsers and search engines ask for these at the root; the files live with the app's icons
 const ROOT_ICONS = { '/favicon.ico': '/anis-app/favicon.ico', '/apple-touch-icon.png': '/anis-app/apple-touch-icon.png', '/apple-touch-icon-precomposed.png': '/anis-app/apple-touch-icon.png' };
 

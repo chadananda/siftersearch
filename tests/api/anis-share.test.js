@@ -230,6 +230,6 @@ describe('site worker forwards (anis.oceanlibrary.com)', () => {
   it('/api/chat/share* (any method) goes to the Anís Worker before the tower proxy', () => {
     const at = w.indexOf("url.pathname.startsWith('/api/chat/share/'))) return env.ANIS.fetch(request)");
     expect(at).toBeGreaterThan(0);
-    expect(at).toBeLessThan(w.indexOf('policyFor(url, request.method'));
+    expect(at).toBeLessThan(w.indexOf('policyFor(url, request.method, policyHeaders(request, test));\n        const st'));   // the main cache dispatch
   });
 });

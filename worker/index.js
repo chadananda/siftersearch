@@ -18,8 +18,9 @@ import { deweyEmail } from './mail/dewey.js';
 import { deweyUploadRoute } from './dewey-upload.js';
 import { mediaFile, warmMedia, ensureMedia, MEDIA_FILE } from './media.js';
 import { shortLink, shortHost, SHORT_PATH, SHORT_HOST } from './short-links.js';
-import { anisAppRoute } from './anis-app.js';
+import { anisAppRoute, sitemapXml } from './anis-app.js';
 import { DISCUSSION_PATH } from './anis/share.js';
+import { DISCUSS_PATH, DISCUSS_API, DIALOGUE_PATH, discussUrl, discussResponse, discussTurns, discussSitemapUrls } from './anis/discuss.js';
 import { d1Dump, d1Edit } from './d1-dump.js';
 import { version as BUILD_VERSION } from '../package.json';
 import { als, evict, installFetchCache, policyFor, cacheKey, serveCached, apiProducer, edgeStoredCc, API_ORIGIN } from './edge-cache.js';
@@ -31,7 +32,7 @@ installFetchCache();
 // Pre-warm (after deploy: /_edge/warm; cron every minute fills cold keys, every 10th minute refreshes stale ones) so a
 // visitor practically never meets a never-cached page. Talks: the first N of the media index.
 const WARM_API = ['/api/media/index', '/api/media/progress', '/api/media/progress/live', '/api/speakers', '/api/v1/pages', '/api/library/landing', '/api/library/shelves'];
-const WARM_PAGES = ['/', '/media', '/library', '/biography', '/docs', '/dialogue', '/research', '/about', '/sitemap-library.xml'];
+const WARM_PAGES = ['/', '/media', '/library', '/biography', '/docs', '/research', '/about', '/sitemap-library.xml'];
 const WARM_TALKS = 24;
 
 // x-sifter-origin-test: down | slow=<ms> — simulate an unreachable / slow tower for THIS request (internal key only).
@@ -113,6 +114,18 @@ export function createExports(manifest) {
       async fetch(request, env, ctx) {
         const url = new URL(request.url);
         if (url.hostname === SHORT_HOST) {   // anis.oceanlibrary.com: Anís as an installable app at the root (worker/anis-app.js)
+          // published discussions (worker/anis/discuss.js): /discuss + /discuss/<slug>, edge-cached like the site's pages
+          const dm = ['GET', 'HEAD'].includes(request.method) && DISCUSS_PATH.exec(url.pathname);
+          if (dm) {
+            const test = originTest(request, env), st = { env, ctx, tainted: false, test };
+            const policy = policyFor(url, request.method, policyHeaders(request, test));
+            const produce = () => discussResponse(dm[1], { api: API_ORIGIN });
+            return als.run(st, () => (policy.mode === 'cache' ? serveCached({ key: cacheKey(url, policy.kind, BUILD_VERSION), policy, env, ctx, produce }) : produce().then((r) => r.res)));
+          }
+          if (url.pathname === '/anis-sitemap.xml' && request.method === 'GET') {   // the app root + every published discussion
+            const urls = await als.run({ env, ctx, tainted: false, test: null }, () => discussSitemapUrls({ api: API_ORIGIN }));
+            return new Response(sitemapXml(urls), { headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=3600' } });
+          }
           const a = await anisAppRoute(url, env);
           if (a instanceof Response) return a;
           if (url.pathname.startsWith('/img/') && env.IMG) return env.IMG.fetch(request);   // covers/portraits: the image Worker (service binding), same as siftersearch.com/img/*
@@ -121,6 +134,11 @@ export function createExports(manifest) {
           if (env.ANIS && ['GET', 'HEAD'].includes(request.method) && DISCUSSION_PATH.test(url.pathname)) return env.ANIS.fetch(request);
         }
         { const s = shortHost(request, { base: env.DOCS_PUBLIC_URL || undefined, pass: isApiPath }); if (s) return s; }   // anis.oceanlibrary.com: short links, the widget + API
+        // the discussions live on the Anís host (canonical there); this site's /discuss is only a door to them
+        if (DISCUSS_PATH.test(url.pathname)) return Response.redirect(`https://${SHORT_HOST}${url.pathname}${url.search}`, 301);
+        { const m = DIALOGUE_PATH.exec(url.pathname); if (m) return Response.redirect(`${discussUrl(m[1])}${url.search}`, 301); }   // the old /dialogue pages (kept in the repo, never served)
+        // the chat's "Continue this conversation" from a published discussion (?discuss=<slug>): its turns
+        { const m = request.method === 'GET' && DISCUSS_API.exec(url.pathname); if (m) return als.run({ env, ctx, tainted: false, test: null }, () => discussTurns(m[1], { api: API_ORIGIN })); }
         if (url.pathname === '/_edge/warm') {
           if (!env.S1_KEY || request.headers.get('x-internal-key') !== env.S1_KEY) return Response.json({ error: 'unauthorized' }, { status: 401 });
           const t0 = Date.now();
