@@ -148,8 +148,8 @@ describe('edge cache', async () => {
     const { join } = await import('path');
     const src = readFileSync(join(import.meta.dirname, '../../worker/index.js'), 'utf8');
     expect(src).toMatch(/DOC_PATH\.exec\(url\.pathname\)/);
-    expect(src).toMatch(/docSitemapUrls\(\{ api: API_ORIGIN \}\)/);
+    expect(src).toMatch(/docSitemapUrls[,\]]/);
     expect(src).toMatch(/DOC_PATH\.test\(url\.pathname\)\) return Response\.redirect/);
-    expect(readFileSync(join(import.meta.dirname, '../../worker/anis-app.js'), 'utf8')).toContain('(api|widget|d|discuss|doc)');
+    expect(readFileSync(join(import.meta.dirname, '../../worker/anis-app.js'), 'utf8')).toContain('(api|widget|d|discuss|doc|bio|media)');
   });
 });

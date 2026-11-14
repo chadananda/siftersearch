@@ -41,7 +41,7 @@ self.addEventListener('activate', (e) => e.waitUntil((async () => {
 })()));
 self.addEventListener('fetch', (e) => {
   const u = new URL(e.request.url);
-  if (e.request.method !== 'GET' || u.origin !== location.origin || /^\\/(api|widget|d|discuss|doc)(\\/|$)/.test(u.pathname) || u.pathname === '/widget.js') return;
+  if (e.request.method !== 'GET' || u.origin !== location.origin || /^\\/(api|widget|d|discuss|doc|bio|media)(\\/|$)/.test(u.pathname) || u.pathname === '/widget.js') return;
   if (e.request.mode === 'navigate') {
     e.respondWith(fetch(e.request).then((r) => { if (r.ok) { const c = r.clone(); caches.open(C).then((x) => x.put('/', c)); } return r; })
       .catch(() => caches.match('/')));

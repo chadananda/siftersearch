@@ -26,7 +26,7 @@ describe('Anís app host', () => {
     const r = at('/anis-sw.js');
     expect(r.headers.get('service-worker-allowed')).toBe('/');
     const src = await r.text();
-    expect(src).toContain('(api|widget|d|discuss|doc)');
+    expect(src).toContain('(api|widget|d|discuss|doc|bio|media)');
     expect(() => new Function(src.replace(/self\.|caches\.|location\./g, 'globalThis.'))).not.toThrow();
   });
   it('asset links stay empty until the Android package is configured', () => {
