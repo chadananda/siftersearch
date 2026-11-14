@@ -23,6 +23,7 @@ import { DISCUSSION_PATH } from './anis/share.js';
 import { DISCUSS_PATH, DISCUSS_API, DIALOGUE_PATH, discussUrl, discussResponse, discussTurns, discussSitemapUrls } from './anis/discuss.js';
 import { DOC_PATH, docResponse, docSitemapUrls } from './anis/doc-pages.js';
 import { BIO_PATH, BIOGRAPHY_PATH, bioResponse, bioSitemapUrls } from './anis/people.js';
+import { MEDIA_PATH, mediaResponse, mediaSitemapUrls } from './anis/talks.js';
 import { d1Dump, d1Edit } from './d1-dump.js';
 import { version as BUILD_VERSION } from '../package.json';
 import { als, evict, installFetchCache, policyFor, cacheKey, anisCacheKey, serveCached, apiProducer, edgeStoredCc, API_ORIGIN } from './edge-cache.js';
@@ -34,7 +35,7 @@ installFetchCache();
 // Pre-warm (after deploy: /_edge/warm; cron every minute fills cold keys, every 10th minute refreshes stale ones) so a
 // visitor practically never meets a never-cached page. Talks: the first N of the media index.
 const WARM_API = ['/api/media/index', '/api/media/progress', '/api/media/progress/live', '/api/speakers', '/api/v1/pages', '/api/library/landing', '/api/library/shelves'];
-const WARM_PAGES = ['/', '/media', '/library', '/docs', '/research', '/about', '/sitemap-library.xml'];
+const WARM_PAGES = ['/', '/library', '/docs', '/research', '/about', '/sitemap-library.xml'];
 const WARM_TALKS = 24;
 
 // x-sifter-origin-test: down | slow=<ms> — simulate an unreachable / slow tower for THIS request (internal key only).
@@ -105,7 +106,7 @@ export function createExports(manifest) {
       for (const p of WARM_API) await one(p);
       let talks = [];
       try { const d = await (await fetch(API_ORIGIN + '/api/media/index')).json(); talks = (d.items || []).map((i) => i?.s).filter(Boolean).slice(0, WARM_TALKS); } catch { /* pages only */ }
-      const queue = [...WARM_PAGES, ...talks.map((s) => `/media/${s}`), ...talks.map((s) => `/api/media/${s}`)];
+      const queue = [...WARM_PAGES, ...talks.map((s) => `/api/media/${s}`)];
       await Promise.all(Array.from({ length: 4 }, async () => { while (queue.length) await one(queue.shift()); }));
       return out;
     });
@@ -132,16 +133,17 @@ export function createExports(manifest) {
             const produce = () => docResponse(xm, { api: API_ORIGIN });
             return als.run(st, () => (policy.mode === 'cache' ? serveCached({ key: cacheKey(url, policy.kind, BUILD_VERSION), policy, env, ctx, produce }) : produce().then((r) => r.res)));
           }
-          // biographies (worker/anis/people.js): /bio[/<slug>], edge-cached in the Anís key namespace
-          const bm = ['GET', 'HEAD'].includes(request.method) && BIO_PATH.exec(url.pathname);
+          // biographies (worker/anis/people.js) and talks (worker/anis/talks.js): /bio[/<slug>], /media[/<slug>]; keys in the Anís namespace
+          // (the same paths once held siftersearch.com's own pages)
+          const bm = ['GET', 'HEAD'].includes(request.method) && (BIO_PATH.exec(url.pathname) || MEDIA_PATH.exec(url.pathname));
           if (bm) {
             const test = originTest(request, env), st = { env, ctx, tainted: false, test };
             const policy = policyFor(url, request.method, policyHeaders(request, test));
-            const produce = () => bioResponse(bm[1] || '', { api: API_ORIGIN });
+            const produce = () => (bm[0].startsWith('/bio') ? bioResponse(bm[1] || '', { api: API_ORIGIN }) : mediaResponse(bm[1] || '', { api: API_ORIGIN }));
             return als.run(st, () => (policy.mode === 'cache' ? serveCached({ key: anisCacheKey(url, policy.kind, BUILD_VERSION), policy, env, ctx, produce }) : produce().then((r) => r.res)));
           }
-          if (url.pathname === '/anis-sitemap.xml' && request.method === 'GET') {   // the app root + every published discussion, /doc text and biography
-            const urls = await als.run({ env, ctx, tainted: false, test: null }, async () => (await Promise.all([discussSitemapUrls, docSitemapUrls, bioSitemapUrls].map((f) => f({ api: API_ORIGIN })))).flat());
+          if (url.pathname === '/anis-sitemap.xml' && request.method === 'GET') {   // the app root + every published discussion, /doc text, biography and talk
+            const urls = await als.run({ env, ctx, tainted: false, test: null }, async () => (await Promise.all([discussSitemapUrls, docSitemapUrls, bioSitemapUrls, mediaSitemapUrls].map((f) => f({ api: API_ORIGIN })))).flat());
             return new Response(sitemapXml(urls), { headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=3600' } });
           }
           const a = await anisAppRoute(url, env);
@@ -154,8 +156,9 @@ export function createExports(manifest) {
         { const s = shortHost(request, { base: env.DOCS_PUBLIC_URL || undefined, pass: isApiPath }); if (s) return s; }   // anis.oceanlibrary.com: short links, the widget + API
         // the discussions and /doc texts live on the Anís host (canonical there); this site's /discuss and /doc are only doors to them
         if (DISCUSS_PATH.test(url.pathname) || DOC_PATH.test(url.pathname)) return Response.redirect(`https://${SHORT_HOST}${url.pathname}${url.search}`, 301);
-        // biographies too (Chad 11-14: the Anís URLs are canonical)
+        // biographies and talks too (Chad 11-14: the Anís URLs are canonical); /media's speakers, sets, clips and admin pages stay here
         { const m = BIOGRAPHY_PATH.exec(url.pathname); if (m) return Response.redirect(`https://${SHORT_HOST}/bio${m[1] ? `/${m[1]}` : ''}${url.search}`, 301); }
+        { const m = MEDIA_PATH.exec(url.pathname); if (m && !/^(remaster|speakers|sets)$/.test(m[1] || '')) return Response.redirect(`https://${SHORT_HOST}${url.pathname}${url.search}`, 301); }
         { const m = DIALOGUE_PATH.exec(url.pathname); if (m) return Response.redirect(`${discussUrl(m[1])}${url.search}`, 301); }   // the old /dialogue pages (kept in the repo, never served)
         // the chat's "Continue this conversation" from a published discussion (?discuss=<slug>): its turns
         { const m = request.method === 'GET' && DISCUSS_API.exec(url.pathname); if (m) return als.run({ env, ctx, tainted: false, test: null }, () => discussTurns(m[1], { api: API_ORIGIN })); }
@@ -172,7 +175,7 @@ export function createExports(manifest) {
           if (!/^[a-z0-9][a-z0-9-]{0,160}$/.test(slug)) return Response.json({ error: 'bad slug' }, { status: 400 });
           const at = (p, kind) => cacheKey(new URL(`https://siftersearch.com${p}`), kind, BUILD_VERSION);
           const keys = doc ? [at(`/docs/${slug}`, 'html'), at(`/api/v1/pages/${slug}`, 'api'), at('/api/v1/pages', 'api')]
-            : [at(`/media/${slug}`, 'html'), at(`/api/media/${slug}`, 'api')];
+            : [at(`/media/${slug}`, 'html'), at(`/api/media/${slug}`, 'api'), anisCacheKey(new URL(`https://${SHORT_HOST}/media/${slug}`), 'html', BUILD_VERSION)];
           await Promise.all(keys.map((k) => evict(k, env)));
           return Response.json({ purged: keys });
         }
