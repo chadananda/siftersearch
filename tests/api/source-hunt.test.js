@@ -1,6 +1,6 @@
 // SourceHunt: origin choice, citing publications, tablet (linked vs cross-lingual candidates) — all deps faked.
 import { describe, it, expect } from 'vitest';
-import { sourceHunt, prepareQuote, rankOrigins, quoteAuthorOf } from '../../api/lib/source-hunt.js';
+import { sourceHunt, prepareQuote, rankOrigins, quoteAuthorOf, misfiled } from '../../api/lib/source-hunt.js';
 
 const QUOTE = 'The earth is but one country, and mankind its citizens';
 const ROWS = {
@@ -102,6 +102,16 @@ describe('sourceHunt', () => {
       expect((await sourceHunt(QUOTE, deps({ rows }))).origin.id).toBe(1);   // ranked first without the rule
       const r = await sourceHunt(QUOTE, deps({ rows }), { coreOnly: true });
       expect(r.origin).toMatchObject({ id: 3 });
+    });
+    it('a scholar\'s study filed under another tradition with a Central Figure as author is never the source (11-14 Paradise and Paradigm)', async () => {
+      const rows = async (ids) => (await rowsWith([1, 3])(ids)).map((r) => (r.id === 3
+        ? { ...r, religion: 'Christian', collection: null, book_author: 'Bahá’u’lláh', title: 'Paradise and Paradigm', source_site: null, fm_translator: null }
+        : r));
+      const r = await sourceHunt(QUOTE, deps({ rows }), { coreOnly: true });
+      expect(r.origin).toMatchObject({ id: 1, title: 'Gleanings' });
+      expect(misfiled({ religion: 'Christian', book_author: 'Bahá’u’lláh' })).toBe(true);
+      expect(misfiled({ religion: 'Islam', book_author: 'Rumi' })).toBe(false);   // another tradition's own writer stays a source
+      expect(misfiled({ religion: null, book_author: 'Bahá’u’lláh' })).toBe(false);
     });
   });
 

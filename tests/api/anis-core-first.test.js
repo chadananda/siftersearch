@@ -3,7 +3,7 @@
 // The search a Bahá'í question runs hands the written core over first (English Writings, Shoghi Effendi, then the Persian/
 // Arabic originals), talks kept after them, pilgrim notes after talks, commentary left out once the core is enough.
 import { describe, it, expect } from 'vitest';
-import { byTier, coreFirst, needsWritings, tierLabel, CORE_ENOUGH } from '../../api/lib/assistant/source-tier.js';
+import { byTier, coreFirst, needsWritings, othersDocument, tierLabel, CORE_ENOUGH } from '../../api/lib/assistant/source-tier.js';
 import { toolRunner } from '../../api/lib/assistant/researcher.js';
 import { agentAnswer, AGENT_SYSTEM } from '../../api/lib/assistant/agent-core.js';
 
@@ -93,6 +93,31 @@ describe('core texts first: held research and the agent prompt', () => {
     expect(needsWritings([HYMN, GLEANINGS, BAYAN])).toBe(true);
     expect(coreFirst([HYMN, GLEANINGS, BAYAN]).left).toBe(0);
     expect(coreFirst([HYMN, GLEANINGS, BAYAN, SWAB]).kept).toEqual([GLEANINGS, BAYAN, SWAB]);
+  });
+  // round 4 live replay: held set 182 as D1 stores it — no collection field, so the Hymn (Savi's study, filed under Bahá'u'lláh) counted as an
+  // authorized Writing and nothing was left out. The address is read instead: bahai-library.com/savi_… is Savi's document, /tablet-translations/ the shelf.
+  const SET_182 = [
+    { id: 28512421, title: 'The Springs of Divine Bounty Are Welling Forth', author: "Bahá'u'lláh", religion: B, language: 'fa', source_url: 'https://oceanoflights.org/bahaullah-pub01-23-fa/#x', text: 'شیطان' },
+    { id: 20786517, title: 'Tabernacle of Unity', author: 'Bahá’u’lláh', religion: B, source_url: 'https://siftersearch.com/library/view?doc=20807#p114', text: 'the Evil One' },
+    { id: 28307327, title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh', religion: B, source_url: 'https://oceanlibrary.com/gleanings-from-the-writings-of-bahaullah/?paraId=para_261', text: 'Watch over yourselves, for the Evil One is lying in wait' },
+    { id: 14145050, title: 'Súrih of the Exposition (Súrat al-Bayán)', author: "Bahá'u'lláh", religion: B, source_url: 'https://siftersearch.com/library/bahai/tablet-translations/bahaullah_surih-bayan#p35', text: 'the very deeds of the Evil One' },
+    { id: 10628537, title: 'A Hymn to Love (Sáqí, bi-dih ábí)', author: 'Bahá’u’lláh', religion: B, source_url: 'https://bahai-library.com/savi_hymn_love', text: 'the Evil Whisperer … the Satan of self' },
+    { id: 20818537, title: 'Paris Talks', author: '‘Abdu’l-Bahá', religion: B, source_url: 'https://oceanlibrary.com/paris-talks_abdul-baha/?paraId=para_1042', text: 'evil is imperfection' }];
+  it('held research with no collection (as D1 holds it): the study is read from its address and left out; the talk kept', async () => {
+    const { kept } = coreFirst(byTier(SET_182));
+    expect(kept.map((p) => p.id)).not.toContain(10628537);
+    expect(kept.map((p) => p.id)).not.toContain(14145050);   // an individual's rendering, once the authorized core is enough
+    expect(kept.map((p) => p.id)).toEqual(expect.arrayContaining([28307327, 20786517, 20818537]));
+    expect(othersDocument({ source_url: 'https://bahai-library.com/savi_hymn_love' })).toBe(true);
+    expect(othersDocument({ source_url: 'https://bahai-library.com/bahaullah_hall_surih_visitation' })).toBe(false);
+    expect(othersDocument({ source_url: 'https://bahai-library.com/bab_nicolas_terry_proofs' })).toBe(false);
+    const seen = [];
+    await agentAnswer({ messages: [{ role: 'user', content: 'What is the Evil One in the Bahá\'í Writings?' }], tools: { search: async () => [] },
+      held: { same: true, status: 'candidate', question: 'What is the Evil One in the Bahá\'í Writings: a literal being or a metaphor?', passages: SET_182 },
+      create: async (p) => { seen.push(p); return { choices: [{ message: { content: 'Bahá’u’lláh warns:\n\n{{quote P1}}' } }] }; } });
+    const turn = seen[0].messages.findLast((m) => m.role === 'user').content;
+    expect(turn).not.toMatch(/Hymn to Love|savi_hymn_love/);
+    expect(turn).toMatch(/Paris Talks/);
   });
   it('the prompt: core texts lead, originals with their existing translation, talks beside, scholars only for an unaddressed point', () => {
     expect(AGENT_SYSTEM).toMatch(/CORE TEXTS FIRST/);

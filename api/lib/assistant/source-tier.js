@@ -67,6 +67,12 @@ export function sourceTier(p = {}) {
   return 'secondary';
 }
 
+/** A Central Figure or Shoghi Effendi as the writer of a document filed under ANOTHER tradition: a metadata contradiction (11-14 replay:
+ *  "Paradise and Paradigm", a scholar's study on the Christian shelf with author "Bahá'u'lláh", became the source card "— Bahá'u'lláh").
+ *  Never a source, never credited to that writer on a card. A document with no religion is not judged. Pure. */
+export const misfiled = (p = {}) => !!p?.religion && !isBahai(p) && [p.author, p.source_author, p.writer, p.book_author]
+  .some((w) => { const k = keyOf(String(w || '').split(/[,;&]| and /)[0]); return WRITINGS.has(k) || k === GUARDIAN; });
+
 /** Why a passage has no tier when it may be Bahá'í: its document has no religion, so its standing cannot be read (the 11-04
  *  traces: "The Pattern of Bahá'í Life", author '4461', religion null). A METADATA gap — logged and counted, never guessed. */
 export function tierGap(p = {}) {
@@ -85,10 +91,21 @@ const rankOf = (p) => { const t = sourceTier(p); const i = TIER_ORDER.indexOf(t)
 // shelf, a "(provisional translation)" title, a provisional / personal translation label, or a named translator who is not
 // Shoghi Effendi or an institution. 0 = authorized/published, 1 = an individual's rendering. Pure.
 const OFFICIAL = /shoghi|world cent(?:re|er)|house of justice|research department|committee|publishing trust/i;
+// A passage with no collection (research sets stored none before 11-14 — the held Evil One set: Savi's "A Hymn to Love" counted as an
+// authorized Writing, so commentary was never left out) is read from its address, which is metadata too: the library's Tablet
+// Translations shelf, and bahai-library.com, which names a document <writer>_<title> — a Central Figure's or Shoghi Effendi's own
+// text is filed under them (bahaullah_hall_…, bab_…), any other first word is another person's document (savi_hymn_love, hornby_…).
+const urlOf = (p) => String(p?.source_url || p?.url || p?.citation_url || '');
+const TT_URL = /\/library\/bahai\/tablet-translations\//i;
+const BL_DOC = /^https?:\/\/(?:www\.)?bahai-library\.(?:com|org)\/([a-z][a-z-]*?)_/i;
+const OWN_SLUG = /^(?:bahaullah|bab|abdulbaha|abdul-baha|shoghieffendi|shoghi-effendi|compilation|compilations)$/i;
+export const othersDocument = (p = {}) => { const m = BL_DOC.exec(urlOf(p)); return !!m && !OWN_SLUG.test(m[1]); };
+const shelfOf = (p) => String(p.collection || (TT_URL.test(urlOf(p)) ? 'Tablet Translations' : '')).trim();
 export const translationRank = (p = {}) => {
   if (!p || !isBahai(p)) return 0;
   const label = String(p.translation || ''), by = String(p.translator || p.translated_by || '');
-  if (/^tablet translations$/i.test(String(p.collection || '').trim()) || /\(provisional translation\)/i.test(String(p.title ?? p.source_title ?? ''))) return 1;
+  if (/^tablet translations$/i.test(shelfOf(p)) || /\(provisional translation\)/i.test(String(p.title ?? p.source_title ?? ''))) return 1;
+  if (othersDocument(p)) return 1;
   if (/^(?:provisional|translation by)\b/i.test(label) && !OFFICIAL.test(label)) return 1;
   return by && !OFFICIAL.test(by) ? 1 : 0;
 };

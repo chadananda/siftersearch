@@ -11,6 +11,7 @@ import { firstPerson } from './authorship/reader.js';
 import { paragraphAuthor } from './authorship/effective.js';
 import { authorAuthority, getAuthority, doctrinalTier } from './authority.js';
 import { canonicalTradition } from './assistant/tradition-name.js';
+import { misfiled } from './assistant/source-tier.js';
 import { isCoreLiterature } from './rights/canonical.js';
 import { keyFactor, foldKey } from './search/doctrinal-rank.js';
 import { segment, cleanText } from './phrases.js';
@@ -232,7 +233,10 @@ const docBrief = (r) => ({ id: r.doc_id, title: r.title, site: r.source_site || 
 const bookAuthority = (c) => { if (c.book_authority != null) return c.book_authority; try { return getAuthority({ ...c, author: c.book_author }); } catch { return null; } };
 const isCoreHolder = (c) => isCoreLiterature({ ...c, author: c.writer, book_authority: bookAuthority(c) });
 // a core origin: core literature, or the Writings in Shoghi Effendi's own translation (guardianWritings)
-const isCoreOrigin = (c) => isCoreHolder(c) || guardianWritings(c);
+// a Central Figure or Shoghi Effendi as the writer of a row filed under ANOTHER tradition is a metadata contradiction, never a source
+// (11-14 replay: "Paradise and Paradigm", a scholar's study on the Christian shelf with author "Bahá'u'lláh", was the source card)
+export { misfiled };
+const isCoreOrigin = (c) => !misfiled(c) && (isCoreHolder(c) || guardianWritings(c));
 // opts.prefer(candidate): the work the seeker NAMED ("in the Dawn-Breakers …") — the best-ranked holder it accepts is the origin,
 // ahead of coreOnly (the reader chose the book; Anís respond.js passes Jev's draw_from span)
 export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = null, religion = null, coreOnly = false, prefer = null, tradition = null } = {}) {
@@ -354,8 +358,8 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   // no tradition named: a non-Bahá'í text holding the words verbatim (its own core, or the writer's own work: the Gita, Rumi) that ranks above the
   // Bahá'í core pick is the source — a Bahá'í book quoting Rumi is not where Rumi's line comes from. Bahá'í quotes have no such holder: unchanged.
   const tierCore = (c) => isCoreHolder(c) || doctrinalTier({ religion: c.religion, collection: c.collection, title: c.pubTitle || c.title, author: c.book_author }) === 'core';
-  const ownCore = (c) => sameTradition(c.religion, trad) && tierCore(c);
-  const foreign = (c) => !!c.religion && !/^bah/i.test(c.religion) && (c.overlap || 0) >= VERBATIM && (c.ownWork || tierCore(c));
+  const ownCore = (c) => sameTradition(c.religion, trad) && !misfiled(c) && tierCore(c);
+  const foreign = (c) => !!c.religion && !/^bah/i.test(c.religion) && !misfiled(c) && (c.overlap || 0) >= VERBATIM && (c.ownWork || tierCore(c));
   const bahaiPick = ranked.find(isCoreOrigin), foreignPick = !trad ? ranked.find(foreign) : null;
   const coreOf = otherTrad ? (ranked.find(ownCore) || ranked.find((c) => c.ownWork && sameTradition(c.religion, trad)))
     : foreignPick && (!bahaiPick || ranked.indexOf(foreignPick) < ranked.indexOf(bahaiPick)) ? foreignPick : bahaiPick;

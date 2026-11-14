@@ -590,3 +590,22 @@ function dropSentences(text, bad) {
   const out = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
   return out ? { text: out, dropped } : { text: src, dropped: 0 };
 }
+
+// INTERNAL NARRATION — BLOCKING (11-14 round 4: "The candidate source here is a scholarly book…", "The glossary notes … look like the best
+// source… I'll check them directly."). Talk about candidates, tools, held research or the agent's next step never reaches the reader: such a
+// sentence is removed wherever it stands (outside blockquotes and tables). A reply that is ONLY narration comes back empty — the caller re-asks. Pure.
+const NARRATION = /\b(?:held research|research_lookup|quotation_candidates|search_in_work|fused_search|tool (?:results?|calls?|output)|the (?:search|tool)s? (?:returned|found|gave|show)|candidate (?:sources?|passages?|works?)|the candidates?\b|(?:looks?|seems?) like the best source|best (?:candidate|lead))/i;
+const PLAN = /^\s*(?:i['’]ll|i will|i['’]m going to|let me(?! know)|next,? i|i need to|i should|i can now|i['’]d (?:need|have) to)\b[^.!?\n]{0,200}\b(?:check|look|search|verify|consult|find|read|confirm|pull|trace|open|examine|dig)\b/i;
+export const isNarration = (s) => { const t = String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '); return NARRATION.test(t) || PLAN.test(t); };
+export function dropNarration(text) {
+  let dropped = 0;
+  const out = String(text || '').split('\n').map((line) => {
+    if (/^\s*(?:>|\|)/.test(line) || !line.trim()) return line;
+    const sents = line.match(/[^.!?]+(?:[.!?…]+["”’)*_]*|$)\s*/g) || [line];
+    const kept = sents.filter((x) => !(isNarration(x) && ++dropped));
+    return kept.length === sents.length ? line : kept.join('').trimEnd();
+  }).join('\n').replace(/\n{3,}/g, '\n\n');
+  return { text: dropped ? out.trim() : String(text || ''), dropped };
+}
+/** The reply's last sentence is a plan ("I'll check them directly.") — an unfinished answer. Pure. */
+export const endsOnPlan = (text) => { const t = String(text || '').trim(); const last = (t.match(/[^.!?\n]+[.!?…]*\s*$/) || [''])[0]; return !!last.trim() && PLAN.test(last); };

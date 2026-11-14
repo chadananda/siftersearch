@@ -1,7 +1,7 @@
 // The library tools behind refs (P# passages, W# web answers, B# works): toolRunner, show/fit/clip helpers. PURE — bundles for a Worker (agent-core.js).
 // Server-only defaults (rights, title finder, link maps) come in as opts.fallback; researcher.js wraps this with them. Deps: source-tier, head-of, forensics, tool-cache
 import { headOf } from '../text/head-of.js';
-import { byTier, coreFirst, isWrittenCore, needsWritings, tierLabel } from './source-tier.js';
+import { byTier, coreFirst, isWrittenCore, misfiled, needsWritings, sourceTier, tierLabel } from './source-tier.js';
 import { copyClass, COPY_CLASSES } from '../audit/forensics.js';
 import { canonicalTradition } from './tradition-name.js';
 import { translationLabel } from './tool-defs.js';
@@ -59,10 +59,18 @@ export function sourceLine(source, original = null) {
   const tablet = original && t && !/^untitled\b/i.test(t) && original.source_url ? `, quoting ${the}${link(t, original.source_url)}` : '';
   return `From ${link(String(source.title || 'the source').trim(), source.source_url)}${tablet}.`;
 }
+// THE SOURCE IS CORE (memory "quote candidates = core only"; 11-14 replay: the tower named "Paradise and Paradigm", a scholar's study
+// filed on the Christian shelf with author "Bahá'u'lláh", as the source): a Bahá'í source is a written text of the Central Figures or Shoghi
+// Effendi (sourceTier writings | guardian), never a misfiled document; another tradition's source keeps the tool's choice. A non-core
+// 'source' is set aside, and a core passage the tool returned that holds the words (score ≥ 0.9: the quotation's own words) takes its place.
+const coreSource = (p) => !misfiled(p) && (!sourceTier(p) || ['writings', 'guardian'].includes(sourceTier(p)));
+const HOLDS = 0.9;
 export function sourceAnswer(list = []) {
   const ps = (list || []).filter(Boolean);
   if (!ps.some((p) => p.role)) return ps;
-  const source = ps.find((p) => p.role === 'source');
+  const named = ps.find((p) => p.role === 'source');
+  const source = named && coreSource(named) ? named
+    : named ? (((x) => x && { ...x, role: 'source' })(ps.find((p) => p !== named && ['cited_by', 'holder'].includes(p.role) && Number(p.score) >= HOLDS && sourceTier(p) && coreSource(p)))) : null;
   if (!source) return ps.filter((p) => p.role === 'holder' || p.role === 'near').slice(0, 2)
     .map((p) => ({ ...p, note: 'NOT the quoted words — a near passage; say plainly that no published source holds the exact wording' }));
   const orig = ps.find((p) => p.role === 'original' && p.document_id !== source.document_id);

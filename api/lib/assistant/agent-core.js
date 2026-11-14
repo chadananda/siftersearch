@@ -3,7 +3,7 @@
 import { toolRunner, TOOL_CHARS } from './tool-runner.js';
 import { workNotes as workNotesLookup, asPassage, SAME_QUESTION } from './tool-defs.js';
 import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
-import { dropSearchOffer, dropUncheckedDisclaimer, isUncheckedDisclaimer } from './lint.js';
+import { dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer } from './lint.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
 import { expandTemplates } from './widgets/templates.js';
@@ -67,7 +67,8 @@ WRITING:
 - A TABLET OR WORK written in Arabic or Persian (or another original language) that the reader asks about: never hide it because it is not in English. Say plainly that the library holds it in its original (name the language) and link that original — call original_lookup or document_search so you hold its own passage or book, and cite it ([[P#]] / [[B#]]: its link opens it on Ocean of Lights). Close with one line offering to read and discuss it with the reader and to prepare a side-by-side document of the original beside the English. With no English translation in the library, say so and still offer to discuss the original. Original-language lines are QUOTED only when the reader asks for the original, or in {{side_by_side}}; the original is always named and linked.
 - The reader asks for the side-by-side document: call side_by_side_document on a passage of that work and give its [[B#]] in one sentence.
 - Quotation marks only around words copied exactly from a passage. Credit a quotation to the passage's writer (a letter written on behalf of Shoghi Effendi is not his own words; an editor's introduction is not the author's).
-- WHO A BOOK MEANS. A name is evidence, never identity: two men can share a name (two Mullá Báqirs — a Letter of the Living who lived to recognise Bahá'u'lláh, and Mullá Mihdíy-i-Kandí's brother, martyred at Ṭabarsí). Bind a person only by what the passage itself says of him (kin, place, fate, date), and say which one when the name is shared. To identify someone a book names, search that book first (search_in_work: its own notes, glossary and footnotes say whom it means), then the histories; when passages disagree on the identity, the book's own note and the relation stated beside the name decide.
+- WHO A BOOK MEANS. A name is evidence, never identity: two men can share a name (two Mullá Báqirs — a Letter of the Living who lived to recognise Bahá'u'lláh, and Mullá Mihdíy-i-Kandí's brother, martyred at Ṭabarsí). Bind a person only by what the passage itself says of him (kin, place, fate, date), and say which one when the name is shared. To identify someone a book names, look in that book's own notes ONCE (one search_in_work for its notes, glossary or footnotes — a translation may have none in the library; finding nothing, go on), then the histories; when passages disagree on the identity, the book's own note and the relation stated beside the name decide.
+- NEVER NARRATE. The reader sees only the answer: never write about candidates, tools, searches, held research or what you will check next ("The candidate source is…", "I'll check the notes"). When your searches run out, write the answer from what you hold and say plainly what is not settled.
 - LINKS COME FROM PASSAGES. Cite with refs ([[P3]]) only; never type a library address or a paragraph id yourself — code makes every link from a passage you hold, and a typed one is removed.
 - CORE TEXTS FIRST. Answer from the written texts of Bahá'u'lláh, the Báb and 'Abdu'l-Bahá and from Shoghi Effendi — in English and in the Persian and Arabic originals (originals_search; quote an original with its existing translation, never a new one) — and let them lead and carry the argument. A recorded talk of 'Abdu'l-Bahá may stand beside a written text when it adds something, named as spoken; a pilgrim's recollection after that; a scholar's book only for a point no Writing addresses, named as that writer's view. Quote 'Abdu'l-Bahá from His own text, never through a scholar who quotes Him. When your passages lead with a talk or a study, search the Writings on that point before writing.
 - Prefer, in order: the Writings of Bahá'u'lláh, the Báb and 'Abdu'l-Bahá; Shoghi Effendi; then compilations; "Uncompiled Published Letters" (or "Uncompiled Letters") only when nothing else holds the words. A recollection of a Central Figure's spoken words (pilgrim notes, a visitor's article) only when no Writing says it, and named as a recollection in a few words. Doctrine rests on the Writings and Shoghi Effendi; the Universal House of Justice speaks with authority on law and administration.
@@ -146,8 +147,12 @@ export async function readRound(create, params, onText = null) {
 
 // The server pieces are injected (agent.js): toolDefs (the LLM tool schemas), canonical (tool name resolver), workNotes(title, notes) → { work, notes },
 // post.dropPreamble, runner (toolRunner with the server fallbacks: rights, title finder, link maps), cards(args, opts) → refCards, maxTokens (reply ceiling). Each defaults to a pure no-op so the core runs in a Worker.
+// the searches are spent (round or call cap) or the draft ended on a plan: the answer is written now, never a plan
+export const WRITE_NOW = 'Your searches are done. Write the answer now from what you hold: no plan, no "I\'ll check", no talk of tools, candidates or searches. Where something is not settled by what you hold, say so plainly in one line.';
+const NOTES_Q = /\b(?:notes?|glossary|footnotes?|annotations?|endnotes?)\b/i;
 export async function agentAnswer({ messages, create, tools: raw, onEvent = () => {}, maxRounds = 8, maxCalls = 24, subject = null, cache = null, cardDocs = undefined, frame = null,
   toolDefs = [], canonical = (n) => n, held = null, links = (t) => t, workNotes = (title, notes) => workNotesLookup(title, notes || (async () => ({ works: [] }))), post = {}, cards: cardsFn = null, maxTokens = 16000, runner = toolRunner }) {
+  let notesLooked = 0;   // search_in_work calls into a book's notes this question (one is run)
   const dropPreamble = post.dropPreamble || ((t) => t);
   const impl = cache ? cachedImpl(raw, cache) : raw;   // data-level cache: refs are per turn, so what is stored is the passages, never the rendered text
   // spec #5 (11-06): the first round's library search must carry Jev's subject (query-anchor.js) — code checks, never intent
@@ -205,6 +210,8 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     return `${hit.length} talk${hit.length === 1 ? '' : 's'}, best first (the reader sees ${hit.length === 1 ? 'its card' : 'their cards'} with a player; name the talk in italics and its speaker, write no ref, no link, no quotation marks; no passages unless asked):\n${hit.map((t) => `- *${t.title}* — ${t.speaker || 'speaker unknown'}${t.year ? `, ${t.year}` : ''}${t.duration_s ? `, ${Math.round(t.duration_s / 60)} min` : ''}`).join('\n')}`;
   };
   if (impl.searchInWork) run.search_in_work = async (a) => {
+    // a book's notes are looked in ONCE a question (11-14 Íqán: the English Íqán has no such note in the library; six rounds hunted for it)
+    if ((a?.queries || []).some((q) => NOTES_Q.test(q)) && notesLooked++) return `not run: ${a.work}'s notes were already searched once for this question — they may not be in the library; answer from what you hold or the histories`;
     const r = await impl.searchInWork(a);
     if (!r) return `no work titled "${a.work}" in the library`;
     if (!r.passages.length) return `nothing in ${r.work.title} for ${(a.queries || []).map((q) => `"${q}"`).join(', ')} (${r.note || r.per_query.map((q) => `${q.exact} exact / ${q.meaning} by meaning`).join('; ')}) — this is the wording, not the end: try the words the source itself would use`;
@@ -257,7 +264,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const msgs = [{ role: 'system', content: frame ? `${AGENT_SYSTEM}${followUp}\n\nTHIS CHANNEL'S REPLY FRAME (it governs length and tone; it overrides the lengths above): ${frame}` : `${AGENT_SYSTEM}${followUp}` }, ...convo];
   if (heldText) { const u = msgs.findLastIndex((m) => m.role === 'user'); msgs[u] = { ...msgs[u], content: `${msgs[u].content}\n\n---\n${heldText}` }; }
   const steps = [], usage = { in: 0, out: 0 };
-  let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false;
+  let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false, capped = false, replanned = false;
   // the answering round streams a sentence at a time; only sentences whose quotations are in a passage held are shown
   const asked0 = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const held0 = () => [...found.values()].map((p) => ({ ...p, source_title: p.title }));
@@ -330,7 +337,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const finishLive = (s) => {
     const [, lead, core0, trail] = String(s).match(/^(\s*)([\s\S]*?)(\s*)$/);
     if (!core0) return s;
-    const c1 = sourceOnly(core0), d = dropUncheckedDisclaimer(c1);
+    const c1 = dropNarration(sourceOnly(core0)).text, d = dropUncheckedDisclaimer(c1);
     const core = (d.dropped ? d.text : isUncheckedDisclaimer(c1) ? '' : c1).trim();   // a released piece that is only the disclaimer (lint never empties a text)
     if (!core) return '';
     citedWorkCards(core);
@@ -347,6 +354,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   };
   for (let round = 0; round < maxRounds; round++) {
     const last = round === maxRounds - 1 || calls >= maxCalls;
+    if (last && round > 0 && !capped) { capped = true; msgs.push({ role: 'user', content: WRITE_NOW }); }   // the searches are spent: the answer now, from what is held (11-14 Íqán: it ended on "I'll check them directly.")
     const r = await readRound(create, { messages: msgs, ...(last ? {} : { tools: toolDefs, tool_choice: 'auto' }), max_tokens: maxTokens, thinking: false }, streamed || gate === false ? null : onText);   // the reply's safety ceiling, never a length cut (11-04); no thinking (11-12: Claude 5 thinks by default — seconds every round)
     usage.in += r?.usage?.prompt_tokens || 0; usage.out += r?.usage?.completion_tokens || 0;
     const m = r?.choices?.[0]?.message || {};
@@ -361,6 +369,14 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
         nudged = true;
         msgs.push({ role: 'assistant', content: final.replaceAll(NOT_FOUND, '').trim() || '(no answer yet)' }, { role: 'user', content: nudge(n) });
         continue;
+      }
+      // an answer that ends on a plan ("I'll check…") or is only narration is unfinished: once, the agent writes it from what it holds, with no tools
+      if (!replanned && (endsOnPlan(final) || (final.trim() && !dropNarration(final).text.trim()))) {
+        replanned = true; capped = true; gate = false; streamed = false;   // the replay replaces anything shown
+        msgs.push({ role: 'assistant', content: final }, { role: 'user', content: WRITE_NOW });
+        const r2 = await readRound(create, { messages: msgs, max_tokens: maxTokens, thinking: false }, null);
+        usage.in += r2?.usage?.prompt_tokens || 0; usage.out += r2?.usage?.completion_tokens || 0;
+        final = String(r2?.choices?.[0]?.message?.content || '') || final;
       }
       break;
     }
@@ -396,7 +412,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   // code does the grounding: refs → links, unverifiable quotations out, speakers fixed, quotations linked, no preamble
   const retrieved = [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
   sourceCarded = false; skipped = false;   // the whole reply is one text again (a non-streamed or replayed reply carries its own card)
-  const rendered = renderRefs(dropUncheckedDisclaimer(sourceOnly(final)).text, { found, works });
+  const rendered = renderRefs(dropUncheckedDisclaimer(dropNarration(sourceOnly(final)).text).text, { found, works });
   const asked = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const whole = restoreElisions(rendered, retrieved, { asked });   // a "…" bridging the passage's own words → its contiguous words (11-04 #161/#138)
   const guarded = dropUnverified(whole.text, retrieved, { asked });

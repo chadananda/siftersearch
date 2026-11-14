@@ -42,7 +42,9 @@ export async function lookup(env, question, { threshold = RELATED } = {}) {
 
 const snap = (p) => ({ id: p.id, document_id: p.document_id ?? p.doc_id ?? null, paragraph_index: p.paragraph_index ?? null, text: p.text ?? null,
   title: p.title ?? null, author: p.author ?? null, source_url: p.source_url || p.url || null, religion: p.religion ?? null, cover_url: p.cover_url ?? null, year: p.year ?? null,
-  ...(p.role ? { role: p.role } : {}), ...(p.note ? { note: p.note } : {}) });
+  ...(p.role ? { role: p.role } : {}), ...(p.note ? { note: p.note } : {}),
+  // the standing fields source-tier reads (11-14: sets held no collection, so a translator's study filed under Bahá'u'lláh counted as a Writing)
+  ...Object.fromEntries(['collection', 'book_author', 'translator', 'translation', 'language'].filter((k) => p[k] != null).map((k) => [k, p[k]])) });
 
 /** Record passages as a candidate set (curated sets never overwritten, only hits grow). `question` may be a matched set's question to grow it. */
 export async function capture(env, question, passages) {

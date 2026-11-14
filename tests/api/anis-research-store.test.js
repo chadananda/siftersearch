@@ -32,6 +32,12 @@ describe('research store', () => {
     expect(r.similarity).toBe(1); expect(r.set.passages.map((p) => p.text)).toEqual(['t1', 't2']);
     expect(env.db.prepare('SELECT hits FROM anis_research_sets').get().hits).toBe(1);
   });
+  it('a held passage keeps the fields its standing is read from (collection, book author, translator, language)', async () => {
+    await capture(env, 'how do bahais pray?', [P(1, { collection: 'Tablet Translations', book_author: 'B', translator: 'X', language: 'fa' }), P(2)]);
+    const r = await lookup(env, 'how do bahais pray?');
+    expect(r.set.passages[0]).toMatchObject({ collection: 'Tablet Translations', book_author: 'B', translator: 'X', language: 'fa' });
+    expect(r.set.passages[1]).not.toHaveProperty('collection');
+  });
   it('semantic hit on a reworded question; related below SAME; miss below RELATED', async () => {
     await capture(env, 'how do bahais pray?', [P(1)]);
     const same = await lookup(env, 'how do baha is pray'); expect(same.similarity).toBeGreaterThan(0.88); expect(outcomeOf(same.similarity)).toBe('hit');

@@ -158,6 +158,27 @@ describe('source questions', async () => {
     // an older server (no roles) passes through
     expect(sourceAnswer(SA.map(({ role, ...p }) => p))).toHaveLength(5);
   });
+  // round 4 live: the tower named a Christian-filed study (Paradise and Paradigm, author field 'Bahá’u’lláh') as the source → never; a core holder of the words stands in
+  it('sourceAnswer: a misfiled or non-core "source" never stands; a core work holding the words does, else no source', async () => {
+    const { sourceAnswer } = await import('../../api/lib/assistant/tool-runner.js');
+    const PP = { id: 9, text: `${Q}.`, title: 'Paradise and Paradigm', author: 'Bahá’u’lláh', religion: 'Christian', source_url: 'https://x/pp#p3', document_id: 982940, role: 'source' };
+    const FOW = { id: 7, text: `${Q}.`, title: 'The Fountain of Wisdom', author: "Bahá'u'lláh", source_url: 'https://oceanlibrary.com/fow#p9', document_id: 6, role: 'cited_by', score: 1 };
+    const out = sourceAnswer([PP, FOW, SA[2]]);
+    expect(out.map((p) => p.id)).toEqual([7]);
+    expect(out[0].note).toContain('From [The Fountain of Wisdom](https://oceanlibrary.com/fow#p9)');
+    // only a weak or non-core holder → no source, never the study
+    expect(sourceAnswer([PP, { ...FOW, score: 0.5 }, SA[2]]).map((p) => p.id)).not.toContain(9);
+    expect(sourceAnswer([PP, SA[2]]).map((p) => p.id)).not.toContain(9);
+  });
+  it('a card never credits a misfiled study to the Writer its author field names', async () => {
+    const { misfiled } = await import('../../api/lib/assistant/source-tier.js');
+    expect(misfiled({ religion: 'Christian', author: 'Bahá’u’lláh' })).toBe(true);
+    expect(misfiled({ religion: 'Bahai', author: 'Bahá’u’lláh' })).toBe(false);
+    const { fromRefs, toMarkdown } = await import('../../api/lib/assistant/widgets/quote.js');
+    const card = fromRefs(['P1'], { found: new Map([['P1', { text: 'w', source_url: 'https://x/pp', title: 'Paradise and Paradigm', author: 'Bahá’u’lláh', religion: 'Christian' }]]) });
+    expect(card.author).toBeNull();
+    expect(toMarkdown(card)).not.toMatch(/Bahá’u’lláh/);
+  });
   it('a source answer carries its book card by code, and the writer sees only the source and the original', async () => {
     const cards = [], seen = [];
     const bookCard = async ({ title }) => ({ kind: 'work', doc: { id: 3 }, book: { id: 3, title, author: "Bahá'u'lláh", url: 'https://oceanlibrary.com/gleanings', cover_url: 'https://siftersearch.com/img/covers/3' } });

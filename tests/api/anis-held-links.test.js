@@ -41,7 +41,8 @@ describe('links come from held passages', () => {
     await agentAnswer({ messages: [{ role: 'user', content: 'Who is Mullá Báqir in the Íqán?' }], tools: { search: async () => [] }, create: async (p) => { seen.push(p); return { choices: [{ message: { content: 'x' } }] }; } });
     const sys = seen[0].messages[0].content;
     expect(sys).toMatch(/WHO A BOOK MEANS\. A name is evidence, never identity/);
-    expect(sys).toMatch(/search that book first \(search_in_work/);
+    expect(sys).toMatch(/look in that book's own notes ONCE \(one search_in_work/);   // round 4: bounded — a translation may have no notes in the library
+    expect(sys).toMatch(/NEVER NARRATE/);
     expect(sys).toMatch(/never type a library address or a paragraph id/);
   });
 });
