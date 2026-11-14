@@ -54,9 +54,13 @@ describe('the agent shows the talk', () => {
   const base = { messages: [{ role: 'user', content: 'can you find the talk from Hooper Dunbar on conciousness?' }] };
   it('a found talk becomes turn.talks (its card), counted as one library search', async () => {
     const talkSearchImpl = async (a) => talkSearch(a, deps());
-    const r = await agentAnswer({ ...base, create: script([call('a', 'talk_search', { speaker: 'Hooper Dunbar', topic: 'conciousness' })], 'Hooper Dunbar gave *Consciousness, Creation and the Soul* in 1988.'), tools: { talkSearch: talkSearchImpl, search: async () => [] } });
+    const ev = [];
+    const r = await agentAnswer({ ...base, onEvent: (e) => ev.push(e), create: script([call('a', 'talk_search', { speaker: 'Hooper Dunbar', topic: 'conciousness' })], 'Hooper Dunbar gave *Consciousness, Creation and the Soul* in 1988.'), tools: { talkSearch: talkSearchImpl, search: async () => [] } });
     expect(r.talks.map((t) => t.slug)).toEqual(['dunbar-consciousness-creation-and-the-soul']);
     expect(r.agent.searches).toBe(1);
+    const first = ev.findIndex((e) => e.type === 'talks');   // the card goes out as soon as the talk is found, before any reply text
+    expect(ev[first]?.talks?.[0]?.slug).toBe('dunbar-consciousness-creation-and-the-soul');
+    expect(ev.slice(0, first).some((e) => e.type === 'text')).toBe(false);
     expect(r.reply).toContain('Consciousness, Creation and the Soul');
   });
   it('no match → no card', async () => {

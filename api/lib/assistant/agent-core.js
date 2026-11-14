@@ -154,6 +154,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     if (!r) return `no work or section like "${a.title}" in the library — try document_search with another spelling, or fused_search for passages that name it`;
     const b = r.book, ref = addWork({ id: r.kind === 'section' ? `${b.id}:${r.sec?.start_index}` : b.id, title: b.title, author: b.author, url: b.url, religion: r.doc?.religion ?? null });
     bookCards.set(ref, b);
+    onEvent({ type: 'books', books: [...bookCards.values()].slice(0, 3) });   // the card shows the moment the work is found (Chad 11-13), not after the reply
     return `[${ref}] ${b.title}${b.author ? ` — ${b.author}` : ''}${r.kind === 'section' ? ` (a section of ${b.section?.of})` : ''}${b.description ? `\n${clip(b.description, 400)}` : ''}\nThe reader sees its card; write [[${ref}]] where you name it.`;
   };
   // a talk (media library): its card is shown to the reader (the turn's `talks`); the agent gets the facts, never a ref or a URL to write
@@ -163,6 +164,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     const hit = (r?.talks || []).filter((t) => t.matched);
     if (!hit.length) return `no published talk found for ${[a.speaker, a.topic, a.title].filter(Boolean).map((x) => `"${x}"`).join(' / ')}${r?.talks?.length ? `; ${a.speaker} has these talks: ${r.talks.map((t) => `"${t.title}"${t.year ? ` (${t.year})` : ''}`).join('; ')}` : ' — try another wording, or fused_search the transcripts'}`;
     for (const t of hit) talks.set(t.slug, t);
+    onEvent({ type: 'talks', talks: [...talks.values()].slice(0, 3) });   // the talk's card shows at once, before the reply is written
     return `${hit.length} talk${hit.length === 1 ? '' : 's'}, best first (the reader sees ${hit.length === 1 ? 'its card' : 'their cards'} with a player; name the talk in italics and its speaker, write no ref, no link, no quotation marks; no passages unless asked):\n${hit.map((t) => `- *${t.title}* — ${t.speaker || 'speaker unknown'}${t.year ? `, ${t.year}` : ''}${t.duration_s ? `, ${Math.round(t.duration_s / 60)} min` : ''}`).join('\n')}`;
   };
   if (impl.searchInWork) run.search_in_work = async (a) => {
