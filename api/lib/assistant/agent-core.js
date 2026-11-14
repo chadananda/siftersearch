@@ -3,7 +3,7 @@
 import { toolRunner, TOOL_CHARS } from './tool-runner.js';
 import { workNotes as workNotesLookup, asPassage, SAME_QUESTION } from './tool-defs.js';
 import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
-import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence, unappliedCorrection, dropSearchedNote, dropRebuildPreamble, fixCounts, wantsTable, dropSourceSpeculation, dropLinkDebris, duplicateRows, noteDuplicateRows, recapitalise, pointsAbove, dropAbovePointer, unlinkSiteRoots, rebuildsTable, isRebuildMeta } from './lint.js';
+import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence, contentAbsence, emptyInWork, conflictClaims, danglingOpens, askedSource, unappliedCorrection, dropSearchedNote, dropRebuildPreamble, fixCounts, wantsTable, dropSourceSpeculation, dropLinkDebris, duplicateRows, noteDuplicateRows, recapitalise, pointsAbove, dropAbovePointer, unlinkSiteRoots, rebuildsTable, isRebuildMeta } from './lint.js';
 import { DEPTH, hasDepth, dropDepth, dropOffers, runInHeads, headsAsk, leadSource, leadAsk } from './reply-form.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
@@ -41,6 +41,15 @@ export function rebuiltDrift(messages = [], final = '') {
 }
 /** The re-ask for an absence claim no search inside the histories backs (lint.js unbackedAbsence; history-sweep.js). */
 export const absenceAsk = (claims) => `(note from the library, not the reader) You wrote that the library has nothing on someone — ${claims.map((c) => `"${c.slice(0, 160)}"`).join('; ')} — without searching inside the histories for that name. Run fused_search with about: "history" on each such name alone (it searches inside Nabíl's The Dawn-Breakers, Balyuzi, Momen and Ẓuhúru'l-Ḥaqq with spelling variants), then write the answer again: the library has no account only of a name that search came back empty on — say so in ONE short line after the table (or in the row: "not identified in the library"), never describing the search or the spellings tried.`;
+/** The re-ask for a content absence or a narration of sources (lint.js contentAbsence; 11-14 Taherzadeh "the library does not appear to
+ *  hold" vol. 1 — it holds all four; round 3 "these sources show no…", "I found no sentence…", "I have not searched…"). */
+export const contentAbsenceAsk = (claims, searched) => `(note from the library, not the reader) You wrote ${claims.map((c) => `"${c.slice(0, 160)}"`).join('; ')}. ${searched ? '' : 'No search inside the work came back empty this turn, so that is not established. Run search_in_work on the work (name its volume when it has volumes) with the words the source itself would use, and book_card on any book or volume you said the library lacks. '}Then write the answer again from what the passages say: an absence is stated only after a search inside the work came back empty, and then as ONE plain line about the text ("The Will does not say …"), never as what you found, what the sources show, what the library holds or what you did not search.`;
+/** The re-ask for a dispute between sources (lint.js conflictClaims; 11-14: the letter's "Arab believer in Baghdád" and Taherzadeh's
+ *  Aḥmad of Yazd are one man, who lived in Baghdád). */
+export const conflictAsk = (claims) => `(note from the library, not the reader) You wrote that sources disagree: ${claims.map((c) => `"${c.slice(0, 160)}"`).join('; ')}. Before saying so, check that both passages speak of the same thing — the same tablet (the Arabic and the Persian Tablets of Aḥmad are two tablets, for two men), the same person, the same event — and search inside the fuller source (search_in_work, its own words) for the detail that may reconcile them (where the person lived, another name). Then write the answer again: a disagreement is stated only when the passages, read in full, plainly say different things about the same thing — then quote both, briefly, without deciding; never invent a dispute, never "a different man" unless a passage says so.`;
+/** The lead re-ask (reply-form.js leadSource) is dropped when the first quotation is the source the question asks about ("What does
+ *  Taherzadeh say…": 11-14, the rewrite put a letter written on the Guardian's behalf first and left "There he names…" with no one named). */
+export const askedLead = (lead, found, question) => (lead && askedSource(question, found?.get?.(lead.first)) ? null : lead);
 /** The re-ask for a reader's correction left open (lint.js unappliedCorrection). */
 export const correctionAsk = (rows, readerText) => `(note from the library, not the reader) The reader corrected ${rows.map((n) => `row ${n}`).join(', ')}: "${String(readerText).slice(0, 240)}". Your table still offers two readings there. Check the reader's words against the passages you hold: where a passage supports the correction (Shoghi Effendi's notes to The Dawn-Breakers first), apply it — the row names that person, in the reader's sense, with the other reading as one short note at most. Do not restate the reader's correction in other words. Write the whole table again with every other row unchanged.`;
 /** The re-ask for circular identification rows (lint.js circularRows). */
@@ -119,7 +128,7 @@ WRITING:
 - Documents and email: when the reader asks for something printed, saved or emailed, write the content itself — the system turns your reply into a PDF and emails it (asking for the address if it has none). Never say you cannot send email or make a document, and never describe the delivery yourself. A heading or label over a passage names what that passage itself says — a passage on fasting is never labelled as one on prayer.
 - A section, chapter or paragraph number comes only from the passage's own place (the card's place, the ref's head) — never from memory, never hedged ("I believe", "check it against the edition"); with no place given, name the work and give no number.
 - Never say what you did not check, verify or look up ("I did not check the section number…"): find it, or leave it out.
-- Speak about the texts, never about your tools: no "the excerpt I can see", "the library does not link", "my search returned". If something was not found, say once, plainly, that you found no such text. Capitalise He/His/Him for Bahá'u'lláh, the Báb and 'Abdu'l-Bahá.
+- Speak about the texts, never about your tools: no "the excerpt I can see", "the library does not link", "my search returned". An absence is said only after a search inside the work came back empty, and then as one plain line about the text ("The Will does not say …") — never "I found no…", "these sources show no…", "I have not searched…", or that the library lacks a book or volume. When the question names a writer or a work, that writer's own words lead the reply; others follow, named for what they are. Sources disagree only when, read in full, they say different things about the same thing — never invent a dispute. Capitalise He/His/Him for Bahá'u'lláh, the Báb and 'Abdu'l-Bahá.
 - Cite with refs: put [[P3]] right after the words that come from passage P3; write a book's name as [[B1]] (code turns it into the linked title). Never write a URL. Never use a ref you were not given.
 - Display templates, when they help the reader: a line holding only {{quote P3}} shows passage P3 whole as a card (the key passage of an answer; do not also type its words); {{book B1}} shows the book's card where you recommend a work; {{side_by_side P1 P4}} sets an original beside its translation; {{scene "Title" "line" P4 P5}} shows a moment of a story with the passages that record it. Optional — plain prose with refs is always fine.
 - A prayer, verse or short tablet the reader will read or recite is quoted WHOLE: call whole_lookup on its ref first (it returns the whole prayer, every paragraph) and quote that. Never add a line you did not read in a passage.
@@ -353,7 +362,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const turnNote = [firstVisit ? FIRST_VISIT : null, reader, heldText].filter(Boolean).join('\n\n');
   if (turnNote) { const u = msgs.findLastIndex((m) => m.role === 'user'); msgs[u] = { ...msgs[u], content: `${msgs[u].content}\n\n---\n${turnNote}` }; }
   const steps = [], usage = { in: 0, out: 0 };
-  let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false, capped = false, replanned = false, circled = false, drifted = false, absent = false, corrected = false, formed = false;
+  let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false, capped = false, replanned = false, circled = false, drifted = false, absent = false, corrected = false, formed = false, voided = false, disputed = false, preForm = null;
   // the answering round streams a sentence at a time; only sentences whose quotations are in a passage held are shown
   const asked0 = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const held0 = () => [...found.values()].map((p) => ({ ...p, source_title: p.title }));
@@ -525,12 +534,26 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
         msgs.push({ role: 'assistant', content: final }, { role: 'user', content: absenceAsk(unbacked) });
         continue;
       }
+      // a content absence or narration of sources ("the library does not appear to hold vol. 1", "these sources show no…") → once, search inside the work and rewrite
+      const voids = voided ? [] : contentAbsence(final);
+      if (voids.length && round < maxRounds - 1 && calls < maxCalls) {
+        voided = true; gate = false; streamed = false;
+        msgs.push({ role: 'assistant', content: final }, { role: 'user', content: contentAbsenceAsk(voids, emptyInWork(steps)) });
+        continue;
+      }
       // the reader corrected a row and the reply still offers both readings there → once, apply the correction where the passages support it
       const lastReader = String([...messages].reverse().find((m) => m.role === 'user')?.content || '');
       const open = corrected ? [] : unappliedCorrection(lastReader, final);
       if (open.length && round < maxRounds - 1 && calls < maxCalls) {
         corrected = true; gate = false; streamed = false;
         msgs.push({ role: 'assistant', content: final }, { role: 'user', content: correctionAsk(open, lastReader) });
+        continue;
+      }
+      // a dispute between sources ("the two accounts differ … I leave the point open") → once, check both speak of the same thing and rewrite
+      const disputes = disputed ? [] : conflictClaims(final);
+      if (disputes.length && round < maxRounds - 1 && calls < maxCalls) {
+        disputed = true; gate = false; streamed = false;
+        msgs.push({ role: 'assistant', content: final }, { role: 'user', content: conflictAsk(disputes) });
         continue;
       }
       // a rebuilt table (compile/revise/email, round 6) keeps the latest table's rows 1…N, each its own person and facts → once, rewrite it
@@ -542,12 +565,15 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
       }
       // REPLY FORM (reply-form.js, Chad 11-14 Reddit round 3) → once, the writer rewrites: run-in section heads in a reply the agent did not mark
       // [[DEPTH]]; a talk / pilgrim note / House letter / commentary quoted ahead of a written core passage the same reply quotes
-      const heads = formed || hasDepth(final) ? [] : runInHeads(final), lead = formed ? null : leadSource(final, found);
+      const heads = formed || hasDepth(final) ? [] : runInHeads(final), lead = formed ? null : askedLead(leadSource(final, found), found, asked0.at(-1));
       if ((heads.length || lead) && round < maxRounds - 1 && calls < maxCalls) {
         formed = true; gate = false; streamed = false;
+        preForm = final;
         msgs.push({ role: 'assistant', content: final }, { role: 'user', content: [heads.length ? headsAsk(heads) : '', lead ? leadAsk(lead) : ''].filter(Boolean).join('\n\n') });
         continue;
       }
+      // the form rewrite reordered the reply and left a paragraph opening on a pronoun with no one named before it ("There he names…") → keep the draft
+      if (preForm && danglingOpens(final).length && !danglingOpens(preForm).length) final = preForm;
       // an answer that ends on a plan ("I'll check…") or is only narration is unfinished: once, the agent writes it from what it holds, with no tools
       if (!replanned && (endsOnPlan(final) || (final.trim() && !dropNarration(final).text.trim()))) {
         replanned = true; capped = true; gate = false; streamed = false;   // the replay replaces anything shown

@@ -18,9 +18,38 @@ const fold = (n) => String(n || '').normalize('NFD').replace(/[\u0300-\u036f’'
  *  scripture / interpretation / rest), then the writer's own book over a book quoting him, then a published title over a
  *  slug-titled copy, then OceanLibrary's copy; search order breaks ties. Pure. */
 export function sourceFirst(ps) {
-  const rank = (p) => [TIER[p.authority] ?? 2, p.book_author && fold(p.book_author) !== fold(p.author) ? 1 : 0, slug(p.title || p.work) ? 1 : 0,
+  const quoting = (p) => !!p.book_author && fold(p.book_author) !== fold(p.author);
+  const words = (p) => { const w = fold(p.text).replace(/[^a-z0-9\s]+/g, ' ').split(/\s+/).filter(Boolean); return new Set(w.slice(0, -5).map((_, i) => w.slice(i, i + 6).join(' '))); };
+  const tier = ps.map((p) => TIER[p.authority] ?? 2);
+  // the writer's own book inherits the best tier of a book quoting the same words from him (11-14 round 3: Paris Talks, "reported", lost
+  // to the compilation "Bahá'í Sacred Writings", tagged scripture, for 'Abdu'l-Bahá's own line — the reply cited the compilation)
+  ps.forEach((c, j) => {
+    if (!quoting(c) || !c.author) return;
+    const cw = words(c);
+    ps.forEach((o, i) => { if (!quoting(o) && fold(o.author) === fold(c.author) && [...words(o)].some((x) => cw.has(x))) tier[i] = Math.min(tier[i], tier[j]); });
+  });
+  const rank = (p, i) => [tier[i], quoting(p) ? 1 : 0, slug(p.title || p.work) ? 1 : 0,
     /oceanlibrary\.com/.test(String(p.source_url || p.url || '')) ? 0 : 1];
-  return ps.map((p, i) => ({ p, i, r: rank(p) })).sort((a, b) => { for (let k = 0; k < 4; k++) if (a.r[k] !== b.r[k]) return a.r[k] - b.r[k]; return a.i - b.i; }).map((x) => x.p);
+  return ps.map((p, i) => ({ p, i, r: rank(p, i) })).sort((a, b) => { for (let k = 0; k < 4; k++) if (a.r[k] !== b.r[k]) return a.r[k] - b.r[k]; return a.i - b.i; }).map((x) => x.p);
+}
+
+// A VOLUME is part of a title (11-14 live: "The Revelation of Bahá'u'lláh vol. 2" resolved to vol. 3 — the title matcher scores the
+// volumes alike and the longest wins — so every volume searched was vol. 3 and the reply said the library lacked vol. 1 and the
+// Tablet of Aḥmad chapter, which is in vol. 2). volumeOf: the volume a title names (arabic or roman) or null; seriesTitle: the
+// title without it. Pure.
+const VOL = /[\s,;:(–—-]*\b(?:vol(?:ume)?\.?|v\.|tome)\s*(\d{1,3}|[ivxlc]{1,6})\b\.?\)?/i;
+const ROMAN = { i: 1, v: 5, x: 10, l: 50, c: 100 };
+const roman = (r) => [...r.toLowerCase()].reduce((n, ch, i, a) => n + (ROMAN[ch] < (ROMAN[a[i + 1]] || 0) ? -ROMAN[ch] : ROMAN[ch]), 0);
+export const volumeOf = (t) => { const m = String(t || '').match(VOL); return m ? (/^\d+$/.test(m[1]) ? Number(m[1]) : roman(m[1])) : null; };
+export const seriesTitle = (t) => String(t || '').replace(VOL, '').trim();
+const foldS = (t) => fold(seriesTitle(t)).replace(/[^a-z0-9]+/g, ' ').replace(/^the /, '').trim();
+/** The volumes of the found work's series (same title without its volume, same author), in volume order. Pure. */
+export function volumesOf(doc, docs) {
+  const base = foldS(doc.title), by = fold(doc.author);
+  const vols = (docs || []).filter((d) => volumeOf(d.title) != null && foldS(d.title) === base && fold(d.author) === by);
+  const one = new Map();
+  for (const d of vols.sort((a, b) => volumeOf(a.title) - volumeOf(b.title) || (b.paragraph_count || 0) - (a.paragraph_count || 0))) if (!one.has(volumeOf(d.title))) one.set(volumeOf(d.title), d);
+  return [...one.values()];
 }
 
 export function strategyImpl({ search, fastSearch, deps = {} } = {}) {
@@ -28,9 +57,22 @@ export function strategyImpl({ search, fastSearch, deps = {} } = {}) {
   const quote = deps.quoteSearch || (async (a) => (await import('./tools.js')).run('quote_search', a, ctx));
   const title = deps.findTitled || (async (t) => (await import('./work-request.js')).findTitled([t]));
   // the work by title → { doc, ids: [every document searched], series? }. Star of the West = one document per issue; years narrow it.
+  // the series' books: every copy titled like the series (the volumes); stubbed in tests
+  const seriesDocs = deps.seriesDocs || (async (t) => (await (await import('./work-request.js')).rankTitled([t], { widen: true, limit: 40 })).sorted);
+  // a work in volumes: the volume asked for, else every volume (a question about the series is a question about all of it)
+  const volumes = async (doc, work) => {
+    if (volumeOf(doc.title) == null) return null;
+    const vols = volumesOf(doc, await seriesDocs(seriesTitle(doc.title)).catch(() => []));
+    if (!vols.some((d) => Number(d.id) === Number(doc.id))) vols.push(doc);
+    const want = volumeOf(work);
+    if (want != null) { const v = vols.find((d) => volumeOf(d.title) === want); return v ? { doc: v, ids: [Number(v.id)], series: null } : { doc, ids: [], series: null, note: `the library holds ${seriesTitle(doc.title)} vols. ${vols.map((d) => volumeOf(d.title)).join(', ')} — no vol. ${want}` }; }
+    return vols.length > 1 ? { doc: vols[0], ids: vols.map((d) => Number(d.id)), series: `${seriesTitle(doc.title)} (vols. ${vols.map((d) => volumeOf(d.title)).join(', ')})` } : null;
+  };
   const resolve = async (work, years = []) => {
     const f = await title(work).catch(() => null);
     if (!f?.doc) return null;
+    const v = await volumes(f.doc, work);
+    if (v) return v;
     if (!sowWholeAsked(f.doc, work)) return { doc: f.doc, ids: [Number(f.doc.id)], series: null };
     const rows = await (deps.sowDocs || (async () => (await import('../docs-repo.js')).docsInFolder(SOW_FOLDER)))().catch(() => null);
     const issues = (rows || []).map((d) => ({ id: Number(d.id), at: sowIssue(d) })).filter((d) => d.at);
@@ -58,7 +100,7 @@ export function strategyImpl({ search, fastSearch, deps = {} } = {}) {
     async searchInWork({ work, queries, years = [], section = null }) {
       const w = await resolve(work, years);
       if (!w) return null;
-      if (!w.ids.length) return { work: { id: w.doc.id, title: w.series || w.doc.title }, total: 0, passages: [], per_query: [], note: `no ${w.series} issue for ${years.join(', ')}` };
+      if (!w.ids.length) return { work: { id: w.doc.id, title: w.series || w.doc.title }, total: 0, passages: [], per_query: [], note: w.note || `no ${w.series} issue for ${years.join(', ')}` };
       let range = {};
       if (section && w.ids.length === 1) {
         const secs = await (deps.sectionsOf || (async (id) => (await import('../repos/sections-repo.js')).sectionsOfDoc(id)))(w.ids[0]).catch(() => []);
@@ -84,8 +126,9 @@ export function strategyImpl({ search, fastSearch, deps = {} } = {}) {
     },
     /** A selection made from one whole work (Haiku picks per chunk). → work-extract's { result, work } | null */
     async extractFromWork({ work, select }) {
-      const f = await title(work).catch(() => null);
-      if (!f?.doc) return null;
+      const w = await resolve(work).catch(() => null);
+      if (!w?.doc || !w.ids.length) return null;   // the volume asked for (a whole series: its first volume)
+      const f = { doc: w.doc };
       const ex = deps.extractFromWork || (await import('./work-extract.js')).extractFromWork;
       return ex({ messages: [{ role: 'user', content: select }], doc: f.doc });
     },

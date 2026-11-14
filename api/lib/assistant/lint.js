@@ -663,6 +663,39 @@ export const unbackedAbsence = (text, sweeps = []) => {
   const empty = sweeps.filter((s) => !s.n).flatMap((s) => s.variants.flatMap((v) => plain(v).split(/[^\p{L}]+/u))).filter((w) => w.length >= 4 && !/^(?:mulla|mirza|hajji?|siyyid|shaykh|aqa)$/.test(w));
   return absenceClaims(text).filter((c) => { const t = plain(c); return !empty.some((w) => t.includes(w)); });
 };
+// A CONTENT ABSENCE or a source narration (11-14 Taherzadeh "volume 1, which the library does not appear to hold" — it holds all four;
+// round 3: "these sources show no…", "I found no sentence in the Will…", "I have not searched for…"): allowed only after a search
+// INSIDE the work came back empty, and even then said as what the text does not say, never as what was found or searched. → the
+// sentences (outside blockquotes). Pure.
+const CONTENT_ABSENCE = /\b(?:(?:the )?library (?:does not|doesn[’']t|did not) (?:appear to |seem to )?(?:hold|have|carry|contain|include)|(?:which|that) the library (?:does not|doesn[’']t) (?:appear to |seem to )?(?:hold|have|carry|contain)|(?:holds?|has|carries) [^.!?\n]{0,60}\bonly as (?:opening|first|sample) pages|(?:these|the|my|those) (?:sources|passages|texts|results|searches) (?:show|give|contain|hold|turn up|have) (?:no|nothing)\b|I (?:also |still |simply |only )?(?:found|find|could find|have found|did not find|didn[’']t find|could not find|couldn[’']t find|cannot find|can[’']t find) (?:no|nothing|any)\b|I (?:also |still )?have(?: not|n[’']t) (?:yet )?(?:searched|looked|checked|found)\b|(?:is|are) not (?:in|held in) the library\b)/i;
+export const contentAbsence = (text) => String(text || '').split('\n').filter((l) => !/^\s*>/.test(l))
+  .flatMap((l) => l.match(/[^.!?]+(?:[.!?…]+|$)/g) || []).map((x) => x.trim()).filter((x) => CONTENT_ABSENCE.test(x.replace(/[“"][^”"]{0,600}[”"]/g, ' ')));
+/** Did a search INSIDE a work come back empty this turn? (an absence may then be said — as what the text does not say). Pure. */
+export const emptyInWork = (steps = []) => steps.some((s) => !s.deferred && /^(?:search_in_work|extract_from_work)$/.test(s.tool) && !s.found);
+// A CONFLICT CLAIM (11-14 Taherzadeh: "The two accounts differ … I leave the point open" — the letter's "Arab believer in Baghdád" and
+// Taherzadeh's Aḥmad of Yazd are one man: Aḥmad lived in Baghdád for years, vol. 2 ch. 5; the Persian Tablet of Aḥmad is a second tablet,
+// for Ḥájí Mírzá Aḥmad of Káshán). A dispute between sources is stated only after both passages are checked to speak of the same thing.
+// → the claim sentences (outside blockquotes). Pure.
+const CONFLICT = /\b(?:(?:the )?(?:two|these|both|the) (?:accounts|sources|passages|texts|readings|versions|statements) (?:differ|disagree|conflict|contradict)|(?:differs?|disagrees?) (?:from|with) [^.!?\n]{0,60}\b(?:account|words|statement|view)|\b(?:account|letter|passage|text|source|statement|version|record)s? (?:contradicts?|conflicts? with)\b|a different (?:man|person|woman|figure) from\b|(?:leave|leaves|leaving) (?:the|this) (?:point|question|matter) open|(?:would|will|do) not treat (?:it|this) as (?:resolved|settled)|(?:nothing|no passage) [^.!?\n]{0,40}\b(?:reconciles|settles|resolves) (?:them|this|it))/i;
+export const conflictClaims = (text) => String(text || '').split('\n').filter((l) => !/^\s*>/.test(l))
+  .flatMap((l) => l.match(/[^.!?]+(?:[.!?…]+|$)/g) || []).map((x) => x.trim()).filter((x) => CONFLICT.test(x.replace(/[“"][^”"]{0,600}[”"]/g, ' ')));
+/** A paragraph that opens on a pronoun whose person is named only later ("There he names…" with Taherzadeh first named after it —
+ *  11-14: a reorder moved his book's paragraph below the letter's). → the opening lines. Pure. */
+export function danglingOpens(text) {
+  const paras = String(text || '').split(/\n\s*\n/), out = [];
+  paras.forEach((p, i) => {
+    const t = p.trim(); if (!t || /^\s*(?:>|\||#|[-*] )/.test(t)) return;
+    if (/^(?:There|Here|In it|In that (?:book|work|volume)|Elsewhere),? (?:he|she|they)\b/.test(t) || (i === 0 && /^(?:He|She|They) (?:names|writes|says|states|adds|calls|describes)\b/.test(t))) out.push(t.slice(0, 80));
+  });
+  return out;
+}
+/** The question names this passage's writer or work (surname / a title word run) — "What does Taherzadeh say…" → his book leads,
+ *  whatever its tier. Pure. */
+export function askedSource(question, p) {
+  const q = plain(question), names = [p?.author, p?.book_author].filter(Boolean).flatMap((a) => plain(a).split(/[^\p{L}]+/u)).filter((w) => w.length >= 5 && !/^(?:abdul|bahaullah|shoghi|effendi|compilation|bahai|writings)$/.test(w));
+  const title = plain(p?.title || p?.work || '').replace(/\b(?:vol(?:ume)?|v)\b.*$/, '').replace(/[^\p{L}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+  return names.some((w) => new RegExp(`\\b${w}\\b`, 'u').test(q)) || (title.length >= 12 && q.replace(/[^\p{L}\s]/gu, ' ').replace(/\s+/g, ' ').includes(title));
+}
 export function dropNarration(text) {
   let dropped = 0;
   const out = String(text || '').split('\n').map((line) => {
