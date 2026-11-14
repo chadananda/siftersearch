@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-14T16:45:57.902Z",
+  "generated": "2026-11-14T16:49:39.395Z",
   "entries": [
+    {
+      "hash": "bc429547a",
+      "date": "2026-11-14",
+      "type": "Other",
+      "description": "The original recording never plays — Original switch removed on both hosts",
+      "scope": null
+    },
     {
       "hash": "a070f66fd",
       "date": "2026-11-14",
@@ -760,6 +767,13 @@
   ],
   "grouped": {
     "2026-11-14": [
+      {
+        "hash": "bc429547a",
+        "date": "2026-11-14",
+        "type": "Other",
+        "description": "The original recording never plays — Original switch removed on both hosts",
+        "scope": null
+      },
       {
         "hash": "a070f66fd",
         "date": "2026-11-14",
