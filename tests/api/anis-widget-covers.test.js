@@ -6,7 +6,7 @@ import * as quote from '../../api/lib/assistant/widgets/quote.js';
 describe('widget covers', () => {
   it('book card falls back to the cover by doc id', () => {
     const works = new Map([['B1', { id: 20810, title: 'Kitáb-i-Íqán', author: "Bahá'u'lláh", url: 'https://oceanoflights.org/x' }]]);
-    expect(book.fromRefs(['B1'], { works, books: new Map() }).cover_url).toBe('https://siftersearch.com/img/covers/20810');
+    expect(book.fromRefs(['B1'], { works, books: new Map() }).cover_url).toBe('https://anis.oceanlibrary.com/img/covers/20810');
     const books = new Map([['B1', { cover_url: 'https://siftersearch.com/img/covers/20810?v=abc' }]]);
     expect(book.fromRefs(['B1'], { works, books }).cover_url).toBe('https://siftersearch.com/img/covers/20810?v=abc');
   });

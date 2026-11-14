@@ -10,6 +10,7 @@ import { thinkingParam } from '../../api/lib/model-registry.js';
 import { lookup, capture, logQuestion, saveTurn, markStale, embed, EMBED_MODEL, SAME_QUESTION } from './research-store.js';
 import { restate, underPriceBoundary } from './restate.js';
 import { finishLinks, templateFilter } from './links.js';
+import { anisDeep, anisText } from '../../api/lib/anis-links.js';
 import { backPills, pinnedQuestion } from './pills.js';
 import { triageLetter } from './triage.js';
 import { feedback } from './feedback.js';
@@ -107,7 +108,8 @@ export function remoteImpl(env, { turn, local, fetchFn = fetch, ctx = null }) {
     if (r.out != null) later(store(key, r.text));
     return r.out;
   };
-  const impl = Object.fromEntries(snapshot.impl.map((fn) => [fn, (...args) => call(fn, args)]));
+  // the model reads only Anís-safe addresses (Chad 11-14 link policy, lib/anis-links.js): our reader links → their Anís pages
+  const impl = Object.fromEntries(snapshot.impl.map((fn) => [fn, (...args) => call(fn, args).then((out) => anisDeep(out))]));
   return { impl: { ...impl, ...local }, stat };
 }
 
@@ -157,7 +159,8 @@ export async function chat(request, env, ctx, deps = {}) {
   // streamed modes write SSE as the turn runs; a letter or a document is collected and returned whole (out)
   const { readable, writable } = C.stream ? new TransformStream() : {}, writer = writable?.getWriter();
   let chain = Promise.resolve(), out = null;
-  const send = (o) => { if (writer) chain = chain.then(() => writer.write(enc.encode(`data: ${JSON.stringify(o)}\n\n`))).catch(() => {}); return chain; };
+  // every event leaves Anís-safe (never a siftersearch.com address: text, cards, covers, citations, talks, follow-ups)
+  const send = (o) => { if (writer) chain = chain.then(() => writer.write(enc.encode(`data: ${JSON.stringify(anisDeep(o))}\n\n`))).catch(() => {}); return chain; };
   const ping = writer && setInterval(() => { chain = chain.then(() => writer.write(enc.encode(': ping\n\n'))).catch(() => {}); }, 8000);
   const run = async () => {
     const t0 = Date.now();
@@ -258,8 +261,8 @@ export async function chat(request, env, ctx, deps = {}) {
       const timings = { total_ms: Date.now() - t0, first_text_ms: firstText, tower_ms: stat.ms, tower_calls: stat.calls, cached_calls: stat.cached, tower_by: stat.by, rounds, round_ms: roundMs, restate_ms: restateMs, restated: canon, widgets: (A.widgets || []).map((w) => w.kind), links: { narrowed: fin.narrowed, unplaced: fin.unplaced }, ...(body.trace ? { trace } : {}), research: sim == null ? null : { similarity: +sim.toFixed(3), question: matchedQ }, asked: researchQ };
       emit({ type: 'complete', citations: cites, ...(A.talks?.length ? { talks: A.talks } : {}), meta: { engine: 'anis-edge', mode, retrieved_count: A.retrieved.length, gate_passed: true, conversation_id: conversationId, format: 'agent', timings } });
       // a letter carries each card's quotation markdown (its marker dropped); a document keeps the markers — the PDF draws the widgets there
-      if (!C.stream) out = { reply: mode === 'email' ? reply.replace(/<!-- widget:[^>]*-->\s*/g, '') : reply, mode, status: 'answered', triage: await triageP,
-        retrieved: A.retrieved.length, format: 'agent', conversationId, citations: cites, widgets: A.widgets || [], timings };
+      if (!C.stream) out = anisDeep({ reply: mode === 'email' ? reply.replace(/<!-- widget:[^>]*-->\s*/g, '') : reply, mode, status: 'answered', triage: await triageP,
+        retrieved: A.retrieved.length, format: 'agent', conversationId, citations: cites, widgets: A.widgets || [], timings });
       // persistence never on the critical path
       ctx.waitUntil(Promise.all([
         saveTurn(env, { conversationId, round, role: 'user', content: question, site, channel }),
@@ -301,7 +304,7 @@ export async function shareRoute(request, env, ctx, deps = {}) {
   if (slug && m === 'DELETE') { const b = await request.json().catch(() => ({})); const r = await shareDelete(slug, b?.owner_key, env); return json(r.out, r.status, h); }
   if (slug && m === 'GET') {
     const d = await published(env, slug);
-    return d ? json({ slug: d.slug, title: d.title, summary: d.summary, scope: d.scope, turns: d.turns, published_at: d.published_at }, 200, { ...h, 'cache-control': 'public, max-age=300' }) : json({ error: 'not found' }, 404, h);
+    return d ? json({ slug: d.slug, title: d.title, summary: d.summary, scope: d.scope, turns: anisDeep(d.turns), published_at: d.published_at }, 200, { ...h, 'cache-control': 'public, max-age=300' }) : json({ error: 'not found' }, 404, h);
   }
   return json({ error: 'not found' }, 404, h);
 }
@@ -309,7 +312,7 @@ export async function shareRoute(request, env, ctx, deps = {}) {
 /** GET /d/<slug>: the public discussion page (server-rendered, no client script). */
 export async function discussionRoute(slug, env) {
   const d = await published(env, slug);
-  const html = d ? discussionPage(d) : notFoundPage();
+  const html = d ? anisText(discussionPage(d)) : notFoundPage();   // a stored discussion's old links rewritten as it renders
   return new Response(html, { status: d ? 200 : 404, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': d ? 'public, max-age=300' : 'no-store',
     'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin' } });
 }

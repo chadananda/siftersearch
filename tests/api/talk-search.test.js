@@ -18,8 +18,8 @@ describe('talk_search', () => {
   it('speaker + a typo\'d topic finds the talk with its page, sketch and player', async () => {
     const { talks } = await talkSearch({ speaker: 'Hooper Dunbar', topic: 'conciousness' }, deps());
     expect(talks[0]).toMatchObject({ doc_id: 2210357, slug: 'dunbar-consciousness-creation-and-the-soul', year: 1988, matched: true,
-      url: 'https://siftersearch.com/media/dunbar-consciousness-creation-and-the-soul', thumb_url: 'https://cdn/x/sketch-sq-abc.jpg',
-      audio_url: 'https://siftersearch.com/api/media/dunbar-consciousness-creation-and-the-soul/file/web/dunbar-consciousness-creation-and-the-soul.m4a' });
+      url: 'https://anis.oceanlibrary.com/media/dunbar-consciousness-creation-and-the-soul', thumb_url: 'https://cdn/x/sketch-sq-abc.jpg',
+      audio_url: 'https://anis.oceanlibrary.com/api/media/dunbar-consciousness-creation-and-the-soul/file/web/dunbar-consciousness-creation-and-the-soul.m4a' });
     expect(talks[1].matched).toBe(false);
   });
   it('diacritics fold in the speaker; a clips-only talk has no player', async () => {

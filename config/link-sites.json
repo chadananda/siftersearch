@@ -1,0 +1,11 @@
+{
+  "_doc": "Link policy (Chad 11-14): a passage/work links the first collaborator site below that holds it (the deepest link it supports), else the Anís host; never siftersearch.com in Anís output. Order = rank. Adding a site = one entry here (read by api/lib/source-links.js tierOf and api/lib/anis-links.js). links: the link styles the site supports, deepest first.",
+  "anis": { "origin": "https://anis.oceanlibrary.com" },
+  "own": ["siftersearch.com"],
+  "sites": [
+    { "id": "oceanlibrary", "name": "Ocean Library", "hosts": ["oceanlibrary.com"], "links": ["range", "paragraph", "document"] },
+    { "id": "oceanoflights", "name": "Ocean of Lights", "hosts": ["oceanoflights.org"], "links": ["fragment", "document"] },
+    { "id": "phelps", "name": "Phelps Inventory", "hosts": ["portlandiator.github.io"], "links": ["document"] },
+    { "id": "bahai-library", "name": "Bahá'í Library Online", "hosts": ["bahai-library.com"], "links": ["document"] }
+  ]
+}

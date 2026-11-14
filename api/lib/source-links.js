@@ -7,17 +7,19 @@ import { slugifyPath } from './slug.js';
 import { rangeUrl, quoteUrl } from './ocean-range.js';
 import { encodeMarker } from './ool-range.js';
 import { sowMarkerUrl, SOW_BASE, isSowWork } from './sow-links.js';
+import { LINK_SITES, isOurs, docPage } from './anis-links.js';
 
 export const SITE = 'https://siftersearch.com';   // the site worker: pages + the image service (/img/*); never the api tunnel
-const TIERS = [['oceanlibrary.com', 1], ['oceanoflights.org', 2], ['portlandiator.github.io', 3], ['bahai-library.com', 4]];
+// the collaborator sites, in rank order, from config/link-sites.json (Chad 11-14: adding a site = one entry there, no code)
+const TIERS = LINK_SITES.flatMap((s, i) => s.hosts.map((h) => [h, i + 1]));
 const OURS = 'siftersearch.com';
-export const PUBLISHER_TIER = 5, SIFTER_TIER = 6;   // consumers compare against these, never against literals
+export const PUBLISHER_TIER = LINK_SITES.length + 1, SIFTER_TIER = LINK_SITES.length + 2;   // consumers compare against these, never against literals
 
 /** Site tier of a URL: 0 Star of the West on bahai-education.org (the only complete text, Chad 11-11: first for every SoW citation), 1 OceanLibrary, 2 OceanofLights, 3 Phelps collection, 4 BahaiLibrary, 5 another publisher, 6 SifterSearch. */
 export function tierOf(url) {
   let host;
   try { host = new URL(url).hostname.replace(/^www\./, ''); } catch { return { site: null, tier: 9 }; }
-  if (host === OURS || host.endsWith(`.${OURS}`)) return { site: OURS, tier: SIFTER_TIER };
+  if (isOurs(url)) return { site: host.endsWith(OURS) ? OURS : host, tier: SIFTER_TIER };   // our own pages (siftersearch, the Anís host): fallback only
   if (String(url).startsWith(`${SOW_BASE}/`)) return { site: 'bahai-education.org', tier: 0 };
   const hit = TIERS.find(([d]) => host === d || host.endsWith(`.${d}`));
   return hit ? { site: hit[0], tier: hit[1] } : { site: host, tier: PUBLISHER_TIER };
@@ -72,7 +74,7 @@ export function workUrl(doc) {
  * @param {object} doc  { id|doc_id, source_url, metadata, religion, collection, slug, filename }
  * @returns {{ url, site, tier, paragraph_level, reader_url }}
  */
-export function linkFor(doc, paragraphIndex, { quote = null } = {}) {
+export function linkFor(doc, paragraphIndex, { quote = null, prefer = null } = {}) {
   const reader = readerUrl(doc, paragraphIndex);
   // Every OceanLibrary paragraph has a para_id (the site copy's id="para_N"); search carries it as external_para_id.
   // Attach it here, once, so no search path can hand out a book-level OceanLibrary link when the paragraph is known.
@@ -112,9 +114,20 @@ export function linkFor(doc, paragraphIndex, { quote = null } = {}) {
     .concat(sow ? [sow] : [])
     .map((u) => ({ url: u, ...tierOf(u) }))
     .filter((c) => c.tier < SIFTER_TIER);   // our own address stored as a "source" is not a source
-  // Best tier wins; within a tier, a paragraph-level link beats a whole-document one.
-  candidates.sort((a, b) => a.tier - b.tier || Number(paragraphLevel(b.url)) - Number(paragraphLevel(a.url)));
+  // Best tier wins; within a tier, a paragraph-level link beats a whole-document one. A deployment's home site(s) (`prefer`: hosts,
+  // planning/anis-host-sites-plan.md) rank above every tier when they hold the text; the configured order follows.
+  const home = (c) => (prefer?.length && prefer.some((h) => c.site === h || String(c.site).endsWith(`.${h}`)) ? 0 : 1);
+  candidates.sort((a, b) => home(a) - home(b) || a.tier - b.tier || Number(paragraphLevel(b.url)) - Number(paragraphLevel(a.url)));
   const best = candidates[0];
   if (!best) return { url: reader, site: OURS, tier: SIFTER_TIER, paragraph_level: true, reader_url: reader };
   return { url: best.url, site: best.site, tier: best.tier, paragraph_level: paragraphLevel(best.url), reader_url: reader };
+}
+
+/** The link ANÍS gives a passage (Chad 11-14): a collaborator's page by linkFor's order (home site first with `prefer`), else the
+ *  document's page on the Anís host (anis.oceanlibrary.com/doc/<slug>#p<i>) — never a siftersearch.com reader. */
+export function anisLinkFor(doc, paragraphIndex, opts = {}) {
+  const l = linkFor(doc, paragraphIndex, opts);
+  if (l.tier < SIFTER_TIER) return l;
+  const url = docPage(doc, paragraphIndex);
+  return { ...l, url, site: url ? new URL(url).hostname : null, reader_url: url };
 }

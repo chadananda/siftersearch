@@ -1,8 +1,9 @@
 // Display widget `book`: a work the reply recommends or names, as a card (cover, title linked to the book, author, a line on it).
 // Built from a book ref the writer named ({{book B1}}). Pure.
+import { ANIS_ORIGIN } from '../../anis-links.js';
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
-const coverOf = (id) => (Number(id) > 0 ? `https://siftersearch.com/img/covers/${Number(id)}` : null);   // the cover by doc id (no cover → 404 → the card's drawn cover)
+const coverOf = (id) => (Number(id) > 0 ? `${ANIS_ORIGIN}/img/covers/${Number(id)}` : null);   // the cover by doc id (no cover → 404 → the card's drawn cover)
 
 export function fromRefs([ref], { works, books, shown }) {
   const w = works?.get(ref), b = books?.get(ref) || {};

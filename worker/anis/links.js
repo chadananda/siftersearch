@@ -2,6 +2,7 @@
 // research). Research passages already carry whole-paragraph range links; a quote marker (#~q=) narrows its link to the quoted words.
 import { findSpan, siteOffset } from '../../api/lib/ocean-range.js';
 import { textFragmentUrl, dropMarkers } from '../../api/lib/ocean-links.js';
+import { anisText } from '../../api/lib/anis-links.js';
 
 const OL_LINK = /https:\/\/(?:www\.)?oceanlibrary\.com\/([^/?#\s"'<>)\]]+)\/?\?paraId=([A-Za-z0-9_.-]+)(?:&selectionString=([^#\s"'<>)\]&]+))?(?:#~q=([^\s"'<>)\]]+))?/g;
 const OOL_QUOTE = /https:\/\/(?:www\.)?oceanoflights\.org\/([^?#\s"'<>)\]]+?)\/?#(?:~d=\d+)?~q=([^\s"'<>)\]]+)/g;
@@ -35,7 +36,10 @@ export function finishLinks(reply, passages) {
     return a ? `${base}&selectionString=${encodeURIComponent(`${a.ilmid}.0~${a.ilmid}.${siteOffset(a.text, a.text.length)}`)}` : base;
   });
   s = s.replace(OOL_QUOTE, (whole, slug, q) => { const quote = dec(q); return quote ? textFragmentUrl(`https://oceanoflights.org/${slug}/`, quote) : `https://oceanoflights.org/${slug}/`; });
-  return { text: dropMarkers(s), narrowed, unplaced };
+  // our own reader links → the passage's Anís page (its held passage names the document), else unlinked (lib/anis-links.js)
+  const byUrl = new Map();
+  for (const p of passages || []) for (const k of ['source_url', 'url', 'citation_url', 'reader_url']) if (p?.[k]) byUrl.set(String(p[k]).replace(/#.*$/, ''), p);
+  return { text: anisText(dropMarkers(s), { docOf: (u) => byUrl.get(u.replace(/#.*$/, '')) || null }), narrowed, unplaced };
 }
 
 /** A streamed-text filter: inline templates ({{quote P3}}, widgets/templates.js) never show while the reply streams — a template is

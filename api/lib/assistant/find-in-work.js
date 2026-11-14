@@ -1,6 +1,6 @@
 // In-book / quote shaping (Chad 11-10): turns a quote_search result into the reply by CODE (no LLM): 1 hit = the passage quoted + linked
 // citation (+ a card), n = count line + passages, meaning = labelled. Deps: quote-search.js (the search + text helpers, re-exported here).
-import { SITE } from '../source-links.js';
+import { ANIS_ORIGIN as SITE } from '../anis-links.js';   // Anís output: the Anís host (Chad 11-14), never siftersearch.com
 import { sowCoverUrl, sowIssueIds, sowWholeAsked } from '../sow-links.js';
 import { foldText, holdsWords, boldWords, excerptOf, balanceQuotes } from './quote-search.js';
 export { foldText, holdsWords, boldWords, excerptOf, balanceQuotes };

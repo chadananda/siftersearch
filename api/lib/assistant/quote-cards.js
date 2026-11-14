@@ -3,7 +3,7 @@
 // cited in the reply → its book card(s). The client swaps the blockquote for the card; without the event the reply is unchanged.
 // Deps: quote-blocks.js (shared with the clients), docs-repo listDocs (covers, one read by ids), hit-links workLinks (book urls).
 import { quoteBlocks, foldQuote } from '../quote-blocks.js';
-import { SITE } from '../source-links.js';
+import { ANIS_ORIGIN as SITE } from '../anis-links.js';   // Anís output: the Anís host (Chad 11-14), never siftersearch.com
 import { sowCoverUrl } from '../sow-links.js';
 
 const abs = (u) => (u ? (/^https?:/.test(u) ? u : `${SITE}${u}`) : null);

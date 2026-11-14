@@ -11,6 +11,7 @@ import { SCENARIO_GUIDE, resolveScenario } from './scenarios.js';
 import { foldVerbatim } from '../search/verbatim.js';
 import { headOf } from '../text/head-of.js';
 import { tierLabel } from './source-tier.js';
+import { anisUrl } from '../anis-links.js';
 
 let SOUL = null;
 export function soul() {
@@ -159,10 +160,9 @@ export function passageHeader(p, i) {
   return `[${i + 1}] ${p.source_title || 'Untitled'}${p.place || p.locator ? ` · at ${p.place || p.locator}` : ''}${who ? ` — ${who}` : ''}${voices}${p.authority ? ` · ${p.authority}` : ''}${p.standing ? ` · [${p.standing}]` : ''}${tier ? ` · ${tier}` : ''}${p.theme ? ` · theme: ${p.theme}` : ''}${p.translation ? ` · EXISTING TRANSLATION (${p.translation}) — quote it verbatim` : ''}${originalNote(p)}`;
 }
 
-// Anís never names siftersearch.com (public identity; round 5: timeline Source cells linked our reader): a passage whose only link is
-// our own reader reaches the writer with NO URL, so it is cited as an unlinked title; the exit lint (citeLinks) is the backstop
-const OWN_SITE = /^https?:\/\/(?:[a-z0-9-]+\.)?siftersearch\.com(?:[/?#]|$)/i;
-export const publicUrl = (u) => (u && !OWN_SITE.test(String(u)) ? u : null);
+// Anís never names siftersearch.com (public identity; Chad 11-14 link policy, lib/anis-links.js): a passage whose only link is our own
+// reader reaches the writer with its Anís page (anis.oceanlibrary.com/doc/…), or with NO URL when it has none (cited as an unlinked title)
+export const publicUrl = (u, doc = null) => (u ? anisUrl(String(u), { doc }) || null : null);
 
 // A SLUG-TITLED scrape ("shoghi-effendi-trans-011-the-dawn-breakers_en", an oceanoflights .docx — r16 11-11) whose slug ENDS with the
 // title of another passage in the set is that book: it takes the title and the other copy's public book link (never the .docx)
@@ -171,15 +171,15 @@ const letters = (t) => String(t || '').normalize('NFD').replace(/[^\p{L}\p{N}]/g
 export const unslug = (passages) => passages.map((p) => {
   if (!SLUGGY(p.source_title)) return p;
   const tail = letters(String(p.source_title).replace(/[_-](?:en|fa|ar|de|fr|es)$/i, ''));
-  const book = passages.find((q) => q !== p && !SLUGGY(q.source_title) && letters(q.source_title).length >= 6 && tail.endsWith(letters(q.source_title)) && publicUrl(q.citation_url));
+  const book = passages.find((q) => q !== p && !SLUGGY(q.source_title) && letters(q.source_title).length >= 6 && tail.endsWith(letters(q.source_title)) && publicUrl(q.citation_url, q));
   if (!book) return p;
-  const u = String(publicUrl(book.citation_url)).replace(/[?#].*$/, '');
+  const u = String(publicUrl(book.citation_url, book)).replace(/[?#].*$/, '');
   return { ...p, source_title: book.source_title, citation_url: u };
 });
 
 export function anisUserPayload({ question, conversation = '', passages: given = [], conversational = false, entities = null, peopleAnswer = null, target = null, direction = '' }) {
   const passages = unslug(given);
-  const lines = passages.map((p, i) => `${passageHeader(p, i)}\nURL: ${publicUrl(p.citation_url) || '(none — name the title in italics, unlinked; never tell the reader whether a source has a link)'}\n${passageText(p)}`);
+  const lines = passages.map((p, i) => `${passageHeader(p, i)}\nURL: ${publicUrl(p.citation_url, p) || '(none — name the title in italics, unlinked; never tell the reader whether a source has a link)'}\n${passageText(p)}`);
   // Each piece of evidence goes with its verbatim PROOF — the model reads what the source actually says.
   const cite = (e) => `${e.statement}${e.when ? ` (${e.when})` : ''} — ${e.source || 'source'}${publicUrl(e.url) ? ` URL: ${publicUrl(e.url)}` : ''}${e.proof ? ` — proof: "${String(e.proof).slice(0, 220)}"` : ''}`;
   const people = (entities || []).map((p) => `- ${p.name}${p.aliases?.length ? ` (also called ${p.aliases.slice(0, 6).join(', ')})` : ''}${p.summary ? ` — ${p.summary}` : ''}: ${(p.evidence || []).map(cite).join('; ')}`);   // aliases/summary: a person report (person-report.js)

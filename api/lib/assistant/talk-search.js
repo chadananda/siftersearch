@@ -1,6 +1,6 @@
 // talk_search core (Chad 11-14: "looking for a document should be very very fast"): a published talk by speaker, topic or title, ranked in
 // memory over the published rows (no LLM, no Qdrant unless the title says nothing). Deps injectable: rows(), sketch(key), topicDocs(topic). Pure but for the defaults.
-import { SITE } from '../source-links.js';
+import { ANIS_ORIGIN as SITE } from '../anis-links.js';   // Anís output: the Anís host (Chad 11-14), never siftersearch.com
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘'ʼ`]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const STOP = new Set(['the', 'a', 'an', 'of', 'on', 'in', 'to', 'and', 'for', 'about', 'talk', 'talks', 'lecture', 'recording', 'by', 'from', 'with', 'dr', 'mr']);

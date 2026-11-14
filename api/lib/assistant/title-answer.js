@@ -10,7 +10,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bareTitle, findWork, findTitled, workLead } from './work-request.js';
 import { modelFor } from '../model-roles.js';
-import { workUrl, SITE } from '../source-links.js';
+import { workUrl } from '../source-links.js';
+import { ANIS_ORIGIN as SITE } from '../anis-links.js';   // Anís output: the Anís host (Chad 11-14), never siftersearch.com
 import { sowCoverUrl } from '../sow-links.js';
 
 const DEFAULT = join(dirname(fileURLToPath(import.meta.url)), '../../../data/run/work-summaries.json');

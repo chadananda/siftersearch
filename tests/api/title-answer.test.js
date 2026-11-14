@@ -38,7 +38,7 @@ describe('title-answer', () => {
     const ev = [];
     const doc = { ...GPB.doc, cover_url: '/img/covers/21310?v=3aebc7aba314' };
     await titleAnswer({ doc, others: [] }, { onEvent: (e) => ev.push(e), links: async () => new Map(), summary: async () => null });
-    expect(ev[0].book.cover_url).toBe('https://siftersearch.com/img/covers/21310?v=3aebc7aba314');
+    expect(ev[0].book.cover_url).toBe('https://anis.oceanlibrary.com/img/covers/21310?v=3aebc7aba314');
   });
   it('a thin row from the book fast path (no cover field) gets its cover by one read — 11-11 Dhammapada card had none', async () => {
     const thin = { id: 20925, title: 'The Dhammapada', author: 'Siddhartha Buddha', paragraph_count: 450 };
@@ -46,11 +46,11 @@ describe('title-answer', () => {
     const ev = [];
     await titleAnswer({ doc: thin, others: [] }, { onEvent: (e) => ev.push(e), links: async () => new Map(), summary: async () => 'Verses.', card: (d) => cardFields(d, { read }) });
     expect(read).toHaveBeenCalledWith(20925);
-    expect(ev[0].book.cover_url).toBe('https://siftersearch.com/img/covers/20925?v=01cb4171cd2d');
+    expect(ev[0].book.cover_url).toBe('https://anis.oceanlibrary.com/img/covers/20925?v=01cb4171cd2d');
     const sev = [];
     await sectionAnswer({ sec: { doc_id: 20925, book: 'The Dhammapada', author: 'Siddhartha Buddha', title: 'The Twin Verses', start_index: 0, end_index: 20 } },
       { onEvent: (e) => sev.push(e), link: async () => 'https://x/y', card: (d) => cardFields(d, { read }) });
-    expect(sev[0].book.cover_url).toBe('https://siftersearch.com/img/covers/20925?v=01cb4171cd2d');
+    expect(sev[0].book.cover_url).toBe('https://anis.oceanlibrary.com/img/covers/20925?v=01cb4171cd2d');
   });
   it('cardFields reads nothing when the row already carries its cover and edition fields (even null), and keeps the row on a failed read', async () => {
     const read = vi.fn(async () => { throw new Error('db'); });
