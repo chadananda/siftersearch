@@ -105,16 +105,17 @@ describe('score routes', () => {
 describe('hype-question-faults report', () => {
   it('runs questionFault over stated questions only: counts, byFault, samples with the doc title', async () => {
     const r = await hypeQuestionFaultsJob({}, { maxId: async () => 2, yieldTick: async () => {} });
-    expect(r).toMatchObject({ scanned: 5, paragraphs: 2, faulty: 2, byFault: { selfReference: 2 } });
-    expect(r.samples.map((s) => s.q).sort()).toEqual(['According to this passage, what is taxation?', BAD].sort());
-    expect(r.samples[0]).toMatchObject({ doc: 'Some Questioned Answers', fault: 'selfReference' });
+    // yes/no is a fault in every tier, seeker included (Chad 11-13)
+    expect(r).toMatchObject({ scanned: 5, paragraphs: 2, faulty: 3, byFault: { selfReference: 2, yesNo: 1 } });
+    expect(r.samples.map((s) => s.q).sort()).toEqual(['According to this passage, what is taxation?', BAD, 'Is there life after death?'].sort());
+    expect(r.samples.find((s) => s.q === BAD)).toMatchObject({ doc: 'Some Questioned Answers', fault: 'selfReference' });
     expect(raw.prepare('SELECT COUNT(*) n FROM content WHERE hyp_questions LIKE ?').get('%this paragraph%').n).toBe(1);
   });
   it('samples are capped at 30 by reservoir', async () => {
     const many = JSON.stringify(Array.from({ length: 50 }, (_, i) => `What does this passage say about item ${i}?`));
     raw.prepare(`INSERT INTO content (id, doc_id, paragraph_index, text, hyp_questions) VALUES (3, 7, 5, 't', ?)`).run(many);
     const r = await hypeQuestionFaultsJob({}, { maxId: async () => 3, yieldTick: async () => {}, rand: () => 0.5 });
-    expect(r.faulty).toBe(52);
+    expect(r.faulty).toBe(53);
     expect(r.samples).toHaveLength(30);
   });
 });
