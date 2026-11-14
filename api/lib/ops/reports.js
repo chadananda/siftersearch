@@ -44,6 +44,7 @@ import { pipelineSnapshotJob } from './pipeline-snapshot-job.js';
 import { impliedOverviewJob } from './implied-overview-job.js';
 import { hypeQuestionFaultsJob } from './hype-question-faults-job.js';
 import { hypeSelfrefPurgeJob } from './hype-selfref-purge-job.js';
+import { hypeYesnoAssessJob } from './hype-yesno-assess-job.js';
 import { deletionsByDay, hollowDocs, liveParagraphsByDocAuthors, liveParagraphsOfDoc } from '../repos/integrity-repo.js';
 import { docLanguageCounts } from '../repos/language-repo.js';
 import { coveredByDocAuthor, monthSpend, skippedByDocAuthor, unitsForParagraphs } from '../repos/phrase-store-repo.js';
@@ -254,6 +255,7 @@ REPORTS['hype-question-faults'] = hypeQuestionFaultsJob;   // legacy stated ques
 // operator path for POST /api/admin/implied/import (that route needs an admin session): { file? } premise-reconcile-*/premise-pilot-* in data/run
 REPORTS['hype-question-sample'] = async (params = {}) => (await import('../implied/service.js')).sampleQuestions({ fault: params.fault || 'yesNo', n: params.n ?? 40, skipScored: false });   // random legacy stated questions of one fault (yesNo|namedBook|any) with passage + link — same shape as /implied/sample, no scored-skip
 REPORTS['question-scores-import'] = async (params = {}) => (await import('../implied/service.js')).importScores({ file: params.file });   // {file} JSON array under data/run → setScore per row ({paraId, question, kind:'stated', score, tags?, note?, fault?, rater})
+REPORTS['hype-yesno-assess'] = hypeYesnoAssessJob;   // model judges legacy yes/no STATED questions: keep / rewrite / drop; dry run calls the model, writes nothing
 REPORTS['hype-selfref-purge'] = hypeSelfrefPurgeJob;   // legacy self-reference STATED questions: dry run by default; apply:true empties their slots + queues the hype follow-index (long job, own lane)
 REPORTS['implied-import'] = async (params = {}) => { const S = await import('../implied/service.js'); const r = await S.importRun({ file: params.file }); if (r.docIds?.length) r.reindex = await S.queueReindex(r.docIds); return r; };   // the Implication browser's numbers + HyPE spend story (api/routes/implied-admin.js reads the latest)
 
@@ -486,7 +488,7 @@ REPORTS['anis-precache'] = async (params) => (await import('../assistant/precach
 REPORTS['tradition-readiness'] = async (params) => (await import('./tradition-readiness.js')).traditionReadinessReport(params);   // params { tradition?, minPct? } — per religion (bank traditions first) × layer: total/done/% by core/gray/rest from coverage_totals; ready + missing layers; "not measured" where the ledger has no stamp
 REPORTS['hype-quality'] = async (params) => (await import('../pipeline/hype-program.js')).hypeQualityReport(params);   // params { tier?, last?, counts? } — spend this month, ¶ done/remaining per tier, ledger metrics vs baseline, grades
 export const LANES = { hype: ['hype-program', 'hype-bank-seed'],   // days of batch waiting: its own lane, one run at a time; archive: ['archive-adopt', 'archive-sample', 'archive-reprobe', 'archive-import', 'archive-import-dryrun', 'archive-collection-backfill', 'archive-search'], copy: ['archive-copy'],   // hours of rsync must not hold up sampling extract: ['episode-extract', 'structure-infer'],
-  heavy: ['index-sizes', 'hype-selfref-purge', 'hollow', 'deletions', 'phrase-coverage', 'phrase-gap', 'hype-coverage', 'hype-quality', 'source-link-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'ol-refresh', 'keyword-fill-sites', 'toc-candidates'],
+  heavy: ['index-sizes', 'hype-yesno-assess', 'hype-selfref-purge', 'hollow', 'deletions', 'phrase-coverage', 'phrase-gap', 'hype-coverage', 'hype-quality', 'source-link-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'ol-refresh', 'keyword-fill-sites', 'toc-candidates'],
   intake: ['dewey-received', 'dewey-discard', 'dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport', 'dewey-offer-paths'],   // a book Chad is waiting on does not queue behind hours of indexing
   ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake
   scout: ['dewey-scout'],
