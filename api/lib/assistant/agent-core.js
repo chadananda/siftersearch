@@ -7,7 +7,7 @@ import { dropSearchOffer, dropUncheckedDisclaimer, isUncheckedDisclaimer } from 
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
 import { expandTemplates } from './widgets/templates.js';
-import { byTier } from './source-tier.js';
+import { byTier, coreFirst } from './source-tier.js';
 
 const clip = (t, n) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? `${s.slice(0, n)}…` : s; };
 // the library copy's edition, from its catalogue record: "who translated this edition" is answered from this line, never from other editions' bibliographies
@@ -156,7 +156,8 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const bookCards = new Map(), fromStrategy = new Set();
   const give = (ps) => ps.map((x) => { const r = add(asPassage(x)); if (r) fromStrategy.add(r); return r; }).filter(Boolean);
   // held research reaches the agent in tier order too (core first, Chad 11-14): it was captured in search order, a study first
-  const heldRefs = new Set(), giveHeld = (ps) => { const refs = give(byTier(ps || [])); for (const r of refs) heldRefs.add(r); return refs; };
+  // and commentary left out when the held written core is enough (source-tier.js coreFirst; 11-14 replay: Savi's commentary closed the Evil One reply)
+  const heldRefs = new Set(), giveHeld = (ps) => { const refs = give(coreFirst(byTier(ps || [])).kept); for (const r of refs) heldRefs.add(r); return refs; };
   if (impl.bookCard) run.book_card = async (a) => {
     const r = await impl.bookCard(a);
     if (!r) return `no work or section like "${a.title}" in the library — try document_search with another spelling, or fused_search for passages that name it`;
@@ -281,8 +282,37 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   // source's own work is dropped by code — keyed on the tool's result, never on the question's wording. A passage a later tool
   // fetched on purpose (the original, a translation) stays. Raw text ([[P#]], {{…}}), before refs render.
   const offSource = (ref) => source && ref !== source.ref && found.has(ref) && (heldRefs.has(ref) || (source.doc && Number(found.get(ref)?.document_id) === source.doc));
+  // THE SOURCE CARD ALWAYS SHOWS (11-14 live replay: the source passage typed as a markdown blockquote, no card): once the trace found the
+  // source, the first blockquote of the source passage's own words becomes its {{quote}} card, later ones go; with none, the card leads.
+  let sourceCarded = false, skipped = false;
+  const words = (x) => String(x).replace(/\[\[[PB]\d+\]\]|\[[^\]]*\]\([^)]*\)/g, ' ').toLowerCase().match(/[\p{L}\p{N}’']+/gu) || [];
+  const ofSource = (line) => {
+    const src = found.get(source.ref); if (!src) return false;
+    const have = new Set(words(src.text)), w = words(line.replace(/^\s*>\s*(?:—.*)?/, ''));
+    return w.length >= 5 && w.filter((x) => have.has(x)).length >= 0.8 * w.length;
+  };
+  const sourceCard = (text) => {
+    const tpl = new RegExp(`\\{\\{\\s*quote\\s+${source.ref}\\b`);
+    if (tpl.test(text)) { sourceCarded = true; return text; }
+    const lines = String(text).split('\n'), out = [];
+    for (const line of lines) {
+      // the typed quotation, its attribution line, and a streamed piece's remainder of it (only refs/links left: "[[P3]]")
+      if ((/^\s*>/.test(line) && ofSource(line)) || (skipped && line.trim() && (/^\s*>\s*(?:—|$)/.test(line) || !words(line).length))) {
+        if (!sourceCarded) { out.push(`{{quote ${source.ref}}}`); sourceCarded = true; }
+        skipped = true;
+        continue;
+      }
+      if (line.trim()) skipped = false;
+      out.push(line);
+    }
+    const t = out.join('\n');
+    if (sourceCarded) return t;
+    sourceCarded = true;
+    return `{{quote ${source.ref}}}\n\n${t}`;
+  };
   const sourceOnly = (text) => {
     if (!source) return text;
+    text = sourceCard(text);
     const refsOf = (x) => [...String(x).matchAll(/\bP\d+\b/g)].map((m) => m[0]);
     const offAll = (x) => { const refs = refsOf(x); return refs.length > 0 && refs.every(offSource); };
     return String(text).split('\n').map((line) => {
@@ -360,6 +390,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   citedWorkCards(final);   // a short reply never streamed: the work it names still gets its card (idempotent after a stream)
   // code does the grounding: refs → links, unverifiable quotations out, speakers fixed, quotations linked, no preamble
   const retrieved = [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
+  sourceCarded = false; skipped = false;   // the whole reply is one text again (a non-streamed or replayed reply carries its own card)
   const rendered = renderRefs(dropUncheckedDisclaimer(sourceOnly(final)).text, { found, works });
   const asked = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const whole = restoreElisions(rendered, retrieved, { asked });   // a "…" bridging the passage's own words → its contiguous words (11-04 #161/#138)

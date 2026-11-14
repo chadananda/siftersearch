@@ -99,6 +99,10 @@ export const byTier = (ps = []) => ps.map((p, i) => [p, i]).sort((a, b) => rankO
 
 /** Is any passage from the authoritative written tier (the Writings or Shoghi Effendi)? */
 export const isWrittenCore = (p) => ['writings', 'guardian'].includes(sourceTier(p));
+// an AUTHORIZED written core passage: an individual's rendering ('Tablet Translations', a provisional translation — often with the
+// translator's own commentary in the same document, 11-14: Savi's "A Hymn to Love" is filed under Bahá'u'lláh) does not count toward
+// CORE_ENOUGH, and is left out with commentary once the authorized core is enough
+const authorizedCore = (p) => isWrittenCore(p) && translationRank(p) === 0;
 export const hasAuthoritative = (ps = []) => ps.some(isWrittenCore);
 
 /** CORE TEXTS FIRST (Chad 11-14: "answer the questions from core texts when possible, not stray into Julio Savi. Books by
@@ -110,13 +114,13 @@ export const CORE_ENOUGH = 3;
  *  recollection or commentary ranked ahead of the first written one. Pure. */
 export const needsWritings = (ps = []) => {
   const tiered = ps.filter((p) => sourceTier(p));
-  return tiered.filter(isWrittenCore).length < CORE_ENOUGH || (tiered.length > 0 && !isWrittenCore(tiered[0]));
+  return tiered.filter(authorizedCore).length < CORE_ENOUGH || (tiered.length > 0 && !authorizedCore(tiered[0]));
 };
 /** → { kept, left }: commentary ('secondary') left out when the written core (plus `originals`, the Persian/Arabic Writings
  *  shown beside) reaches CORE_ENOUGH; talks and recollections always kept (a preference, never an exclusion). Pure. */
 export const coreFirst = (ps = [], originals = 0) => {
-  if (ps.filter(isWrittenCore).length + originals < CORE_ENOUGH) return { kept: ps, left: 0 };
-  const kept = ps.filter((p) => sourceTier(p) !== 'secondary');
+  if (ps.filter(authorizedCore).length + originals < CORE_ENOUGH) return { kept: ps, left: 0 };
+  const kept = ps.filter((p) => sourceTier(p) !== 'secondary' && !(isWrittenCore(p) && translationRank(p) === 1));
   return { kept, left: ps.length - kept.length };
 };
 

@@ -25,4 +25,15 @@ describe('anis edge tool cache', () => {
     expect(t.calls.length).toBe(4);
     expect(c.m.size).toBe(0);
   });
+  it('a sourceOf copy stored before passages carried their roles is never served (11-14 replay: holders, citing works, no card)', async () => {
+    const c = r2();
+    const args = ['Let your vision be world-embracing'];
+    const legacy = (await toolKey('sourceOf', args)).replace('sourceOf@roles', 'sourceOf');
+    await c.put(legacy, JSON.stringify({ out: [{ id: 1, title: 'Bahá’í Sacred Writings' }] }), { customMetadata: { at: String(Date.now()) } });
+    const t = towerFake([{ id: 2, title: 'Gleanings', role: 'source' }]);
+    const a = remoteImpl(env(c), { turn: {}, local: {}, fetchFn: t.fetchFn });
+    expect((await a.impl.sourceOf(...args))[0].role).toBe('source');
+    expect(t.calls.length).toBe(1);
+    expect(legacy).not.toBe(await toolKey('sourceOf', args));
+  });
 });

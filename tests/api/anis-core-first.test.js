@@ -74,6 +74,26 @@ describe('core texts first: held research and the agent prompt', () => {
     expect(turn.indexOf('Gleanings')).toBeLessThan(turn.indexOf('An Early Pilgrimage'));
     expect(turn.indexOf('An Early Pilgrimage')).toBeLessThan(turn.indexOf('Eternal Quest'));
   });
+  // 11-14 live replay: no tool ran (held research), and Savi's "A Hymn to Love" — filed under Bahá'u'lláh in 'Tablet Translations', the
+  // paragraph his commentary — closed the reply beside Gleanings, the Súriy-i-Bayán, Paris Talks and Some Answered Questions
+  const HYMN = { id: 9, title: 'A Hymn to Love (Sáqí, bi-dih ábí)', author: 'Bahá’u’lláh', religion: B, collection: 'Tablet Translations', document_id: 11447, text: 'The Evil Whisperer, mentioned by Bahá’u’lláh' };
+  const SAQ = { id: 10, title: 'Some Answered Questions', author: '‘Abdu’l-Bahá', religion: B, collection: 'Core Talks', text: 'evil is merely their non-existence' };
+  it('held research: commentary and an individual\'s rendering left out once the authorized core is enough; talks kept; the card survives', async () => {
+    const seen = [];
+    const held = { same: true, status: 'answered', question: 'Who is the Evil One?', passages: [HYMN, MAXWELL, SAVI, GLEANINGS, BAYAN, PARIS, SAQ].map((p) => ({ ...p, source_url: `https://oceanlibrary.com/d${p.id}#p1` })) };
+    const r = await agentAnswer({ messages: [{ role: 'user', content: 'Who is the Evil One?' }], tools: { search: async () => [] }, held,
+      create: async (p) => { seen.push(p); return { choices: [{ message: { content: 'Bahá’u’lláh names him:\n\n{{quote P1}}' } }] }; } });
+    const turn = seen[0].messages.findLast((m) => m.role === 'user').content;
+    expect(turn).not.toMatch(/Hymn to Love|Eternal Quest/);
+    expect(turn).toMatch(/Paris Talks/);
+    expect(turn).toMatch(/An Early Pilgrimage/);   // a recollection is reported speech: kept, after the talks
+    expect(r.widgets.filter((w) => w.kind === 'quote')).toHaveLength(1);
+  });
+  it('an individual\'s rendering never counts toward the core', () => {
+    expect(needsWritings([HYMN, GLEANINGS, BAYAN])).toBe(true);
+    expect(coreFirst([HYMN, GLEANINGS, BAYAN]).left).toBe(0);
+    expect(coreFirst([HYMN, GLEANINGS, BAYAN, SWAB]).kept).toEqual([GLEANINGS, BAYAN, SWAB]);
+  });
   it('the prompt: core texts lead, originals with their existing translation, talks beside, scholars only for an unaddressed point', () => {
     expect(AGENT_SYSTEM).toMatch(/CORE TEXTS FIRST/);
     expect(AGENT_SYSTEM).toMatch(/never through a scholar who quotes Him/);

@@ -66,7 +66,10 @@ export const nativeFetchCreate = (env, model, fetchFn = fetch, trace = null) => 
 export const CACHED_TOOLS = new Set(['around', 'bookCard', 'extractFromWork', 'findPassage', 'original', 'originals', 'ownSource', 'search', 'searchBy', 'searchIn',
   'searchInWork', 'sourceOf', 'talkSearch', 'trace', 'translation', 'translationsOf', 'upgradeLinks', 'urlsOf', 'whole', 'wordStudy', 'work', 'workNotes', 'writings']);
 const FRESH_MS = 3 * 864e5;
-export const toolKey = async (fn, args) => `tool/${fn}/${[...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(args ?? []))))]
+// a tool whose answer's SHAPE changed gets a new key, so no copy stored before the change is ever served (11-14 replay: a sourceOf copy
+// from before passages carried their roles reached the writer — holders, citing works and a study, no source card)
+export const TOOL_SHAPE = { sourceOf: 'roles' };
+export const toolKey = async (fn, args) => `tool/${fn}${TOOL_SHAPE[fn] ? `@${TOOL_SHAPE[fn]}` : ''}/${[...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(args ?? []))))]
   .map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 40)}`;
 
 export function remoteImpl(env, { turn, local, fetchFn = fetch, ctx = null }) {

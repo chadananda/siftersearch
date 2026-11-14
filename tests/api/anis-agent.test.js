@@ -215,6 +215,37 @@ describe('source questions', async () => {
     expect(text + r.reply).not.toMatch(/p116|uhj#p2|just before|House of Justice|did not check/);
     expect(ev.filter((e) => e.type === 'widget' && e.widget.kind === 'quote')).toHaveLength(1);
   });
+  // 11-14 live replay (33246f168): the agent typed the source passage as a markdown blockquote → no card at all. The source card is code's.
+  const TYPED = `The words come from Bahá'u'lláh.\n\n> ${Q}. [[P3]]\n> — [[P3]]\n\nFrom [Gleanings from the Writings of Bahá’u’lláh](https://oceanlibrary.com/gleanings?paraId=p117).`;
+  it('cards survive: the source typed as a blockquote becomes its card (whole reply)', async () => {
+    const { create } = traceFirst(() => ({ choices: [{ message: { content: TYPED } }] }));
+    const r = await agentAnswer({ messages: [{ role: 'user', content: `Where does "${Q}" come from?` }], tools: { ...T, sourceOf: async () => SA }, held: HELD, create });
+    expect(r.widgets.filter((w) => w.kind === 'quote')).toHaveLength(1);
+    expect(r.widgets.find((w) => w.kind === 'quote').text).toContain(Q);
+    expect(r.reply.split(Q)).toHaveLength(2);   // the card's own fallback only, not the typed copy too
+    expect(r.reply).not.toMatch(/\[\[P|> — \(/);
+    expect(r.reply).toContain('From [Gleanings');
+  });
+  it('cards survive: streamed, and with no quotation typed at all the card leads', async () => {
+    const BARE = 'From [Gleanings from the Writings of Bahá’u’lláh](https://oceanlibrary.com/gleanings?paraId=p117), quoting [the Lawḥ-i-Maqṣúd](https://oceanoflights.org/maqsud#p4). Bahá’u’lláh revealed that Tablet in ‘Akká, and the words stand in it as the closing counsel of a long passage on the oneness of mankind.';
+    for (const draft of [TYPED, BARE]) {
+      const ev = [];
+      const parts = draft.split(/(?<=\n)/);
+      const { create } = traceFirst(() => ({ async *[Symbol.asyncIterator]() { for (const c of parts) yield { choices: [{ delta: { content: c } }] }; yield { choices: [], usage: {} }; } }));
+      await agentAnswer({ messages: [{ role: 'user', content: `Where does "${Q}" come from?` }], tools: { ...T, sourceOf: async () => SA }, held: HELD, create, onEvent: (e) => ev.push(e) });
+      const quotes = ev.filter((e) => e.type === 'widget' && e.widget.kind === 'quote');
+      expect(quotes, draft.slice(0, 20)).toHaveLength(1);
+      expect(quotes[0].widget.text).toContain(Q);
+      expect(ev.some((e) => e.type === 'books')).toBe(true);   // and the book's card
+      const said = ev.filter((e) => e.type === 'text').map((e) => e.content).join('');
+      expect(said.split(Q), draft.slice(0, 20)).toHaveLength(2);   // one copy: the card's
+      expect(said).not.toMatch(/\[\[P|> — \(|^\(\[/m);   // no orphaned ref or attribution from the typed quotation
+    }
+  });
+  it('cards survive: an agent-written {{quote}} card with no trace is kept', async () => {
+    const r = await agentAnswer({ messages: [{ role: 'user', content: 'Tell me about it' }], tools: T, held: HELD, create: async () => ({ choices: [{ message: { content: 'It reads:\n\n{{quote P1}}' } }] }) });
+    expect(r.widgets.filter((w) => w.kind === 'quote')).toHaveLength(1);
+  });
   it('no trace this turn → held passages are cited as before (the guard is keyed on the trace, not the wording)', async () => {
     const r = await agentAnswer({ messages: [{ role: 'user', content: 'Tell me about it' }], tools: T, held: HELD, create: async () => ({ choices: [{ message: { content: 'The House of Justice cites it [[P2]].' } }] }) });
     expect(r.reply).toContain('uhj#p2');
