@@ -6,6 +6,7 @@ import { readFileSync, statSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { docPageSlug } from './doc-slug.js';
+import { linkFor } from '../source-links.js';
 
 export const DOC_PAGES_FILE = 'doc-pages.json';
 const DEFAULT_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'data', DOC_PAGES_FILE);
@@ -19,7 +20,8 @@ const byTitle = (a, b) => String(a.title).localeCompare(String(b.title));
  * { books, tablets } rows (pipeline-snapshot-repo.docPagesRows) → { generated_at, books, tablets }.
  * books: encumbered works (only their opening is shown). tablets: docs whose paragraphs pair an original with English —
  * an English doc with a stored original (with_original), or a Persian/Arabic doc with a recorded translation (with_translation).
- * Hidden traditions are left out; a doc whose recorded original is itself listed is left out (one page per text).
+ * Hidden traditions are left out; a doc whose recorded original is itself listed is left out (one page per text). Copies of one
+ * tablet (same Ocean of Lights bookid or Partial Inventory pin) keep one page: the copy the collaborator order ranks first, then the lowest id.
  */
 export function shapeDocPages({ books = [], tablets = [] } = {}, { hidden = new Set(), now = Date.now() } = {}) {
   const shown = (r) => r?.id && r.title && !hidden.has(r.religion);
@@ -36,8 +38,14 @@ export function shapeDocPages({ books = [], tablets = [] } = {}, { hidden = new 
     return { id: r.id, slug: docPageSlug(r), title: r.title, author: r.author || null, religion: r.religion || null, collection: r.collection || null,
       language: r.language === 'en' ? (r.original_lang || null) : r.language, paired: r.language === 'en' ? r.with_original : r.with_translation,
       bookid: m.bookid || null, pin: m.pin || null, source_url: r.source_url || null, updated: day(r.updated_at) };
-  }).sort(byTitle);
-  return { generated_at: new Date(now).toISOString(), books: outBooks, tablets: outTablets };
+  });
+  const rank = (t) => linkFor({ id: t.id, source_url: t.source_url, metadata: { bookid: t.bookid, pin: t.pin } }, null).tier;
+  const best = new Map();
+  for (const t of outTablets) {
+    const k = t.bookid ? `b:${t.bookid}` : t.pin ? `p:${t.pin}` : `i:${t.id}`, had = best.get(k);
+    if (!had || rank(t) < rank(had) || (rank(t) === rank(had) && t.id < had.id)) best.set(k, t);
+  }
+  return { generated_at: new Date(now).toISOString(), books: outBooks, tablets: [...best.values()].sort(byTitle) };
 }
 
 let cache = { path: null, mtime: -1, data: null };

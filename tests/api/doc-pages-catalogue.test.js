@@ -48,6 +48,15 @@ describe('shapeDocPages', () => {
     expect(snap.tablets.find((t) => t.id === 945614)).toMatchObject({ language: 'ar', paired: 18, bookid: 'BAB_AHMAD' });
     expect(snap.tablets.find((t) => t.id === 12)).toMatchObject({ language: 'fa', paired: 4 });
   });
+  it('copies of one tablet (same bookid or pin) keep one page: the collaborator order picks, then the lowest id', () => {
+    const t = (id, extra) => ({ id, title: `T${id}`, religion: "Baha'i", language: 'ar', with_translation: 3, ...extra });
+    const out = shapeDocPages({ tablets: [
+      t(21, { metadata: '{"bookid":"X_1"}' }), t(20, { metadata: '{"bookid":"X_1"}', source_url: 'https://bahai-library.com/x' }),
+      t(30, { metadata: '{"bookid":"X_1"}', source_url: 'https://oceanlibrary.com/x' }),
+      t(41, { metadata: '{"pin":"P9"}' }), t(40, { metadata: '{"pin":"P9"}' }), t(50, {}), t(51, {}),
+    ] }).tablets.map((x) => x.id).sort((a, b) => a - b);
+    expect(out).toEqual([30, 40, 50, 51]);
+  });
   it('readDocPages reads the file, null before the first build', () => {
     const dir = mkdtempSync(join(tmpdir(), 'docp-'));
     expect(readDocPages(join(dir, 'none.json'))).toBeNull();

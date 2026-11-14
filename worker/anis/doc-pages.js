@@ -2,16 +2,20 @@
 // opening only (api/lib/rights/preview.js — the same ceiling the library reader enforces, clamped here again); an original
 // tablet shows its Persian/Arabic beside the English, row by row (/api/library/documents/:id/sbs?cached=true: stored
 // alignments only, so a crawler never buys one). Index /doc (+ /doc/books, /doc/tablets[/<page>]) from the reports-built
-// catalogue (GET /api/library/doc-pages). Look and head: share.js. Edge-cached by the site Worker; producer contract {res, tainted}.
+// catalogue (GET /api/library/doc-pages). Any other text: a collaborator that holds it gets a 301 (link policy, doc-home.js), else
+// its public text renders here, TEXT_PAGE paragraphs a page (/doc/<slug>/<n>). Look and head: share.js. Edge-cached by the site
+// Worker; producer contract {res, tainted}.
 import { esc, plain, head, TOP, titleFrom, ORIGIN } from './share.js';
 import { widgetEmbed, askLink } from './content-widget.js';
 import { PREVIEW_PARAGRAPHS } from '../../api/lib/rights/preview.js';
 import { docPageSlug, docIdFromSlug } from '../../api/lib/library/doc-slug.js';
-import { workUrl, oceanoflightsUrl, inventoryUrl } from '../../api/lib/source-links.js';
+import { oceanoflightsUrl, inventoryUrl } from '../../api/lib/source-links.js';
+import { collaboratorUrl } from '../../api/lib/library/doc-home.js';
 
 export { docPageSlug, docPageUrl, docPagePath, docIdFromSlug } from '../../api/lib/library/doc-slug.js';
-export const DOC_PATH = /^\/doc(?:\/(books|tablets)(?:\/(\d{1,4}))?|\/([a-z0-9][a-z0-9-]{0,200}))?\/?$/;
+export const DOC_PATH = /^\/doc(?:\/(books|tablets)(?:\/(\d{1,4}))?|\/([a-z0-9][a-z0-9-]{0,200})(?:\/(\d{1,5}))?)?\/?$/;
 export const PAGE_SIZE = 200;
+export const TEXT_PAGE = 200;   // paragraphs on one page of a plain text (/doc/<slug>/<n>)
 export const SBS_LIMIT = 300;   // paragraphs on one side-by-side page; a longer text links on to its full home
 const RTL = new Set(['ar', 'fa', 'he', 'ur']);
 const LANG = { ar: 'Arabic', fa: 'Persian', he: 'Hebrew', ur: 'Urdu', en: 'English' };
@@ -19,8 +23,6 @@ const SECTION = { books: { title: 'Book openings', kicker: 'Copyrighted books', 
   tablets: { title: 'Originals with their translation', kicker: 'Side by side', blurb: 'Persian and Arabic originals beside their English translation, sentence by sentence.' } };
 const ask = (d) => `Tell me about “${d.title}”${d.author ? ` by ${d.author}` : ''}: what is it, and what does it teach?`;
 const meta = (m) => { try { return typeof m === 'string' ? JSON.parse(m) : (m || {}); } catch { return {}; } };
-// the collaborator page that holds this text, by the link policy's order; never this library's own reader
-const homeOf = (doc) => { const u = workUrl({ ...doc, id: doc.id }); return u && !/siftersearch\.com/.test(u) ? u : null; };
 const SITES = [[/oceanlibrary\.com/, 'The English in the Ocean Library'], [/oceanoflights\.org/, 'On Ocean of Lights'], [/PI_browser|portlandiator/, 'The English in the Partial Inventory'],
   [/bahai-library\.com/, 'On Bahá’í Library Online']];
 const siteLabel = (u) => SITES.find(([re]) => re.test(u))?.[1] || 'Its source';
@@ -75,6 +77,8 @@ ${widgetEmbed(o.text)}
 </html>`;
 const person = (name) => (name ? { '@type': 'Person', name } : undefined);
 const byline = (d) => [d.author, d.collection].filter(Boolean).map(esc).join(' · ');
+const pid = (p) => (Number.isInteger(p.paragraph_index) ? ` id="p${p.paragraph_index}"` : '');
+const paraHtml = (ps) => ps.map((p) => (p.blocktype === 'heading' || (p.heading && !p.text) ? `<h2${pid(p)}>${md(p.text || p.heading)}</h2>` : `<p${pid(p)}>${md(p.text)}</p>`)).join('\n');
 const cta = (d) => `<aside class="cta" aria-label="Ask"><p>A question about this text?</p>${askLink('Ask Anís about this text', ask(d), 'btn')}</aside>`;
 
 /** A copyrighted book's opening: at most PREVIEW_PARAGRAPHS paragraphs, whatever the API returned, then where to get the book. */
@@ -87,7 +91,7 @@ export function openingPage(doc, paragraphs) {
     ...(doc.year ? { datePublished: String(doc.year) } : {}), ...(publisher ? { publisher: { '@type': 'Organization', name: publisher } } : {}),
     ...(doc.description ? { description: plain(doc.description) } : {}), ...(doc.purchase_url ? { offers: { '@type': 'Offer', url: doc.purchase_url } } : {}),
     isAccessibleForFree: false, hasPart: { '@type': 'WebPageElement', isAccessibleForFree: true, cssSelector: '.text' } };
-  const body = shown.map((p) => (p.blocktype === 'heading' || (p.heading && !p.text) ? `<h2>${md(p.text || p.heading)}</h2>` : `<p>${md(p.text)}</p>`)).join('\n');
+  const body = paraHtml(shown);
   const get = doc.purchase_url ? `<p><a href="${esc(doc.purchase_url)}" rel="nofollow noopener">Get the whole book</a>${publisher ? ` (published by ${esc(publisher)})` : ''}.</p>`
     : publisher ? `<p>The whole book is published by ${esc(publisher)}.</p>` : '';
   return page({ type: 'book', title: `${doc.title}${doc.author ? ` — ${doc.author}` : ''} (opening pages)`, description, url, ld, text: { type: 'text', slug, title: doc.title } }, `<article>
@@ -105,6 +109,29 @@ ${body}
 ${cta(doc)}`);
 }
 
+/** A text no collaborator holds: its public text, TEXT_PAGE paragraphs a page. `total` = the doc's paragraph count. */
+export function textPage(doc, paragraphs, { n = 1, total = 0 } = {}) {
+  const slug = docPageSlug(doc), at = (k) => `/doc/${slug}${k > 1 ? `/${k}` : ''}`, url = ORIGIN + at(n);
+  const pages = Math.max(1, Math.ceil(total / TEXT_PAGE)), shown = (paragraphs || []).slice(0, TEXT_PAGE);
+  const first = shown.map((p) => p.text).filter(Boolean).join(' ');
+  const description = doc.description ? titleFrom(plain(doc.description), 160) : titleFrom(first || doc.title, 160);
+  const ld = { '@context': 'https://schema.org', '@type': 'CreativeWork', '@id': ORIGIN + at(1), url, name: doc.title, author: person(doc.author), inLanguage: doc.language || 'en',
+    ...(doc.year ? { datePublished: String(doc.year) } : {}), ...(doc.collection ? { isPartOf: { '@type': 'Collection', name: doc.collection } } : {}), isAccessibleForFree: true, description };
+  const lang = doc.language || 'en', dir = RTL.has(lang) ? 'rtl' : 'ltr';
+  return page({ type: 'article', title: `${doc.title}${doc.author ? ` — ${doc.author}` : ''}${n > 1 ? ` (page ${n})` : ''}`, description, url, ld, text: { type: 'text', slug, title: doc.title } }, `<article>
+<p class="crumb"><a href="/doc">All texts</a></p>
+<h1>${esc(doc.title)}</h1>
+${byline(doc) ? `<p class="meta">${byline(doc)}${doc.year ? ` · ${esc(doc.year)}` : ''}</p>` : ''}
+${doc.description && n === 1 ? `<p class="summary">${md(doc.description)}</p>` : ''}
+<hr class="rule">
+<div class="text" lang="${esc(lang)}" dir="${dir}">
+${paraHtml(shown)}
+</div>
+${pages > 1 ? `<nav class="pager" aria-label="Pages">${n > 1 ? `<a href="${at(n - 1)}" rel="prev">Previous</a>` : ''}<span class="meta">Page ${n} of ${pages}</span>${n < pages ? `<a href="${at(n + 1)}" rel="next">Next</a>` : ''}</nav>` : ''}
+</article>
+${cta(doc)}`);
+}
+
 /** An original beside its English, sentence row by sentence row; rows highlight on hover and on tap (focus). */
 export function sbsPage(doc, sbs) {
   const slug = docPageSlug(doc), url = `${ORIGIN}/doc/${slug}`, m = meta(doc.metadata);
@@ -112,7 +139,7 @@ export function sbsPage(doc, sbs) {
   const paras = (sbs.paragraphs || []).slice(0, SBS_LIMIT);
   const english = paras.flatMap((p) => p.rows.map((r) => r.t)).filter(Boolean).join(' ');
   const description = doc.description ? titleFrom(plain(doc.description), 160) : titleFrom(`${langName} original beside the English: ${english}`, 160);
-  const home = homeOf({ ...doc, source_url: doc.source_url || sbs.doc?.source_url || null });
+  const home = collaboratorUrl({ ...doc, source_url: doc.source_url || sbs.doc?.source_url || null });
   const links = [
     m.bookid && [oceanoflightsUrl(m.bookid), `The ${langName} original on Ocean of Lights`],
     home && [home, siteLabel(home)],
@@ -182,7 +209,8 @@ export const docNotFound = () => page({ type: 'website', title: 'Text not found 
 const HTML = { 'content-type': 'text/html; charset=utf-8', 'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin' };
 const ok = (html) => ({ res: new Response(html, { status: 200, headers: { ...HTML, 'cache-control': 'public, max-age=300' } }), tainted: false });
 const notFound = () => ({ res: new Response(docNotFound(), { status: 404, headers: { ...HTML, 'cache-control': 'no-store' } }), tainted: false });
-const moved = (path) => ({ res: new Response(null, { status: 301, headers: { location: ORIGIN + path, 'cache-control': 'public, max-age=3600' } }), tainted: false });
+const movedTo = (location) => ({ res: new Response(null, { status: 301, headers: { location, 'cache-control': 'public, max-age=3600' } }), tainted: false });
+const moved = (path) => movedTo(ORIGIN + path);
 const read = async (fetchFn, path) => {
   const r = await fetchFn(path, { headers: { accept: 'application/json' } });   // anonymous: the public window, never a staff read
   if ([400, 403, 404].includes(r.status)) return { missing: true, status: r.status };
@@ -195,20 +223,28 @@ const hasEnglish = (sbs) => (sbs?.paragraphs || []).some((p) => p.rows?.some((r)
 /** GET /doc[/books|/tablets[/<n>]|/<slug>] → { res, tainted }. `m` = DOC_PATH's match; `api` = the tower origin. */
 export async function docResponse(m, { api, fetchFn = fetch }) {
   try {
-    const [, kind, n, slug] = m;
+    const [, kind, n, slug, pn] = m;
     if (kind) { const html = docListPage(await catalogue(api, fetchFn), kind, n ? Number(n) : 1); return html ? ok(html) : notFound(); }
     if (!slug) return ok(docIndexPage(await catalogue(api, fetchFn)));
-    const id = docIdFromSlug(slug);
-    if (!id) return notFound();
-    const { data, missing } = await read(fetchFn, `${api}/api/library/documents/${id}?paragraphLimit=${PREVIEW_PARAGRAPHS}`);
+    const id = docIdFromSlug(slug), at = pn ? Number(pn) : 1;
+    if (!id || at < 1) return notFound();
+    const { data, missing } = await read(fetchFn, `${api}/api/library/documents/${id}?paragraphLimit=${TEXT_PAGE}&paragraphOffset=${(at - 1) * TEXT_PAGE}`);
     const doc = missing ? null : data?.document;
     if (!doc?.title) return notFound();
-    const canonical = docPageSlug({ ...doc, id });
-    if (slug !== canonical) return moved(`/doc/${canonical}`);
-    const d = { ...doc, id };
-    if (Number(doc.encumbered) === 1) return ok(openingPage(d, data.paragraphs));
-    const s = await read(fetchFn, `${api}/api/library/documents/${id}/sbs?cached=true&limit=${SBS_LIMIT}`);
-    return hasEnglish(s.data) ? ok(sbsPage(d, s.data)) : notFound();
+    const d = { ...doc, id }, canonical = docPageSlug(d), path = `/doc/${canonical}${at > 1 ? `/${at}` : ''}`;
+    const here = (html) => (slug !== canonical || (pn && at === 1) ? moved(path) : ok(html));
+    // 1. an original beside its English: found nowhere else, so it stays here even when a collaborator holds the text
+    if (Number(doc.encumbered) !== 1) {
+      const s = await read(fetchFn, `${api}/api/library/documents/${id}/sbs?cached=true&limit=${SBS_LIMIT}`);
+      if (hasEnglish(s.data)) return at > 1 ? notFound() : here(sbsPage(d, s.data));
+    }
+    // 2. a collaborator holds it → there (Chad 11-14: collaborator sites first)
+    const away = collaboratorUrl(d);
+    if (away) return movedTo(away);
+    // 3. a copyrighted book: its permitted opening; 4. anything else: its public text, page by page
+    if (Number(doc.encumbered) === 1) return at > 1 ? notFound() : here(openingPage(d, data.paragraphs));
+    if (at > 1 && !(data.paragraphs || []).length) return notFound();
+    return here(textPage(d, data.paragraphs, { n: at, total: data.paragraphTotal ?? doc.paragraph_count ?? 0 }));
   } catch {
     return { res: new Response('This text is briefly unavailable. Please try again in a moment.', { status: 503, headers: { 'content-type': 'text/plain; charset=utf-8', 'retry-after': '30' } }), tainted: true };
   }

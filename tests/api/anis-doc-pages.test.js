@@ -1,6 +1,6 @@
 // anis.oceanlibrary.com/doc: slug → page (301 to canonical, 404 unknown), the copyright ceiling, the side-by-side view, index + sitemap.
 import { describe, it, expect } from 'vitest';
-import { DOC_PATH, docResponse, docSitemapUrls, PAGE_SIZE } from '../../worker/anis/doc-pages.js';
+import { DOC_PATH, docResponse, docSitemapUrls, PAGE_SIZE, TEXT_PAGE } from '../../worker/anis/doc-pages.js';
 import { PREVIEW_PARAGRAPHS } from '../../api/lib/rights/preview.js';
 import { THEME_PREP } from '../../worker/anis/content-widget.js';
 
@@ -27,8 +27,13 @@ function fake({ bookParas = 40, sbs = SBS, catalogue = CAT } = {}) {
     if (p.pathname === '/api/library/documents/8632') return j({ document: BOOK, paragraphs: paras(bookParas), previewLimit: 40 });
     if (p.pathname === '/api/library/documents/945614') return j({ document: TABLET, paragraphs: paras(3) });
     if (p.pathname === '/api/library/documents/945614/sbs') return j(sbs);
-    if (p.pathname === '/api/library/documents/77') return j({ document: { id: '77', title: 'Plain Book', language: 'en', encumbered: 0 }, paragraphs: paras(3) });
-    if (p.pathname === '/api/library/documents/77/sbs') return j({ doc: { language: 'en' }, paragraphs: [{ n: 1, kind: 'text', rows: [{ o: 'x', t: '' }] }] });
+    if (p.pathname === '/api/library/documents/77') {
+      const off = Number(p.searchParams.get('paragraphOffset') || 0), lim = Number(p.searchParams.get('paragraphLimit'));
+      return j({ document: { id: '77', title: 'Plain Book', language: 'en', encumbered: 0, paragraph_count: 450 }, paragraphs: paras(450).slice(off, off + lim), paragraphTotal: 450 });
+    }
+    if (p.pathname === '/api/library/documents/78') return j({ document: { id: '78', title: 'Held Elsewhere', language: 'en', encumbered: 0, source_url: 'https://bahai-library.com/held_elsewhere' }, paragraphs: paras(3) });
+    if (p.pathname === '/api/library/documents/79') return j({ document: { ...BOOK, id: '79', title: 'Copyright Held', source_url: 'https://bahai-library.com/copyright_held' }, paragraphs: paras(40) });
+    if (/^\/api\/library\/documents\/7[78]\/sbs$/.test(p.pathname)) return j({ doc: { language: 'en' }, paragraphs: [{ n: 1, kind: 'text', rows: [{ o: 'x', t: '' }] }] });
     return j({ error: 'not found' }, 404);
   };
   return { calls, fetchFn };
@@ -40,7 +45,8 @@ const get = async (path, f = fake()) => {
 
 describe('routing and slugs', () => {
   it('DOC_PATH: index, lists, pages, slugs', () => {
-    expect(DOC_PATH.exec('/doc').slice(1)).toEqual([undefined, undefined, undefined]);
+    expect(DOC_PATH.exec('/doc').slice(1)).toEqual([undefined, undefined, undefined, undefined]);
+    expect(DOC_PATH.exec('/doc/plain-book-77/3').slice(3)).toEqual(['plain-book-77', '3']);
     expect(DOC_PATH.exec('/doc/tablets/2').slice(1, 3)).toEqual(['tablets', '2']);
     expect(DOC_PATH.exec('/doc/books-of-light-12')[3]).toBe('books-of-light-12');
     expect(DOC_PATH.exec('/doc/Bad Slug')).toBeNull();
@@ -54,8 +60,8 @@ describe('routing and slugs', () => {
       expect(r.location).toBe('https://anis.oceanlibrary.com/doc/gate-of-the-heart-nader-saiedi-8632');
     }
   });
-  it('unknown slug, no id, or a doc with nothing unique → 404 noindex', async () => {
-    for (const p of ['/doc/no-such-text-999', '/doc/no-id-here', '/doc/plain-book-77']) {
+  it('unknown slug or no id → 404 noindex', async () => {
+    for (const p of ['/doc/no-such-text-999', '/doc/no-id-here', '/doc/plain-book-77/4']) {
       const r = await get(p);
       expect(r.status, p).toBe(404);
       expect(r.html).toContain('<meta name="robots" content="noindex">');
@@ -68,14 +74,14 @@ describe('copyrighted book: the opening only', () => {
   it(`never more than PREVIEW_PARAGRAPHS (${PREVIEW_PARAGRAPHS}), even when the origin sends more`, async () => {
     const r = await get('/doc/gate-of-the-heart-nader-saiedi-8632', fake({ bookParas: 120 }));
     const body = r.html.slice(r.html.indexOf('<div class="text"'), r.html.indexOf('<div class="ends"'));
-    expect((body.match(/<p>/g) || []).length).toBe(PREVIEW_PARAGRAPHS);
+    expect((body.match(/<p id="p\d+">/g) || []).length).toBe(PREVIEW_PARAGRAPHS);
     expect(body).toContain(`Paragraph number ${PREVIEW_PARAGRAPHS}.`);
     expect(body).not.toContain(`Paragraph number ${PREVIEW_PARAGRAPHS + 1}.`);
   });
   it('asks the origin anonymously for the preview window, then where to get the book', async () => {
     const f = fake();
     const r = await get('/doc/gate-of-the-heart-nader-saiedi-8632', f);
-    expect(f.calls.find((u) => u.includes('/documents/8632'))).toContain(`paragraphLimit=${PREVIEW_PARAGRAPHS}`);
+    expect(f.calls.find((u) => u.includes('/documents/8632'))).toMatch(/paragraphOffset=0/);
     expect(f.calls.some((u) => u.includes('/sbs'))).toBe(false);
     expect(r.html).toContain('href="https://example.com/buy"');
     expect(r.html).toContain('Wilfrid Laurier University Press');
@@ -85,6 +91,35 @@ describe('copyrighted book: the opening only', () => {
     expect(r.html).toMatch(/href="\/\?ask=[^"]*Gate%20of%20the%20Heart[^"]*" data-anis-ask=/);
     expect(r.html).toMatch(/window\.anisPage=\{"type":"text","slug":"gate-of-the-heart[^"]*-8632","title":"Gate of the Heart/);
     expect(noWidget(r.html)).not.toMatch(/siftersearch/i);
+  });
+});
+
+describe('link policy: collaborators first, else the text here', () => {
+  it('a collaborator holds it → 301 there, straight from any slug or the bare id (a copyrighted book too)', async () => {
+    for (const [p, to] of [['/doc/78', 'https://bahai-library.com/held_elsewhere'], ['/doc/old-79', 'https://bahai-library.com/copyright_held']]) {
+      const r = await get(p);
+      expect(r.status, p).toBe(301);
+      expect(r.location).toBe(to);
+    }
+  });
+  it('the original beside its English stays here even when a collaborator holds the tablet', async () => {
+    expect((await get('/doc/prayer-for-ahmad-the-bab-945614')).status).toBe(200);
+  });
+  it('a text no collaborator holds renders here, TEXT_PAGE paragraphs a page, anchors kept', async () => {
+    const r1 = await get('/doc/plain-book-77'), r3 = await get('/doc/plain-book-77/3');
+    expect(r1.status).toBe(200);
+    expect((r1.html.match(/<p id="p\d+">/g) || []).length).toBe(TEXT_PAGE);
+    expect(r1.html).toContain('<p id="p0">Paragraph number 1.</p>');
+    expect(r1.html).toContain('href="/doc/plain-book-77/2" rel="next"');
+    expect(r3.html).toContain('<link rel="canonical" href="https://anis.oceanlibrary.com/doc/plain-book-77/3">');
+    expect(r3.html).toContain('<p id="p400">Paragraph number 401.</p>');
+    expect(r3.html).not.toContain('rel="next"');
+    expect((await get('/doc/plain-book-77/1')).location).toBe('https://anis.oceanlibrary.com/doc/plain-book-77');
+    expect((await get('/doc/77/2')).location).toBe('https://anis.oceanlibrary.com/doc/plain-book-77/2');
+    expect(noWidget(r1.html)).not.toMatch(/siftersearch/i);
+  });
+  it('a copyrighted book has no page 2', async () => {
+    expect((await get('/doc/gate-of-the-heart-nader-saiedi-8632/2')).status).toBe(404);
   });
 });
 
