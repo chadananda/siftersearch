@@ -1,6 +1,6 @@
 // Verbatim lead (api/lib/search/verbatim.js): an exact quotation's own passage leads, in every script.
 import { describe, it, expect } from 'vitest';
-import { foldVerbatim, isVerbatimQuery, verbatimLead, exactLead } from '../../api/lib/search/verbatim.js';
+import { foldVerbatim, isVerbatimQuery, verbatimLead, exactLead, isQuestion } from '../../api/lib/search/verbatim.js';
 
 const e = (id, text) => ({ id, text });
 const textOf = (x) => x.text;
@@ -46,5 +46,19 @@ describe('quotation recall (11-13)', () => {
     expect(SEARCH_PARAMS.phraseExact.rescore).toBe(true);
     expect(SEARCH_PARAMS.phraseExact.oversampling).toBeGreaterThan(SEARCH_PARAMS.phrase.oversampling);
     expect(SEARCH_PARAMS.phraseExact.hnsw_ef).toBeGreaterThan(SEARCH_PARAMS.phrase.hnsw_ef);
+  });
+});
+
+describe('a question vs a quotation that begins with a question word (11-13)', () => {
+  it('a sentence ending in a period is a statement', () => {
+    expect(isQuestion('What you are about to hear is the fifth version of what is now all too clearly a work in progress.')).toBe(false);
+  });
+  it('a long pasted sentence is a quotation even without punctuation', () => {
+    expect(isQuestion('What you are about to hear is the fifth version of what is now all too clearly a work in progress')).toBe(false);
+  });
+  it('typed questions stay questions', () => {
+    expect(isQuestion('what is the purpose of prayer')).toBe(true);
+    expect(isQuestion('Is the Fast a command or a suggestion?')).toBe(true);
+    expect(isQuestion('What you are about to hear is the fifth version of what is now all too clearly a work in progress?')).toBe(true);
   });
 });

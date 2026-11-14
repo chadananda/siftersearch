@@ -15,7 +15,16 @@ export function foldVerbatim(s) {
 export const isVerbatimQuery = (q, min = 5) => foldVerbatim(q).split(' ').filter(Boolean).length >= min;
 /** A QUESTION is not a quotation: a passage that merely restates "what is the purpose of prayer" does not answer it (10-20:
  *  a PDF repeating the question led 'Abdu'l-Bahá's answer). Pure. */
-export const isQuestion = (q) => /\?\s*$/.test(String(q || '')) || /^\s*(what|who|whom|whose|why|how|when|where|which|is|are|was|were|do|does|did|can|could|should|would|will|shall|may|must)\b/i.test(String(q || ''));
+/** A sentence ending in "." or "!" is a statement, and a long text is pasted words: "What you are about to hear is the fifth version
+ *  of…" (a talk's own sentence, 11-13) begins with a question word but is a quotation. */
+export const QUESTION_MAX_WORDS = 12;
+export const isQuestion = (q) => {
+  const s = String(q || '').trim();
+  if (/\?["'”’)\]]*$/.test(s)) return true;
+  if (/[.!]["'”’)\]]*$/.test(s)) return false;
+  return /^(what|who|whom|whose|why|how|when|where|which|is|are|was|were|do|does|did|can|could|should|would|will|shall|may|must)\b/i.test(s)
+    && foldVerbatim(s).split(' ').filter(Boolean).length <= QUESTION_MAX_WORDS;
+};
 
 /** Entries (in their current order) whose text contains the query verbatim go first; the rest keep their order.
  *  textOf(entry) → the passage text. Returns a new array; never drops an entry. */
