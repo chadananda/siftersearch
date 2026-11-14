@@ -3,7 +3,7 @@
 import { toolRunner, TOOL_CHARS } from './tool-runner.js';
 import { workNotes as workNotesLookup, asPassage, SAME_QUESTION } from './tool-defs.js';
 import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
-import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts } from './lint.js';
+import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence } from './lint.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
 import { expandTemplates } from './widgets/templates.js';
@@ -38,6 +38,8 @@ export function rebuiltDrift(messages = [], final = '') {
   const out = numberedRows(final), src = numberedRows(prior.content);
   return out.length >= Math.max(2, Math.ceil(src.length / 2)) ? tableDrift(prior.content, final) : null;   // a one-row correction is not a rebuild
 }
+/** The re-ask for an absence claim no search inside the histories backs (lint.js unbackedAbsence; history-sweep.js). */
+export const absenceAsk = (claims) => `(note from the library, not the reader) You wrote that the library has nothing on someone — ${claims.map((c) => `"${c.slice(0, 160)}"`).join('; ')} — without searching inside the histories for that name. Run fused_search with about: "history" on each such name alone (it searches inside Nabíl's The Dawn-Breakers, Balyuzi, Momen and Ẓuhúru'l-Ḥaqq with spelling variants), then write the answer again: say the library has no account only for a name that search came back empty on, naming the spellings searched.`;
 /** The re-ask for circular identification rows (lint.js circularRows). */
 export const circularAsk = (names) => `(note from the library, not the reader) These rows cite only the text being explained — the list that NAMES them — as evidence of who they were: ${names.join('; ')}. Naming is not evidence. For EACH of them, run fused_search with about: "history" on the name and its variants (with diacritics and without, and the short name alone, e.g. "Turshízí", "Khu'í") — Nabíl's narrative (The Dawn-Breakers), God Passes By, Balyuzi, Momen — then write the whole table again: every row's evidence a passage that DESCRIBES the person (a role, an event, a fate), or "not identified in the library (searched: <the names you searched>)". Never cite the text being explained as evidence of who someone was.`;
 export const CONVO_BUDGET = 60000, CONVO_MAX = 12;
@@ -122,7 +124,7 @@ WRITING:
 - NEVER NARRATE. The reader sees only the answer: never write about candidates, tools, searches, held research or what you will check next ("The candidate source is…", "I'll check the notes"). When your searches run out, write the answer from what you hold and say plainly what is not settled.
 - LINKS COME FROM PASSAGES. Cite with refs ([[P3]]) only; never type a library address or a paragraph id yourself — code makes every link from a passage you hold, and a typed one is removed.
 - CORE TEXTS FIRST (the Bahá'í Faith in play). Answer from the written texts of Bahá'u'lláh, the Báb and 'Abdu'l-Bahá and from Shoghi Effendi — in English and in the Persian and Arabic originals (originals_search; quote an original with its existing translation, never a new one) — and let them lead and carry the argument. A recorded talk of 'Abdu'l-Bahá may stand beside a written text when it adds something, named as spoken; a pilgrim's recollection after that; a scholar's book only for a point no Writing addresses, named as that writer's view. Quote 'Abdu'l-Bahá from His own text, never through a scholar who quotes Him. When your passages lead with a talk or a study, search the Writings on that point before writing.
-- HISTORY AND BIOGRAPHY keep scholarship. Judge each question's kind yourself and pass it as about on fused_search and research_lookup: "teaching" (what a text or the Faith teaches — the core texts suffice and commentary is left out) or "history" (an event, a date, who a person was). For history the same order holds — the Writings and Shoghi Effendi lead where they speak, and Nabíl's The Dawn-Breakers (Shoghi Effendi's translation) is THE narrative source for the Báb's ministry and the Bábí period: tell the events from it and quote it (fused_search with about: "history" searches inside it; search_in_work on it for a chapter or a person). It is in the library: never write that the library does not give you Nabíl's text, or that no passage exists for a point, before searching inside it — but the histories and scholars (Nabíl, Balyuzi, Momen, Mázandarání, Nicolas, Taherzadeh…) are needed to unravel obscure figures: search them on purpose, by the person's name and its variants, for EACH person you have not yet identified before writing that the library holds nothing on them; name each scholar's claim as theirs ("Balyuzi identifies him as…"). The evidence decides an identification, and a correction from the reader is evidence: weigh it against the passages, never keep an earlier reading out of habit.
+- HISTORY AND BIOGRAPHY keep scholarship. Judge each question's kind yourself and pass it as about on fused_search and research_lookup: "teaching" (what a text or the Faith teaches — the core texts suffice and commentary is left out) or "history" (an event, a date, who a person was). For history the same order holds — the Writings and Shoghi Effendi lead where they speak, and Nabíl's The Dawn-Breakers (Shoghi Effendi's translation) is THE narrative source for the Báb's ministry and the Bábí period: tell the events from it and quote it (fused_search with about: "history" searches inside it; search_in_work on it for a chapter or a person). It is in the library: never write that the library does not give you Nabíl's text, or that no passage exists for a point, before searching inside it — but the histories and scholars (Nabíl, Balyuzi, Momen, Mázandarání, Nicolas, Taherzadeh…) are needed to unravel obscure figures: search them on purpose, by the person's name and its variants, for EACH person you have not yet identified before writing that the library holds nothing on them (fused_search with about: "history" on the name alone searches inside Nabíl, Balyuzi, Momen and Ẓuhúru'l-Ḥaqq with its spelling variants; only when that comes back empty may you say the library has no account of them); name each scholar's claim as theirs ("Balyuzi identifies him as…"). The evidence decides an identification, and a correction from the reader is evidence: weigh it against the passages, never keep an earlier reading out of habit.
 - WHO WAS EACH OF THEM (an identification table or list): each person's evidence is a passage that DESCRIBES them — a role, an event, a fate. The text that merely names them (the list being explained) is never evidence of who they were. Before writing, search each person not yet identified separately (about: "history"; the name with diacritics, without, and the short name alone — "Turshízí", "Khu'í"); if still nothing, the row says "not identified in the library (searched: …)".
 - With the Bahá'í Faith in play, prefer, in order: the Writings of Bahá'u'lláh, the Báb and 'Abdu'l-Bahá; Shoghi Effendi; then compilations; "Uncompiled Published Letters" (or "Uncompiled Letters") only when nothing else holds the words. A recollection of a Central Figure's spoken words (pilgrim notes, a visitor's article) only when no Writing says it, and named as a recollection in a few words. Doctrine rests on the Writings and Shoghi Effendi; the Universal House of Justice speaks with authority on law and administration.
 - In a Bahá'í question, readings in the community's sense: "the House" = the Universal House of Justice, "the Master" = 'Abdu'l-Bahá, "the Guardian" = Shoghi Effendi, "the Blessed Beauty" = Bahá'u'lláh, "the Most Holy Book" = the Kitáb-i-Aqdas, "the Nine Year Plan" = 2022–2031.
@@ -213,7 +215,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const subj = subjectOr(subject, messages);
   let anchored = false;
   const t0 = Date.now();
-  const { found, works, add, addWork, show, run } = runner(impl, { search: 'fused_search' });
+  const { found, works, add, addWork, show, run, sweeps = [] } = runner(impl, { search: 'fused_search' });
   // the strategy tools (agent-strategies.js): their data → refs here; passages they gave are remembered for the cards
   const bookCards = new Map(), fromStrategy = new Set();
   const give = (ps) => ps.map((x) => { const r = add(asPassage(x)); if (r) fromStrategy.add(r); return r; }).filter(Boolean);
@@ -334,7 +336,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const turnNote = [firstVisit ? FIRST_VISIT : null, reader, heldText].filter(Boolean).join('\n\n');
   if (turnNote) { const u = msgs.findLastIndex((m) => m.role === 'user'); msgs[u] = { ...msgs[u], content: `${msgs[u].content}\n\n---\n${turnNote}` }; }
   const steps = [], usage = { in: 0, out: 0 };
-  let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false, capped = false, replanned = false, circled = false, drifted = false;
+  let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false, capped = false, replanned = false, circled = false, drifted = false, absent = false;
   // the answering round streams a sentence at a time; only sentences whose quotations are in a passage held are shown
   const asked0 = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const held0 = () => [...found.values()].map((p) => ({ ...p, source_title: p.title }));
@@ -461,6 +463,13 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
       if (circ.length && round < maxRounds - 1 && calls < maxCalls) {
         circled = true; gate = false; streamed = false;
         msgs.push({ role: 'assistant', content: final }, { role: 'user', content: circularAsk(circ) });
+        continue;
+      }
+      // an absence claim ("the library gives no account of him") with no empty search inside the histories behind it → once, search them and rewrite
+      const unbacked = absent ? [] : unbackedAbsence(final, sweeps);
+      if (unbacked.length && round < maxRounds - 1 && calls < maxCalls) {
+        absent = true; gate = false; streamed = false;
+        msgs.push({ role: 'assistant', content: final }, { role: 'user', content: absenceAsk(unbacked) });
         continue;
       }
       // a rebuilt table (compile/revise/email, round 6) keeps the latest table's rows 1…N, each its own person and facts → once, rewrite it

@@ -9,7 +9,8 @@ import { cleanCardText, isPdfDump, readableTitle } from '../../api/lib/assistant
 import { fromRefs as quoteFrom } from '../../api/lib/assistant/widgets/quote.js';
 import { fromRefs as sceneFrom } from '../../api/lib/assistant/widgets/scene.js';
 import { expandTemplates } from '../../api/lib/assistant/widgets/templates.js';
-import { dropDanglingLeadIn, dropCutOff, unholdTexts, dropNarration } from '../../api/lib/assistant/lint.js';
+import { dropDanglingLeadIn, dropCutOff, unholdTexts, dropNarration, unbackedAbsence } from '../../api/lib/assistant/lint.js';
+import { HISTORY_WORKS, nameVariants } from '../../api/lib/assistant/history-sweep.js';
 import { agentAnswer, AGENT_SYSTEM } from '../../api/lib/assistant/agent-core.js';
 
 const B = "Baha'i";
@@ -142,5 +143,61 @@ describe('4 · length is judgement', () => {
     expect(AGENT_SYSTEM).toMatch(/LENGTH is your judgment, from the question and the reader/);
     expect(AGENT_SYSTEM).toMatch(/what you leave out is offered as follow-up questions/);
     expect(AGENT_SYSTEM).not.toMatch(/\b\d{3,4} words\b/);
+  });
+});
+
+// db-battery 11-14, retrieval gap: a library-wide search on the bare name found nothing for Bajistání, Khu'í, Ibdál, Ardibílí, Qumí, Kandí…
+// although each stands in The Dawn-Breakers (21308) and most in Balyuzi, Momen or Ẓuhúru'l-Ḥaqq (15254); dbp:004 said "no account" of
+// Basṭámí although his vision is in 21308. A person lookup searches inside the histories with spelling variants; "no account" needs that empty.
+describe('5 · the person lookup searches inside the histories', () => {
+  const BAJ = { id: 7001, document_id: 21308, title: 'The Dawn-Breakers', author: 'Nabil Zarandi', religion: B, source_url: 'https://oceanlibrary.com/dawn-breakers#p7001',
+    text: 'Mullá Ḥasan-i-Bajistání, one of the companions of Mullá Ḥusayn, was overtaken by doubts and later confessed his fault.' };
+  const BAL = { id: 7002, document_id: 462, title: 'The Báb', author: 'H. M. Balyuzi', religion: B, collection: "Baha'i Books", source_url: 'https://oceanlibrary.com/balyuzi-bab#p7002',
+    text: 'Bajistání, a disciple of Siyyid Kázim, was among those who set out from Karbilá.' };
+  const runner = (inWork) => { const asked = []; const r = toolRunner({ search: async () => [GPB(1)], writings: async () => [], translationsOf: async () => new Map(),
+    searchIn: async (q, doc) => { asked.push([doc, q]); return inWork(q, doc); } }); return { r, asked }; };
+  it('the spellings: as given, without diacritics or hamza/ayn, the -í/-iy ending swapped', () => {
+    expect(nameVariants("Khu'í")).toEqual(["Khu'í", 'Khui', 'Khuiy']);
+    expect(nameVariants('Mullá Mihdíy-i-Kandí')).toContain('Mulla Mihdi-i-Kandi');
+  });
+  it('a name the main search missed is found inside Nabíl and Balyuzi; every history work is searched, the bare spelling too', async () => {
+    const { r, asked } = runner((q, doc) => (doc === 21308 && /Bajist/.test(q) ? [BAJ] : doc === 462 ? [BAL] : []));
+    const out = await r.run.fused_search({ query: 'Bajistání', tradition: B, about: 'history' });
+    expect([...new Set(asked.map(([d]) => d))]).toEqual(HISTORY_WORKS);
+    expect(asked.filter(([d]) => d === 21308).map(([, q]) => q)).toEqual(['Bajistání', 'Bajistani', 'Bajistaniy']);
+    expect(out).toMatch(/Mullá Ḥasan-i-Bajistání, one of the companions/);
+    expect(out).toMatch(/a disciple of Siyyid Kázim/);
+    expect(out).toMatch(/searched inside the histories[^\n]*"Bajistani"[^\n]*2 passages/);
+    expect(r.sweeps).toEqual([{ query: 'Bajistání', variants: ['Bajistání', 'Bajistani', 'Bajistaniy'], n: 2 }]);
+  });
+  it('an empty sweep says so — and is what allows "no account"', async () => {
+    const { r } = runner(() => []);
+    const out = await r.run.fused_search({ query: 'Ibdál', tradition: B, about: 'history' });
+    expect(out).toMatch(/nothing inside them\. Only now may you write that the library gives no account/);
+    expect(r.sweeps[0].n).toBe(0);
+  });
+  it('an absence claim is backed only by an empty sweep on that name', () => {
+    const claim = 'Mullá Ḥasan-i-Bajistání was a Letter of the Living. The library gives no account of Bajistání beyond his name.';
+    expect(unbackedAbsence(claim, [])).toHaveLength(1);
+    expect(unbackedAbsence(claim, [{ variants: ['Bajistání', 'Bajistani'], n: 0 }])).toHaveLength(0);
+    expect(unbackedAbsence(claim, [{ variants: ['Bajistání', 'Bajistani'], n: 2 }])).toHaveLength(1);
+    expect(unbackedAbsence(claim, [{ variants: ['Ibdál', 'Ibdal'], n: 0 }])).toHaveLength(1);
+    expect(unbackedAbsence('| 7 | Khu\'í | not identified in the library (searched: Khu\'í, Khui) |', [{ variants: ["Khu'í", 'Khui'], n: 0 }])).toHaveLength(0);
+    expect(unbackedAbsence('> the library holds nothing', [])).toHaveLength(0);
+  });
+  it('an unbacked "no account" sends the agent into the histories once, then the answer is rewritten from what it found', async () => {
+    const seen = [];
+    const create = async (p) => { seen.push(p);
+      if (seen.length === 1) return { choices: [{ message: { content: 'Basṭámí was the second Letter of the Living. The library gives no account of Basṭámí’s vision.' } }] };
+      if (seen.length === 2) return { choices: [{ message: { content: '', tool_calls: [{ id: 'h', function: { name: 'fused_search', arguments: JSON.stringify({ query: 'Basṭámí', tradition: B, about: 'history' }) } }] } }] };
+      return { choices: [{ message: { content: 'Mullá ‘Alíy-i-Basṭámí was the second Letter of the Living; Nabíl records how he recognised the Báb [[P2]].' } }] }; };
+    const VIS = { ...BAJ, id: 7003, text: 'Mullá ‘Alíy-i-Basṭámí, the second to believe, recognised the Báb through a vision while in prayer and fasting.' };
+    const r = await agentAnswer({ messages: [{ role: 'user', content: 'Who was Basṭámí?' }], create,
+      tools: { search: async () => [GPB(1)], writings: async () => [], translationsOf: async () => new Map(), searchIn: async (q, doc) => (doc === 21308 ? [VIS] : []) } });
+    const msgs = seen.at(-1).messages;   // one conversation, grown round by round
+    expect(msgs.filter((m) => m.role === 'user' && /without searching inside the histories/.test(m.content))).toHaveLength(1);
+    expect(msgs.findLast((m) => m.role === 'tool').content).toMatch(/through a vision while in prayer/);
+    expect(r.reply).not.toMatch(/gives no account/);
+    expect(r.reply).toMatch(/Nabíl records/);
   });
 });

@@ -637,6 +637,18 @@ export function dropCutOff(text) {
   }).join('\n');
   return { text: dropped ? out.replace(/\n{3,}/g, '\n\n').trim() : String(text || ''), dropped };
 }
+// AN ABSENCE CLAIM about a person ("the library gives no account of him", "not identified in the library") — allowed only after a search
+// INSIDE the histories on that name came back empty (history-sweep.js; Dawn-Breakers battery 11-14: Basṭámí's vision is in 21308, yet
+// "no account"). → the claim sentences (outside blockquotes), each with the plain words it names. Pure.
+const ABSENCE = /\b(?:the library (?:holds|has|gives|contains|offers|provides) (?:nothing|no (?:account|passage|record|mention|information|description))|(?:not|never) identified in the library|nothing in the library (?:on|about|identifies|describes)|no (?:account|passage|record|mention) (?:of|on|about) (?:him|her|them|this (?:man|woman|person))\b[^.!?\n]*\bin the library)/i;
+export const absenceClaims = (text) => String(text || '').split('\n').filter((l) => !/^\s*>/.test(l))
+  .flatMap((l) => l.match(/[^.!?]+(?:[.!?…]+|$)/g) || []).filter((x) => ABSENCE.test(x)).map((x) => x.trim());
+const plain = (s) => String(s).normalize('NFD').replace(/\p{M}/gu, '').replace(/[’'ʻʿʼ`‘]/g, '').toLowerCase();
+/** The claims no empty sweep backs: a claim is backed when it names a word (≥4 letters) of a name whose sweep found nothing. Pure. */
+export const unbackedAbsence = (text, sweeps = []) => {
+  const empty = sweeps.filter((s) => !s.n).flatMap((s) => s.variants.flatMap((v) => plain(v).split(/[^\p{L}]+/u))).filter((w) => w.length >= 4 && !/^(?:mulla|mirza|hajji?|siyyid|shaykh|aqa)$/.test(w));
+  return absenceClaims(text).filter((c) => { const t = plain(c); return !empty.some((w) => t.includes(w)); });
+};
 export function dropNarration(text) {
   let dropped = 0;
   const out = String(text || '').split('\n').map((line) => {

@@ -1,11 +1,12 @@
 // The library tools behind refs (P# passages, W# web answers, B# works): toolRunner, show/fit/clip helpers. PURE — bundles for a Worker (agent-core.js).
 // Server-only defaults (rights, title finder, link maps) come in as opts.fallback; researcher.js wraps this with them. Deps: source-tier, head-of, forensics, tool-cache
 import { headOf } from '../text/head-of.js';
-import { NARRATIVE_DOCS, byTier, coreFirst, isNarrative, isWrittenCore, misfiled, needsWritings, sourceTier, tierLabel } from './source-tier.js';
+import { byTier, coreFirst, isNarrative, isWrittenCore, misfiled, needsWritings, sourceTier, tierLabel } from './source-tier.js';
 import { copyClass, COPY_CLASSES } from '../audit/forensics.js';
 import { canonicalTradition } from './tradition-name.js';
 import { translationLabel } from './tool-defs.js';
 import { part } from './tool-cache.js';
+import { HISTORY_NAMES, sweepHistory } from './history-sweep.js';
 
 export const PASSAGE_CHARS = 4000;   // = prompt.js PASSAGE_CHARS (a passage's shown length)
 
@@ -116,6 +117,7 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
     const caps = fitLengths(texts.map((t, i) => Math.min(t.length, ps[i][1].translation ? Math.max(n, 4000) : n)), SHOW_CHARS - heads.reduce((a, h) => a + h.length + 5, 0));
     return ps.map((_, i) => `${heads[i]}\n${headOf(texts[i], caps[i])}`).join('\n\n');
   };
+  const sweeps = [];   // each person lookup's sweep inside the histories: { query, variants, n } (agent-core: an absence claim needs an empty one)
   const searched = [];   // each search's query and its passages' documents in rank order (research's book step)
   // AUTHORITATIVE TIER FIRST (11-04 taxation: the Writings never reached the brief; talks and Esslemont did). A Bahá'í search
   // whose hits hold no written Writings and nothing of Shoghi Effendi is searched again in those writers' works alone
@@ -154,10 +156,10 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
     const early = impl.originals && /bah/i.test(String(tradition || '')) ? impl.originals(query).catch(() => []) : null;
     // a Bahá'í-scoped search starts the Writings pass beside it (11-12: run after it, the two searches took 2.5–4.8 s); used only when needed
     const wEarly = impl.writings && /bah/i.test(String(tradition || '')) ? impl.writings(query).catch(() => []) : null;
-    // a HISTORY question (Dawn-Breakers battery 11-14: Nabíl cited in 4 of 10 narrative replies) also searches inside Nabíl's
-    // narrative, started beside the main search and used only when the hits hold none of it
+    // a HISTORY question (Dawn-Breakers battery 11-14: Nabíl cited in 4 of 10 narrative replies; bare names found nothing library-wide)
+    // also searches INSIDE the histories (history-sweep.js: Nabíl; for a person, Balyuzi, Momen, Ẓuhúru'l-Ḥaqq too, with spelling variants)
     const history = about === 'history';
-    const nEarly = history && impl.searchIn && (!tradition || /bah/i.test(String(tradition))) ? impl.searchIn(query, NARRATIVE_DOCS[0]).catch(() => []) : null;
+    const sweep = history && impl.searchIn && (!tradition || /bah/i.test(String(tradition))) ? sweepHistory(impl, query) : null;
     let hits = (await impl.search(query, tradition)).slice(0, 8);
     // CORE FIRST (Chad 11-14, "Who is the Evil One": a scholar's study led, 'Abdu'l-Bahá quoted through it, then pilgrim notes,
     // the Writings fourth): the Writings are searched on the same point whenever the hits hold too few written core passages
@@ -169,13 +171,17 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
     } else if (impl.writings && !hits.length && /bah/i.test(String(tradition || ''))) {
       hits = (await (wEarly || impl.writings(query)).catch(() => [])).slice(0, 4);
     }
-    if (nEarly && !hits.some(isNarrative) && (!hits.length || bahaiSearch(tradition, hits))) {
+    let told = [], swept = null;
+    if (sweep && (!hits.length || bahaiSearch(tradition, hits))) {
+      swept = await sweep;
       const seen = new Set(hits.map((p) => p.id).filter((x) => x != null));
-      const told = ((await nEarly) || []).filter((p) => p.id == null || !seen.has(p.id)).slice(0, 3);
-      hits = [...hits.slice(0, 10 - told.length), ...told];
+      const fresh = swept.hits.filter((p) => p.id == null || !seen.has(p.id));
+      told = (hits.some(isNarrative) ? fresh.filter((p) => !isNarrative(p)) : fresh).slice(0, 4);
+      if (swept.person) sweeps.push({ query, variants: swept.variants, n: swept.n });
     }
     const orig = await originalsFor(query, hits, early);
-    hits = byTier(hits).slice(0, 10 - orig.length);
+    // what the sweep found inside the histories keeps its place (the main search's tail gives way, never these)
+    hits = told.length ? byTier([...byTier(hits).slice(0, Math.max(0, 10 - orig.length - told.length)), ...told]) : byTier(hits).slice(0, 10 - orig.length);
     // the agent's own-source pass (own-source.js preferOwnWork): a Writing quoted in a compilation or another's book → the writer's own work
     const o0 = Date.now();
     if (impl.ownSource) hits = (await impl.ownSource(hits).catch(() => null)) || hits;
@@ -190,7 +196,10 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
     const core = hits.filter(isWrittenCore).map((p) => add(p));
     const origRefs = await showOriginals(orig);
     const rest = hits.filter((p) => !isWrittenCore(p)).map((p) => add(p));
-    const out = show([...core, ...origRefs, ...rest]);
+    const out0 = show([...core, ...origRefs, ...rest]);
+    // a person lookup says what was searched inside the histories — and only an empty sweep allows "the library gives no account of…"
+    const out = swept?.person ? `${out0}\n\n(searched inside the histories — ${HISTORY_NAMES} — for ${swept.variants.map((v) => `"${v}"`).join(', ')}: ${swept.n
+      ? `${swept.n} passage${swept.n > 1 ? 's' : ''} from them above` : 'nothing inside them. Only now may you write that the library gives no account of this person; name the spellings searched'})` : out0;
     if (history && hits.some((p) => sourceTier(p) === 'secondary')) return `${out}\n\n(history question: scholarship is kept — name each scholar's claim as theirs ("Balyuzi writes…"); the Writings and Shoghi Effendi still lead where they speak)`;
     return left ? `${out}\n\n(${left} passage${left > 1 ? 's' : ''} of commentary left out: the Writings above answer this — search a scholar by name only for a point they do not address; if this is a history or biography question, search again with about: "history" to keep them)` : out;
   };
@@ -281,5 +290,5 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
       return `[${ref}] (WEB — not the library)\n${clipText(r.text, 1500)}${r.citations?.length ? `\nSources: ${r.citations.slice(0, 5).map((c) => c.url || c).join(' · ')}` : ''}`;
     },
   };
-  return { found, works, searched, add, addWork, show, run, readAround, rowsAround };
+  return { found, works, searched, sweeps, add, addWork, show, run, readAround, rowsAround };
 }
