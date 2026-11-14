@@ -166,7 +166,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=900, 
   .bio-jn li + li::before { content: '→ '; color: var(--text-muted); }
   .bio-jy { margin-left: .35rem; color: var(--text-muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
   .bio-src { padding-left: 1.4rem; color: var(--text-secondary); font-size: .85rem; display: grid; gap: .35rem; }
-  .bio-src a { color: var(--accent); }
+  .bio-src a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }   /* links in running text are never colour-only (WCAG 1.4.1) */
   .bio-cite { color: var(--text-muted); }
   .bio-proof { color: var(--text-muted); }
   .bio-note { color: var(--text-muted); font-size: .85rem; margin-top: 1rem; }

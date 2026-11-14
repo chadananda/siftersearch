@@ -87,3 +87,9 @@ describe('/bio on the Anís host', () => {
     expect(await bioSitemapUrls({ api: API, fetchFn: origin({}) })).toEqual([{ loc: 'https://anis.oceanlibrary.com/bio', changefreq: 'weekly' }]);
   });
 });
+
+describe('bio page accessibility', () => {
+  it('source-list links are underlined, not told apart by colour alone (Lighthouse link-in-text-block)', () => {
+    expect(src('src/pages/biography/[slug].astro')).toMatch(/\.bio-src a \{[^}]*text-decoration: underline/);
+  });
+});
