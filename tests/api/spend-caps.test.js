@@ -242,10 +242,10 @@ describe('the hype-program group (Chad 11-09: at most $1000/month for everything
     _reset(); await expect(assertSpendCap('hype-program', { provider: 'anthropic', now: NOW, deps: deps(5, 1000) })).rejects.toMatchObject({ code: 'SPEND_CAP', group: 'hype-program', cap: 1000 });
   });
   it('its spend does not count toward the provider caps, and the other groups keep their full allowance', async () => {
-    expect(exemptCallers()).toEqual(['hype-program']);
+    expect(exemptCallers()).toEqual(['hype-program', 'media-content', 'media-headings', 'media-quotes', 'media-verify']);
     const seen = []; const d = { ...deps(), byProvider: async (r, ex) => { seen.push(ex); return { anthropic: 14 }; } };
     await expect(assertSpendCap('improve-judge', { provider: 'anthropic', now: NOW, deps: d })).resolves.toBeUndefined();
-    expect(seen[0]).toEqual(['hype-program']);
+    expect(seen[0]).toEqual(['hype-program', 'media-content', 'media-headings', 'media-quotes', 'media-verify']);
     _reset(); await expect(assertSpendCap('segmenter', { provider: 'anthropic', now: NOW, deps: deps(30, 100, { anthropic: 15.5 }) })).rejects.toMatchObject({ group: 'anthropic-total' });
   });
   it('billTo hype-program routes a disambiguation or grading call made inside the job to the same group', async () => {

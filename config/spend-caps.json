@@ -161,7 +161,8 @@
     }
   },
   "provider_exempt": [
-    "hype-program"
+    "hype-program",
+    "media-content-cut"
   ],
   "_provider_exempt": "Groups whose spend does NOT count toward the provider-wide caps and which those caps never refuse (their own monthly ceiling governs), so readers and other background work keep the full anthropic allowance. Rules for these groups must use `exact` callers only.",
   "env_alias": {
