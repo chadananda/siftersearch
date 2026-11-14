@@ -246,7 +246,18 @@ export function createSentenceGate(passages, emit, { asked = [] } = {}) {
     if (!bad.length) emit(s);
     else if (/^[ \t]*\|/.test(s)) emit(rowWithout(s, bad));   // a table row keeps its cells (round 7d, Íqán turn 4: rows 4, 7, 9, 10 went whole)
   };
-  const nextEnd = () => {
+  // A TEMPLATE MARKER IS RELEASED WHOLE (presumption run 11-14: `{{quote:\n\n> "…"\n\nP7}}` split at its blank lines and reached the reader as
+  // three pieces): an end inside a marker waits for its "}}" (one still open past 2,000 characters is the writer's stray brace, not a marker)
+  const marker = (e) => {
+    for (let at = 0; ;) {
+      const a = buf.indexOf('{{', at); if (a < 0 || a >= e) return e;
+      const b = buf.indexOf('}}', a + 2); if (b < 0) return buf.length - a < 2000 ? -1 : e;
+      if (e <= b + 1) return b + 2;
+      at = b + 2;
+    }
+  };
+  const nextEnd = () => { const e = textEnd(); return e > 0 ? marker(e) : e; };
+  const textEnd = () => {
     let open = false, block = /^[ \t]*>/.test(buf), row = /^[ \t]*\|/.test(buf);
     for (let i = 0; i < buf.length; i++) {
       const c = buf[i];
@@ -369,17 +380,21 @@ export function linkQuotes(text, passages) {
     i = j - 1;
   }
   // inline quotations, outside blockquotes; the window is the quotation's sentence (back to the last sentence end, on to the next)
-  const res = out.map((line) => { const done = new Set(); return /^\s*>/.test(line) ? line : line.replace(/["“]([^"”\n]+)["”]/g, (m, words, off, all) => {
-    if (words.trim().split(/\s+/).length < 5) return m;
-    const before = all.slice(0, off), after = all.slice(off + m.length);
-    if (/^[*_]*\]\(/.test(after)) return m;   // already link text ([*"…"*](url)): a link inside it would nest and break both
+  // an emphasised quotation (*"…"*, **"…"**) takes its link AFTER the closing stars: inside them, markQuotes re-wraps the bare
+  // quote and the bold no longer pairs (r7e t4: **"…"* ([The Dawn-Breakers](…))*)
+  const res = out.map((line) => { const done = new Set(); return /^\s*>/.test(line) ? line : line.replace(/["“]([^"”\n]+)["”]([*_]{0,3})/g, (m0, words, em0, off, all) => {
+    const m = m0.slice(0, m0.length - em0.length), em = em0 && all.slice(0, off).endsWith(em0) ? em0 : '';
+    const rest = em0.slice(em.length);
+    if (words.trim().split(/\s+/).length < 5) return m0;
+    const before = all.slice(0, off - em.length), after = all.slice(off + m.length);
+    if (/^[*_]*\]\(/.test(after)) return m0;   // already link text ([*"…"*](url)): a link inside it would nest and break both
     const start = Math.max(before.search(/[.!?]\s[^.!?]*$/), 0);
     const end = after.search(/[.!?](\s|$)/);
     const p = holder(words, before.slice(start) + (end < 0 ? after : after.slice(0, end + 1)));
-    if (!p || done.has(p.citation_url)) return m;   // one link per passage per paragraph
+    if (!p || done.has(p.citation_url)) return m0;   // one link per passage per paragraph
     done.add(p.citation_url);
     linked++;
-    return `${m} (${link(p)})`;
+    return `${m}${em} (${link(p)})${rest}`;
   }); });
   return { text: res.join('\n'), linked };
 }

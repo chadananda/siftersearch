@@ -849,17 +849,24 @@ export function dropLinkDebris(text) {
 const rowWords = (cell) => foldL(String(cell || '').replace(/\[[^\]]*\]\([^)]*\)/g, ' ').replace(/https?:\/\/\S+/g, ' ')).match(/[\p{L}\p{N}]+/gu) || [];
 const grams = (ws, k = 5) => { const g = new Set(); for (let i = 0; i + k <= ws.length; i++) { const x = ws.slice(i, i + k); if (x.filter((w) => w.length >= 4).length >= 3) g.add(x.join(' ')); } return g; };
 const GLOSSARY = /glossar|libro de certeza/i;
+const CLAIM = /\s*The glossary's description of him matches (?:the one the sources give for [^()|]+? \(row \d+\)|another man's in these sources), so his identity is unconfirmed\.\s*/;
 export function duplicateRows() {
   const seen = [];
   return (line) => {
     if (!/^\s*\|/.test(line) || /^\s*\|[\s:|-]+\|?\s*$/.test(line)) return line;
     const cells = line.split('|');
     if (cells.length < 5 || !/^\s*\d{1,3}\b/.test(cells[1] || '')) return line;
-    const n = Number(/\d+/.exec(cells[1])[0]), name = cells[2].trim().replace(/\*\*/g, ''), who = cells[3], src = cells.slice(4).join('|');
+    const n = Number(/\d+/.exec(cells[1])[0]), name = cells[2].trim().replace(/\*\*/g, ''), src = cells.slice(4).join('|');
+    // round 8 (t4): the model copies this rule's sentence from an earlier turn with a stale row ("…for Mullá Báqir (row 11)"); it is never
+    // trusted, the rule re-derives it from the rows themselves
+    const claimed = CLAIM.test(cells[3]), who = claimed ? ` ${cells[3].replace(new RegExp(CLAIM.source, 'g'), ' ').trim()} ` : cells[3];
+    if (claimed) cells[3] = who;
     const me = { n, name, keys: nameKeys(name), g: grams(rowWords(who)), gloss: GLOSSARY.test(src) && !/Dawn-Breakers|Nabíl|Nabil/i.test(src) };
-    const other = seen.find((o) => o.keys.join(' ') !== me.keys.join(' ') && [...me.g].some((x) => o.g.has(x)));
+    // the row it shares the MOST with (round 8: Kandí's row 10 shares the whole description, Báqir's row 11 one phrase)
+    const shared = (o) => [...me.g].filter((x) => o.g.has(x)).length;
+    const other = seen.filter((o) => o.keys.join(' ') !== me.keys.join(' ') && shared(o) > 0).sort((a, b) => shared(b) - shared(a))[0];
     seen.push(me);
-    if (!other) return line;
+    if (!other) return claimed && me.gloss ? `${cells.slice(0, 3).join('|')}| The glossary's description of him matches another man's in these sources, so his identity is unconfirmed. ${who.trim()} |${cells.slice(4).join('|')}` : claimed ? cells.join('|') : line;
     const named = (o, cell) => o.keys.length && o.keys.every((k) => foldL(cell).includes(k));
     if (named(other, who)) return line;
     if (me.gloss && !other.gloss) {   // this row rests on the glossary: its copied description goes, the contradiction stands in its place
@@ -890,3 +897,9 @@ export const recapitalise = (text) => String(text || '').split('\n').map((l) => 
 const ABOVE = /,?\s*(?:in|from|as|see)\s+(?:the|this)\s+(?:passage|words|quotation|text|card|lines?)\s+(?:quoted|shown|cited|given|set out)\s+above\b|\s*\((?:quoted|shown|see) above\)|,?\s*(?:quoted|shown|cited) above\b/gi;
 export const pointsAbove = (text) => { ABOVE.lastIndex = 0; const r = ABOVE.test(String(text || '')); ABOVE.lastIndex = 0; return r; };
 export const dropAbovePointer = (text) => String(text || '').replace(ABOVE, '').replace(/\s+([.,;:])/g, '$1');
+
+/** A link to a bare site root is no place (r8 t4: "([Revelation](https://oceanlibrary.com/))", "[Tablet, provisional
+ *  translation](https://oceanlibrary.com/)"): the label stands, and "([label])" with nothing else in it goes whole. Pure. */
+export const unlinkSiteRoots = (text) => String(text || '')
+  .replace(/\s*\(\[([^\[\]\n]+)\]\(https?:\/\/[^\s/()]+\/?\)\)/g, (m, label, off, all) => (all.slice(Math.max(0, off - 120), off).includes(label.replace(/[*_]/g, '')) ? '' : ` (${label})`))
+  .replace(/\[([^\[\]\n]+)\]\(https?:\/\/[^\s/()]+\/?\)/g, '$1');

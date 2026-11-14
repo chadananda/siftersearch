@@ -3,10 +3,10 @@
 import { toolRunner, TOOL_CHARS } from './tool-runner.js';
 import { workNotes as workNotesLookup, asPassage, SAME_QUESTION } from './tool-defs.js';
 import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
-import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence, unappliedCorrection, dropSearchedNote, dropRebuildPreamble, fixCounts, wantsTable, dropSourceSpeculation, dropLinkDebris, duplicateRows, noteDuplicateRows, recapitalise, pointsAbove, dropAbovePointer, rebuildsTable, isRebuildMeta } from './lint.js';
+import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence, unappliedCorrection, dropSearchedNote, dropRebuildPreamble, fixCounts, wantsTable, dropSourceSpeculation, dropLinkDebris, duplicateRows, noteDuplicateRows, recapitalise, pointsAbove, dropAbovePointer, unlinkSiteRoots, rebuildsTable, isRebuildMeta } from './lint.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
-import { expandTemplates, blockquoteCards } from './widgets/templates.js';
+import { expandTemplates, mendTemplates, blockquoteCards } from './widgets/templates.js';
 import { isSiteRoot, readableTitle, holdsPhrase } from './widgets/card-text.js';
 import { byTier, coreFirst } from './source-tier.js';
 import { keepHeldLinks } from './held-links.js';
@@ -156,8 +156,9 @@ export function renderRefs(text, { found, works }) {
     .replace(/\*{0,2}\[\[?(B\d+)\]\]?\*{0,2}(?!\()/g, (m, r) => { const w = works.get(r), t = readableTitle(w?.title) || w?.title; return w && t ? (w.url ? `[*${t}*](${w.url})` : `*${t}*`) : ''; })
     .replace(/\s*\[\[?((?:[PW]\d+)(?:\s*[,;]\s*[PW]\d+)*)\]\]?(?!\()/g, (m, list) => {
       const seen = new Set();
-      const links = list.split(/\s*[,;]\s*/).map((r) => found.get(r)).filter((p) => { const k = p?.document_id ?? p?.source_url; return p?.source_url && !seen.has(k) && seen.add(k); })
-        .map((p) => { const t = clip(shortTitle(readableTitle(p.title) || 'source'), 70); return isSiteRoot(p.source_url) ? `*${t}*` : `[${p.web ? 'web: ' : ''}${t}](${p.source_url})`; });   // a bare site root is no place: the title alone
+      const links = list.split(/\s*[,;]\s*/).map((r) => found.get(r)).filter((p) => { const k = p?.document_id ?? p?.source_url ?? p?.title; return (p?.source_url || p?.title) && !seen.has(k) && seen.add(k); })
+        // a bare site root is no place, and a passage whose link was not its book (r8: otherBook) has none: the title alone
+        .map((p) => { const t = clip(shortTitle(readableTitle(p.title) || 'source'), 70); return !p.source_url || isSiteRoot(p.source_url) ? `*${t}*` : `[${p.web ? 'web: ' : ''}${t}](${p.source_url})`; });
       return links.length ? ` (${links.join('; ')})` : '';
     })
     .replace(/[ \t]+([.,;:!?])/g, '$1')
@@ -459,19 +460,19 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   let bqLive = false;
   const ABOVE_SPLIT = /\b(?:quoted|shown|cited) above\b/i;
   const tidyLive = (piece) => {
-    const lines = dropLinkDebris(dropSourceSpeculation(piece).text).text.split('\n').map(dupLive);
+    const lines = unlinkSiteRoots(dropLinkDebris(dropSourceSpeculation(piece).text).text).split('\n').map(dupLive);
     rowsLive += lines.filter((l) => /^\s*\|\s*\d{1,3}\b/.test(l)).length;
     const said = lines.join('\n'), carded0 = bqLive || liveWidgets.some((w) => ['quote', 'scene'].includes(w.kind)) || /^\s*>/m.test(said.split(ABOVE_SPLIT)[0]);
     if (/^\s*>/m.test(said)) bqLive = true;
     const t = recapitalise(!carded0 && pointsAbove(said) ? dropAbovePointer(said) : said);
     return rowsLive >= 2 ? fixCounts(t, rowsLive).text : tableWanted ? fixCounts(t, null).text : t;
   };
-  const tidyWhole = (text) => { const t = recapitalise(noteDuplicateRows(dropLinkDebris(dropSourceSpeculation(text).text).text)), n = numberedRows(t).length;
+  const tidyWhole = (text) => { const t = recapitalise(noteDuplicateRows(unlinkSiteRoots(dropLinkDebris(dropSourceSpeculation(text).text).text))), n = numberedRows(t).length;
     return n >= 2 ? fixCounts(t, n).text : t; };
   const finishLive = (s) => {
     const [, lead, core0, trail] = String(s).match(/^(\s*)([\s\S]*?)(\s*)$/);
     if (!core0) return s;
-    const c1 = dropSearchedNote(dropNarration(blockquoteCards(sourceOnly(core0), found, carded)).text), d = dropUncheckedDisclaimer(c1);
+    const c1 = dropSearchedNote(dropNarration(blockquoteCards(sourceOnly(mendTemplates(core0, { found, works, books: bookCards, shown: shownCards(), carded, subject: subj })), found, carded)).text), d = dropUncheckedDisclaimer(c1);
     const core = (d.dropped ? d.text : isUncheckedDisclaimer(c1) ? '' : c1).trim();   // a released piece that is only the disclaimer (lint never empties a text)
     if (!core) return '';
     citedWorkCards(core);
@@ -578,7 +579,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const retrieved = [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
   sourceCarded = false; skipped = false;   // the whole reply is one text again (a non-streamed or replayed reply carries its own card)
   const opened = rebuildsTable(messages, final) ? dropRebuildPreamble(final).text : final;   // a rebuilt table opens with the table (round 7d)
-  const rendered = renderRefs(dropUncheckedDisclaimer(dropSearchedNote(dropNarration(blockquoteCards(sourceOnly(opened), found, carded)).text)).text, { found, works });
+  const rendered = renderRefs(dropUncheckedDisclaimer(dropSearchedNote(dropNarration(blockquoteCards(sourceOnly(mendTemplates(opened, { found, works, books: bookCards, shown: shownCards(), carded, subject: subj })), found, carded)).text)).text, { found, works });
   const asked = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const whole = restoreElisions(rendered, retrieved, { asked });   // a "…" bridging the passage's own words → its contiguous words (11-04 #161/#138)
   const guarded = dropUnverified(whole.text, [...retrieved, ...carried], { asked });

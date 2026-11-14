@@ -4,14 +4,16 @@
 //   no file-name title. 3 Layout: no lead-in without its card, no cut-off sentence, one card per passage. 4 Length is judgement, not a cap.
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { createSentenceGate, linkQuotes, dropUnverified, rowWithout } from '../../api/lib/assistant/quotes.js';
+import { createSentenceGate, linkQuotes, markQuotes, dropUnverified, rowWithout } from '../../api/lib/assistant/quotes.js';
 import { sourceTier, coreFirst, byTier, isNarrative, TIER_ORDER } from '../../api/lib/assistant/source-tier.js';
 import { toolRunner } from '../../api/lib/assistant/researcher.js';
-import { cleanCardText, isPdfDump, readableTitle, isSiteRoot, holdsPhrase, cleanUrl } from '../../api/lib/assistant/widgets/card-text.js';
+import { cleanCardText, isPdfDump, readableTitle, isSiteRoot, holdsPhrase, cleanUrl, otherBook } from '../../api/lib/assistant/widgets/card-text.js';
 import { fromRefs as quoteFrom } from '../../api/lib/assistant/widgets/quote.js';
 import { fromRefs as sceneFrom } from '../../api/lib/assistant/widgets/scene.js';
-import { expandTemplates, blockquoteCards } from '../../api/lib/assistant/widgets/templates.js';
+import { expandTemplates, blockquoteCards, mendTemplates } from '../../api/lib/assistant/widgets/templates.js';
 import { dropDanglingLeadIn, dropCutOff, unholdTexts, dropNarration, unbackedAbsence, absenceClaims, unappliedCorrection, correctedRows, dropUncheckedDisclaimer, dropSearchedNote, numberedRows, rebuildsTable, dropRebuildPreamble, fixCounts, dropSourceSpeculation, dropLinkDebris, noteDuplicateRows, duplicateRows, recapitalise, isNarration, pointsAbove, dropAbovePointer } from '../../api/lib/assistant/lint.js';
+import { unlinkSiteRoots } from '../../api/lib/assistant/lint.js';
+import { markdownDefects } from '../../api/lib/assistant/md-valid.js';
 import { HISTORY_WORKS, nameVariants } from '../../api/lib/assistant/history-sweep.js';
 import { agentAnswer, AGENT_SYSTEM, renderRefs } from '../../api/lib/assistant/agent-core.js';
 
@@ -433,5 +435,87 @@ describe('8 · round-7e live evidence', () => {
     expect(cleanUrl('https://oceanoflights.org/bahaullah-st-015-en/ ↑')).toBe('https://oceanoflights.org/bahaullah-st-015-en/');
     expect(cleanUrl('https://oceanlibrary.com/x?p=1')).toBe('https://oceanlibrary.com/x?p=1');
     expect(readableTitle('bahaullah-st-015_en')).toBe('A Tablet of Bahá’u’lláh');
+  });
+});
+
+// ── 9 Round 8 (live check of 7e, Íqán chain t4, 11-14) ──────────────────────────────────────────────────────────────────
+describe('round 8: a link is the passage\'s own book; emphasis stays balanced; the duplicate-row note names the right row', () => {
+  const KJV = 'https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos';
+  // the backfill bound Taherzadeh's volumes (docs 429/430/432, title "Revelation") to the KJV Apocalypse by title alone
+  const TAHERZADEH = { id: 708, document_id: 430, title: 'Revelation', author: 'Adib Taherzadeh', religion: B, source_url: KJV, url: KJV,
+    text: 'survived all the other Letters of the Living, was the only one who embraced the Cause of Bahá\'u\'lláh and remained loyal and devoted to Him' };
+  it('a link whose book is another one (title word only) is dropped; the passage\'s own books keep theirs', () => {
+    expect(otherBook(KJV, 'Revelation', 'Adib Taherzadeh')).toBe(true);
+    expect(otherBook('https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1304', 'The Dawn-Breakers', 'Nabil Zarandi')).toBe(false);
+    expect(otherBook(KJV, 'The Bible (KJV), The Revelation of Saint John', 'King James Bible')).toBe(false);
+    const r = toolRunner({ search: async () => [], writings: async () => [], translationsOf: async () => new Map() });
+    const ref = r.add(TAHERZADEH);
+    expect(r.found.get(ref).source_url).toBeNull();
+    const out = renderRefs(`Taherzadeh writes that he survived them all [[${ref}]].`, { found: r.found, works: new Map() });
+    expect(out).toMatch(/\*Revelation\*/);
+    expect(out).not.toMatch(/kjv/);
+  });
+  it('t4 line 27: a site-root link after the cited title goes; a bare root link keeps its label', () => {
+    const line = `- **Mullá Báqir-i-Tabrízí, the Letter of the Living (not row 11).** Adib Taherzadeh writes that he **"survived all the other Letters of the Living, was the only one who embraced the Cause of Bahá'u'lláh and remained loyal and devoted to Him"* ([Revelation, #708](https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos))* ([Revelation](https://oceanlibrary.com/)). The Báb's words to him, **"Haply thou mayest in eight years, in the day of His Revelation, attain unto His Presence,"* ([Epistle to the Son of the Wolf](https://oceanlibrary.com/epistle-to-the-son-of-the-wolf_bahaullah/?paraId=para_258&selectionString=epistle_to_the_son_of_the_wolf_bahai_en-bl9w.0~epistle_to_the_son_of_the_wolf_bahai_en-bl9w.416))* are quoted by Bahá'u'lláh ([Epistle to the Son of the Wolf](https://oceanlibrary.com/epistle-to-the-son-of-the-wolf_bahaullah/?paraId=para_183&selectionString=epistle_to_the_son_of_the_wolf_bahai_en-bl7t.0~epistle_to_the_son_of_the_wolf_bahai_en-bl7t.393)). 'Abdu'l-Bahá relates his visit to Bahá'u'lláh in Baghdad ([Tablet, provisional translation](https://oceanlibrary.com/)).`;
+    const out = unlinkSiteRoots(line.replace(KJV, 'https://oceanlibrary.com/x-revelation'));
+    expect(out).not.toMatch(/\(\[Revelation\]\(https:\/\/oceanlibrary\.com\/\)\)/);
+    expect(unlinkSiteRoots('A tablet ([Tablet, provisional translation](https://oceanlibrary.com/)).')).toBe('A tablet (Tablet, provisional translation).');
+  });
+  it('t4 row 11: the quote link goes after the closing emphasis, so markQuotes leaves the stars balanced (md-valid flags the broken one)', () => {
+    const broken = `| 11 | Mullá Báqir | The brother of Mullá Mihdíy-i-Kandí (row 10), as the reader reads him. Nabíl's notes list **"Mullá Báqir, brother of Mullá Mihdí, both of whom were men of considerable learning, to whose great attainments Bahá'u'lláh testifies in the 'Kitáb-i-Íqán.'"* ([The Dawn-Breakers](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=fn_250))* The Spanish note adds that he was martyred at Ṭabarsí. He is not the Letter of the Living Mullá Báqir-i-Tabrízí (see note). | Nabíl, [The Dawn-Breakers](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=fn_250); Spanish edition's note, [Libro de Certeza](https://bahai-library.com/bahaullah_libro_certeza_iqan&chapter=all) |`;
+    expect(markdownDefects(broken.split('|')[3]).some((d) => d.id === 'unbalanced-emphasis')).toBe(true);
+    const words = 'Mullá Báqir, brother of Mullá Mihdí, both of whom were men of considerable learning, to whose great attainments Bahá\'u\'lláh testifies in the \'Kitáb-i-Íqán.\'';
+    const NOTE = { id: 250, document_id: 21308, title: 'The Dawn-Breakers', author: 'Nabil Zarandi', religion: B, citation_url: 'https://oceanlibrary.com/dawn-breakers_nabil/?paraId=fn_250', source_url: 'https://oceanlibrary.com/dawn-breakers_nabil/?paraId=fn_250', source_title: 'The Dawn-Breakers', text: `Among them were ${words}` };
+    const said = `Nabíl's notes list *"${words}"* and more.`;
+    const linked = linkQuotes(said, [NOTE]).text;
+    expect(linked).toMatch(/\*"[^"]+"\* \(\[The Dawn-Breakers\]/);
+    const marked = markQuotes(linked, [NOTE]).text;
+    expect(markdownDefects(marked).filter((d) => d.id === 'unbalanced-emphasis')).toEqual([]);
+  });
+  const T4 = [`| 8 | Mullá Mihdíy-i-Khu’í | The glossary's description of him matches the one the sources give for Mullá Báqir (row 11), so his identity is unconfirmed. The Spanish edition's note describes him as a close companion of Bahá'u'lláh and tutor to the children of His household, martyred at Ṭabarsí. The histories hold no account under this name. | Spanish edition's note, [Libro de Certeza](https://bahai-library.com/bahaullah_libro_certeza_iqan&chapter=all) |`, `| 10 | Mullá Mihdíy-i-Kandí | "A close companion of Bahá'u'lláh, and a tutor to the children of His household." Nabíl places him in the fort at Ṭabarsí with his brother Mullá Báqir. | Nabíl, [The Dawn-Breakers](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1304&selectionString=dawn-breakers-prod-version_en_12x.0~dawn-breakers-prod-version_en_12x.86) |`, `| 11 | Mullá Báqir | The brother of Mullá Mihdíy-i-Kandí (row 10), as the reader reads him. Nabíl's notes list **"Mullá Báqir, brother of Mullá Mihdí, both of whom were men of considerable learning, to whose great attainments Bahá'u'lláh testifies in the 'Kitáb-i-Íqán.'"* ([The Dawn-Breakers](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=fn_250))* The Spanish note adds that he was martyred at Ṭabarsí. He is not the Letter of the Living Mullá Báqir-i-Tabrízí (see note). | Nabíl, [The Dawn-Breakers](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=fn_250); Spanish edition's note, [Libro de Certeza](https://bahai-library.com/bahaullah_libro_certeza_iqan&chapter=all) |`];
+  it('t4 rows 8/10/11: the glossary row names Kandí (row 10), whose description it repeats, never Báqir (row 11) — whole reply and stale copy alike', () => {
+    const fresh = T4[0].replace(/The glossary's description of him matches the one the sources give for Mullá Báqir \(row 11\), so his identity is unconfirmed\. /, '');
+    for (const rows of [T4, [fresh, T4[1], T4[2]]]) {
+      const row8 = noteDuplicateRows(rows.join('\n')).split('\n')[0];
+      expect(row8).toMatch(/matches the one the sources give for Mullá Mihdíy-i-Kandí \(row 10\)/);
+      expect(row8).not.toMatch(/row 11/);
+      expect(row8.match(/matches the one/g)).toHaveLength(1);
+    }
+  });
+  it('streamed, row 8 comes before row 10: its copied claim is not trusted, and row 10 carries the note', () => {
+    const g = duplicateRows(), [a, b] = [g(T4[0]), g(T4[1])];
+    expect(a).not.toMatch(/row 11|Mullá Báqir \(/);
+    expect(a).toMatch(/matches another man's in these sources/);
+    expect(b).toMatch(/The glossary gives Mullá Mihdíy-i-Khu’í \(row 8\) this same description/);
+  });
+});
+
+// ── 9b A quote wrapped in the card marker (presumption run 11-14, 1fuszlx / 1kuomdm) ────────────────────────────────────
+describe('round 8: {{quote:\n\n> "…"\n\nP7}} becomes the card, or else a plain blockquote', () => {
+  const SAQ = { id: 275, document_id: 20911, title: 'Some Answered Questions', author: "'Abdu'l-Bahá", religion: B, source_url: 'https://oceanlibrary.com/saq#p275',
+    text: 'The resurrection of the Manifestations of God is not of the body. All that pertains to Them — all Their states and conditions, all that They do, found, teach, interpret, illustrate, and instruct — is of a mystical and spiritual character and does not belong to the realm of materiality.' };
+  const RAW = `He states a principle about all the Manifestations of God:\n\n{{quote:\n\n> "${SAQ.text}"  \n> — [[P7]]\n\nP7}}\n\nHe argues from the Gospels themselves.`;
+  it('the P-number is recovered and the card drawn; no brace, no "P7}}" reaches the reader', () => {
+    const found = new Map([['P7', { ...SAQ, ref: 'P7' }]]);
+    const mended = mendTemplates(RAW, { found, works: new Map() });
+    expect(mended).toMatch(/^\{\{quote P7\}\}$/m);
+    expect(mended).not.toMatch(/^>/m);
+    const x = expandTemplates(mended, { found, works: new Map(), carded: new Set() });
+    expect(x.widgets.map((w) => w.kind)).toEqual(['quote']);
+    expect(x.text).not.toMatch(/\{\{|\}\}|P7\}/);
+    expect(x.text).toMatch(/Gospels themselves/);
+  });
+  it('a ref not in hand: the marker goes and the quote stays as an ordinary blockquote', () => {
+    const mended = mendTemplates(RAW, { found: new Map(), works: new Map() });
+    expect(mended).not.toMatch(/\{\{|\}\}|P7\}/);
+    expect(mended).toMatch(/^> "The resurrection of the Manifestations/m);
+    expect(mended).toMatch(/^> — \[\[P7\]\]$/m);
+  });
+  it('the sentence gate releases the marker whole, never split at its blank lines', () => {
+    const out = []; const gate = createSentenceGate([SAQ], (s) => out.push(s));
+    for (const ch of RAW.match(/[\s\S]{1,7}/g)) gate.push(ch);
+    gate.flush();
+    const piece = out.find((s) => s.includes('{{quote'));
+    expect(piece).toMatch(/P7\}\}/);
   });
 });

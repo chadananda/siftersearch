@@ -43,6 +43,19 @@ export const readableTitle = (title) => {
 /** A site's bare root ("https://oceanoflights.org/") is no place in a work: never a citation's link (Íqán r6 t2/t4 Ẓuhúru'l-Ḥaqq). Pure. */
 export const isSiteRoot = (u) => { try { const x = new URL(String(u)); return x.pathname.replace(/\/+$/, '') === '' && !x.search && !x.hash; } catch { return false; } };
 
+/** An OceanLibrary BOOK link that names another book (r8 t4: Taherzadeh's *Revelation*, #708 → kjv-apocalypse-saint-john-of-patmos —
+ *  the library bound docs to OceanLibrary by exact title, and "Revelation" is also the KJV Apocalypse's title): its slug shares no
+ *  word with the passage's title NOR its author. Other hosts and one-word slugs pass. Pure. */
+const SLUG_STOP = new Set(['the', 'and', 'of', 'a', 'an', 'in', 'on', 'en', 'vol', 'part']);
+const slugWords = (s) => (String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[’'‘ʼ`]/g, '').match(/[a-z0-9]+/g) || []).filter((w) => w.length > 2 && !SLUG_STOP.has(w));
+export const otherBook = (url, title, author) => {
+  let u; try { u = new URL(String(url)); } catch { return false; }
+  if (!/(^|\.)oceanlibrary\.com$/.test(u.host)) return false;
+  const slug = slugWords((u.pathname.split('/').filter(Boolean)[0] || '').replace(/[-_]/g, ' ')), named = slugWords(`${title || ''} ${author || ''}`);
+  if (slug.length < 2 || !slugWords(title).length) return false;
+  return !slug.some((w) => named.some((x) => x.startsWith(w.slice(0, 4)) || w.startsWith(x.slice(0, 4))));
+};
+
 const foldW = (s) => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[’'‘ʼ`]/g, '').match(/[\p{L}\p{N}]+/gu) || [];
 /** The passage holds the asked words, in order (punctuation, accents and case aside; an elision "…" splits the quotation). Pure. */
 export const holdsPhrase = (text, phrase) => {

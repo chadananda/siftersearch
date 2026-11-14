@@ -20,6 +20,25 @@ const unseen = (data, carded) => {
 };
 const remember = (data, carded) => { for (const x of data.kind === 'scene' ? data.passages : data.kind === 'quote' ? [data] : []) carded?.add(cardKey(x.text)); };
 
+// A QUOTE WRAPPED IN THE MARKER (presumption run 11-14, 1fuszlx P46/P6, 1kuomdm P7/P2): the writer typed `{{quote:\n\n> "…" — [[P7]]\n\nP7}}`
+// and the reader saw braces, the quote as plain text and "P7}}". A marker that spans lines or opens with a colon is mended BEFORE anything
+// else reads the text: its P/B numbers → the template on its own line (the card), when that card can be drawn; otherwise the marker goes
+// and its inside stays as typed (an ordinary blockquote). Raw text ([[P#]] not yet rendered). Pure.
+const WRAPPED = /\{\{[ \t]*([a-z_]+)[ \t]*(?::[ \t]*|(?=\n))([\s\S]*?)\}\}/g;
+export function mendTemplates(text, refs) {
+  const t = String(text || '');
+  if (!/\{\{[ \t]*[a-z_]+[ \t]*(?::|\n)/.test(t)) return t;
+  return t.replace(WRAPPED, (m, kind, inner) => {
+    const tail = /((?:[\s,]+[PB]\d+)+)\s*$/.exec(` ${inner}`);   // bare P-numbers closing the marker; a [[P7]] attribution stays in the quote
+    const ids = tail ? [...new Set([...tail[1].matchAll(/[PB]\d+/g)].map((x) => x[0]))] : [];
+    const body = (tail ? ` ${inner}`.slice(0, tail.index) : inner).trim();
+    const fromBody = ids.length ? ids : [...body.matchAll(/\[\[([PB]\d+)\]\]/g)].map((x) => x[1]).slice(0, 1);
+    const built = WIDGETS[kind] && fromBody.length ? WIDGETS[kind].fromRefs?.(fromBody, refs, []) : null;
+    if (built && unseen(built, refs?.carded)) return `\n\n{{${kind} ${fromBody.join(' ')}}}\n\n`;
+    return body ? `\n\n${body}\n\n` : '';
+  }).replace(/\n{3,}/g, '\n\n');
+}
+
 export function expandTemplates(text, refs, { start = 0 } = {}) {
   const widgets = [];
   const out = String(text || '').replace(LINE, (m, kind, strs, list) => {
