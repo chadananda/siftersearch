@@ -3,8 +3,8 @@
 // sifter-bulk.slice, the SYSTEM twin of that slice (docs/ops/sifter-bulk.system.slice: 16 cores, 20 GB, weight 10), since dockerd, not the agent, owns it.
 export const towerFinishArgs = (env = process.env) => ['--host', 'tower', '--types', 'cpu-finish', '--slots', env.MEDIA_FINISH_SLOTS || '2', '--gb-per-talk', '6',
   '--root', env.MEDIA_FINISH_ROOT || '/tank/media/.finish-work', '--run', 'docker', '--device', 'none', '--cpus', env.MEDIA_FINISH_CPUS || '6',
-  // q4 = quiet v2 (digest 01d36bcc…, the image aorus/boss/pods run); loaded on tower by docker save|load from aorus (ghcr pulls stall there)
-  '--image', env.MEDIA_FINISH_IMAGE || 'sifter-media-worker:gpu-20261102-q4', '--cgroup-parent', 'sifter-bulk.slice'];
+  // q5 = q4 + code 1ca3787c (quiet v3: static silenced, sound map; content cuts), built on tower FROM q4 (11-14, aorus offline); aorus/boss/pods still q4
+  '--image', env.MEDIA_FINISH_IMAGE || 'sifter-media-worker:gpu-20261114-q5', '--cgroup-parent', 'sifter-bulk.slice'];
 if (process.argv[1]?.endsWith('tower-finish.mjs')) {
   for (const f of ['.env-public', '.env-secrets']) process.loadEnvFile(f);
   process.env.MEDIA_QUEUE_KEY ||= process.env.INTERNAL_API_KEY;   // the admin key works every queue op (api/routes/media-queue.js)
