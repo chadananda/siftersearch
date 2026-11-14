@@ -38,6 +38,11 @@ export function upsertThread(index, entry) {
 
 export const removeThread = (index, id) => (index || []).filter((t) => t.id !== id);
 
+/** A published share recorded on its thread ({slug, url, key}: the key unpublishes); one record per slug. */
+export const addShare = (index, id, share) => (index || []).map((t) => (t.id !== id ? t : { ...t, shares: [...(t.shares || []).filter((x) => x.slug !== share.slug), share] }));
+/** The thread's shares forgotten (after unpublishing them). */
+export const dropShares = (index, id) => (index || []).map((t) => { if (t.id !== id) return t; const { shares, ...rest } = t; return rest; });
+
 /** Keep at most `max` threads: the oldest unpinned go first. Returns the kept index and the ids dropped. */
 export function pruneThreads(index, max = MAX_THREADS) {
   const sorted = sortThreads(index || []);

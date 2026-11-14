@@ -18,9 +18,9 @@
   import SideBySide from '../components/widgets/SideBySide.svelte';
   import { widgetSegments } from '../../api/lib/assistant/widgets/segments.js';
   import { BUILD, tagFor } from './version.js';
-  import { plainReply, replyHtml, replySources, referenceList, questionIndex, roundOf, answerTurns, rewind } from './reply-actions.js';
+  import { plainReply, replyHtml, replySources, referenceList, questionIndex, roundOf, answerTurns, rewind, shareTurns, fromShared } from './reply-actions.js';
   import { openStore, loadMessages, saveMessages, saveIndex, upsertThread, removeThread, pruneThreads, dropThreadData, groupThreads,
-    filterThreads, messagesText, threadTitle, firstQuestion, newThreadId, activeKey } from './threads.js';
+    filterThreads, messagesText, threadTitle, firstQuestion, newThreadId, activeKey, addShare, dropShares } from './threads.js';
   let { token = '', api = 'https://siftersearch.com', accent = '', name = '', mission = '', opened = '', samples = '', fullscreen = '', version = '' } = $props();   // version: shown beside the title (the Anís app passes its build, Chad 11-13); never part of the name the model uses
   // sample-questions menu (header icon; one showcase question per strategy): on by default (Chad 11-10); a host turns it off with
   // samples="off"/"false", a reader with ?anis-samples=0 (remembered on this browser; ?anis-samples brings it back)
@@ -57,6 +57,9 @@
     share: ['M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7', 'm16 6-4-4-4 4', 'M12 2v13'],
     trash: ['M3 6h18', 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6', 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'],
     x: ['M6 6l12 12', 'M18 6 6 18'],
+    link: ['M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7', 'M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7'],
+    open: ['M15 3h6v6', 'M10 14 21 3', 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'],
+    unshare: ['M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7', 'M12 15V9', 'm3 3 18 18'],
     user: ['M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2', 'M12 3a4 4 0 1 0 0 8a4 4 0 1 0 0-8z'],
     copy: ['M10 8h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z', 'M5 16H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'],
     check: ['M20 6 9 17l-5-5'],
@@ -68,6 +71,7 @@
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '');
   const reveal = (node) => { queueMicrotask(() => node.scrollIntoView?.({ block: 'nearest' })); };
   const focusSel = (node) => { node.focus(); node.select(); };
+  const focusIn = (node) => { queueMicrotask(() => node.querySelector('button.go, input, button')?.focus?.()); };
   let cfg = $state(null);
   let open = $state(!!opened);   // `opened` = handed over open by the previous build's self-update
   let denied = $state(false);
@@ -162,6 +166,7 @@
   // shortcuts inside the panel: ⌘/Ctrl+Shift+O → a new conversation; Esc closes the innermost layer first
   function shortcut(e) {
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'o' || e.key === 'O')) { e.preventDefault(); if (!busy) newConversation(); return true; }
+    if (e.key === 'Escape' && shareSheet) { shareSheet = null; return true; }
     if (e.key === 'Escape' && (menuFor || renaming || confirmDel)) { menuFor = ''; renaming = ''; confirmDel = ''; return true; }
     if (e.key === 'Escape' && (drawerOpen || histOpen)) { drawerOpen = false; histOpen = false; return true; }
     return false;
@@ -199,6 +204,7 @@
         greet = () => { const hello = c.greetings?.length ? c.greetings[Math.floor(Math.random() * c.greetings.length)] : c.greeting;
           return hello ? [{ role: 'assistant', content: hello, done: true, followups: pickStarters() }] : []; };
         if (!messages.some((m) => m.role === 'user')) messages = greet();   // only a greeting kept → a fresh one (live facts, new starter pills)
+        continueShared();
         track('widget_load');
         maybeOfferOnetap();   // a restored transcript may already qualify — don't wait for the next answer
       })
@@ -311,18 +317,61 @@
     const list = referenceList(replySources(messages[mi]));
     toast(!list ? 'No sources linked' : (await clip(list)) ? 'Sources copied' : 'Could not copy');
   }
-  // one answer published as a discussion (P3: /api/chat/share; the preview modal goes before this call)
-  async function shareMsg(mi) {
-    const turns = answerTurns(messages, mi);
-    if (!turns) return;
+  // ── Share (P3): the server sanitizes a draft → the reader previews it (title editable) → Publish makes it public at
+  // anis.oceanlibrary.com/d/<slug>. Nothing is public before the click; the owner key kept on the thread unpublishes it.
+  let shareSheet = $state(null);   // { phase: prep | ready | publishing | done | error, scope, threadId, round?, slug?, title?, summary?, turns?, owner_key?, url?, error? }
+  async function shareOpen(turns, scope, threadId, round = null) {
+    if (!turns?.length) { toast('Nothing to share yet'); return; }
+    menuFor = ''; histOpen = false;
+    const sheet = { phase: 'prep', scope, threadId, round };
+    shareSheet = sheet;
     try {
       const r = await fetch(`${api}/api/chat/share`, { method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ scope: 'answer', turns, conversation_id: activeId, round: roundOf(messages, mi) }) });
-      const url = r.ok ? (await r.json())?.url : null;
-      if (!url) throw new Error(`share ${r.status}`);
-      if (navigator.share && matchMedia('(hover: none)').matches) { await navigator.share({ title: turns[0].content.slice(0, 80), url }).catch(() => {}); return; }
-      toast((await clip(url)) ? 'Link copied' : 'Could not copy');
-    } catch { toast('Sharing is not available yet'); }
+        body: JSON.stringify({ scope, turns, conversation_id: threadId, ...(round ? { round } : {}) }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.slug) throw new Error(j.error || 'Could not prepare this for sharing. Please try again.');
+      if (shareSheet?.threadId === threadId && shareSheet.phase === 'prep') shareSheet = { ...sheet, ...j, phase: 'ready' };
+    } catch (err) { if (shareSheet?.phase === 'prep') shareSheet = { ...sheet, phase: 'error', error: err.message }; }
+  }
+  const shareMsg = (mi) => shareOpen(answerTurns(messages, mi), 'answer', activeId, roundOf(messages, mi));
+  const shareThread = (t) => shareOpen(shareTurns(t.id === activeId ? messages : loadMessages(LS(), token, t.id)), 'conversation', t.id);
+  async function sharePublish() {
+    const d = shareSheet;
+    if (!d || d.phase !== 'ready') return;
+    shareSheet = { ...d, phase: 'publishing', error: '' };
+    try {
+      const r = await fetch(`${api}/api/chat/share/publish`, { method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ slug: d.slug, owner_key: d.owner_key, title: d.title }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.url) throw new Error(j.error);
+      threads = addShare(threads, d.threadId, { slug: d.slug, url: j.url, key: d.owner_key, at: Date.now() }); saveIndex(LS(), token, threads);
+      shareSheet = { ...d, phase: 'done', url: j.url, title: j.title };
+      if (navigator.share && matchMedia('(hover: none)').matches) navigator.share({ title: j.title, url: j.url }).catch(() => {});
+    } catch { shareSheet = { ...d, phase: 'ready', error: 'Could not publish. Please try again.' }; }
+  }
+  async function copyShareLink() { toast((await clip(shareSheet?.url || '')) ? 'Link copied' : 'Could not copy'); }
+  async function unpublish(t) {
+    menuFor = '';
+    const results = await Promise.all((t.shares || []).map((x) => fetch(`${api}/api/chat/share/${encodeURIComponent(x.slug)}`, { method: 'DELETE',
+      headers: { 'content-type': 'application/json' }, body: JSON.stringify({ owner_key: x.key }) }).then((r) => r.ok || r.status === 404).catch(() => false)));
+    if (results.every(Boolean)) { threads = dropShares(threads, t.id); saveIndex(LS(), token, threads); toast('Unpublished'); }
+    else toast('Could not unpublish. Please try again.');
+  }
+  // the app opened from a shared discussion (/?from=<slug>, the page's "Continue" button): a new thread that holds it
+  async function continueShared() {
+    if (!isFull || typeof location === 'undefined') return;
+    const slug = new URLSearchParams(location.search).get('from');
+    if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)+$/.test(slug)) return;
+    try { const u = new URL(location.href); u.searchParams.delete('from'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } catch { /* ok */ }
+    try {
+      const r = await fetch(`${api}/api/chat/share/${slug}`);
+      const d = r.ok ? await r.json() : null, ms = fromShared(d);
+      if (!ms.length) throw new Error('empty');
+      setActive(newThreadId()); messages = ms; errorMsg = '';
+      saveMessages(LS(), token, activeId, messages);
+      threads = upsertThread(threads, { id: activeId, title: threadTitle(d.title || firstQuestion(ms)), updated: Date.now() }); saveIndex(LS(), token, threads);
+      scroll(); setTimeout(() => inputEl?.focus(), 50);
+    } catch { toast('That discussion is no longer available'); }
   }
   function voteMsg(mi, v) {
     const m = messages[mi], vote = m.vote === v ? 0 : v, qi = questionIndex(messages, mi);
@@ -707,7 +756,8 @@
                 <div class="tr-menu" role="menu" use:reveal>
                   <button type="button" role="menuitem" onclick={() => renameStart(t)}>{@render ic('rename')}Rename</button>
                   <button type="button" role="menuitem" onclick={() => togglePin(t)}>{@render ic('pin')}{t.pinned ? 'Unpin' : 'Pin'}</button>
-                  <button type="button" role="menuitem" disabled title="Sharing arrives soon">{@render ic('share')}Share</button>
+                  <button type="button" role="menuitem" onclick={() => shareThread(t)}>{@render ic('share')}Share</button>
+                  {#if t.shares?.length}<button type="button" role="menuitem" onclick={() => unpublish(t)}>{@render ic('unshare')}Unpublish</button>{/if}
                   <hr />
                   <button type="button" role="menuitem" class="danger" onclick={() => { menuFor = ''; confirmDel = t.id; }}>{@render ic('trash')}Delete</button>
                 </div>
@@ -1014,6 +1064,44 @@
           </div>
         </div>
         {#if toastText}<div class="toast" role="status">{@render ic('check')}{toastText}</div>{/if}
+        {#if shareSheet}
+          <div class="share-scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget && shareSheet?.phase !== 'publishing') shareSheet = null; }}>
+            <div class="share" role="dialog" aria-modal="true" aria-labelledby="share-h" use:focusIn>
+              <header class="share-top">
+                <h2 id="share-h">{shareSheet.phase === 'done' ? 'Published' : shareSheet.scope === 'answer' ? 'Share this answer' : 'Share this conversation'}</h2>
+                <button type="button" class="icon" aria-label="Close" onclick={() => (shareSheet = null)}>{@render ic('x')}</button>
+              </header>
+              {#if shareSheet.phase === 'prep'}
+                <p class="share-note share-wait"><span class="share-spin" aria-hidden="true"></span>Removing personal details…</p>
+              {:else if shareSheet.phase === 'error'}
+                <p class="share-note" role="alert">{shareSheet.error}</p>
+                <div class="share-btns"><button type="button" class="sb" onclick={() => (shareSheet = null)}>Close</button></div>
+              {:else if shareSheet.phase === 'done'}
+                <p class="share-note">Anyone with the link can read it. Unpublish any time from the conversation’s ⋯ menu.</p>
+                <div class="share-link"><span>{shareSheet.url}</span></div>
+                <div class="share-btns">
+                  <a class="sb" href={shareSheet.url} target="_blank" rel="noopener">{@render ic('open')}Open</a>
+                  <button type="button" class="sb go" onclick={copyShareLink}>{@render ic('link')}Copy link</button>
+                </div>
+              {:else}
+                <label class="share-label" for="share-title">Title</label>
+                <input id="share-title" class="share-title" bind:value={shareSheet.title} maxlength="120" disabled={shareSheet.phase === 'publishing'} />
+                {#if shareSheet.summary}<p class="share-sum">{shareSheet.summary}</p>{/if}
+                <p class="share-note">Personal details are replaced with [brackets]. Check the preview, then publish.</p>
+                <div class="share-prev">
+                  {#each shareSheet.turns as t}
+                    {#if t.role === 'user'}<p class="sp-q">{t.content}</p>{:else}<div class="sp-a">{@html replyHtml(t.content)}</div>{/if}
+                  {/each}
+                </div>
+                {#if shareSheet.error}<p class="share-note share-err" role="alert">{shareSheet.error}</p>{/if}
+                <div class="share-btns">
+                  <button type="button" class="sb" onclick={() => (shareSheet = null)}>Cancel</button>
+                  <button type="button" class="sb go" disabled={shareSheet.phase === 'publishing' || !shareSheet.title?.trim()} onclick={sharePublish}>{shareSheet.phase === 'publishing' ? 'Publishing…' : 'Publish'}</button>
+                </div>
+              {/if}
+            </div>
+          </div>
+        {/if}
         <footer>
           <textarea
             rows="1"
@@ -1380,6 +1468,41 @@
     background: #24211c; color: #f6f1e4; box-shadow: 0 10px 28px -8px rgba(20, 14, 4, .45); animation: toast-in .22s cubic-bezier(.22, 1, .36, 1); pointer-events: none; }
   .toast .ic { width: 15px; height: 15px; color: var(--gold); }
   @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 6px); } }
+  /* share sheet (P3): a centered card over the panel; a bottom sheet on phones */
+  .share-scrim { position: absolute; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 16px;
+    background: rgba(20, 16, 10, .38); animation: toast-in .2s ease-out; }
+  .share { width: min(560px, 100%); max-height: min(86%, 720px); display: flex; flex-direction: column; gap: 10px; padding: 16px 18px 18px; border-radius: 16px;
+    background: var(--panel-bg, #f9f6f0); color: #24211c; box-shadow: 0 24px 60px -18px rgba(20, 14, 4, .5), 0 0 0 1px rgba(0, 0, 0, .06); }
+  .share-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .share-top h2 { margin: 0; font: 600 18px/1.3 var(--serif); }
+  .share-label { font: 600 11px/1 system-ui, -apple-system, 'Segoe UI', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #6b6253; }
+  .share-title { width: 100%; padding: 9px 11px; border-radius: 9px; border: 1px solid #ddd3bf; background: #fff; color: inherit; font: 600 16px/1.35 var(--serif); }
+  .share-title:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+  .share-sum { margin: 0; font: 15px/1.45 var(--serif); color: #5f5747; }
+  .share-note { margin: 0; font: 13px/1.45 system-ui, -apple-system, 'Segoe UI', sans-serif; color: #6b6253; }
+  .share-err { color: var(--danger, #b4483a); }
+  .share-wait { display: flex; align-items: center; gap: 10px; padding: 18px 0; font-size: 14px; }
+  .share-spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--gold) 30%, transparent); border-top-color: var(--gold); animation: share-spin .8s linear infinite; }
+  @keyframes share-spin { to { transform: rotate(360deg); } }
+  .share-prev { flex: 1 1 auto; min-height: 80px; overflow-y: auto; padding: 4px 12px; border: 1px solid #e5ddcb; border-radius: 10px; background: #fffdf8;
+    font: 15px/1.55 var(--serif); overflow-wrap: break-word; }
+  .sp-q { margin: 12px 0 6px; font-weight: 600; }
+  .sp-a { padding: 0 0 4px 12px; border-left: 2px solid var(--gold); }
+  .sp-a :global(blockquote) { margin: .6em 0; padding-left: 12px; border-left: 2px solid var(--gold-soft); color: var(--quote); font-style: italic; }
+  .sp-a :global(p) { margin: .5em 0; }
+  .sp-a :global(a) { color: inherit; }
+  .share-link { padding: 10px 12px; border-radius: 9px; border: 1px solid #e5ddcb; background: #fffdf8; font: 13px/1.4 ui-monospace, Menlo, monospace; overflow-wrap: anywhere; }
+  .share-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 2px; }
+  .sb { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid #d9cfba; background: transparent;
+    color: inherit; font: 500 14px/1 system-ui, -apple-system, 'Segoe UI', sans-serif; cursor: pointer; text-decoration: none; }
+  .sb .ic { width: 16px; height: 16px; }
+  .sb.go { background: #14203a; border-color: #14203a; color: #f6efdc; }
+  .sb:disabled { opacity: .5; cursor: default; }
+  .sb:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  @media (max-width: 520px) {
+    .share-scrim { align-items: flex-end; padding: 0; }
+    .share { width: 100%; max-height: 88%; border-radius: 16px 16px 0 0; padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+  }
 
   footer { display: flex; gap: 9px; padding: 12px 14px 8px; background: transparent; }
   .sample-list { position: absolute; top: 62px; left: 10px; right: 10px; z-index: 30; max-height: 55vh; overflow-y: auto; display: flex; flex-direction: column; background: #fff; color: #1e293b; border: 1px solid rgba(128,128,128,.35); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
@@ -1549,6 +1672,12 @@
     .act:hover:not(:disabled) { color: #e6e2d8; }
     .toast { background: #e9e4d6; color: #1a1712; box-shadow: 0 10px 28px -8px rgba(0, 0, 0, .6); }
     .toast .ic { color: #8a6a22; }
+    .share-scrim { background: rgba(0, 0, 0, .55); }
+    .share { background: #14181e; color: #e9e6dd; box-shadow: 0 24px 60px -18px rgba(0, 0, 0, .8), 0 0 0 1px #2b3442; }
+    .share-title, .share-prev, .share-link { background: #1b212a; border-color: #2b3442; }
+    .share-label, .share-note, .share-sum { color: #a9afb9; }
+    .sb { border-color: #3a4352; }
+    .sb.go { background: var(--gold); border-color: var(--gold); color: #14181e; }
     .nextq button:hover:not(:disabled) { color: #eef1f6; border-color: rgba(196, 205, 219, .55); }
     .stage { background-image: linear-gradient(90deg, #6d7789 0%, color-mix(in srgb, var(--accent) 40%, #cfe1ff) 45%, var(--gold-soft) 55%, #6d7789 100%); }
     footer { border-top: 1px solid #232a35; }
@@ -1573,7 +1702,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .bubble-btn, .panel, .msg, .rule, .hist, .tr-menu, .toast { animation: none; }
+    .bubble-btn, .panel, .msg, .rule, .hist, .tr-menu, .toast, .share-scrim { animation: none; }
     .acts { transition: none; }
     .root.full .rail { transition: none; }
     .stage { animation: none; color: #9a8f7a; background: none; }

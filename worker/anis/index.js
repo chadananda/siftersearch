@@ -13,6 +13,7 @@ import { finishLinks, templateFilter } from './links.js';
 import { backPills, pinnedQuestion } from './pills.js';
 import { triageLetter } from './triage.js';
 import { feedback } from './feedback.js';
+import { shareDraft, sharePublish, shareDelete, published, discussionPage, notFoundPage, DISCUSSION_PATH } from './share.js';
 import { CHANNELS, MODES, channelOfMode, greetByName, speakable } from '../../api/lib/assistant/channels.js';
 const formSources = (xs) => xs.map((x) => ({ title: x?.title, url: x?.url ?? x?.source_url ?? null, text: x?.text ?? null }));
 import snapshot from './agent-tools.json';
@@ -129,7 +130,7 @@ async function personaOf(env, token, fetchFn) {
 }
 
 const cors = (request) => ({ 'access-control-allow-origin': request.headers.get('origin') || '*', 'access-control-allow-credentials': 'true',
-  'access-control-allow-headers': 'content-type, x-sifter-test', 'access-control-allow-methods': 'POST, OPTIONS', vary: 'Origin' });
+  'access-control-allow-headers': 'content-type, x-sifter-test', 'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS', vary: 'Origin' });
 
 /** One Anís turn in any MODE (channels.js): chat and audio stream SSE; email and document (internal callers only — the mail
  *  Worker, POST /_anis/turn) run the same turn and answer with one JSON result. */
@@ -258,6 +259,43 @@ export async function chat(request, env, ctx, deps = {}) {
   return new Response(readable, { headers: { ...cors(request), 'content-type': 'text/event-stream', 'cache-control': 'no-cache' } });
 }
 
+/** The share routes (share.js): POST /api/chat/share = a sanitized draft for the reader's preview (a paid Haiku call: rate-limited,
+ *  metered, logged to the ledger); /publish = the reader's click; GET = a published discussion as JSON ("continue"); DELETE = unpublish. */
+export async function shareRoute(request, env, ctx, deps = {}) {
+  const h = cors(request), { pathname } = new URL(request.url), m = request.method;
+  const slug = pathname.match(/^\/api\/chat\/share\/([a-z0-9-]+)$/)?.[1];
+  if (m === 'POST' && pathname === '/api/chat/share') {
+    const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+    if (env.CHAT_LIMIT && !(await env.CHAT_LIMIT.limit({ key: ip }).catch(() => ({ success: true }))).success) return json({ error: 'Too many requests — please wait a minute.' }, 429, { ...h, 'retry-after': '60' });
+    const body = await request.json().catch(() => null);
+    const fetchFn = deps.fetch || fetch, tally = {}, model = modelFor('anis-share').model;
+    const create = metered(deps.create || nativeFetchCreate(env, model, fetchFn), model, 'anis-share-edge', tally);
+    const ask = async (messages) => {
+      if (!underPriceBoundary(model, messages).ok) throw new Error('prompt over the price boundary');
+      const r = await create({ messages, max_tokens: 1500, thinking: false });
+      return String(r?.choices?.[0]?.message?.content || '');
+    };
+    const r = await shareDraft(body, env, { ask, site: hostOf(request.headers.get('origin') || request.headers.get('referer')) });
+    if (Object.keys(tally).length) ctx.waitUntil(remoteImpl(env, { turn: null, local: {}, fetchFn, ctx }).impl.logUsage(Object.values(tally)).catch((err) => console.warn(`[anis] share usage log failed: ${err?.message}`)));
+    return json(r.out, r.status, h);
+  }
+  if (m === 'POST' && pathname === '/api/chat/share/publish') { const r = await sharePublish(await request.json().catch(() => null), env); return json(r.out, r.status, h); }
+  if (slug && m === 'DELETE') { const b = await request.json().catch(() => ({})); const r = await shareDelete(slug, b?.owner_key, env); return json(r.out, r.status, h); }
+  if (slug && m === 'GET') {
+    const d = await published(env, slug);
+    return d ? json({ slug: d.slug, title: d.title, summary: d.summary, scope: d.scope, turns: d.turns, published_at: d.published_at }, 200, { ...h, 'cache-control': 'public, max-age=300' }) : json({ error: 'not found' }, 404, h);
+  }
+  return json({ error: 'not found' }, 404, h);
+}
+
+/** GET /d/<slug>: the public discussion page (server-rendered, no client script). */
+export async function discussionRoute(slug, env) {
+  const d = await published(env, slug);
+  const html = d ? discussionPage(d) : notFoundPage();
+  return new Response(html, { status: d ? 200 : 404, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': d ? 'public, max-age=300' : 'no-store',
+    'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin' } });
+}
+
 const authed = (request, env) => env.TOWER_KEY && request.headers.get('x-internal-key') === env.TOWER_KEY;
 export default {
   async fetch(request, env, ctx) {
@@ -266,6 +304,9 @@ export default {
     if (pathname === '/healthz') return json({ ok: true, service: 'anis' });
     if (pathname === '/api/chat/stream' && request.method === 'POST') return chat(request, env, ctx);
     if (pathname === '/api/chat/feedback' && request.method === 'POST') return feedback(request, env, { headers: cors(request) });   // thumbs on a reply (feedback.js)
+    if (pathname === '/api/chat/share' || pathname.startsWith('/api/chat/share/')) return shareRoute(request, env, ctx);   // shared discussions (share.js)
+    const disc = request.method === 'GET' || request.method === 'HEAD' ? pathname.match(DISCUSSION_PATH)?.[1] : null;
+    if (disc) return discussionRoute(disc, env);
     if (pathname.startsWith('/_anis/') && request.method === 'POST') {
       if (!authed(request, env)) return json({ error: 'unauthorized' }, 401);
       const b = await request.json().catch(() => ({}));

@@ -33,6 +33,8 @@ export const MODEL_ROLES = {
     why: 'the "what I understood" line: one noun phrase restating the resolved request from Jev\'s decision (System One has no free-text type)' },
   'anis-followups': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-12', needs: ['fast', 'json', 'tiny-output'],
     why: 'Chad 11-12: two or three short follow-up questions under each live reply, as tappable pills (mobile); same subject, never a new one' },
+  'anis-share': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-13', needs: ['fast', 'json'],
+    why: 'Chad 11-13 (shared discussions): before a reader publishes a conversation, the personal details they gave (names, circumstances) as exact redactions + a neutral title and one-line summary (worker/anis/share.js); after the deterministic scrub' },
   'anis-restate': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-13', needs: ['fast', 'tiny-output'],
     why: 'Chad 11-13: the reader\'s message → the canonical standalone question before the edge research-cache lookup (worker/anis/restate.js); always under the long-context price boundary' },
   'anis-unmatched-recheck': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-08', needs: ['fast', 'json', 'tiny-output'],

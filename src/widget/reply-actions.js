@@ -101,3 +101,17 @@ export function rewind(messages, i, text) {
   const ask = String(text ?? messages[q].content).trim();
   return ask ? { keep: messages.slice(0, q), ask } : null;
 }
+
+/** The whole conversation to share: every question and finished answer from the first question on (answers as clean markdown). */
+export function shareTurns(messages) {
+  const ms = (messages || []).filter((m) => (m?.role === 'user' || m?.role === 'assistant') && m.content && !m.pending && !m.error);
+  const first = ms.findIndex((m) => m.role === 'user');
+  if (first < 0) return null;
+  const turns = ms.slice(first).map((m) => ({ role: m.role, content: m.role === 'assistant' ? plainReply(m.content) : m.content })).filter((t) => t.content);
+  return turns.some((t) => t.role === 'assistant') ? turns : null;
+}
+
+/** A published discussion (GET /api/chat/share/<slug>) → the messages of a new thread that continues it. */
+export const fromShared = (d) => (Array.isArray(d?.turns) ? d.turns : [])
+  .filter((t) => (t?.role === 'user' || t?.role === 'assistant') && typeof t.content === 'string' && t.content)
+  .map((t) => ({ role: t.role, content: t.content, done: true, ...(t.role === 'assistant' ? { shared: d.slug } : {}) }));

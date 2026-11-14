@@ -19,6 +19,7 @@ import { deweyUploadRoute } from './dewey-upload.js';
 import { mediaFile, warmMedia, ensureMedia, MEDIA_FILE } from './media.js';
 import { shortLink, shortHost, SHORT_PATH, SHORT_HOST } from './short-links.js';
 import { anisAppRoute } from './anis-app.js';
+import { DISCUSSION_PATH } from './anis/share.js';
 import { d1Dump, d1Edit } from './d1-dump.js';
 import { version as BUILD_VERSION } from '../package.json';
 import { als, evict, installFetchCache, policyFor, cacheKey, serveCached, apiProducer, API_ORIGIN } from './edge-cache.js';
@@ -116,6 +117,8 @@ export function createExports(manifest) {
           if (a instanceof Response) return a;
           if (url.pathname.startsWith('/img/') && env.IMG) return env.IMG.fetch(request);   // covers/portraits: the image Worker (service binding), same as siftersearch.com/img/*
           if (a && request.method === 'GET') return handle(manifest, app, new Request(new URL(a, url), request), env, ctx);
+          // a shared discussion's public page, rendered by the Anís Worker (worker/anis/share.js); hyphenated slugs, never a short-link code
+          if (env.ANIS && ['GET', 'HEAD'].includes(request.method) && DISCUSSION_PATH.test(url.pathname)) return env.ANIS.fetch(request);
         }
         { const s = shortHost(request, { base: env.DOCS_PUBLIC_URL || undefined, pass: isApiPath }); if (s) return s; }   // anis.oceanlibrary.com: short links, the widget + API
         if (url.pathname === '/_edge/warm') {
@@ -158,6 +161,8 @@ export function createExports(manifest) {
         if (env.ANIS_EDGE === '1' && env.ANIS && url.pathname === '/api/chat/stream' && request.method === 'POST') return env.ANIS.fetch(request);
         // a reader's thumbs on a reply are stored at the edge (anis_feedback) whichever engine answered
         if (env.ANIS && url.pathname === '/api/chat/feedback' && request.method === 'POST') return env.ANIS.fetch(request);
+        // shared discussions live at the edge (anis_shared): preview, publish, read, unpublish — every method, preflight included
+        if (env.ANIS && (url.pathname === '/api/chat/share' || url.pathname.startsWith('/api/chat/share/'))) return env.ANIS.fetch(request);
         // media files: R2 at the edge (worker/media.js); falls through to the plain proxy when not cacheable
         if (MEDIA_FILE.test(url.pathname)) { const r = await mediaFile(request, env, ctx, API_ORIGIN); if (r) return r; }
         // public pages + public API reads: edge stale-while-revalidate (worker/edge-cache.js) — any cached copy answers at once
