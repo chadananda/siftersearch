@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-14T17:44:22.851Z",
+  "generated": "2026-11-14T17:47:32.417Z",
   "entries": [
+    {
+      "hash": "842f46706",
+      "date": "2026-11-14",
+      "type": "Other",
+      "description": "Expand maximizes in place off the Anís host; an unknown ?t= never shows another thread",
+      "scope": null
+    },
     {
       "hash": "970913265",
       "date": "2026-11-14",
@@ -749,17 +756,17 @@
       "type": "Test",
       "description": "Siftersearch-reports (which runs the archive jobs) stays inside the capped bulk slice (Chad 11-02: search is top priority)",
       "scope": null
-    },
-    {
-      "hash": "d2a3b69b4",
-      "date": "2026-11-02",
-      "type": "Other",
-      "description": "Hype collection keeps full vectors in RAM (on_disk false, applied live 11-02: hype x6 0.38→0.18 s, x30 1.4→0.55 s)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-11-14": [
+      {
+        "hash": "842f46706",
+        "date": "2026-11-14",
+        "type": "Other",
+        "description": "Expand maximizes in place off the Anís host; an unknown ?t= never shows another thread",
+        "scope": null
+      },
       {
         "hash": "970913265",
         "date": "2026-11-14",
@@ -1529,13 +1536,6 @@
         "date": "2026-11-02",
         "type": "Test",
         "description": "Siftersearch-reports (which runs the archive jobs) stays inside the capped bulk slice (Chad 11-02: search is top priority)",
-        "scope": null
-      },
-      {
-        "hash": "d2a3b69b4",
-        "date": "2026-11-02",
-        "type": "Other",
-        "description": "Hype collection keeps full vectors in RAM (on_disk false, applied live 11-02: hype x6 0.38→0.18 s, x30 1.4→0.55 s)",
         "scope": null
       }
     ]
