@@ -234,6 +234,19 @@ export function verifySkip(meta) {
   return meta.remaster?.status === 'review' ? 'remaster held' : 'not remastered';
 }
 
+/** The remaster's web copies already carry the current listening file + quiet decision: unipase listening, remaster codec, both copies newer than
+ *  every input (unipase.opus, quiet.json, sound.json). Mtime-based: any newer decision (a GPU re-run) lands a newer input and forces a re-encode. */
+export async function webCurrent(meta = {}, dir = '') {
+  if (meta.enhancement?.listening !== 'unipase' || meta.web_codec !== WEB_CODEC_REMASTER) return false;
+  const mt = async (f) => (await stat(f).catch(() => null))?.mtimeMs ?? null;
+  const outs = await Promise.all(['ogg', 'm4a'].map((x) => mt(join(dir, 'web', `${meta.slug}.${x}`))));
+  if (outs.some((t) => t == null)) return false;
+  const { src } = listeningSource(meta, dir);
+  const ins = (await Promise.all([src, join(dir, 'enhanced', 'quiet.json'), join(dir, 'enhanced', 'sound.json')].map(mt)));
+  if (ins[0] == null || ins[1] == null) return false;
+  return Math.min(...outs) > Math.max(...ins.filter((t) => t != null));
+}
+
 export async function runItem(item, opts = {}, deps = {}) {
   // A container worker receives explicit local tools and a job-local catalogue
   // adapter. It must never import the production DB or acquire server clients.
@@ -638,7 +651,12 @@ export async function runItem(item, opts = {}, deps = {}) {
       else throw new WorkerWait('quiet (decided in the gpu job: the remaster is redone for quiet v2)');
     }
 
-    if (stage === 'web') {
+    // KEEP (11-14: 4586 went off air): the remaster's web copies, when newer than the listening file and its quiet decision, were made from exactly
+    // these (the worker applied that quiet). Tower cannot remake a unipase copy (WorkerWait below), so a quiet redo with no new decision keeps them
+    // instead of taking a published talk off air waiting for a worker; trim re-cuts from the source as always.
+    const webKept = stage === 'web' && !existsSync(join(podDir(dir), 'post.json')) && await webCurrent(meta, dir);
+    if (webKept) { delete meta.trim; rec.kept = 'web copies newer than the remaster and its quiet decision'; }
+    if (stage === 'web' && !webKept) {
       delete meta.trim;   // fresh, untrimmed web copies (the 'trim' stage cuts them again from the words)
       const published = !!(meta.stages?.catalog?.at || item.published_at);
       const nextAudioVersion = published ? audioVersion(meta) + 1 : audioVersion(meta);

@@ -1,7 +1,7 @@
 // GPU spend ∝ work done (Chad 10-24): rent rule, ledger, reaper, dead-man switch, duplicate results, boot deadline, pod loss, system checks.
 import { describe, it, expect, vi } from 'vitest';
 vi.mock('../../api/lib/db.js', () => ({ query: vi.fn(), queryOne: vi.fn(), queryAll: vi.fn(async () => []), transaction: vi.fn() }));
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from 'fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync, utimesSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { execFileSync } from 'child_process';
@@ -695,6 +695,26 @@ describe('the pod does the heavy half of a remaster; tower validates and places'
     expect(readFileSync(join(t.dir, 'web', 'x.ogg'), 'utf8')).toBe('x.ogg'); expect(readFileSync(join(t.dir, 'web', 'x.original.m4a'), 'utf8')).toBe('x.original.m4a');
     expect(meta.web_original).toEqual({ ogg: 'web/x.original.ogg', m4a: 'web/x.original.m4a' });
     expect(meta.qa.remaster.verdict).toMatch(/usable|partial/);
+  });
+  it('a quiet/web redo keeps the remaster web copies newer than the listening file + quiet decision (no worker, no ffmpeg, stays on air); older copies still wait for a worker (11-14: 4586)', async () => {
+    const t = await talk();
+    rmSync(join(t.dir, 'enhanced', 'pod'), { recursive: true, force: true });
+    writeFileSync(join(t.dir, 'enhanced', 'unipase.opus'), 'OPUS'); writeFileSync(join(t.dir, 'enhanced', 'quiet.json'), '{}');
+    const m = JSON.parse(readFileSync(join(t.dir, 'meta.json'), 'utf8'));
+    m.enhancement = { listening: 'unipase', variants: [...m.enhancement.variants, { name: 'unipase', file: 'enhanced/unipase.opus' }] };
+    Object.assign(m, { web_codec: 'unipase+opus96audio', remaster: { status: 'done', quiet: { v: 2 } } });
+    writeFileSync(join(t.dir, 'meta.json'), JSON.stringify(m));
+    const old = new Date(Date.now() - 86400e3);
+    for (const f of ['enhanced/unipase.opus', 'enhanced/quiet.json']) utimesSync(join(t.dir, f), old, old);
+    for (const x of ['ogg', 'm4a']) writeFileSync(join(t.dir, 'web', `x.${x}`), 'web');
+    await runItem(t.item, { redo: ['web'], only: ['web'] }, t.deps);
+    const after = JSON.parse(readFileSync(join(t.dir, 'meta.json'), 'utf8'));
+    expect(after.stages.web.at).toBeTruthy(); expect(t.tools.ffmpeg).not.toHaveBeenCalled();
+    expect(readFileSync(join(t.dir, 'web', 'x.ogg'), 'utf8')).toBe('web');
+    // a newer quiet decision (a GPU re-run landed) → the copies are stale → not kept: the web stage makes them again
+    utimesSync(join(t.dir, 'enhanced', 'quiet.json'), new Date(Date.now() + 60e3), new Date(Date.now() + 60e3));
+    await runItem(t.item, { redo: ['web'], only: ['web'] }, t.deps).catch(() => {});
+    expect(t.tools.ffmpeg).toHaveBeenCalled();
   });
   it('verify: a remaster measured as unchanged is demoted to review, the listening copy reverts, the tier is dropped, and it is not complete', async () => {
     const t = await talk();
