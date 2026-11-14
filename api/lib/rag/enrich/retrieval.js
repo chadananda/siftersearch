@@ -514,7 +514,7 @@ const titleForms = (title) => {
 };
 // "this prayer / according to this teaching" slipped through on the tablets and interfaith runs (10-14); "the prayer" alone
 // is a legitimate ask ("What is the prayer for the dead?"), so only "this|that …" and "according to the …" are refused.
-const SELF_REF_NOUNS = 'passage|paragraph|text|verse|tablet|excerpt|extract|prayer|teaching|letter|epistle|sermon|discourse|chapter|section|writing';
+const SELF_REF_NOUNS = 'passage|paragraph|text|verse|tablet|excerpt|extract|prayer|teaching|letter|epistle|sermon|discourse|chapter|section|writing|account|story|narrative';
 const SELF_REFERENCE = new RegExp(`\\bthe (passage|paragraph|text|excerpt|extract)\\b|\\b(this|that) (${SELF_REF_NOUNS})\\b|\\baccording to (this|that|the) (${SELF_REF_NOUNS})\\b|\\bthe author\\b`, 'i');
 const NON_LATIN = /[\u0590-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/;   // Hebrew/Arabic/Persian script: retrieval is in English
 // Yes/no is refused in every tier (Chad 11-13: "Do Bahá'í teachings offer a pattern for future society?" — a complex topic
