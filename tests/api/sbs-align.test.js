@@ -84,5 +84,10 @@ describe('buildSbs', () => {
     expect(r.doc).toEqual({ id: 7, title: 'T', original_title: null, author: 'A', translator: 'Phelps', language: 'fa', direction: 'rtl', cover_url: null, source_url: null, paragraphs: 5 });
     expect(r.sections).toEqual([{ title: 'Ch 1', start: 1 }]); expect(r.next_offset).toBe(2);
     expect(r.paragraphs.map((p) => p.n)).toEqual([1, 2]); expect(Object.keys(r.paragraphs[0]).sort()).toEqual(['aligned', 'kind', 'n', 'rows']);
+  });  it('cached: stored alignments only, the model is never called (public /doc pages: crawlers buy nothing)', async () => {
+    const llm = vi.fn(async () => null);
+    const r = await buildSbs(7, { cached: true }, { ...deps({ id: 7, title: 'T', language: 'ar', encumbered: 0 }), llm });
+    expect(llm).not.toHaveBeenCalled();
+    expect(r.paragraphs[0]).toMatchObject({ aligned: 'paragraph', rows: [{ o: LONG_O, t: LONG_E }] });
   });
 });

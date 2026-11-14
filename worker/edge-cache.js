@@ -26,6 +26,7 @@ const API_ROUTES = [
   [/^\/api\/speakers$/, 300, true],
   [/^\/api\/library\/landing$/, 30, true],          // the /library landing's live numbers + new arrivals
   [/^\/api\/library\/sitemap(\/[a-z0-9-]+)?$/, 3600, true],   // the library sitemap's data (reports snapshot, 3 h)
+  [/^\/api\/library\/doc-pages$/, 3600, true],                // the Anís host's /doc catalogue (reports snapshot, 6 h)
   [/^\/api\/library\/(tree|nodes|shelves|shelves\/items|documents|letters)$/, 300, false],
   [/^\/api\/library\/(nodes|documents)\/[^/]+$/, 300, false],
   [/^\/api\/library\/by-slug\/[^/]+(\/[^/]+)?$/, 300, false],
@@ -44,7 +45,8 @@ const API_ROUTES = [
 
 // Public SSR pages (none reads cookies; only /admin's middleware does). Fresh = the page's own s-maxage, else 60 s.
 // /discuss = the Anís host's published discussions (worker/anis/discuss.js); siftersearch.com/discuss 301s there, so the path key is the Anís page's own.
-const HTML_PAGES = /^\/(|media(\/.*)?|library(\/.*)?|biography(\/.*)?|docs(\/.*)?|who-was-at\/.+|dialogue(\/.*)?|discuss(\/.*)?|research(\/.*)?|document\/.+|m\/.+|about|changelog|privacy|terms|contact|contribute|dewey|sourcehunt)\/?$/;
+// /doc = the Anís host's unique library texts (worker/anis/doc-pages.js), the same way.
+const HTML_PAGES = /^\/(|media(\/.*)?|library(\/.*)?|biography(\/.*)?|docs(\/.*)?|who-was-at\/.+|dialogue(\/.*)?|discuss(\/.*)?|doc(\/.*)?|research(\/.*)?|document\/.+|m\/.+|about|changelog|privacy|terms|contact|contribute|dewey|sourcehunt)\/?$/;
 // The library sitemap (index + parts): SSR endpoints rendering XML, cached like pages but validated as a whole sitemap.
 const XML_PAGES = /^\/sitemap-(library(-[a-z0-9-]+)?|biography)\.xml$/;
 const HTML_NEVER = /^\/(admin|profile|settings|referrals|print|community\/(new|post)|support\/success)(\/|$)/;

@@ -21,6 +21,7 @@ import { shortLink, shortHost, SHORT_PATH, SHORT_HOST } from './short-links.js';
 import { anisAppRoute, sitemapXml } from './anis-app.js';
 import { DISCUSSION_PATH } from './anis/share.js';
 import { DISCUSS_PATH, DISCUSS_API, DIALOGUE_PATH, discussUrl, discussResponse, discussTurns, discussSitemapUrls } from './anis/discuss.js';
+import { DOC_PATH, docResponse, docSitemapUrls } from './anis/doc-pages.js';
 import { d1Dump, d1Edit } from './d1-dump.js';
 import { version as BUILD_VERSION } from '../package.json';
 import { als, evict, installFetchCache, policyFor, cacheKey, serveCached, apiProducer, edgeStoredCc, API_ORIGIN } from './edge-cache.js';
@@ -122,8 +123,16 @@ export function createExports(manifest) {
             const produce = () => discussResponse(dm[1], { api: API_ORIGIN });
             return als.run(st, () => (policy.mode === 'cache' ? serveCached({ key: cacheKey(url, policy.kind, BUILD_VERSION), policy, env, ctx, produce }) : produce().then((r) => r.res)));
           }
-          if (url.pathname === '/anis-sitemap.xml' && request.method === 'GET') {   // the app root + every published discussion
-            const urls = await als.run({ env, ctx, tainted: false, test: null }, () => discussSitemapUrls({ api: API_ORIGIN }));
+          // unique library texts (worker/anis/doc-pages.js): /doc, /doc/books|tablets[/<n>], /doc/<slug>, edge-cached the same way
+          const xm = ['GET', 'HEAD'].includes(request.method) && DOC_PATH.exec(url.pathname);
+          if (xm) {
+            const test = originTest(request, env), st = { env, ctx, tainted: false, test };
+            const policy = policyFor(url, request.method, policyHeaders(request, test));
+            const produce = () => docResponse(xm, { api: API_ORIGIN });
+            return als.run(st, () => (policy.mode === 'cache' ? serveCached({ key: cacheKey(url, policy.kind, BUILD_VERSION), policy, env, ctx, produce }) : produce().then((r) => r.res)));
+          }
+          if (url.pathname === '/anis-sitemap.xml' && request.method === 'GET') {   // the app root + every published discussion + every /doc text
+            const urls = await als.run({ env, ctx, tainted: false, test: null }, async () => (await Promise.all([discussSitemapUrls({ api: API_ORIGIN }), docSitemapUrls({ api: API_ORIGIN })])).flat());
             return new Response(sitemapXml(urls), { headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=3600' } });
           }
           const a = await anisAppRoute(url, env);
@@ -134,8 +143,8 @@ export function createExports(manifest) {
           if (env.ANIS && ['GET', 'HEAD'].includes(request.method) && DISCUSSION_PATH.test(url.pathname)) return env.ANIS.fetch(request);
         }
         { const s = shortHost(request, { base: env.DOCS_PUBLIC_URL || undefined, pass: isApiPath }); if (s) return s; }   // anis.oceanlibrary.com: short links, the widget + API
-        // the discussions live on the Anís host (canonical there); this site's /discuss is only a door to them
-        if (DISCUSS_PATH.test(url.pathname)) return Response.redirect(`https://${SHORT_HOST}${url.pathname}${url.search}`, 301);
+        // the discussions and /doc texts live on the Anís host (canonical there); this site's /discuss and /doc are only doors to them
+        if (DISCUSS_PATH.test(url.pathname) || DOC_PATH.test(url.pathname)) return Response.redirect(`https://${SHORT_HOST}${url.pathname}${url.search}`, 301);
         { const m = DIALOGUE_PATH.exec(url.pathname); if (m) return Response.redirect(`${discussUrl(m[1])}${url.search}`, 301); }   // the old /dialogue pages (kept in the repo, never served)
         // the chat's "Continue this conversation" from a published discussion (?discuss=<slug>): its turns
         { const m = request.method === 'GET' && DISCUSS_API.exec(url.pathname); if (m) return als.run({ env, ctx, tainted: false, test: null }, () => discussTurns(m[1], { api: API_ORIGIN })); }

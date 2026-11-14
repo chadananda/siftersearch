@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { execFile } from 'child_process';
 import { shapeLibraryStats, LIBRARY_STATS_FILE } from '../library/library-stats.js';
 import { shapeLibrarySitemap, LIBRARY_SITEMAP_FILE } from '../library/library-sitemap.js';
+import { shapeDocPages, DOC_PAGES_FILE } from '../library/doc-pages.js';
 import { hiddenReligions } from '../authority.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -24,6 +25,7 @@ export const TTL = {
   shelves: 30 * MIN,        // /library index (data/library-shelves.json)
   libraryStats: 5 * MIN,    // docs-table aggregates the API serves (data/library-stats.json) — i.e. every run
   librarySitemap: 3 * HOUR, // every public reader URL (data/library-sitemap.json → /sitemap-library*.xml)
+  docPages: 6 * HOUR,       // the Anís host's /doc catalogue (data/doc-pages.json): encumbered books + original/English pairs
   entityReview: HOUR,       // data/entity-review-model.json
   cloudflare: 20 * MIN,     // external API
   answerCache: 30 * MIN,
@@ -358,6 +360,15 @@ export async function buildPipelineSnapshot({ rebaseIntegrity = false, force = f
     await probe('library-sitemap', async () => {
       writeJson(sitemapPath, shapeLibrarySitemap(await repo.sitemapRows(), { hidden: hiddenReligions(), now }));
       state.library_sitemap_at = new Date(now).toISOString();
+    }, null);
+  }
+
+  // The /doc catalogue (GET /api/library/doc-pages → anis.oceanlibrary.com/doc index + sitemap).
+  const docPagesPath = join(dataDir, DOC_PAGES_FILE);
+  if (force || !fresh({ generated_at: state.doc_pages_at }, TTL.docPages, now)) {
+    await probe('doc-pages', async () => {
+      writeJson(docPagesPath, shapeDocPages(await repo.docPagesRows(), { hidden: hiddenReligions(), now }));
+      state.doc_pages_at = new Date(now).toISOString();
     }, null);
   }
 

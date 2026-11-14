@@ -85,6 +85,7 @@ describe('snapshot sections run on their own clocks', () => {
       heldDocs: f('heldDocs', []), stubLinkText: f('stubLinkText', ''),
       libraryStatsRows: f('libraryStatsRows', { facets: [], authors: 0, byEra: [], topAuthors: [], recentlyUpdated: 0 }),
       sitemapRows: f('sitemapRows', [{ religion: 'Jain', collection: 'Agamas', slug: 'akaranga', updated_at: '2026-10-13 13:33:44' }]),
+      docPagesRows: f('docPagesRows', { books: [{ id: 8632, title: 'Gate of the Heart', author: 'Nader Saiedi', religion: "Baha'i", updated_at: '2026-11-03 18:02:54' }], tablets: [] }),
     } };
   }
   it('a steady-state run touches only the cheap probes and the new ai_usage rows', async () => {
@@ -99,11 +100,13 @@ describe('snapshot sections run on their own clocks', () => {
     expect(first.stubDocs).toBe(1);
     expect(first.sitemapRows).toBe(1);   // the library sitemap: one docs pass → data/library-sitemap.json
     expect(JSON.parse(readFileSync(join(dataDir, 'library-sitemap.json'), 'utf8')).parts['jain-1']).toEqual([['/library/jain/agamas/akaranga', '2026-10-13']]);
+    expect(first.docPagesRows).toBe(1);   // the /doc catalogue → data/doc-pages.json
+    expect(JSON.parse(readFileSync(join(dataDir, 'doc-pages.json'), 'utf8')).books[0].slug).toBe('gate-of-the-heart-nader-saiedi-8632');
     for (const k of Object.keys(calls)) delete calls[k];
 
     t += 10 * 60_000; bump(40);
     const r = await buildPipelineSnapshot({}, deps);
-    for (const heavy of ['sitemapRows', 'liveParagraphs', 'byLanguage', 'pendingEmbeddingByDoc', 'stubDocs', 'huskDocs', 'heldDocs', 'corpusSummary', 'searchActivity', 'usageNames', 'usageFirstSince']) {
+    for (const heavy of ['sitemapRows', 'docPagesRows', 'liveParagraphs', 'byLanguage', 'pendingEmbeddingByDoc', 'stubDocs', 'huskDocs', 'heldDocs', 'corpusSummary', 'searchActivity', 'usageNames', 'usageFirstSince']) {
       expect(calls[heavy], heavy).toBeUndefined();
     }
     expect(calls.usageDelta).toBe(1);

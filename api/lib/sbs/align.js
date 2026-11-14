@@ -165,13 +165,15 @@ export async function alignParagraphs(paras, { docLang, firstN = 1, cacheGet, ca
 
 const RTL = new Set(['ar', 'fa', 'he', 'ur']);
 /** The /documents/:id/sbs payload (contract: .claude/context/brief-sbs-contract.md). → null if no such doc; { copyright: true } if encumbered.
+ *  `cached`: serve stored alignments only, never call the model (public crawlable pages: a crawler must not buy alignments).
  *  deps: { doc(id), total(id), paragraphs(id, off, lim), sections(id), cacheGet, cachePut, llm } */
-export async function buildSbs(id, { offset = 0, limit = 400 }, deps) {
+export async function buildSbs(id, { offset = 0, limit = 400, cached = false }, deps) {
   const doc = await deps.doc(id);
   if (!doc) return null;
   if (doc.encumbered === 1) return { copyright: true };
   const [total, rows, sections] = await Promise.all([deps.total(id), deps.paragraphs(id, offset, limit), deps.sections(id)]);
-  const paragraphs = await alignParagraphs(rows, { docLang: doc.language, firstN: offset + 1, cacheGet: deps.cacheGet, cachePut: deps.cachePut, llm: deps.llm });
+  const paragraphs = await alignParagraphs(rows, { docLang: doc.language, firstN: offset + 1, cacheGet: deps.cacheGet, cachePut: deps.cachePut, llm: deps.llm,
+    ...(cached ? { maxUncached: 0 } : {}) });
   let translators = []; try { translators = JSON.parse(doc.translators || '[]'); } catch { /* none */ }
   const language = doc.language === 'en' ? (rows.find((r) => r.original_lang)?.original_lang || 'en') : doc.language;
   const end = offset + rows.length;

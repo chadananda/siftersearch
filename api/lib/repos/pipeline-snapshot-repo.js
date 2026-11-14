@@ -161,6 +161,21 @@ export const sitemapRows = () => queryAll(`SELECT religion, collection, slug, up
    WHERE deleted_at IS NULL AND duplicate_of IS NULL AND slug IS NOT NULL AND slug != ''
      AND religion IS NOT NULL AND religion != '' AND collection IS NOT NULL AND collection != ''`, [], 'snapshot:library-sitemap');
 
+/** The /doc pages' rows (data/doc-pages.json, api/lib/library/doc-pages.js): copyrighted books (a docs pass) and docs whose
+ *  paragraphs pair an original with English (two partial-index passes over content). Out of process only. */
+export async function docPagesRows() {
+  const books = await queryAll(`SELECT id, title, author, religion, collection, language, year, description, purchase_url, publisher,
+      cover_url, metadata, updated_at FROM docs WHERE encumbered = 1 AND deleted_at IS NULL AND duplicate_of IS NULL`, [], 'snapshot:doc-pages-books');
+  const tablets = await queryAll(`SELECT d.id, d.title, d.author, d.religion, d.collection, d.language, d.source_url, d.metadata, d.updated_at,
+      d.original_doc_id, x.with_original, x.with_translation, x.original_lang
+    FROM (SELECT doc_id, SUM(o) AS with_original, SUM(t) AS with_translation, MAX(lang) AS original_lang FROM (
+        SELECT doc_id, 1 AS o, 0 AS t, original_lang AS lang FROM content WHERE original_text IS NOT NULL AND deleted_at IS NULL
+        UNION ALL SELECT doc_id, 0, 1, NULL FROM content WHERE translation_by IS NOT NULL AND deleted_at IS NULL) GROUP BY doc_id) x
+    JOIN docs d ON d.id = x.doc_id
+   WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL AND COALESCE(d.encumbered, 0) = 0`, [], 'snapshot:doc-pages-tablets');
+  return { books, tablets };
+}
+
 // ── missing books (6 h): stubs LIKE-scan low-¶ docs' content (~6 s) ─────────────────────────────────────────────────
 // Catalogue rows (Phelps inventory / bibliography) are not missing books.
 const NOT_CATALOGUE = `

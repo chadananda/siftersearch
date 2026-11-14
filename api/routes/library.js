@@ -21,6 +21,7 @@ import { ignoreMissingTable } from '../lib/swallow.js';   // narrow the silence 
 import { getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
 import { readLibraryStats, religionCollectionCounts } from '../lib/library/library-stats.js';
 import { readLibrarySitemap } from '../lib/library/library-sitemap.js';
+import { readDocPages } from '../lib/library/doc-pages.js';
 import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { previewWindow, PREVIEW_PARAGRAPHS, PREVIEW_MESSAGE, canReadFull } from '../lib/rights/preview.js';
@@ -1565,6 +1566,14 @@ Return ONLY the description text, no quotes or formatting.`;
     reply.header('Cache-Control', 'public, max-age=300, s-maxage=3600');
     return { generated_at: snap.generated_at, chunk: snap.chunk, total: snap.total, parts: snap.index };
   });
+  // The Anís host's /doc catalogue (copyrighted books' openings + original/English pairs), from the reports-built snapshot
+  // (data/doc-pages.json, api/lib/library/doc-pages.js; never a query here). Edge-cached. 503 until the first snapshot.
+  fastify.get('/doc-pages', async (request, reply) => {
+    const snap = readDocPages();
+    if (!snap) return reply.code(503).header('Cache-Control', 'no-store').send({ error: 'doc-pages snapshot not built yet' });
+    reply.header('Cache-Control', 'public, max-age=300, s-maxage=3600');
+    return snap;
+  });
   fastify.get('/sitemap/:part', async (request, reply) => {
     const snap = readLibrarySitemap();
     if (!snap) return reply.code(503).header('Cache-Control', 'no-store').send({ error: 'sitemap snapshot not built yet' });
@@ -2124,12 +2133,14 @@ Return ONLY the description text, no quotes or formatting.`;
   /**
    * Side-by-side document data: per paragraph, equal-count sentence rows {o, t} (lib/sbs/align.js). Public; encumbered → 403.
    * Contract: .claude/context/brief-sbs-contract.md. Uncached paragraphs align lazily (≤40 per request) — re-fetch to fill the rest.
+   * ?cached=true: stored alignments only, no model call (the Anís host's public /doc pages, which crawlers read).
    */
   fastify.get('/documents/:id/sbs', {
     preHandler: [optionalAuthenticate],
     schema: {
       params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
-      querystring: { type: 'object', properties: { offset: { type: 'integer', default: 0, minimum: 0 }, limit: { type: 'integer', default: 400, minimum: 1, maximum: 1000 } } }
+      querystring: { type: 'object', properties: { offset: { type: 'integer', default: 0, minimum: 0 }, limit: { type: 'integer', default: 400, minimum: 1, maximum: 1000 },
+        cached: { type: 'boolean', default: false } } }
     }
   }, async (request, reply) => {
     const { buildSbs } = await import('../lib/sbs/align.js');
