@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { lookup, capture, logQuestion, saveTurn, loadConversation, questionHash, outcomeOf, MAX_PASSAGES } from '../../worker/anis/research-store.js';
+import { lookup, capture, markStale, logQuestion, saveTurn, loadConversation, questionHash, outcomeOf, MAX_PASSAGES } from '../../worker/anis/research-store.js';
 
 const cos = (a, b) => { let d = 0, x = 0, y = 0; for (let i = 0; i < a.length; i++) { d += a[i] * b[i]; x += a[i] * a[i]; y += b[i] * b[i]; } return d / (Math.sqrt(x * y) || 1); };
 // unit vector at angle t (degrees): cosine between two = cos(delta)
@@ -95,5 +95,16 @@ describe('research store', () => {
   });
   it('bundles for a Worker (esbuild --platform=browser)', () => {
     expect(() => execFileSync('node_modules/.bin/esbuild', ['worker/anis/research-store.js', '--bundle', '--platform=browser', '--format=esm', '--log-level=error', '--outfile=/dev/null'])).not.toThrow();
+  });
+  it('a set a correction showed wrong goes stale: never served, never on a curated set; the next capture starts afresh (11-14 Íqán divines)', async () => {
+    const set = await capture(env, 'how do bahais pray?', [P(1), P(2)]);
+    expect(await markStale(env, set.id)).toBe(true);
+    expect(await lookup(env, 'how do bahais pray?')).toBeNull();
+    expect(await lookup(env, 'how do baha is pray')).toBeNull();
+    const again = await capture(env, 'how do bahais pray?', [P(3)]);
+    expect(again.passages.map((p) => p.id)).toEqual([3]);   // the wrong passages are not merged back
+    env.db.prepare("UPDATE anis_research_sets SET status = 'curated'").run();
+    expect(await markStale(env, again.id)).toBe(false);
+    expect(readFileSync('worker/d1/anis/0019_anis_stale_iqan_divines.sql', 'utf8')).toMatch(/status = 'stale'[^;]*WHERE id = 172 AND status = 'candidate'/);
   });
 });

@@ -7,7 +7,7 @@ import { formPass } from '../../api/lib/assistant/lint.js';
 import { toNative, fromNative, chunksOf } from '../../api/lib/anthropic-native.js';
 import { modelFor } from '../../api/lib/model-roles.js';
 import { thinkingParam } from '../../api/lib/model-registry.js';
-import { lookup, capture, logQuestion, saveTurn, embed, EMBED_MODEL, SAME_QUESTION } from './research-store.js';
+import { lookup, capture, logQuestion, saveTurn, markStale, embed, EMBED_MODEL, SAME_QUESTION } from './research-store.js';
 import { restate, underPriceBoundary } from './restate.js';
 import { finishLinks, templateFilter } from './links.js';
 import { backPills, pinnedQuestion } from './pills.js';
@@ -324,6 +324,7 @@ export default {
       const b = await request.json().catch(() => ({}));
       if (pathname === '/_anis/turn') return chat(request, env, ctx, { body: b, trusted: true });   // any mode, e.g. the mail Worker's letters (mode email)
       if (pathname === '/_anis/embed') return json({ model: EMBED_MODEL, vectors: (await env.AI.run(EMBED_MODEL, { text: (b.texts || []).map(String) })).data });
+      if (pathname === '/_anis/stale') return json({ stale: await markStale(env, b.id) });   // a set a reader's correction showed wrong (research-store.js)
       if (pathname === '/_anis/lookup') { const r = await lookup(env, b.question || ''); return json({ hit: !!r, similarity: r?.similarity ?? null, same: r ? r.similarity >= SAME_QUESTION : false, set: r?.set ?? null }); }
     }
     return json({ error: 'not found' }, 404);

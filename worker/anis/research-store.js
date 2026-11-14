@@ -65,6 +65,13 @@ export async function capture(env, question, passages) {
   return parse(row);
 }
 
+/** A set that led a reply wrong (a reader's correction) stops being served: stale sets are skipped by lookup and a new capture of the
+ *  question starts afresh. Curated sets are a person's decision, never staled here. → true when a set changed. */
+export async function markStale(env, id) {
+  const r = await env.ANIS_DB.prepare("UPDATE anis_research_sets SET status = 'stale', updated_at = ? WHERE id = ? AND status = 'candidate'").bind(Date.now(), Number(id)).run();
+  return (r?.meta?.changes ?? r?.changes ?? 0) > 0;
+}
+
 /** Record one researched question; never throws. */
 export async function logQuestion(env, { question, similarity = null, setId = null, site = null, channel = null, ms = null, format = null } = {}) {
   try {

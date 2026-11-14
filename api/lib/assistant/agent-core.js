@@ -8,6 +8,7 @@ import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
 import { expandTemplates } from './widgets/templates.js';
 import { byTier, coreFirst } from './source-tier.js';
+import { keepHeldLinks } from './held-links.js';
 
 const clip = (t, n) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? `${s.slice(0, n)}…` : s; };
 // the library copy's edition, from its catalogue record: "who translated this edition" is answered from this line, never from other editions' bibliographies
@@ -66,6 +67,8 @@ WRITING:
 - A TABLET OR WORK written in Arabic or Persian (or another original language) that the reader asks about: never hide it because it is not in English. Say plainly that the library holds it in its original (name the language) and link that original — call original_lookup or document_search so you hold its own passage or book, and cite it ([[P#]] / [[B#]]: its link opens it on Ocean of Lights). Close with one line offering to read and discuss it with the reader and to prepare a side-by-side document of the original beside the English. With no English translation in the library, say so and still offer to discuss the original. Original-language lines are QUOTED only when the reader asks for the original, or in {{side_by_side}}; the original is always named and linked.
 - The reader asks for the side-by-side document: call side_by_side_document on a passage of that work and give its [[B#]] in one sentence.
 - Quotation marks only around words copied exactly from a passage. Credit a quotation to the passage's writer (a letter written on behalf of Shoghi Effendi is not his own words; an editor's introduction is not the author's).
+- WHO A BOOK MEANS. A name is evidence, never identity: two men can share a name (two Mullá Báqirs — a Letter of the Living who lived to recognise Bahá'u'lláh, and Mullá Mihdíy-i-Kandí's brother, martyred at Ṭabarsí). Bind a person only by what the passage itself says of him (kin, place, fate, date), and say which one when the name is shared. To identify someone a book names, search that book first (search_in_work: its own notes, glossary and footnotes say whom it means), then the histories; when passages disagree on the identity, the book's own note and the relation stated beside the name decide.
+- LINKS COME FROM PASSAGES. Cite with refs ([[P3]]) only; never type a library address or a paragraph id yourself — code makes every link from a passage you hold, and a typed one is removed.
 - CORE TEXTS FIRST. Answer from the written texts of Bahá'u'lláh, the Báb and 'Abdu'l-Bahá and from Shoghi Effendi — in English and in the Persian and Arabic originals (originals_search; quote an original with its existing translation, never a new one) — and let them lead and carry the argument. A recorded talk of 'Abdu'l-Bahá may stand beside a written text when it adds something, named as spoken; a pilgrim's recollection after that; a scholar's book only for a point no Writing addresses, named as that writer's view. Quote 'Abdu'l-Bahá from His own text, never through a scholar who quotes Him. When your passages lead with a talk or a study, search the Writings on that point before writing.
 - Prefer, in order: the Writings of Bahá'u'lláh, the Báb and 'Abdu'l-Bahá; Shoghi Effendi; then compilations; "Uncompiled Published Letters" (or "Uncompiled Letters") only when nothing else holds the words. A recollection of a Central Figure's spoken words (pilgrim notes, a visitor's article) only when no Writing says it, and named as a recollection in a few words. Doctrine rests on the Writings and Shoghi Effendi; the Universal House of Justice speaks with authority on law and administration.
 - Readings in the community's sense: "the House" = the Universal House of Justice, "the Master" = 'Abdu'l-Bahá, "the Guardian" = Shoghi Effendi, "the Blessed Beauty" = Bahá'u'lláh, "the Most Holy Book" = the Kitáb-i-Aqdas, "the Nine Year Plan" = 2022–2031.
@@ -322,6 +325,8 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
       return sents.filter((x) => !(/\[\[P\d+\]\]/.test(x) && !/\{\{/.test(x) && offAll((x.match(/\[\[P\d+\]\]/g) || []).join(' ')))).join('');
     }).join('\n').replace(/\n{3,}/g, '\n\n');
   };
+  // every paragraph link is one a held passage carries (held-links.js); a typed one → the book, or its words
+  const heldOnly = (t, ps) => keepHeldLinks(t, { passages: [...found.values(), ...(ps || []), ...(held?.passages || [])], works: [...works.values()], prior: messages }).text;
   const finishLive = (s) => {
     const [, lead, core0, trail] = String(s).match(/^(\s*)([\s\S]*?)(\s*)$/);
     if (!core0) return s;
@@ -333,7 +338,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     const t = linkQuotes(fixQuoteSpeakers(restoreElisions(renderRefs(core, { found, works }), ret, { asked: asked0 }).text, ret).text, ret).text;
     const x = expandTemplates(markQuotes(t, ret).text, { found, works, books: bookCards, shown: shownCards() }, { start: liveWidgets.length });
     for (const w of x.widgets) { liveWidgets.push(w); onEvent({ type: 'widget', widget: w }); }
-    return lead + links(x.text, ret) + trail;
+    return lead + links(heldOnly(x.text, ret), ret) + trail;
   };
   const onText = (t) => {
     if (t.includes(NOT_FOUND)) { gate = false; return; }   // a not-found draft may be nudged into another round: never shown
@@ -402,7 +407,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const offerless = dropSearchOffer(dropPreamble(shown ?? linked.text).trim());   // the research is his to run, never an offer (11-04 #163)
   // inline templates ({{quote P3}} …) → widget marker + fallback + data, last: the words are the passage's own, never re-grounded (widgets/templates.js)
   const { text: reply, widgets } = shown != null ? { text: offerless.text, widgets: liveWidgets }
-    : ((x) => ({ ...x, text: links(x.text, retrieved) }))(expandTemplates(markQuotes(offerless.text, retrieved).text, { found, works, books: bookCards, shown: shownCards() }));   // quoted words styled apart (Chad 11-04)
+    : ((x) => ({ ...x, text: links(heldOnly(x.text, retrieved), retrieved) }))(expandTemplates(markQuotes(offerless.text, retrieved).text, { found, works, books: bookCards, shown: shownCards() }));   // quoted words styled apart (Chad 11-04)
   const citations = [...[...works.values()].map((w) => ({ title: w.title, author: w.author, url: w.url, religion: w.religion, document_id: w.id, paragraph_index: null, text: '' })),
     ...retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url, religion: q.religion, document_id: q.doc_id, paragraph_index: q.paragraph_index ?? null, text: String(q.text).slice(0, 300) }))]
     .filter((c) => c.url && reply.includes(c.url));
