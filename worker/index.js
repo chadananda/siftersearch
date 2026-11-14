@@ -17,7 +17,8 @@ import { mailRoute, mailCron } from './mail/index.js';
 import { deweyEmail } from './mail/dewey.js';
 import { deweyUploadRoute } from './dewey-upload.js';
 import { mediaFile, warmMedia, ensureMedia, MEDIA_FILE } from './media.js';
-import { shortLink, shortHost, SHORT_PATH } from './short-links.js';
+import { shortLink, shortHost, SHORT_PATH, SHORT_HOST } from './short-links.js';
+import { anisAppRoute } from './anis-app.js';
 import { d1Dump, d1Edit } from './d1-dump.js';
 import { version as BUILD_VERSION } from '../package.json';
 import { als, evict, installFetchCache, policyFor, cacheKey, serveCached, apiProducer, API_ORIGIN } from './edge-cache.js';
@@ -110,6 +111,11 @@ export function createExports(manifest) {
     default: {
       async fetch(request, env, ctx) {
         const url = new URL(request.url);
+        if (url.hostname === SHORT_HOST) {   // anis.oceanlibrary.com: Anís as an installable app at the root (worker/anis-app.js)
+          const a = anisAppRoute(url, env);
+          if (a instanceof Response) return a;
+          if (a && request.method === 'GET') return handle(manifest, app, new Request(new URL(a, url), request), env, ctx);
+        }
         { const s = shortHost(request, { base: env.DOCS_PUBLIC_URL || undefined, pass: isApiPath }); if (s) return s; }   // anis.oceanlibrary.com: short links, the widget + API
         if (url.pathname === '/_edge/warm') {
           if (!env.S1_KEY || request.headers.get('x-internal-key') !== env.S1_KEY) return Response.json({ error: 'unauthorized' }, { status: 401 });

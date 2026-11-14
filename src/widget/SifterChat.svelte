@@ -989,6 +989,9 @@
 
   /* ── fullscreen host (siftersearch.com/anis): the panel is the page at every size ── */
   .root.full .panel { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; border-radius: 0; }
+  /* installed as an app (anis.oceanlibrary.com, viewport-fit=cover): keep the header and the input clear of the notch,
+     the rounded corners and the home bar */
+  .root.full .panel, .panel { padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0); }
 
   /* ── Small screens: the panel becomes a full sheet. ── */
   @media (max-width: 640px) {

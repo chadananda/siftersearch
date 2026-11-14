@@ -1,0 +1,48 @@
+---
+// anis.oceanlibrary.com — Anís as a standalone app (Chad 11-13): the widget, opened full screen, with the web-app head
+// (manifest, service worker, Apple home-screen tags, safe areas). Served at the host root by worker/anis-app.js.
+// Own head, not Layout: this is Ocean 2.0's assistant, not a SifterSearch page.
+const ORIGIN = 'https://anis.oceanlibrary.com';
+const title = 'Anís — Ocean AI Research Assistant';
+const description = "Ask Anís about the world's sacred and scholarly texts — answers quoted and cited from the Ocean library.";
+---
+<!doctype html>
+<html lang="en" style="background:#0a162a;color:#e6edf6;">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={`${ORIGIN}/`} />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Ocean 2.0" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={`${ORIGIN}/`} />
+  <meta property="og:image" content={`${ORIGIN}/anis-app/icon-512.png`} />
+  <meta name="twitter:card" content="summary" />
+  <link rel="manifest" href="/anis.webmanifest" />
+  <meta name="theme-color" content="#0a162a" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Anís" />
+  <meta name="application-name" content="Anís" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="apple-touch-icon" href="/anis-app/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/anis-app/icon-192.png" />
+  <style>
+    html, body { margin: 0; height: 100%; background: #0a162a; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+    body { min-height: 100dvh; }
+    noscript p { font: 16px/1.5 system-ui, sans-serif; padding: 2rem; color: #e6edf6; }
+  </style>
+</head>
+<body>
+  <noscript><p>Anís needs JavaScript to run.</p></noscript>
+  <script is:inline src="/widget.js" data-key="wgt_house_siftersearch" data-name="Anís" data-opened="1" data-fullscreen="1" async></script>
+  <script is:inline>
+    if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('/anis-sw.js', { scope: '/' }).catch(() => {}));
+  </script>
+</body>
+</html>
