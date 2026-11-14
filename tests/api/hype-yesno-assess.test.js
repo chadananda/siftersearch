@@ -10,7 +10,7 @@ function fakes(rows, replies) {
   let n = 0;
   return { db, calls, writes, deps: {
     maxId: async () => 100, window: async (a, b) => [...db.values()].filter((r) => r.id > a && r.id <= b).map((r) => ({ id: r.id, doc_id: r.doc_id, hyp_questions: r.hyp_questions })),
-    titles: async () => new Map([[7, 'Some Book']]), texts: async (ids) => new Map(ids.map((i) => [i, { text: `Passage ${i}. ` + 'x'.repeat(400) }])),
+    titles: async () => new Map([[7, 'Some Book']]), texts: async (ids) => new Map(ids.map((i) => [i, { text: `Passage ${i}. the house is open to all the peoples of the world. ` + 'x'.repeat(400) }])),
     chat: async (messages) => { calls.push(messages); const r = typeof replies === 'function' ? replies(messages, n++) : replies; return { content: r, usage: { promptTokens: 1000, completionTokens: 100, cachedTokens: 0 } }; },
     cost: ({ promptTokens, completionTokens }) => (promptTokens * 0.0001 + completionTokens * 0.0005) / 1000,
     replace: async (ups) => { for (const u of ups) { const r = db.get(u.id); if (r.hyp_questions === u.from) r.hyp_questions = u.to; } writes.push(ups.length); return ups.length; },
@@ -18,7 +18,7 @@ function fakes(rows, replies) {
   } };
 }
 const rows = () => [
-  { id: 1, doc_id: 7, hyp_questions: JSON.stringify([{ q: YES1, a: 'span one' }, OK, { q: YES2, a: 'span two' }, IMP, YES3]) },
+  { id: 1, doc_id: 7, hyp_questions: JSON.stringify([{ q: YES1, a: 'span one' }, OK, { q: YES2, a: 'open to all the peoples' }, IMP, YES3]) },
   { id: 2, doc_id: 7, hyp_questions: JSON.stringify([OK]) },
   { id: 3, doc_id: 7, hyp_questions: JSON.stringify([{ q: 'Is God one?', a: 'z', seeker: true }]) },
 ];
@@ -35,7 +35,7 @@ describe('hype-yesno-assess', () => {
   it('dry run calls the model, reports counts, cost and all samples, writes nothing', async () => {
     const f = fakes(rows(), reply), before = JSON.stringify([...f.db.values()]);
     const r = await hypeYesnoAssessJob({}, f.deps);
-    expect(r).toMatchObject({ apply: false, paragraphs: 2, questions: 4, keep: 2, rewrite: 1, drop: 1, unanswered: 0, docs: 1 });
+    expect(r).toMatchObject({ apply: false, paragraphs: 2, questions: 4, keep: 1, rewrite: 1, drop: 2, keepUnverified: 1, unanswered: 0, docs: 1 });
     expect(r.usd).toBeGreaterThan(0); expect(r.usdPerQuestion).toBeCloseTo(r.usd / 4, 5);
     expect(r.samples.length).toBe(4); expect(r.samples[0]).toMatchObject({ q: YES1, verdict: 'rewrite', newQ: expect.stringMatching(/^What pattern/) }); expect(r.samples[0].passage.length).toBeLessThanOrEqual(300);
     expect(f.writes).toEqual([]); expect(JSON.stringify([...f.db.values()])).toBe(before); expect(r.reindex).toBeUndefined(); expect(f.calls.length).toBe(2);
@@ -46,8 +46,10 @@ describe('hype-yesno-assess', () => {
     expect(r).toMatchObject({ written: 2, reindex: 'queued:7' });
     const a = JSON.parse(f.db.get(1).hyp_questions);
     expect(a[0]).toEqual({ q: 'What pattern for future society do the Bahá’í teachings offer?', a: 'span one', was: YES1 });
-    expect(a[1]).toBe(OK); expect(a[2]).toEqual({ q: YES2, a: 'span two', closed: true }); expect(a[3]).toEqual(IMP); expect(a[4]).toEqual({ q: '', dropped: 'yesNo', was: YES3 });
-    expect(JSON.parse(f.db.get(3).hyp_questions)).toEqual([{ q: 'Is God one?', a: 'z', seeker: true, closed: true }]);
+    expect(a[1]).toBe(OK); expect(a[2]).toEqual({ q: YES2, a: 'open to all the peoples', closed: true }); expect(a[3]).toEqual(IMP); expect(a[4]).toEqual({ q: '', dropped: 'yesNo', was: YES3 });
+    // stored span 'z' is too short to verify and the model gave none: an unverifiable keep is dropped, like a new closed yes/no
+    expect(JSON.parse(f.db.get(3).hyp_questions)).toEqual([{ q: '', dropped: 'yesNo', was: 'Is God one?' }]);
+    expect(r.keepUnverified).toBe(1);
     expect(JSON.parse(f.db.get(2).hyp_questions)).toEqual([OK]);
   });
   it('an invalid rewrite (still yes/no, self-referencing, or a duplicate) becomes a drop', async () => {
@@ -85,5 +87,11 @@ describe('hype-yesno-assess', () => {
     f.deps.window = async (a, b) => { const w = await orig(a, b); f.db.get(1).hyp_questions = JSON.stringify([OK]); return w; };
     await hypeYesnoAssessJob({ apply: true, limit: 5 }, f.deps);
     expect(JSON.parse(f.db.get(1).hyp_questions)).toEqual([OK]);
+  });
+  it('a keep may stand on the model\'s own answering words when they are in the passage', async () => {
+    const f = fakes([rows()[2]], verdicts([{ i: 0, verdict: 'keep', a: 'open to all the peoples of the world' }]));
+    const r = await hypeYesnoAssessJob({ apply: true, limit: 5 }, f.deps);
+    expect(r).toMatchObject({ keep: 1, drop: 0 });
+    expect(JSON.parse(f.db.get(3).hyp_questions)).toEqual([{ q: 'Is God one?', a: 'open to all the peoples of the world', seeker: true, closed: true }]);
   });
 });

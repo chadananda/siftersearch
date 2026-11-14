@@ -5,7 +5,7 @@
 // Model = HyPE's own (claude-haiku-5-5, pipeline/profile.js HAIKU_ALL.hype), stage 'hype-yesno', metered + spend-capped by ai.js chatCompletion; plain calls (a few hundred), not the batch API.
 import * as implied from '../repos/implied-repo.js';
 import { maxContentId } from '../paragraphs-repo.js';
-import { questionFault } from '../rag/enrich/retrieval.js';
+import { questionFault, spanIsPresent } from '../rag/enrich/retrieval.js';
 import { costOf } from '../rag-adapter/usage.js';
 
 export const YESNO_MODEL = 'claude-haiku-5-5';
@@ -22,7 +22,7 @@ REWRITE: the passage does teach something worth finding, but the yes/no form fla
 
 DROP: there is no good question here (the passage does not really answer it, it is trivial, vague, or it only restates the passage).
 
-Reply with ONLY JSON, no commentary: {"verdicts":[{"i":0,"verdict":"keep"},{"i":1,"verdict":"rewrite","q":"the open question"},{"i":2,"verdict":"drop"}]} with one entry per question, "i" being the question's number as given.`;
+Reply with ONLY JSON, no commentary: {"verdicts":[{"i":0,"verdict":"keep","a":"the passage's exact words that give the yes or no"},{"i":1,"verdict":"rewrite","q":"the open question"},{"i":2,"verdict":"drop"}]} with one entry per question, "i" being the question's number as given.`;
 
 const userOf = (title, passage, qs) => `Book: ${title || 'unknown'}\n\nPassage:\n${String(passage || '').slice(0, PASSAGE_MAX)}\n\nQuestions:\n${qs.map((x, i) => `${i}. ${x.q}${x.a ? `\n   answer span: ${String(x.a).slice(0, 400)}` : ''}`).join('\n')}`;
 
@@ -32,7 +32,7 @@ export function parseVerdicts(text) {
   if (!m) return new Map();
   try {
     const out = new Map();
-    for (const v of JSON.parse(m[0]).verdicts || []) if (Number.isInteger(v?.i) && ['keep', 'rewrite', 'drop'].includes(v.verdict)) out.set(v.i, { verdict: v.verdict, q: String(v.q || '').trim() });
+    for (const v of JSON.parse(m[0]).verdicts || []) if (Number.isInteger(v?.i) && ['keep', 'rewrite', 'drop'].includes(v.verdict)) out.set(v.i, { verdict: v.verdict, q: String(v.q || '').trim(), a: String(v.a || '').trim() });
     return out;
   } catch { return new Map(); }
 }
@@ -86,8 +86,11 @@ export async function hypeYesnoAssessJob(params = {}, deps = {}) {
           // the rewrite must itself pass the gate (open form, no self reference, no book name) and not repeat a question the paragraph already has
           if (!v.q || d.fault(v.q, title, { seeker: !!item.seeker }) || have.has(fold(v.q))) verdict = 'drop'; else { newQ = v.q; have.add(fold(v.q)); }
         }
+        // a kept yes/no stands only on answering words found in the passage — the same rule commitHype applies to new ones
+        let span = item.a || '';
+        if (verdict === 'keep') { span = [v.a, item.a].find((x) => x && spanIsPresent(x, [passage]) === true); if (!span) { verdict = 'drop'; tot.keepUnverified = (tot.keepUnverified || 0) + 1; } }
         tot[verdict]++;
-        next[k] = verdict === 'keep' ? { ...item, closed: true } : verdict === 'rewrite' ? (({ closed, ...rest }) => ({ ...rest, q: newQ, a: item.a ?? '', was: item.q }))(item) : { q: '', dropped: 'yesNo', was: item.q };
+        next[k] = verdict === 'keep' ? { ...item, a: span, closed: true } : verdict === 'rewrite' ? (({ closed, ...rest }) => ({ ...rest, q: newQ, a: item.a ?? '', was: item.q }))(item) : { q: '', dropped: 'yesNo', was: item.q };
         samples.push({ paraId: r.id, docId: r.doc_id, doc: title || null, passage: String(passage).slice(0, 300), q: item.q, verdict, newQ });
         changed++;
       });
