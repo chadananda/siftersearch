@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-14T05:41:48.076Z",
+  "generated": "2026-11-14T13:08:53.721Z",
   "entries": [
     {
       "hash": "29621af91",
@@ -748,13 +748,6 @@
       "date": "2026-10-31",
       "type": "Other",
       "description": "Anís wording battery → then simulated-conversation quality loop (Chad 10-31)",
-      "scope": null
-    },
-    {
-      "hash": "c192c318f",
-      "date": "2026-10-31",
-      "type": "Other",
-      "description": "Deterministic quotation hunt (quote shape overrides Jev topic), plan provenance on the thread, honest absence on a quote miss, search tracing restored on the live path",
       "scope": null
     }
   ],
@@ -1531,13 +1524,6 @@
         "date": "2026-10-31",
         "type": "Other",
         "description": "Anís wording battery → then simulated-conversation quality loop (Chad 10-31)",
-        "scope": null
-      },
-      {
-        "hash": "c192c318f",
-        "date": "2026-10-31",
-        "type": "Other",
-        "description": "Deterministic quotation hunt (quote shape overrides Jev topic), plan provenance on the thread, honest absence on a quote miss, search tracing restored on the live path",
         "scope": null
       }
     ]
