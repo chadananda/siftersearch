@@ -233,7 +233,7 @@ if (db) {
 }
 
 // ── 4-watch. Paid work burning money without working (Chad 11-14) — the `spend-watch` ops REPORT (never a direct query).
-// failing/loop/spike → CRITICAL (the critical path mails [ACTION] once, with the stop lever); cap-pace → warn (weekly). A missing or >90 min old
+// failing/loop (money spent, nothing done) → CRITICAL (one [ACTION] mail with the stop lever); spike/cap-pace → warn (weekly). A missing or >90 min old
 // report is "unknown since <as_of>", never re-quoted numbers.
 try {
   const url = 'http://127.0.0.1:7839/api/admin/ops/reports/spend-watch';
@@ -243,9 +243,11 @@ try {
   const sw = rep?.result, asOf = sw?.as_of, ageMin = asOf ? (Date.now() - Date.parse(asOf)) / 60000 : Infinity;
   if (!sw || !(ageMin <= 90)) add('Spend watch', false, 'warn', `spend-watch unknown since ${asOf || 'never'}`);
   else {
-    const bad = (sw.findings || []).filter((f) => f.kind !== 'cap-pace'), pace = (sw.findings || []).filter((f) => f.kind === 'cap-pace');
+    // only NOT-WORKING spend alarms (failing, loop); a spike or cap pace on working calls is readers being served → weekly
+    const NOT_WORKING = new Set(['failing', 'loop']);
+    const bad = (sw.findings || []).filter((f) => NOT_WORKING.has(f.kind)), pace = (sw.findings || []).filter((f) => !NOT_WORKING.has(f.kind));
     add('Spend watch', !bad.length, 'critical', bad.length ? bad.map((f) => `${f.caller || '(no caller)'} ${f.kind} $${f.rate_usd_h}/h: ${f.evidence} — do: ${f.action}`).join(' · ') + ` (as of ${asOf})` : `ok · $${sw.totals?.usd_1h}/1h $${sw.totals?.usd_today} today (as of ${asOf})`);
-    if (pace.length) add('Spend pace vs cap', false, 'warn', pace.map((f) => `${f.caller || '(no caller)'}: ${f.evidence}`).join(' · ') + ` (as of ${asOf})`);
+    if (pace.length) add('Spend pace', false, 'warn', pace.map((f) => `${f.caller || '(no caller)'} ${f.kind}: ${f.evidence}`).join(' · ') + ` (as of ${asOf})`);
   }
 } catch (e) { add('Spend watch', false, 'warn', `spend-watch unknown (${e.message})`); }
 
