@@ -454,7 +454,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     citedWorkCards(core);
     const ret = heldNowAll();
     const t = linkQuotes(fixQuoteSpeakers(restoreElisions(renderRefs(core, { found, works }), ret, { asked: asked0 }).text, ret).text, ret).text;
-    const x = expandTemplates(markQuotes(t, ret).text, { found, works, books: bookCards, shown: shownCards(), carded }, { start: liveWidgets.length });
+    const x = expandTemplates(markQuotes(t, ret).text, { found, works, books: bookCards, shown: shownCards(), carded, subject: subj }, { start: liveWidgets.length });
     for (const w of x.widgets) { liveWidgets.push(w); onEvent({ type: 'widget', widget: w }); }
     return settleLayout(lead + links(heldOnly(x.text, ret), ret) + trail);
   };
@@ -566,7 +566,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   // inline templates ({{quote P3}} …) → widget marker + fallback + data, last: the words are the passage's own, never re-grounded (widgets/templates.js)
   const tidy = (x) => (shown != null ? x : { ...x, text: unholdTexts(dropCutOff(dropDanglingLeadIn(x.text).text).text) });   // the streamed reply was tidied piece by piece
   const { text: reply, widgets } = tidy(shown != null ? { text: offerless.text, widgets: liveWidgets }
-    : ((x) => ({ ...x, text: links(heldOnly(x.text, retrieved), retrieved) }))(expandTemplates(markQuotes(offerless.text, retrieved).text, { found, works, books: bookCards, shown: shownCards(), carded })));   // quoted words styled apart (Chad 11-04)
+    : ((x) => ({ ...x, text: links(heldOnly(x.text, retrieved), retrieved) }))(expandTemplates(markQuotes(offerless.text, retrieved).text, { found, works, books: bookCards, shown: shownCards(), carded, subject: subj })));   // quoted words styled apart (Chad 11-04)
   const citations = [...[...works.values()].map((w) => ({ title: w.title, author: w.author, url: w.url, religion: w.religion, document_id: w.id, paragraph_index: null, text: '' })),
     ...retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url, religion: q.religion, document_id: q.doc_id, paragraph_index: q.paragraph_index ?? null, text: String(q.text).slice(0, 300) }))]
     .filter((c) => c.url && reply.includes(c.url));

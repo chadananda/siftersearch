@@ -5,16 +5,29 @@ import * as quote from './quote.js';
 import * as book from './book.js';
 import * as scene from './scene.js';
 import { widgetMarker } from './segments.js';
-import { imagesForPassages, cardImage, imageHtml, imageMarkdown } from '../../illustrations.js';
+import { imagesForPassages, cardImage, imageHtml, imageMarkdown, fold, PLACES } from '../../illustrations.js';
 
 export const MODES = ['chat', 'embed', 'email', 'print'];
 // a passage card of an illustrated book (Dawn-Breakers, Chad 11-14) carries at most ONE plate, chosen by code from the passage's own
-// doc, paragraph and words (illustrations.js imagesFor) — never by the model; rendered inside the card, linked to the larger image
+// doc, paragraph and words (illustrations.js imagesFor) — never by the model; rendered inside the card, linked to the larger image.
+// A card from another work (A Traveller's Narrative on the martyrdom, live 11-14: no plate) borrows the plate a Dawn-Breakers passage
+// of this turn drew, only when the card's own words name both a person and a place the plate's caption names — the same event.
+const sameEvent = (img, words) => {
+  const hay = ` ${fold(words)} `, named = (k) => hay.includes(` ${k} `);
+  return img.people.some((p) => p.keys?.some(named)) && img.places.some((pl) => PLACES.find((x) => x.name === pl)?.keys.some(named));
+};
 const pictured = (w) => ({ ...w,
   fromRefs: (refs, ctx, strings) => {
     const d = w.fromRefs(refs, ctx, strings);
-    const img = d && cardImage(imagesForPassages(refs.map((r) => ctx?.found?.get(r)).filter(Boolean), { max: 1 })[0]);
-    return d && img ? { ...d, image: img } : d;
+    if (!d) return d;
+    const own = refs.map((r) => ctx?.found?.get(r)).filter(Boolean), subject = ctx?.subject || '';
+    let img = imagesForPassages(own, { max: 1, subject })[0];
+    if (!img && ctx?.found) {
+      const words = own.map((p) => p.text || '').join(' ');
+      img = imagesForPassages([...ctx.found.values()].filter((p) => !own.includes(p)), { max: 3 }).find((x) => sameEvent(x, words));
+    }
+    const card = cardImage(img);
+    return card ? { ...d, image: card } : d;
   },
   toMarkdown: (d) => [w.toMarkdown(d), imageMarkdown(d.image)].filter(Boolean).join('\n\n'),
   toHtml: (d, opts = {}) => { const h = w.toHtml(d, opts), img = imageHtml(d.image, opts); return img ? h.replace(/(<\/(?:figure|section)>)$/, `${img}$1`) : h; },

@@ -1,0 +1,35 @@
+{
+ "note": "Live SSE 11-14 (a7db067f3): \"Who was Muḥammad Sháh?\" and \"How was the Báb martyred?\" — the real card passages",
+ "shah": {
+  "question": "Who was Muḥammad Sháh?",
+  "scene": {
+   "title": "The Sháh sends an investigator",
+   "line": "c. 1844–45: he wants to know the truth about the Báb"
+  },
+  "passage": {
+   "document_id": 21308,
+   "paragraph_index": 349,
+   "text": "Muḥammad S̱háh himself was moved to ascertain the veracity of these reports and to enquire into their nature. He delegated Siyyid Yaḥyáy-i-Dárábí, the most learned, the most eloquent, and the most influential of his subjects, to interview the Báb and to report to him the results of his investigations. The S̱háh had implicit confidence in his impartiality, in his competence and profound spiritual insight. He occupied a position of such pre-eminence among the leading figures in Persia that at whatever meeting he happened to be present, no matter how great the number of the ecclesiastical leaders who attended it, he was invariably its chief speaker. None would dare to assert his views in his presence. They all reverently observed silence before him; all testified to his sagacity, his unsurpassed knowledge and mature wisdom."
+  }
+ },
+ "bab": {
+  "question": "How was the Báb martyred?",
+  "dawnBreakers": {
+   "document_id": 21308,
+   "paragraph_index": 1145,
+   "text": "Sám Ḵhán ordered his men to drive a nail into the pillar that lay between the door of the room that Siyyid Ḥusayn occupied and the entrance to the adjoining one, and to make fast two ropes to that nail, from which the Báb and His companion were to be separately suspended.[^528] Mírzá Muḥammad-‘Alí "
+  },
+  "travellersNarrative": {
+   "document_id": 20899,
+   "paragraph_index": 57,
+   "text": "Next day the chief of the farrás̱hes delivered over the Báb and a young man named Áqá Muḥammad-‘Alí who was of a noble family of Tabríz to Sám Ḵhán, colonel of the Christian regiment of Urúmíyyih, at the sentences of the learned divine Mullá Muḥammad of Mámaqán, of the second ecclesiastical authority Mullá Mírzá Báqir, and of the third ecclesiastical authority Mullá Murtaḍá-Qulí and others. An iron nail was hammered into the middle of the staircase of the very cell wherein they were imprisoned, and two ropes were hung down. By one rope the Báb was suspended and by the other rope Áqá Muḥammad-‘Alí, both being firmly bound in such wise that the head of that young man was on the Báb’s breast. The surrounding housetops billowed with teeming crowds. A regiment of soldiers ranged itself in three files. The first file fired; then the second file, and then the third file discharged volleys. From the fire of these volleys a mighty smoke was produced. When the smoke cleared away they saw that young man standing and the Báb seated by the side of His amanuensis Áqá Siyyid Ḥusayn in the very cell from the staircase of which they had suspended them. To neither one of them had the slightest injury resulted.",
+   "title": "A Traveler’s Narrative"
+  },
+  "godPassesBy": {
+   "document_id": 21310,
+   "paragraph_index": 126,
+   "text": "The Báb had vanished from their sight! Only his companion remained, alive and unscathed, standing beside the wall on which they had been suspended. The ropes by which they had been hung alone were severed. “The Siyyid-i-Báb has gone from our sight!” cried out the bewildered spectators. A frenzied search immediately ensued. He was found, unhurt and unruffled, in the very room He had occupied the night before, engaged in completing His interrupted conversation with His amanuensis. “_I have finished My conversation with Siyyid_ _Ḥusayn”_ were the words with which the Prisoner, so providentially preserved, greeted the appearance of the farrás̱h\\-bás̱hí, “Now you may proceed to fulfill your intention.” Recalling the bold assertion his Prisoner had previously made, and shaken by so stunning a revelation, the farrás̱h\\-bás̱hí quitted instantly the scene, and resigned his post.",
+   "title": "God Passes By"
+  }
+ }
+}

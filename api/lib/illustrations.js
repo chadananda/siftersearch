@@ -33,41 +33,42 @@ export const allImages = () => IMAGES;
 /**
  * 0–max pictures for a passage or a person: `{ doc, para, text }` (a passage), `{ person }` (a person id: their portrait plate first,
  * then the plates showing them), `{ place }` (a place name). Scored only on what the index records from captions:
- * the plate facing the paragraph, a person/place named both by the caption and the passage, nearness in the same chapter.
- * A passage of a doc with no plates, or a chapter with nothing that fits, → [].
+ * in its chapter, the plate facing the paragraph or one whose caption names a person/place the passage names; else a portrait
+ * of a person the passage (then `subject`, the question's subject) names. Nearness alone never picks a plate. Nothing fits → [].
  */
-export function imagesFor({ doc = null, para = null, person = null, place = null, text = '' } = {}, { max = 2 } = {}) {
-  if (person != null) {
-    const pid = Number(person);
-    return IMAGES.filter((x) => x.people.some((p) => p.id === pid)).sort((a, b) => (b.kind === 'portrait') - (a.kind === 'portrait') || a.people.length - b.people.length).slice(0, max);
-  }
+export function imagesFor({ doc = null, para = null, person = null, place = null, text = '', subject = '' } = {}, { max = 2 } = {}) {
+  if (person != null) { const pid = Number(person);
+    return IMAGES.filter((x) => x.people.some((p) => p.id === pid)).sort((a, b) => (b.kind === 'portrait') - (a.kind === 'portrait') || a.people.length - b.people.length).slice(0, max); }
   if (place && !doc) { const k = fold(place); return IMAGES.filter((x) => x.places.some((p) => fold(p) === k)).slice(0, max); }
   if (doc == null || !illustrated(doc)) return [];
   const chapter = chapterOf(doc, para);
   if (chapter == null) return [];
   const main = !!INDEX.docs?.[doc], hay = fold(text);
   const placesIn = new Set(PLACES.filter((p) => p.keys.some((k) => has(hay, k))).map((p) => p.name));
-  const scored = IMAGES.filter((x) => x.chapter === chapter).map((x) => {
+  // 1-2. a plate of this chapter that faces the paragraph, or whose caption names a person/place the passage names; nearness only breaks ties
+  const fit = IMAGES.filter((x) => x.chapter === chapter).map((x) => {
     let s = 0;
     if (main && para != null && x.para === para) s += 6;
     for (const p of x.people) if (p.keys?.some((k) => has(hay, k))) s += 4;
     for (const p of x.places) if (placesIn.has(p)) s += 3;
-    const near = main && para != null && x.para != null ? Math.abs(x.para - para) : null;
-    if (near != null && near <= 3) s += 2;
-    return { x, s, near: near ?? 1e9 };
-  });
-  const fit = scored.filter((y) => y.s > 0).sort((a, b) => b.s - a.s || a.near - b.near).map((y) => y.x);
+    return { x, s, near: main && para != null && x.para != null ? Math.abs(x.para - para) : 1e9 };
+  }).filter((y) => y.s > 0).sort((a, b) => b.s - a.s || a.near - b.near).map((y) => y.x);
   if (fit.length) return fit.slice(0, max);
-  // nothing named in the passage: one plate of the same chapter, the nearest
-  const near = scored.sort((a, b) => a.near - b.near)[0]?.x;
-  return near ? [near] : [];
+  // 3. a portrait of a person the passage names (first named first), else of the question's subject. Never a bare same-chapter plate:
+  // no picture is better than a wrong one (live 11-14: the Vaḥíd passage drew "the House of Quddús' Father").
+  for (const words of [hay, fold(subject)]) {
+    if (!words) continue;
+    const at = (x) => Math.min(...x.people.flatMap((p) => (p.keys || []).map((k) => ` ${words} `.indexOf(` ${k} `)).filter((i) => i >= 0)), 1e9);
+    const shown = IMAGES.filter((x) => x.kind === 'portrait' && !x.plate_of).map((x) => ({ x, i: at(x) })).filter((y) => y.i < 1e9);
+    if (shown.length) return shown.sort((a, b) => a.i - b.i || a.x.people.length - b.x.people.length).map((y) => y.x).slice(0, 1);
+  }
+  return [];
 }
 
-/** the 0–max pictures for a set of passages (a research packet): each passage's picks, best first, no repeats */
-export function imagesForPassages(passages = [], { max = 2 } = {}) {
+export function imagesForPassages(passages = [], { max = 2, subject = '' } = {}) {
   const out = [];
   for (const p of passages || []) {
-    for (const x of imagesFor({ doc: Number(p?.document_id ?? p?.doc_id) || null, para: p?.paragraph_index ?? null, text: p?.text || '' }, { max }))
+    for (const x of imagesFor({ doc: Number(p?.document_id ?? p?.doc_id) || null, para: p?.paragraph_index ?? null, text: p?.text || '', subject }, { max }))
       if (!out.includes(x)) out.push(x);
     if (out.length >= max) break;
   }

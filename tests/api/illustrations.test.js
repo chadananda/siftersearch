@@ -142,3 +142,31 @@ describe('letters: a fixed-size thumbnail URL', () => {
     expect(sizeImgs('<p>none</p>')).toBe('<p>none</p>');
   });
 });
+
+// live 11-14 (a7db067f3), the real card passages: a wrong plate is worse than none
+describe('live: the right plate or none', async () => {
+  const live = (await import('./fixtures/illustrations-live-20261114.json', { with: { type: 'json' } })).default;
+  const card = (p, title = 'The Dawn-Breakers') => ({ title, author: 'X', source_url: `https://example.org/${p.document_id}#${p.paragraph_index}`, ...p });
+  const shah = { ...live.shah, passage: card(live.shah.passage) };
+  const bab = { dawnBreakers: card(live.bab.dawnBreakers), travellersNarrative: card(live.bab.travellersNarrative), godPassesBy: card(live.bab.godPassesBy) };
+  it('"Who was Muḥammad Sháh?": the Vaḥíd passage gets the Sháh\'s portrait, never an unrelated same-chapter plate', () => {
+    const d = WIDGETS.scene.fromRefs(['P1'], { found: new Map([['P1', shah.passage]]), subject: shah.question }, [shah.scene.title, shah.scene.line]);
+    expect(d.image.id).toBe('db-229-muhammad-shah');
+    expect(imagesFor({ doc: DB, para: 349, text: shah.passage.text }).map((x) => x.id)).not.toContain('db-182-house-quddus');
+  });
+  it('nearness or the chapter alone never picks a plate; the subject\'s portrait does', () => {
+    const vahid = 'He delegated Siyyid Yaḥyáy-i-Dárábí, the most learned, the most eloquent, and the most influential of his subjects, to interview the Báb.';
+    expect(imagesFor({ doc: DB, para: 349, text: vahid })).toEqual([]);
+    expect(imagesFor({ doc: DB, para: 366, text: vahid })).toEqual([]);   // one paragraph from the House of Quddús plate
+    expect(imagesFor({ doc: DB, para: 349, text: vahid, subject: shah.question }).map((x) => x.id)).toEqual(['db-229-muhammad-shah']);
+  });
+  it('"How was the Báb martyred?": the Dawn-Breakers passage draws the Barrack-Square', () => {
+    expect(imagesForPassages([bab.dawnBreakers], { max: 1 })[0].id).toBe('db-511-barrack-square-tabriz');
+  });
+  it('a card from another work on the same event borrows the turn\'s plate; one that names no place of it does not', () => {
+    const found = new Map([['P1', bab.dawnBreakers], ['P2', bab.travellersNarrative], ['P3', bab.godPassesBy]]);
+    expect(WIDGETS.quote.fromRefs(['P2'], { found }).image.id).toBe('db-511-barrack-square-tabriz');
+    expect(WIDGETS.quote.fromRefs(['P3'], { found }).image).toBeUndefined();   // names the Báb, not Tabríz
+    expect(WIDGETS.quote.fromRefs(['P2'], { found: new Map([['P2', bab.travellersNarrative]]) }).image).toBeUndefined();   // no plate in the turn
+  });
+});
