@@ -4,6 +4,7 @@
 import { createHash } from 'node:crypto';
 import { MODEL_ROLES, mediaLlmBatching } from '../model-roles.js';
 import { QUIET_REPAIR_VERSION } from './quiet-record.js';
+import { CONTENT_V } from './content-map.js';
 
 /** The job type = the bundle a stage is delivered in (planning/stage-queue-20261031.md §2; the audio bundles are scripts/media/worker/job-types.json). */
 export const JOB_TYPES = ['intake', 'cpu-prep', 'gpu', 'cpu-finish', 'text', 'publish'];
@@ -66,9 +67,12 @@ export const STAGE_DEFS = [
   { name: 'transcribe', class: 'gpu', job: 'gpu', tool: 'asr', settings: {}, blocksAir: true },
   { name: 'preview', class: 'llm', job: 'text', tool: 'preview', settings: {}, required: false },
   { name: 'diarize', class: 'gpu', job: 'gpu', tool: 'diarize', settings: {}, blocksAir: true },
-  { name: 'trim', class: 'cpu', job: 'cpu-finish', after: ['quiet'], tool: 'trim', settings: {}, required: false },
   // guard 4 (11-03): the edit guard judges only changed words; English words heard right stay (vocab.js changeRefused)
   { name: 'correct', class: 'llm', job: 'text', tool: llm('media-correct').tool, settings: { ...llm('media-correct').settings, guard: 4 }, blocksAir: true },
+  // content map (Chad 11-14, rules §8): which stretches are the talk; its cuts feed trim (web copies) and the text the publish stages read. Not required, never blocks air: a talk without it stays on air until the backfill (ops media rerun content) reaches it
+  { name: 'content', class: 'llm', job: 'text', after: ['correct', 'diarize'], ...llm('media-content'), settings: { ...llm('media-content').settings, v: CONTENT_V }, required: false,
+    also: ['trim', 'headings', 'quotes', 'render', 'ingest'] },   // also = redone WITH it (a new map re-cuts the web copies and the text the publish stages read) without being made from it: a never-ticked content never un-ticks them
+  { name: 'trim', class: 'cpu', job: 'cpu-finish', after: ['quiet'], tool: 'trim', settings: {}, required: false },
   { name: 'clean', class: 'llm', job: 'text', after: ['correct'], get tool() { return `llm:${cleanRole()}`; }, get settings() { return { model: MODEL_ROLES[cleanRole()]?.model ?? null }; }, required: false },
   { name: 'describe', class: 'llm', job: 'text', ...llm('media-meta'), required: false },
   { name: 'thumb', class: 'llm', job: 'publish', tool: 'thumb', settings: {}, required: false },
@@ -104,6 +108,8 @@ export function buildRegistry(defs = STAGE_DEFS) {
   const STAGES = defs.map((d) => d.name);
   const DEPENDENTS = {};
   for (const s of STAGES) for (const p of BY[s].after) (DEPENDENTS[p] ||= []).push(s);
+  // `also`: stages redone with this one although not made from it (re-running them is a consequence, their own ticks never wait on it)
+  for (const s of STAGES) for (const o of BY[s].also || []) { if (!order.has(o) || order.get(o) < order.get(s)) throw Error(`stage ${s}: also ${o}, which is not a later stage`); if (!(DEPENDENTS[s] ||= []).includes(o)) DEPENDENTS[s].push(o); }
   const TYPE_STAGES = Object.fromEntries(JOB_TYPES.map((t) => [t, STAGES.filter((s) => BY[s].job === t)]));
   // a bundle runs on ONE kind of host: its class is its stages' class, and it never mixes them
   const JOB_CLASS = {};

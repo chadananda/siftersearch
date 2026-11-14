@@ -69,3 +69,15 @@ stages, and the talk stays on air until it is complete again. Design: `planning/
 - Dependencies are explicit (`DEPENDENTS`): redoing a stage un-ticks what was made from its output (quiet -> web, trim, update; remaster -> verify, realign, quiet -> ...), nothing earlier and nothing unrelated. A talk missing only a text stage never touches audio.
 - Heavy stages run on a home host or worker, never tower (the `run()` / `WorkerWait` gate).
 - The checklist is the stage registry (`STAGE_DEFS` in `api/lib/media/stages.js`). That file covers how to add a stage, resource classes, worker profiles, and re-running one stage across the library (`ops.mjs media rerun`). The doc is `docs/architecture/media-stages.md`.
+
+## 8. Listening copies are the content only: filler is cut, static never plays (Chad 11-14)
+> "Mark where actual content lives and cut out all the filler — songs, prayers, introductions, gaps. We want to make radio programs
+> out of the content and we need to cut out the rest. And we definitely cannot have loud static in the middle."
+
+- Every talk gets a content map (`meta.trim.cuts`): spans of the recording that are not the talk itself (opening/closing songs and music,
+  devotional prayers and readings, MC remarks and logistics, speaker introductions, thanks and announcements, long dead gaps). Each cut
+  records its kind and reason, so a kind can be restored later by re-running the stage.
+- The web copies are cut to the kept spans of the ONE remaster, with short fades at each join. This is not a splice in the sense of §1:
+  no original audio enters the copy; spans of the same remaster are removed. The full remaster file on disk is never touched.
+- Stored times (words, paragraphs, moments, links) stay in recording time; `trim.js` `webTime()/originalTime()` convert with the cuts.
+- Static/garbled music inside a kept span is silenced by the quiet pass (non-speech judged from the ORIGINAL, never from Whisper words).

@@ -11,15 +11,19 @@
   import { onMount } from 'svelte';
   import { paragraphSegments, speakerLabels, transcriptClickWord, segmentText, segmentWordAt } from '../../lib/media.js';
   import { formatTime } from '../../../api/lib/media/range.js';
+  import { cutDividers } from '../../../api/lib/media/content-map.js';
   import ShareRow from './ShareRow.svelte';
   import RecordLabel from './listening/RecordLabel.svelte';
   import { momentPath, momentShareText, SITE } from '../../lib/share.js';
 
   let { paragraphs = [], headings = [], quotes = [], links = [], crossRefs = [], speakers = {}, range = null, canPlay = false,
     playingPara = -1, playing = false, onword, onpara, root = $bindable(), live = null, onnear = null,
-    moments = [], slug = '', speaker = '', portrait = null, year = null, onmoment = null, momentNow = null, skips = [] } = $props();
+    moments = [], slug = '', speaker = '', portrait = null, year = null, onmoment = null, momentNow = null, skips = [], cuts = [], duration = 0 } = $props();
   // a dead gap (a tape flip, ≥ 20 s with no speech) before a paragraph: a quiet divider (the player skips the gap)
   const gapBefore = $derived(new Map(paragraphs.map((p, i) => [p.n, i ? (skips || []).find((g) => g.from >= paragraphs[i - 1].t1 - 2 && g.to <= p.t0 + 2) : null]).filter(([, g]) => g)));
+
+  // one quiet divider per cut (rules §8: songs, prayers, introductions … are not in this copy), before the first paragraph that follows it
+  const cutsBefore = $derived.by(() => { const m = new Map(); for (const d of cutDividers(paragraphs, cuts, duration)) { const k = d.before_n; if (!m.has(k)) m.set(k, []); m.get(k).push(d); } return m; });
 
   const offsets = $derived(paragraphs.reduce((acc, p, i) => { acc.push(i ? acc[i - 1] + (paragraphs[i - 1].words?.length || 0) : 0); return acc; }, []));
   const labels = $derived(speakerLabels(paragraphs, speakers));
@@ -77,6 +81,9 @@
 <div bind:this={root} class="transcript" class:cursor-text={!canPlay} onclick={click}>
   {#each paragraphs as p, pi (p.n)}
     {@const segs = paragraphSegments(p.words.length, spansBy.get(p.n) || [])}
+    {#each cutsBefore.get(p.n) || [] as d}
+      <p class="tape-gap" role="separator" aria-label={d.label}>— {d.label} —</p>
+    {/each}
     {#if gapBefore.has(p.n)}
       {@const g = gapBefore.get(p.n)}
       <p class="tape-gap" role="separator" aria-label={`Silence on the recording, ${Math.round(g.to - g.from)} seconds, skipped`}>— {Math.round((g.to - g.from) / 60) >= 1 ? `${Math.round((g.to - g.from) / 60)} min` : `${Math.round(g.to - g.from)} s`} of silence on the tape · skipped —</p>
@@ -173,6 +180,9 @@
         </aside>
       {/each}
     </div>
+  {/each}
+  {#each cutsBefore.get(null) || [] as d}
+    <p class="tape-gap" role="separator" aria-label={d.label}>— {d.label} —</p>
   {/each}
 </div>
 

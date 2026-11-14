@@ -110,6 +110,8 @@ export const MODEL_ROLES = {
     why: 'extended portrait masters (Chad 10-22: "fill in with gemini once"): fills only the margins of a 9:16 canvas around a speaker portrait; the original pixels are pasted back; ~$0.04 and ~12 s per person, once' },
   'media-headings': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-22', batch: true, needs: ['json', 'long-input'],
     why: 'topic subheaders (Chad 10-22): a statement or question at each subject shift; a guard keeps only well-spaced ones that share words with their section' },
+  'media-content': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-14', batch: true, needs: ['json', 'long-input', 'judgement'],
+    why: 'content map (Chad 11-14): marks which stretches of a recording are the talk itself and which are songs, prayers, readings, MC, introductions, thanks; deterministic code turns the marks into cuts (content-map.js)' },
   'media-people': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-22', needs: ['json', 'persian-arabic-names', 'judgement'],
     why: 'biography links (Chad 10-22): which historical person each name or title in a talk refers to, chosen from the identity layer\'s candidates; only high-confidence picks with a biography page are linked' },
   'media-quotes': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-21', batch: true, needs: ['json', 'long-input'],

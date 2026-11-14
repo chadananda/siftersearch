@@ -75,3 +75,51 @@ describe('waveform', () => {
     expect(p.peaks[0]).toBeCloseTo(0.5);
   });
 });
+
+// CONTENT CUTS (Chad 11-14, rules §8): meta.trim.cuts removed from the web copy; times convert both ways; the filter keeps exactly the kept spans.
+import { cutSpans, cutFilter, keptSeconds } from '../../api/lib/media/trim.js';
+describe('cuts', () => {
+  const trim = { start_s: 10, end_s: 100, cuts: [{ from: 30, to: 40 }, { from: 39, to: 50 }, { from: 90, to: 120 }] };
+  it('cutSpans merges overlaps and clamps to the window', () => expect(cutSpans(trim)).toEqual([{ from: 30, to: 50 }, { from: 90, to: 100 }]));
+  it('webTime: before, inside (the cut\'s web position) and after a cut', () => {
+    expect(webTime(20, trim)).toBe(10);
+    expect(webTime(35, trim)).toBe(20);
+    expect(webTime(50, trim)).toBe(20);
+    expect(webTime(60, trim)).toBe(30);
+  });
+  it('originalTime inverts webTime for every kept time', () => { for (const t of [0, 5, 19.9, 20, 45, 71]) expect(webTime(originalTime(t, trim), trim)).toBeCloseTo(t, 6); });
+  it('no cuts: the old behaviour', () => { expect(webTime(15, { start_s: 10 })).toBe(5); expect(originalTime(5, { start_s: 10 })).toBe(15); expect(cutFilter({ start_s: 10 }, 100)).toBe(''); });
+  it('keptSeconds = window − cuts; the filter keeps the spans relative to the window start', () => {
+    expect(keptSeconds(trim, 200)).toBe(90 - 30);
+    const f = cutFilter(trim, 200);
+    expect(f).toContain("between(t,0.000,20.000)");
+    expect(f).toContain("between(t,40.000,80.000)");
+    expect(f).toMatch(/aselect='[^']+',asetpts=N\/SR\/TB$/);
+  });
+  it('trimArgs puts the cuts before the fades and the final fade at the kept length', () => {
+    const { pre, af } = trimArgs(trim, 200);
+    expect(pre).toEqual(['-ss', '10.00', '-t', '90.00']);
+    expect(af.indexOf('aselect')).toBeLessThan(af.indexOf('afade=t=in'));
+    expect(af).toContain('afade=t=out:st=59.50');
+  });
+});
+
+describe.skipIf(!ff)('the cut itself, with content cuts', () => {
+  it('ffmpeg output is exactly the kept length, joins fade (no click), and the window is honoured', () => {
+    const d = mkdtempSync(join(tmpdir(), 'trimcut-'));
+    spawnSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'sine=f=440:d=60:sample_rate=16000', '-af', 'volume=0.9', '-c:a', 'pcm_s16le', join(d, 'in.wav')]);
+    const plan = { start_s: 5, end_s: 55, cuts: [{ from: 15, to: 25 }, { from: 40, to: 45 }] };
+    const { pre, af } = trimArgs(plan, 60);
+    const r = spawnSync('ffmpeg', ['-v', 'error', '-y', ...pre, '-i', join(d, 'in.wav'), '-af', af, '-f', 's16le', '-ac', '1', join(d, 'out.raw')]);
+    expect(r.status).toBe(0);
+    const b = readFileSync(join(d, 'out.raw')), s = new Int16Array(b.buffer, b.byteOffset, b.length / 2);
+    expect(s.length / 16000).toBeCloseTo(keptSeconds(plan, 60), 0);   // 50 − 15 = 35 s
+    expect(Math.abs(s.length / 16000 - 35)).toBeLessThan(0.1);
+    // lavfi sine is 1/8 full scale: mid-span level = 0.9 * 0.125 * 32767. The ramp is frame-granular: frames at the join are quieter than the span, mid-span is untouched
+    const peakAt = (t, n) => Math.max(...Array.from({ length: n }, (_, i) => Math.abs(s[Math.round(t * 16000) + i])));
+    const mid = peakAt(15, 1600), join1 = peakAt(10 - 0.01, 160);   // the last 10 ms before the first join
+    expect(mid).toBeGreaterThan(3500);
+    expect(join1).toBeLessThan(mid * 0.7);
+    expect(Math.abs(s[0])).toBeLessThan(200);
+  });
+});

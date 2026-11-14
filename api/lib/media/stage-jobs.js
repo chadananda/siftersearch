@@ -5,7 +5,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { REG, fpOf, JOB_TYPES as REG_JOB_TYPES } from './stages.js';
-import { QUIET_REPAIR_VERSION } from './quiet-record.js';
+import { QUIET_MIN_VERSION } from './quiet-record.js';
 import { REBUILT, isDecoded } from '../../../scripts/media/worker/transit.mjs';
 
 export const AUDIO_TYPES = ['cpu-prep', 'gpu', 'cpu-finish'];
@@ -90,7 +90,7 @@ export function validateTyped(type, r, { inputSha, slug, outputs = null } = {}) 
   if (outputs) { const up = new Set(outputs), gone = files.filter((f) => !up.has('item/' + f.path) && !REBUILT.has(f.path)).map((f) => f.path); if (gone.length) why(`listed but not uploaded: ${gone.slice(0, 5).join(', ')}`); }
   const rm = r.meta?.remaster || {};
   if ((rm.swapped || 0) > 0 || (rm.fallback_sent_pct || 0) > 0 || rm.verdict === 'spliced' || r.meta?.qa?.remaster?.verdict === 'spliced') why('original audio spliced into the remaster (never allowed)');
-  if (type === 'cpu-finish' && !AUDIO_TERMINAL.includes(rm.status) && !((r.meta?.remaster?.quiet?.v ?? 0) >= QUIET_REPAIR_VERSION)) why('no quiet v2 pass (a remaster without the careful quiet is not complete)');
+  if (type === 'cpu-finish' && !AUDIO_TERMINAL.includes(rm.status) && !((r.meta?.remaster?.quiet?.v ?? 0) >= QUIET_MIN_VERSION)) why('no quiet v2+ pass (a remaster without the careful quiet is not complete)');
   return r;
 }
 

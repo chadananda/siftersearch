@@ -6,7 +6,7 @@ import { nextJobs, effectiveDone, AUDIO_TYPES, JOB_TYPES, typedShare, typedEligi
 const tick = (list, extra = {}) => Object.fromEntries(list.map((s) => [s, { at: 1, ...extra }]));
 const ALL = tick(STAGES);
 const without = (...drop) => tick(STAGES.filter((s) => !drop.includes(s)));
-const TEXT = ['preview', 'correct', 'clean', 'describe', 'headings', 'quotes', 'links', 'assess'];
+const TEXT = ['preview', 'correct', 'content', 'clean', 'describe', 'headings', 'quotes', 'links', 'assess'];
 const PUBLISH = ['thumb', 'render', 'ingest', 'catalog', 'update'];
 
 describe('nextJobs: which typed job a talk needs next, from its ticked stages', () => {
@@ -63,7 +63,8 @@ describe('nextJobs: which typed job a talk needs next, from its ticked stages', 
   });
   it('no text stage has a dependency edge into audio (text re-runs never touch audio)', () => {
     const reach = (s, seen = new Set()) => { for (const d of DEPENDENTS[s] || []) if (!seen.has(d)) { seen.add(d); reach(d, seen); } return seen; };
-    for (const s of TEXT) for (const d of reach(s)) expect(['remaster', 'verify', 'realign', 'quiet', 'web', 'trim']).not.toContain(d);
+    // EXEMPTION (Chad 11-14, rules §8): content's declared also-edge to trim (a new content map re-cuts the web copies); no other text stage reaches audio
+    for (const s of TEXT) for (const d of reach(s)) if (!(d === 'trim' && (s === 'content' || reach(s).has('content')))) expect(['remaster', 'verify', 'realign', 'quiet', 'web', 'trim']).not.toContain(d);
   });
   it('held for Chad / archived: no audio job (terminal until Chad decides), text still runs', () => {
     for (const status of ['review', 'archived', 'kept', 'deferred']) {

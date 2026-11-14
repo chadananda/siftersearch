@@ -18,7 +18,7 @@ describe('stale = redo', () => {
     const m = JSON.parse(JSON.stringify(v1)); m.remaster = { quiet: { v: 1 } };
     markStale(m, 'remaster', { published: true }, REG);
     expect(m.stages.remaster.at).toBe('x'); expect(m.stages.remaster.stale).toBeTruthy();
-    expect(hasQuiet(m)).toBe(true); expect(QUIET_REPAIR_VERSION).toBe(2);
+    expect(hasQuiet(m)).toBe(true); expect(QUIET_REPAIR_VERSION).toBe(3);
   });
 });
 

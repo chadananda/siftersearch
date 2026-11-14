@@ -21,6 +21,7 @@
   import TalkFeedback from './TalkFeedback.svelte';
   import { CLIP_MAX_MS, clipPath } from '../../../api/lib/media/clip-text.js';
   import { SITE } from '../../lib/share.js';
+  import { webTime, originalTime } from '../../../api/lib/media/trim.js';
   import { eraVar, duration as dur } from '../../lib/media-listing.js';
 
   let { item, initialRange = null, related = [], speakerKey = null, speakersByKey = {} } = $props();
@@ -88,9 +89,11 @@
 
   // the web copy may start later than the recording (silence trimmed, item.audio.offset_s): every time on this page is the
   // recording's own; the ONE conversion is here (now) and at the seek below. A clip carries its own start.
+  // cuts (item.audio.cuts: songs, prayers, MC … removed from the web copy, rules §8): the same trim.js conversions the server uses
   const offset = item.audio?.offset_s || 0;
+  const trim = { start_s: offset, cuts: item.audio?.cuts || [] };
   const skips = item.skips || [];
-  const now = () => (clip ? clip.start : offset) + (audio?.currentTime || 0);
+  const now = () => (clip ? clip.start + (audio?.currentTime || 0) : originalTime(audio?.currentTime || 0, trim));
   const youtubeHref = $derived(youtubeAtTime(ytBase, current));
   const photo = item.thumb?.kind === 'sketch';
   // the header portrait at its size, face-centred by the image service (the biography helper; a tile is used as is)
@@ -150,7 +153,7 @@
   function frame() {
     let t = now();
     // a dead gap (a tape flip) is skipped, never cut: jump to its end
-    if (level === 'full' && skips.length) { const to = skips.find((g) => t >= g.from && t < g.to)?.to; if (to != null) { audio.currentTime = Math.max(0, to - offset); t = to; } }
+    if (level === 'full' && skips.length) { const to = skips.find((g) => t >= g.from && t < g.to)?.to; if (to != null) { audio.currentTime = webTime(to, trim); t = to; } }
     if (Math.abs(t - current) > 0.05) current = t;
     if (limit != null && t >= limit) { audio.pause(); note = 'End of the selected range.'; }
     mark(wordAt(flat.starts, t + 0.02));
@@ -231,7 +234,7 @@
         const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
         const want = ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg;
         if (fresh || !audio.src || audio.src.startsWith('blob:') || loaded !== want || audio.error) { busy = true; try { await loadCopy(want); note = ''; } finally { busy = false; } }
-        await seekAndWait(t - offset);   // recording time → trimmed web copy time; wait for mobile range seek to finish
+        await seekAndWait(webTime(t, trim));   // recording time → trimmed web copy time; wait for mobile range seek to finish
       } else {
         const want = end ?? t + (item.rights.clip_cap || 180);
         if (fresh || !clip || t < clip.start || t >= clip.end - 0.5 || (end != null && end > clip.end + 0.1)) {
@@ -550,7 +553,7 @@
       {/if}
       <MediaTranscript bind:root {paragraphs} {live} onnear={upgrade} headings={item.headings || []} links={item.links || []} quotes={item.quotes || []} crossRefs={item.cross_references || []}
         speakers={item.speakers || {}} {range} {canPlay} {playing} {playingPara} {onword} {onpara}
-        {moments} slug={item.slug} speaker={item.speaker || ''} portrait={photo ? item.thumb.url : null} year={item.year} {onmoment} {momentNow} {skips} />
+        {moments} slug={item.slug} speaker={item.speaker || ''} portrait={photo ? item.thumb.url : null} year={item.year} {onmoment} {momentNow} {skips} cuts={item.cuts || []} {duration} />
     </div>
 
     {#if item.topics?.length || item.quotes?.length || item.cross_references?.length}

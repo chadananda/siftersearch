@@ -235,6 +235,14 @@ Return JSON {"headings": [{"p": paragraph number where the part starts, "text": 
   return Array.isArray(out?.headings) ? out.headings : [];
 }
 
+/** CONTENT MAP (content-map.js): one read of the whole talk → raw JSON {segments:[{from_n,to_n,kind,why}]} (parsed and turned into cuts by content-map.js). */
+export async function contentTalk(paragraphs, hints = {}, { sound = [], ...opts } = {}) {
+  const { contentPrompt } = await import('./content-map.js');
+  let lines = asLines(paragraphs);
+  if (lines.length > 300000) lines = `${lines.slice(0, 150000)}\n…\n${lines.slice(-150000)}`;
+  return (await ask('media-content', contentPrompt(lines, { hints, minutes: Math.round((paragraphs.at(-1)?.t1 || 0) / 60), sound }), { ...opts, max: 8000 })) || {};
+}
+
 /** AUDIENCE + MOMENTS (assess.js): one read of the whole talk with its sections. → raw JSON (validated by assess.js) */
 export async function assessTalk(paragraphs, sections, ctx = {}, opts = {}) {
   const { assessLines, assessPrompt } = await import('./assess.js');

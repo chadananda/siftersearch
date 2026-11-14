@@ -4,12 +4,31 @@
 // moments, links, sections, ?t= links) stays in ORIGINAL time; the one conversion is webTime()/originalTime() at the
 // three places that read a web copy (player, clip cut, short cut). Long inner gaps (a tape flip) are never cut — the
 // player skips them and the transcript shows a divider. Pure.
+// CONTENT CUTS (Chad 11-14, media-remaster-rules §8): meta.trim.cuts = spans of the recording that are not the talk (songs, prayers, MC, thanks, dead gaps)
+// are removed from the web copies (aselect, fades at every join); webTime()/originalTime() convert with them. No original audio enters the copy.
 
 export const LEAD_PAD_S = 1.0, TAIL_PAD_S = 2.0, FADE_IN_S = 0.3, FADE_OUT_S = 0.5, MIN_TRIM_S = 5, GAP_MIN_S = 20;
 
-/** Original (master) time → the web copy's time, and back. trim: meta.trim (or null). */
-export const webTime = (t, trim) => Math.max(0, Number(t) - (trim?.start_s || 0));
-export const originalTime = (t, trim) => Number(t) + (trim?.start_s || 0);
+/** The cuts of a trim as sorted, merged, clamped [{from, to}] in recording time (inside the start_s..end_s window; zero-length dropped). Pure. */
+export function cutSpans(trim, duration = null) {
+  const lo = trim?.start_s || 0, hi = trim?.end_s ?? (duration != null ? Number(duration) : Infinity);
+  const cs = (trim?.cuts || []).map((c) => ({ from: Math.max(lo, Number(c.from)), to: Math.min(hi, Number(c.to)) })).filter((c) => c.to - c.from > 0.01).sort((a, b) => a.from - b.from);
+  const out = [];
+  for (const c of cs) { if (out.length && c.from <= out[out.length - 1].to + 1e-6) out[out.length - 1].to = Math.max(out[out.length - 1].to, c.to); else out.push({ ...c }); }
+  return out;
+}
+
+/** Original (master) time → the web copy's time, and back. trim: meta.trim (or null). A time inside a cut sits at the cut's web position. */
+export function webTime(t, trim) {
+  t = Number(t); let w = Math.max(0, t - (trim?.start_s || 0));
+  for (const c of cutSpans(trim)) { if (t <= c.from) break; w -= Math.min(t, c.to) - c.from; }
+  return Math.max(0, w);
+}
+export function originalTime(t, trim) {
+  let o = Number(t) + (trim?.start_s || 0);
+  for (const c of cutSpans(trim)) if (o >= c.from - 1e-9) o += c.to - c.from;
+  return o;
+}
 
 /** Where speech energy is: indexes of peaks (0–1, `pps` per second) above a level set from the loud part of the talk
  *  (25 % of its 95th percentile, at least 0.05) — tape hiss sits far below that. → { first, last } seconds, or null. */
@@ -57,11 +76,33 @@ export function trimPlan({ words = [], peaks = [], pps = 20, duration = null } =
   return { start_s, end_s, gaps, lead_s: Math.round(ws[0].s * 10) / 10, tail_s: Math.round((dur - ws[ws.length - 1].e) * 10) / 10 };
 }
 
-/** The ffmpeg arguments that cut a web copy to the plan, with the fades (input options before -i, filter after). */
+/** Seconds of the web copy once the window and the cuts are applied (duration = the recording's). Pure. */
+export function keptSeconds(plan, duration) {
+  const lo = plan?.start_s || 0, hi = plan?.end_s ?? duration;
+  return Math.max(0.5, hi - lo - cutSpans(plan, duration).reduce((a, c) => a + (Math.min(c.to, hi) - Math.max(c.from, lo)), 0));
+}
+
+/** The -af that removes the cuts from the windowed stream (times relative to the window start, which -ss resets to 0): a per-frame volume ramp
+ *  (CUT_FADE_IN_S in / CUT_FADE_OUT_S out at every kept span edge) → aselect of the kept spans → asetpts. '' when there are no cuts. Pure. */
+export const CUT_FADE_IN_S = 0.03, CUT_FADE_OUT_S = 0.05;
+export function cutFilter(plan, duration) {
+  const cuts = cutSpans(plan, duration);
+  if (!cuts.length) return '';
+  const lo = plan.start_s || 0, hi = plan.end_s ?? duration, kept = [];
+  let t = lo;
+  for (const c of cuts) { if (c.from > t + 1e-6) kept.push([t, c.from]); t = c.to; }
+  if (hi > t + 1e-6) kept.push([t, hi]);
+  const r = (x) => (x - lo).toFixed(3);
+  const gain = kept.map(([a, b]) => `between(t,${r(a)},${r(b)})*clip(min((t-${r(a)})/${CUT_FADE_IN_S},(${r(b)}-t)/${CUT_FADE_OUT_S}),0,1)`).join('+');
+  // asetnsamples first: the ramp and the select act per frame, and 256-sample frames (about 5 ms) make the 30/50 ms fades and the join positions real
+  return `asetnsamples=n=256:p=0,volume='${gain}':eval=frame,aselect='${kept.map(([a, b]) => `between(t,${r(a)},${r(b)})`).join('+')}',asetpts=N/SR/TB`;
+}
+
+/** The ffmpeg arguments that cut a web copy to the plan, with the fades (input options before -i, filter after). The window is -ss/-t; the cuts, if any, are in the filter. */
 export function trimArgs(plan, duration) {
   const start = plan.start_s || 0, end = plan.end_s ?? duration;
-  const len = Math.max(0.5, end - start);
-  const af = `afade=t=in:st=0:d=${FADE_IN_S},afade=t=out:st=${Math.max(0, len - FADE_OUT_S).toFixed(2)}:d=${FADE_OUT_S}`;
+  const len = Math.max(0.5, end - start), cut = cutFilter(plan, duration), keptLen = cut ? keptSeconds(plan, duration) : len;
+  const af = [cut, `afade=t=in:st=0:d=${FADE_IN_S}`, `afade=t=out:st=${Math.max(0, keptLen - FADE_OUT_S).toFixed(2)}:d=${FADE_OUT_S}`].filter(Boolean).join(',');
   return { pre: ['-ss', start.toFixed(2), '-t', len.toFixed(2)], af };
 }
 

@@ -6,7 +6,7 @@ import {audioVersion, audioAlignment, listeningVariant, markAudioPending, timing
 // a crash or a drain. Originals are hard-linked read-only and never modified. Deps injected for tests (see `defaults`).
 import { qualityOf, remasterProven } from './remaster-quality.js';
 const towerStrict = () => process.env.MEDIA_REMASTER_STRICT === '1';   // STRICT: tower never reprocesses audio — set once the pre-worker backlog has drained
-import { quietRecord, hasQuiet, QUIET_REPAIR_VERSION, QUIET_AIR_VERSION } from './quiet-record.js';
+import { quietRecord, hasQuiet, QUIET_MIN_VERSION, QUIET_AIR_VERSION } from './quiet-record.js';
 import { podPost, podComplete, podVerdict, take as podTake, forget as podForget, podDir, sha256File } from './pod-post.js';
 import { late } from './late.js';
 import { slotWait, WorkerWait } from './tools.js';
@@ -27,6 +27,7 @@ import { revertInsertions } from './faithfulness.js';
 import { coverageCheck, coverageGaps, onWorker, silentIn } from './coverage.js';
 import { repairParagraphLoops, publishProblems } from './loops.js';
 import { fixMojibake } from './text-repair.js';
+import { contentParagraphs, cutsOfMeta } from './content-map.js';
 import { buildVocab, CORE_TERMS, promptTerms } from './vocab.js';
 import { transcriptMarkdown, pageHtml } from './render.js';
 import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights.js';
@@ -633,7 +634,7 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (stage === 'quiet') {
       const r = meta.remaster || {};
       if (r.status !== 'done' || meta.enhancement?.listening !== 'unipase' || Number(r.swapped) > 0 || Number(r.fallback_sent_pct) > 0) rec.skipped = 'no published pure remaster';   // held / spliced: re-made first, the new result brings its own quiet
-      else if (r.quiet?.v >= QUIET_REPAIR_VERSION && existsSync(join(dir, 'enhanced', 'quiet.json'))) Object.assign(rec, { tool: 'quiet.py', settings: { v: r.quiet.v }, v: r.quiet.v, silenced_s: r.quiet.quiet_s, loud_stretches: r.quiet.loud_stretches, vad_kept_s: r.quiet.vad_kept_s, asr_kept_s: r.quiet.asr_kept_s, from: 'worker result' });
+      else if (r.quiet?.v >= QUIET_MIN_VERSION && existsSync(join(dir, 'enhanced', 'quiet.json'))) Object.assign(rec, { tool: 'quiet.py', settings: { v: r.quiet.v }, v: r.quiet.v, silenced_s: r.quiet.quiet_s, loud_stretches: r.quiet.loud_stretches, vad_kept_s: r.quiet.vad_kept_s, asr_kept_s: r.quiet.asr_kept_s, from: 'worker result' });
       else throw new WorkerWait('quiet (decided in the gpu job: the remaster is redone for quiet v2)');
     }
 
@@ -878,7 +879,18 @@ export async function runItem(item, opts = {}, deps = {}) {
       if (meta.asr) meta.asr.speakers = rec.speakers;
     }
 
-    if (stage === 'trim' && meta.worker_trim) {
+    if (stage === 'content') {
+      // CONTENT MAP (rules §8): the model marks the talk vs songs/prayers/MC/thanks; content-map.js turns it into word-snapped cuts that trim applies to the web copies
+      const work = await readJson(join(dir, 'transcript.work.json'));
+      const C = await import('./content-map.js');
+      const sound = (await readJson(join(dir, 'enhanced', 'sound.json'), { music: [] }))?.music || [];
+      const raw = llm.contentTalk ? await llm.contentTalk(work.paragraphs, { title: meta.title, speaker: meta.speaker, event: meta.event, year: meta.year, place: meta.place }, { spend, sound }) : {};
+      meta.content = C.contentRecord({ raw, paragraphs: work.paragraphs, duration: meta.duration_s, at: d.now() });
+      if (!raw?.segments?.length) meta.content.review ||= 'no segments from the model';
+      rec.cuts = meta.content.cuts.length; rec.kept_s = meta.content.kept_s; if (meta.content.review) rec.review = meta.content.review;
+    }
+
+    if (stage === 'trim' && meta.worker_trim && !meta.content?.cuts?.length) {
       meta.trim = meta.worker_trim; delete meta.worker_trim;
       rec.lead_s = meta.trim.lead_s; rec.gaps = (meta.trim.gaps || []).length; rec.worker = true;
     } else if (stage === 'trim') {
@@ -888,8 +900,11 @@ export async function runItem(item, opts = {}, deps = {}) {
       const raw = await readJson(join(dir, 'transcript.raw.json'), { segments: [] });
       const { peaks, pps } = T.peaksOf(await readJson(join(dir, 'waveform.json'), null));
       const plan = T.trimPlan({ words: flattenWords(raw.segments || []), peaks, pps, duration: meta.duration_s });
+      // CONTENT CUTS (meta.content.cuts): spans removed from the web copies; a skip-gap touching a cut is dropped (the cut already removes it)
+      plan.cuts = (meta.content?.cuts || []).map(({ from, to, kind, why, pn }) => ({ from, to, kind, ...(why ? { why } : {}), ...(pn ? { pn } : {}) }));
+      plan.gaps = plan.gaps.filter((g) => !plan.cuts.some((c) => g.from < c.to && g.to > c.from));
       rec.lead_s = plan.lead_s; rec.gaps = plan.gaps.length;
-      const cutting = plan.start_s > 0 || plan.end_s != null;
+      const cutting = plan.start_s > 0 || plan.end_s != null || T.cutSpans(plan, meta.duration_s).length > 0;
       if (cutting) {
         markAudioPending(meta);
         await save();
@@ -923,9 +938,9 @@ export async function runItem(item, opts = {}, deps = {}) {
         meta.web_listening = listeningVariant(meta);
         const alignedTarget = meta.aligned_to || meta.web_listening;
         meta.audio_alignment_version = alignedTarget === meta.web_listening ? meta.audio_version : null;
-        rec.trimmed_s = Math.round(((plan.start_s || 0) + (plan.end_s != null ? meta.duration_s - plan.end_s : 0)) * 10) / 10;
+        rec.trimmed_s = Math.round((meta.duration_s - T.keptSeconds(plan, meta.duration_s)) * 10) / 10;
       }
-      meta.trim = cutting || plan.gaps.length ? { start_s: plan.start_s, end_s: plan.end_s, gaps: plan.gaps, lead_s: plan.lead_s, tail_s: plan.tail_s, at: new Date().toISOString() } : null;
+      meta.trim = cutting || plan.gaps.length ? { start_s: plan.start_s, end_s: plan.end_s, gaps: plan.gaps, ...(plan.cuts.length ? { cuts: plan.cuts } : {}), lead_s: plan.lead_s, tail_s: plan.tail_s, at: new Date().toISOString() } : null;
       if (!meta.trim) delete meta.trim;
     }
 
@@ -998,9 +1013,9 @@ export async function runItem(item, opts = {}, deps = {}) {
       // topic subheaders (structure only: no audio, no time of their own); the guard keeps faithful, well-spaced ones
       const work = await readJson(join(dir, 'transcript.work.json'));
       const { acceptHeadings } = await import('./headings.js');
-      const proposed = llm.proposeHeadings ? await llm.proposeHeadings(work.paragraphs, { title: meta.title, speaker: meta.speaker, summary: meta.summary }, { spend }) : [];
+      const proposed = llm.proposeHeadings ? await llm.proposeHeadings(contentParagraphs(work.paragraphs, meta.content?.cuts), { title: meta.title, speaker: meta.speaker, summary: meta.summary }, { spend }) : [];
       const model = (await import('../model-roles.js')).modelFor('media-headings')?.model || null;
-      const res = acceptHeadings(proposed, work.paragraphs, { model });
+      const res = acceptHeadings(proposed, contentParagraphs(work.paragraphs, meta.content?.cuts), { model });
       meta.headings = res.headings;
       rec.headings = res.headings.length; rec.refused = res.refused.length;
       if (res.refused.length) rec.refused_why = res.refused.slice(0, 8).map((r) => `${r.p}: ${r.why}`);
@@ -1008,6 +1023,7 @@ export async function runItem(item, opts = {}, deps = {}) {
 
     if (stage === 'quotes') {
       const work = await readJson(join(dir, 'transcript.work.json'));
+      work.paragraphs = contentParagraphs(work.paragraphs, meta.content?.cuts);   // the listening copy's words only (rules §8)
       const tq = Date.now();
       const found = await llm.findQuotations(work.paragraphs, { spend });
       rec.find_ms = Date.now() - tq;
@@ -1034,6 +1050,7 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (stage === 'assess') {
       // AUDIENCE (1–5, per section, tradition-agnostic) and MOMENTS (verbatim, verified out of context) from one whole-talk read
       const work = await readJson(join(dir, 'transcript.work.json'));
+      work.paragraphs = contentParagraphs(work.paragraphs, meta.content?.cuts);
       const A = await import('./assess.js');
       const sections = A.sectionsOf(work.paragraphs, meta.headings || [], meta.chapters || []);
       const ctx = { speaker: meta.speaker, title: meta.title, date: meta.date, year: meta.year, event: meta.event, tradition: meta.tradition };
@@ -1112,12 +1129,12 @@ export async function runItem(item, opts = {}, deps = {}) {
         verbatim: (work.verbatim || []).map((p) => ({ n: p.n, text: p.words.map((w) => w.w).join(' ') })), cleanup: work.cleanup || [], cleanup_stats: work.cleanup_stats || null,
         corrections: work.corrections, corrections_refused: work.refused, turns: raw?.turns || [] };
       await writeJson(join(dir, 'transcript.json'), transcript);
-      await writeFile(join(dir, 'transcript.md'), transcriptMarkdown({ meta, paragraphs: work.paragraphs, quotes, links, chapters: meta.chapters, headings: meta.headings || [] }));
+      await writeFile(join(dir, 'transcript.md'), transcriptMarkdown({ meta, paragraphs: contentParagraphs(work.paragraphs, cutsOfMeta(meta)), quotes, links, chapters: meta.chapters, headings: meta.headings || [] }));
       const api = `/api/media/${meta.slug}`;
-      await writeFile(join(dir, 'page.html'), pageHtml({ meta, paragraphs: work.paragraphs, quotes, links, crs: breakoutsOf([...quotes, ...crs]), chapters: meta.chapters, headings: meta.headings || [], speakers: meta.speakers,
+      await writeFile(join(dir, 'page.html'), pageHtml({ meta, paragraphs: contentParagraphs(work.paragraphs, cutsOfMeta(meta)), quotes, links, crs: breakoutsOf([...quotes, ...crs]), chapters: meta.chapters, headings: meta.headings || [], speakers: meta.speakers,
         audio: meta.rights.playback === 'full' ? `web/${meta.slug}.ogg?v=${audioVersion(meta)}` : null, clipUrl: meta.rights.playback === 'clips' ? `${api}/clip-url` : null,
         pageUrl: `https://siftersearch.com/media/${meta.slug}`, thumb: meta.thumb?.file ? `${api}/file/${meta.thumb.file}` : null }));
-      meta.words_n = work.paragraphs.reduce((a, p) => a + p.words.length, 0);
+      meta.words_n = contentParagraphs(work.paragraphs, cutsOfMeta(meta)).reduce((a, p) => a + p.words.length, 0);
       meta.version = (meta.version || 1) + (meta.stages.render ? 1 : 0);
     }
 

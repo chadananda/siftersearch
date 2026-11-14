@@ -10,6 +10,7 @@ import { enqueue } from '../lib/repos/ops-report-repo.js';
 import { requireInternal } from '../lib/auth.js';
 const isInternal = (req) => !!process.env.DEPLOY_SECRET && req.headers['x-internal-key'] === process.env.DEPLOY_SECRET;
 import { canServeFile, clipQuery, verifyClip, CLIP_CAP, LEVELS } from '../lib/media/rights.js';
+import { contentParagraphs } from '../lib/media/content-map.js';
 import { talkAudio, isRemastered, originalField, audioVersion, timingSignature } from '../lib/media/talk-audio.js';
 import { parseRange, clampClip } from '../lib/media/range.js';
 import { run } from '../lib/media/tools.js';
@@ -90,7 +91,7 @@ async function loadIndexCache() {
 async function readIndexFiles(r) {
   if (!r.dir) return {};
   const [meta, tr, wave] = await Promise.all([readJson(join(r.dir, 'meta.json')), readJson(join(r.dir, 'transcript.json')), readJson(join(r.dir, 'waveform.json'))]);
-  const tStart = new Map((tr?.paragraphs || []).map((p) => [p.n, p.t0]));
+  const tStart = new Map(contentParagraphs(tr?.paragraphs || [], meta?.trim?.cuts).map((p) => [p.n, p.t0]));
   if (meta?.headings) meta.headings = meta.headings.filter((h) => tStart.has(h.p)).map((h) => ({ ...h, t: tStart.get(h.p) }));
   return { meta, quotes: tr?.quotes || [], wave };
 }
@@ -366,10 +367,17 @@ export default async function mediaRoutes(fastify) {
     if (!meta || !tr) return reply.code(404).send({ error: 'NotFound' });
     const v = meta.version || 1, base = `/api/media/${it.slug}`;
     const level = LEVELS.includes(it.playback) ? it.playback : 'clips';
-    const tStart = new Map(tr.paragraphs.map((p) => [p.n, p.t0]));
+    let tStart = new Map(tr.paragraphs.map((p) => [p.n, p.t0]));
     const remastered = level === 'full' && isRemastered(meta);
     const audio = talkAudio({ slug: it.slug, level, meta });
     if (audio?.sync_ready && meta.audio_alignment_hash && meta.audio_alignment_hash !== timingSignature(tr.paragraphs)) audio.sync_ready = false;
+    // CONTENT-ONLY (rules §8): words inside the web copy's cuts are not the reader's transcript; transcript.json stays whole (the alignment hash above is over it)
+    const cuts = meta.trim?.cuts || [];
+    if (cuts.length) {
+      tr.paragraphs = contentParagraphs(tr.paragraphs, cuts); tStart = new Map(tr.paragraphs.map((p) => [p.n, p.t0]));
+      const keep = new Set(tr.paragraphs.map((p) => p.n)), inKept = (x) => keep.has(x.para);
+      tr.quotes = (tr.quotes || []).filter(inKept); tr.cross_references = (tr.cross_references || []).filter(inKept); tr.links = (tr.links || []).filter(inKept);
+    }
     pub(reply, 300);
     return {
       pending: it.restored !== 1, slug: it.slug, title: meta.title, speaker: meta.speaker, speakers: meta.speakers || {}, date: meta.date, year: meta.year, uploaded_year: meta.uploaded_year ?? null, date_flag: meta.date_flag ?? null, place: meta.place, event: meta.event,
@@ -385,6 +393,7 @@ export default async function mediaRoutes(fastify) {
       // remastered: the main copy is a remaster; original_url/original_ogg = the kept original (the page's "Original" A/B button)
       audio,
       skips: meta.trim?.gaps || [],
+      cuts: cuts.map(({ from, to, kind }) => ({ from, to, kind })),
       clip_url: level === 'clips' ? `${base}/clip-url` : null,
       waveform: `${base}/file/waveform.json?v=${audioVersion(meta)}`, page: `${base}/file/page.html?v=${v}`,
       thumb: portrait || (meta.thumb?.file && meta.thumb.kind !== 'photo' ? { url: `${base}/file/${meta.thumb.file}?v=${v}`, kind: meta.thumb.kind, licence: meta.thumb.licence || null, artist: meta.thumb.artist || null, source_url: meta.thumb.source_url || null } : null),

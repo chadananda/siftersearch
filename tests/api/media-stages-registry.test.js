@@ -10,7 +10,7 @@ import { STAGES, COMPLETE_STAGES, DEPENDENTS, indexFields, isComplete, runItem }
 import { nextJobs, TYPE_STAGES, effectiveDone } from '../../api/lib/media/stage-jobs.js';
 import { mediaLanesFeedPass, mediaRerunJob } from '../../api/lib/ops/media-jobs.js';
 
-const OLD_STAGES = ['archive', 'grade', 'enhance', 'remaster', 'verify', 'realign', 'quiet', 'web', 'transcribe', 'preview', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog', 'headings', 'quotes', 'links', 'assess', 'update'];
+const OLD_STAGES = ['archive', 'grade', 'enhance', 'remaster', 'verify', 'realign', 'quiet', 'web', 'transcribe', 'preview', 'diarize', 'correct', 'content', 'trim', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog', 'headings', 'quotes', 'links', 'assess', 'update'];
 const OLD_COMPLETE = ['remaster', 'verify', 'quiet', 'transcribe', 'diarize', 'correct', 'headings', 'quotes', 'links', 'assess', 'ingest', 'catalog'];
 
 // the throwaway examples: one declaration each
@@ -26,9 +26,9 @@ describe('the registry reproduces the checklist exactly (no behaviour change)', 
     expect(STAGES).toEqual(OLD_STAGES);
     expect([...COMPLETE_STAGES].sort()).toEqual([...OLD_COMPLETE].sort());   // (now in run order)
     expect([...REG.AIR_STAGES].sort()).toEqual([...OLD_COMPLETE].sort());   // every stage that blocked air still does
-    expect(DEPENDENTS).toEqual({ remaster: ['verify', 'realign', 'quiet'], realign: ['quiet'], quiet: ['web', 'trim', 'update'] });
+    expect(DEPENDENTS).toMatchObject({ remaster: ['verify', 'realign', 'quiet'], realign: ['quiet'], quiet: ['web', 'trim', 'update'], content: ['trim', 'headings', 'quotes', 'render', 'ingest'] });
     expect(TYPE_STAGES).toEqual({ intake: ['archive'], 'cpu-prep': ['grade'], gpu: ['enhance', 'transcribe', 'diarize'], 'cpu-finish': ['remaster', 'verify', 'realign', 'quiet', 'web', 'trim'],
-      text: ['preview', 'correct', 'clean', 'describe', 'headings', 'quotes', 'links', 'assess'], publish: ['thumb', 'render', 'ingest', 'catalog', 'update'] });
+      text: ['preview', 'correct', 'content', 'clean', 'describe', 'headings', 'quotes', 'links', 'assess'], publish: ['thumb', 'render', 'ingest', 'catalog', 'update'] });
   });
   it('no stage is fed on its own: quiet v2 is decided on the GPU job (11-01), so every stage waits for a campaign', () => {
     expect(REG.FEED_STAGES).toEqual([]);
@@ -85,8 +85,11 @@ describe('resource classes', () => {
 });
 
 describe('a text fix never reaches audio', () => {
-  it('no llm/text stage has an audio dependent', () => {
-    for (const s of REG.STAGES.filter((x) => !AUDIO_JOBS.includes(REG.BY[x].job))) for (const d of withDependents([s])) expect(AUDIO_JOBS).not.toContain(REG.BY[d].job);
+  it('no llm/text stage has an audio dependent (except the content map\'s declared also-edge to trim)', () => {
+    // EXEMPTION (Chad 11-14, rules §8): a new content map MUST re-cut the web copies, so content `also` re-runs trim (cpu-finish). Nothing else may.
+    const exempt = (s, d) => d === 'trim' && (s === 'content' || withDependents([s]).includes('content'));   // (correct → content → trim reaches it too)
+    for (const s of REG.STAGES.filter((x) => !AUDIO_JOBS.includes(REG.BY[x].job))) for (const d of withDependents([s])) if (!exempt(s, d)) expect(AUDIO_JOBS).not.toContain(REG.BY[d].job);
+    expect(REG.BY.content.also).toContain('trim');
   });
   it('the registry refuses an audio stage after a text stage', () => {
     expect(() => buildRegistry([...STAGE_DEFS, { name: 'bad', class: 'cpu', after: ['quotes'], tool: 't', settings: {} }])).toThrow(/audio stage cannot depend/);
