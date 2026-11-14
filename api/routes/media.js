@@ -392,8 +392,9 @@ export default async function mediaRoutes(fastify) {
       // s0: the words' starts on the ORIGINAL copy (remastered talks only) — highlight + position while Original plays
       paragraphs: tr.paragraphs.map((p) => ({ n: p.n, pi: meta.pi?.[p.n] ?? null, t0: p.t0, t1: p.t1, spk: p.spk, sentences: p.sentences, words: p.words.map((w) => (w.hide ? [w.w, w.s, w.e, 1] : [w.w, w.s, w.e])),
         ...originalField(p.words, remastered) })),
-      quotes: (tr.quotes || []).map((q) => ({ para: q.para, i0: q.i0, i1: q.i1, t0: q.t0, t1: q.t1, url: q.url, cite: q.cite, writer: q.writer, excerpt: q.excerpt, basis: q.basis, gate: q.gate })),
-      cross_references: (tr.cross_references || []).map((c) => ({ para: c.para, i0: c.i0, i1: c.i1, t0: c.t0, url: c.url, cite: c.cite, writer: c.writer, claim: c.claim, excerpt: c.excerpt, confidence: c.confidence })),
+      // doc_id: the library document the passage was matched in (link policy: collaborator site or /doc, never home)
+      quotes: (tr.quotes || []).map((q) => ({ para: q.para, i0: q.i0, i1: q.i1, t0: q.t0, t1: q.t1, url: q.url, cite: q.cite, writer: q.writer, excerpt: q.excerpt, basis: q.basis, gate: q.gate, doc_id: q.source?.doc_id ?? null })),
+      cross_references: (tr.cross_references || []).map((c) => ({ para: c.para, i0: c.i0, i1: c.i1, t0: c.t0, url: c.url, cite: c.cite, writer: c.writer, claim: c.claim, excerpt: c.excerpt, confidence: c.confidence, doc_id: c.source?.doc_id ?? null })),
       // named people → /biography/<id>; named works → their canonical copy (the spoken words are the anchor)
       links: (tr.links || []).map((l) => ({ para: l.para, i0: l.i0, i1: l.i1, kind: l.kind, url: l.url, name: l.name || null, title: l.title || null, section: l.section || null })),
       // audience (1 open … 5 internal) with its sections and introductory ranges; moments (verbatim, verified; no internal note)
