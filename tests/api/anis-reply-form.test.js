@@ -404,3 +404,18 @@ describe('abbreviations stay inside their sentence (tz4 live, edge 1e544da3: "Da
   });
 });
 
+
+// team-lead 11-14: reorderQuotes declined in 197utk7 and 1g330j9 with no reason in the telemetry → every decline names its reason (form.reorderWhy)
+describe('reorderQuotes records why it declines', () => {
+  const P = (author, title, extra = {}) => ({ author, religion: B, title, ...extra });
+  const why = (t, found) => { const w = []; expect(reorderQuotes(t, found, w)).toBe(null); return w; };
+  const found = new Map([['P2', P('Universal House of Justice', 'Messages from the Universal House of Justice: 1986-2001')], ['P1', P('Bahá’u’lláh', 'Gleanings from the Writings of Bahá’u’lláh')]]);
+  const t = 'The short answer is no.\n\nThe House of Justice says plainly:\n\n{{quote P2}}\n\nThe welcome is open to all.\n\nBahá’u’lláh writes:\n\n{{quote P1}}\n\nKindness comes first.';
+  it('names each reason', () => {
+    expect(why(t.replace('Kindness comes first.', 'The passage above says it.'), found)).toEqual(['quoted above']);
+    expect(why(t.replace('The welcome is open to all.', 'This is the heart of it.'), found)).toEqual(['next para leans: P2']);
+    expect(why('Intro.\n\n{{quote P1}}\n\nThen.\n\n{{quote P2}}', found)).toEqual(['in order']);
+    expect(why('Intro.\n\n{{quote P9}}', found)).toEqual(['block ¶2: refs=0', 'blocks=0']);
+  });
+  it('the default leaves callers unchanged', () => expect(reorderQuotes(t, found).order).toEqual(['P1', 'P2']));
+});

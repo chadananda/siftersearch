@@ -408,8 +408,8 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   // the reply's form, for timings (worker/anis): never in the reader's text. heads = section heads turned into prose; lead/first = the
   // first draft's quotation order (leadSource) and its first quoted passage; rewritten = the one form rewrite ran (lead source only)
   // leadAfter = the order still wrong after the rewrite; reordered = code then moved whole quotation blocks (reorderQuotes)
-  // unsafe = transforms whose cut broke the word rule (input kept); drops = [{ rule, removed }] what each took out (capped, telemetry only)
-  const form = { heads: 0, lead: null, first: null, depth: false, offers: 0, rewritten: false, rewroteFor: null, leadAfter: null, reordered: false, unsafe: [], drops: [] };
+  // reorderWhy = why reorderQuotes declined or skipped a block; unsafe = transforms whose cut broke the word rule (input kept); drops = [{ rule, removed }] what each took out (capped, telemetry only)
+  const form = { heads: 0, lead: null, first: null, depth: false, offers: 0, rewritten: false, rewroteFor: null, leadAfter: null, reordered: false, reorderWhy: [], unsafe: [], drops: [] };
   const { dropCutOff, dropDanglingLeadIn, dropNarration, dropOffers, dropUncheckedDisclaimer, dropRebuildPreamble, dropSearchOffer, dropSourceSpeculation, deHead, recapitalise } = wordSafe(form, SENTENCE_DROPS);
   const liveWidgets = [];
   const carded = new Set();   // passages already shown in a card this turn (widgets/templates.js: one card per passage)
@@ -621,7 +621,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
       if (!formed) { form.lead = lead; form.first = firstQuoted(final, found); }
       else if (form.lead) {   // the rewrite ran: still out of order → move whole blocks when nothing refers across them, else keep it
         form.leadAfter = leadSource(final, found);
-        const moved = form.leadAfter && reorderQuotes(final, found);
+        const moved = form.leadAfter && reorderQuotes(final, found, form.reorderWhy);
         if (moved) { final = moved.text; form.reordered = true; }
       }
       if (lead && round < maxRounds - 1 && calls < maxCalls) {

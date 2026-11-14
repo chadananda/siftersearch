@@ -183,27 +183,28 @@ const BACK = /^\s*[*_]*(?:(?:on|in|for|to|with|of|by|from|at) (?:this|that|these
 const REFER = /\b(?:the same way|same point|as above|above|below|also|too|again|likewise|as well|that passage|this passage|these passages|the passage)\b/i;
 const quoteBlock = (s) => /^\s*\{\{\s*quote:?[^}]*\}\}\s*$/.test(s) || s.split('\n').every((l) => /^\s*>/.test(l));
 /** → { text, order } with the ranked quotation blocks in rank order, or null (keep the draft). `found`: Map ref → passage. */
-export function reorderQuotes(text, found) {
-  const paras = String(text || '').split(/\n{2,}/), get = (r) => found?.get?.(r);
-  if (/\b(?:quoted|passage|words) (?:above|below)\b|\bas above\b/i.test(text)) return null;
+// why: an array the reasons it declines (or skips a block) are pushed to — timings.form.reorderWhy, telemetry only
+export function reorderQuotes(text, found, why = []) {
+  const paras = String(text || '').split(/\n{2,}/), get = (r) => found?.get?.(r), no = (r) => (why.push(r), null);
+  if (/\b(?:quoted|passage|words) (?:above|below)\b|\bas above\b/i.test(text)) return no('quoted above');
   const units = [];   // { from, to, ref, tier }: paragraphs from..to (lead-in + block)
   paras.forEach((p, i) => {
     if (!quoteBlock(p)) return;
     const refs = quotedRefs(p).filter((r) => get(r) && tierOf(get(r)) != null);
-    if (refs.length !== 1) return;
+    if (refs.length !== 1) { why.push(`block ¶${i + 1}: refs=${refs.length}`); return; }
     const lead = i > 0 && !quoteBlock(paras[i - 1]) && /:[*_]*\s*$/.test(paras[i - 1]) && !units.some((u) => u.to === i - 1);
     units.push({ from: lead ? i - 1 : i, to: i, ref: refs[0], tier: tierOf(get(refs[0])) });
   });
   const sorted = units.map((u, k) => [u, k]).sort((a, b) => a[0].tier - b[0].tier || a[1] - b[1]).map(([u]) => u);
-  if (sorted.every((u, k) => u === units[k])) return null;
+  if (sorted.every((u, k) => u === units[k])) return no(units.length < 2 ? `blocks=${units.length}` : 'in order');
   for (let k = 0; k < units.length; k++) {
     if (sorted[k] === units[k]) continue;
     const u = sorted[k];
-    if (u.from < u.to && (BACK.test(paras[u.from]) || REFER.test(paras[u.from]))) return null;   // its lead-in leans on what came before
+    if (u.from < u.to && (BACK.test(paras[u.from]) || REFER.test(paras[u.from]))) return no(`lead-in ${BACK.test(paras[u.from]) ? 'BACK' : 'REFER'}: ${u.ref}`);   // its lead-in leans on what came before
     const after = paras[units[k].to + 1];
-    if (after != null && !quoteBlock(after) && (BACK.test(after) || /\babove\b/i.test(after))) return null;   // the next paragraph leans on the block it loses
+    if (after != null && !quoteBlock(after) && (BACK.test(after) || /\babove\b/i.test(after))) return no(`next para leans: ${units[k].ref}`);   // the next paragraph leans on the block it loses
     const own = paras[u.to + 1];
-    if (own != null && !quoteBlock(own) && BACK.test(own)) return null;   // …or on this one, which leaves it
+    if (own != null && !quoteBlock(own) && BACK.test(own)) return no(`own para leans: ${u.ref}`);   // …or on this one, which leaves it
   }
   const out = []; let k = 0;
   for (let i = 0; i < paras.length;) {
@@ -211,7 +212,7 @@ export function reorderQuotes(text, found) {
     if (slot) { const u = sorted[k++]; out.push(...paras.slice(u.from, u.to + 1)); i = slot.to + 1; } else out.push(paras[i++]);
   }
   const t = out.join('\n\n');
-  return leadSource(t, found) ? null : { text: t, order: sorted.map((u) => u.ref) };
+  return leadSource(t, found) ? no('leadSource still set') : { text: t, order: sorted.map((u) => u.ref) };
 }
 
 // ---- the offer becomes a pill ----

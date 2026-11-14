@@ -148,7 +148,7 @@ export const dropBriefMarkers = (t) => String(t || '').replace(/\s*\[own\]/gi, '
 const PILGRIM_DISMISSAL = /(?:pilgrim|notes?\b|recollections?|table talk)[^.!?\n]{0,160}\b(?:carr(?:y|ies)|ha(?:ve|s)|hold|holds|with)\s+no\s+(?:real\s+|binding\s+|doctrinal\s+|official\s+)?authority|(?:pilgrim|notes?\b|recollections?)[^.!?\n]{0,120}\b(?:are|is)\s+not\s+(?:authoritative|authentic(?:ated)? text|binding)|(?:should|must)\s+not\s+be\s+quoted\s+as\s+["“]?the\s+guardian\s+said|\bno\s+authority\b[^.!?\n]{0,80}pilgrim/i;
 export function dropPilgrimDismissal(text) {
   return String(text || '').split('\n').map((line) => (/^\s*>/.test(line) || !PILGRIM_DISMISSAL.test(line) ? line
-    : line.split(/(?<=[.!?])\s+/).filter((sent) => !PILGRIM_DISMISSAL.test(sent)).join(' '))).join('\n');
+    : sentencesOf(line).filter((sent) => !PILGRIM_DISMISSAL.test(sent)).join('').trimEnd())).join('\n');
 }
 
 export function dropAuthorityLecture(text) {
@@ -623,8 +623,9 @@ export const unholdTexts = (text) => String(text || '').split('\n').map((l) => (
 // its card was dropped (a PDF page, a passage already carded, a ref not in hand) the lead-in goes too. `final`: a lead-in with nothing
 // after it goes; otherwise it is left for the next piece (a streamed reply). → { text, dropped }. Pure.
 const INTRODUCED = /^\s*(?:<!-- widget:|\{\{|>|\||[-*+]\s|\d+[.)]\s|#)/;
-const LEAD_IN = /(?:^|(?<=[.!?…]["”’)*_]*\s+))[^.!?\n]*:[*_]*\s*$/;
-export const leadInAt = (line) => !/^\s*(?:>|\||#|<!--|\{\{|[-*+]\s|\d+[.)]\s)/.test(line) && line.trim().length <= 400 && LEAD_IN.test(line);
+// the line's last sentence (sentences.js: "In vol. 2 He writes:" and a link's dotted URL stay one sentence), when it ends on a colon
+const leadInOf = (line) => { const last = sentencesOf(line).at(-1) || ''; return /:[*_]*\s*$/.test(last) ? last : null; };
+export const leadInAt = (line) => !/^\s*(?:>|\||#|<!--|\{\{|[-*+]\s|\d+[.)]\s)/.test(line) && line.trim().length <= 400 && !!leadInOf(line);
 export function dropDanglingLeadIn(text, { final = true } = {}) {
   const lines = String(text || '').split('\n');
   let dropped = 0;
@@ -632,7 +633,7 @@ export function dropDanglingLeadIn(text, { final = true } = {}) {
     if (!leadInAt(lines[i])) continue;
     let j = i + 1; while (j < lines.length && !lines[j].trim()) j++;
     if (j < lines.length ? INTRODUCED.test(lines[j]) : !final) continue;
-    lines[i] = lines[i].replace(LEAD_IN, '').trimEnd(); dropped++;
+    lines[i] = lines[i].slice(0, lines[i].length - leadInOf(lines[i]).length).trimEnd(); dropped++;
   }
   if (!dropped) return { text: String(text || ''), dropped };
   return { text: lines.join('\n').replace(/\n{3,}/g, '\n\n').trim(), dropped };
@@ -708,7 +709,7 @@ export function dropNarration(text) {
   return { text: dropped ? out.trim() : String(text || ''), dropped };
 }
 /** The reply's last sentence is a plan ("I'll check them directly.") — an unfinished answer. Pure. */
-export const endsOnPlan = (text) => { const t = String(text || '').trim(); const last = (t.match(/[^.!?\n]+[.!?…]*\s*$/) || [''])[0]; return !!last.trim() && PLAN.test(last); };
+export const endsOnPlan = (text) => { const t = String(text || '').trim(); const last = sentencesOf(t.split('\n').at(-1)).at(-1) || ''; return !!last.trim() && PLAN.test(last); };
 
 /** CIRCULAR EVIDENCE (Chad 11-14, conversation 73b1d410: "fail"). In an identification table ("who was each of them"), a row whose
  *  only citation is the very text being explained — the list that names them, here the Kitáb-i-Íqán — gives no evidence of who
@@ -855,8 +856,8 @@ export function dropSourceSpeculation(text) {
     if (/^\s*>/.test(line) || !SPEC_SENT.test(line)) return line;
     const cut = line.replace(SPEC_CLAUSE, () => { dropped++; return ''; });
     if (!SPEC_SENT.test(cut)) return cut;
-    return cut.split(/(?<=\|)/).map((cell) => { const sents = cell.match(/[^.!?|]+(?:[.!?…]+["”’)*_]*|$)\s*|\|/g) || [cell];
-      return sents.filter((x) => !(SPEC_SENT.test(x.replace(/[“"][^”"]{0,600}[”"]/g, ' ')) && ++dropped)).join(''); }).join('');
+    return cut.split(/(?<=\|)/).map((cell) => { const bar = cell.endsWith('|') ? '|' : '', sents = sentencesOf(bar ? cell.slice(0, -1) : cell);
+      return sents.filter((x) => !(SPEC_SENT.test(x.replace(/[“"][^”"]{0,600}[”"]/g, ' ')) && ++dropped)).join('') + bar; }).join('');
   });
   return { text: dropped ? out.join('\n') : String(text || ''), dropped };
 }
@@ -904,7 +905,7 @@ export function duplicateRows() {
     const named = (o, cell) => o.keys.length && o.keys.every((k) => foldL(cell).includes(k));
     if (named(other, who)) return line;
     if (me.gloss && !other.gloss) {   // this row rests on the glossary: its copied description goes, the contradiction stands in its place
-      const sents = who.trim().match(/[^.!?]+(?:[.!?]+["”’)*_]*(?:\s*\([^)]*\))?|$)\s*/g) || [who];
+      const sents = sentencesOf(who.trim()).reduce((a, x) => { if (/^\(/.test(x) && a.length) a[a.length - 1] += x; else a.push(x); return a; }, []);   // "(row 4)" stays with its sentence
       const rest = sents.filter((x) => ![...grams(rowWords(x))].some((g) => other.g.has(g))).join('').trim();
       cells[3] = ` The glossary's description of him matches the one the sources give for ${other.name} (row ${other.n}), so his identity is unconfirmed.${rest ? ` ${rest}` : ''} `;
       return cells.join('|');
