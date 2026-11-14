@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-14T16:09:47.692Z",
+  "generated": "2026-11-14T16:22:10.568Z",
   "entries": [
+    {
+      "hash": "ceb2d4759",
+      "date": "2026-11-14",
+      "type": "Test",
+      "description": "ANIS service binding check tolerates the IMG binding beside it (f077616c3)",
+      "scope": null
+    },
     {
       "hash": "a4af00055",
       "date": "2026-11-14",
@@ -753,6 +760,13 @@
   ],
   "grouped": {
     "2026-11-14": [
+      {
+        "hash": "ceb2d4759",
+        "date": "2026-11-14",
+        "type": "Test",
+        "description": "ANIS service binding check tolerates the IMG binding beside it (f077616c3)",
+        "scope": null
+      },
       {
         "hash": "a4af00055",
         "date": "2026-11-14",
