@@ -73,6 +73,61 @@ export function sameMediaRevision(pageVersion, apiVersion) {
   return Number.isSafeInteger(page) && page > 0 && page === fresh;
 }
 
+/** A transcript paragraph as the talk page ships it (page weight, 11-14): the word tuples become the words' text joined by
+ *  single spaces (tx) and their timings as centiseconds, a (gap since the previous word's end, length) pair per word,
+ *  comma-joined (tm); hid lists the words the copy edit dropped. A paragraph whose words cannot round-trip is kept whole. */
+export function compactParagraph(p) {
+  const { words, s0, sentences, ...rest } = p || {};
+  if (!Array.isArray(words) || words.some((w) => !w?.[0] || /\s/.test(w[0]))) return p;
+  const tm = [], hid = [];
+  let prev = 0;
+  words.forEach((w, i) => {
+    const a = Math.round((Number(w[1]) || 0) * 100), b = Math.round((Number(w[2]) || 0) * 100);
+    tm.push(a - prev, b - a); prev = b;
+    if (w[3]) hid.push(i);
+  });
+  return { ...rest, tx: words.map((w) => w[0]).join(' '), tm: tm.join(','), ...(hid.length ? { hid } : {}) };
+}
+
+/** compactParagraph reversed: words [[text, s, e(, 1 = dropped)]] back from tx/tm/hid; a full paragraph passes through. */
+export function expandParagraph(p) {
+  if (!p || p.words || p.tx == null) return p;
+  const { tx, tm, hid, ...rest } = p;
+  const texts = tx ? tx.split(' ') : [], times = tm ? tm.split(',').map(Number) : [], drop = new Set(hid || []);
+  let at = 0;
+  const words = texts.map((w, i) => {
+    const a = at + (times[2 * i] || 0), b = a + (times[2 * i + 1] || 0);
+    at = b;
+    return drop.has(i) ? [w, a / 100, b / 100, 1] : [w, a / 100, b / 100];
+  });
+  return { ...rest, words };
+}
+
+/** The visible text of words [i0, i1) exactly as the word spans render it: outside a link each shown word is followed by a
+ *  space; inside a link the shown words are separated by spaces (no trailing one). Dropped words (w[3]) show nothing. */
+export function segmentText(words, i0, i1, inLink = false) {
+  let out = '';
+  for (let i = i0; i < i1; i++) {
+    const w = words[i];
+    if (w[3]) continue;
+    out += w[0] + (!inLink || i < i1 - 1 ? ' ' : '');
+  }
+  return out;
+}
+
+/** The word under a caret offset in a segment's plain text (segmentText): its index in the paragraph. Past the end → the
+ *  last shown word. */
+export function segmentWordAt(words, i0, i1, text, offset) {
+  const ord = String(text).slice(0, Math.max(0, offset)).split(' ').length - 1;
+  let n = -1, last = i0;
+  for (let i = i0; i < i1; i++) {
+    if (words[i]?.[3]) continue;
+    n++; last = i;
+    if (n === ord) return i;
+  }
+  return last;
+}
+
 /** Paragraphs ([{ words: [[text, s, e], …] }]) → flat arrays in reading order: starts, ends, paragraph index, word index. */
 export function flattenWords(paragraphs = []) {
   const n = paragraphs.reduce((a, p) => a + (p.words?.length || 0), 0);
@@ -95,7 +150,7 @@ export function wordAt(starts, t) {
 /** A click on the transcript: the word element to seek to, or null. A click inside a link (a linked quotation, a person, a
  *  work) OPENS the link — links are prioritised over play position (Chad 10-23); only a plain Alt-click on a link plays it. */
 export function transcriptClickWord(e) {
-  const el = e?.target?.closest?.('[data-k]');
+  const el = e?.target?.closest?.('[data-k]') || e?.target?.closest?.('[data-s]');   // a word span, or plain text not yet split
   if (!el) return null;
   const link = e.target.closest('a');
   if (!link) return el;

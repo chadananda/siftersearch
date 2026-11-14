@@ -7,7 +7,7 @@ import Layout from '../../layouts/Layout.astro';
 import SiteNav from '../../components/anis/SiteNav.astro';
 import ReportError from '../../components/anis/ReportError.astro';
 import { isAnisHost } from '../../lib/anis-host.js';
-import { remasterOnly } from '../../lib/media.js';
+import { compactParagraph, remasterOnly } from '../../lib/media.js';
 import MediaPlayer from '../../components/media/MediaPlayer.svelte';
 import SeriesNav from '../../components/media/SeriesNav.astro';
 import { seriesNavigation } from '../../lib/media-series.js';
@@ -68,6 +68,9 @@ const image = bestMoment ? `https://siftersearch.com/api/media/moments/${encodeU
 const url = item ? `https://siftersearch.com/media/${item.slug}` : null;
 const iso = (s) => { s = Math.round(s || 0); return `PT${Math.floor(s / 3600) ? `${Math.floor(s / 3600)}H` : ''}${Math.floor((s % 3600) / 60)}M${s % 60}S`; };
 const transcriptText = item ? item.paragraphs.map((p) => p.words.filter((w) => !w[3]).map((w) => w[0]).join(' ')).join('\n\n') : '';
+// the player's props carry the transcript compact (text + centisecond timings, ~8× smaller than the word tuples); the
+// transcript renders as plain text and is split into word spans on the client as needed (MediaTranscript)
+if (item?.paragraphs) item.paragraphs = item.paragraphs.map(compactParagraph);
 const ld = item ? [{
   '@context': 'https://schema.org', '@type': 'AudioObject', name: item.title, url, description,
   ...(item.speaker ? { author: { '@type': 'Person', name: item.speaker } } : {}),

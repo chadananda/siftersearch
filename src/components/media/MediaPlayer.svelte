@@ -4,11 +4,14 @@
   // stops at the clip end); 'search' is text only. While playing a rAF loop binary-searches the word at the current time,
   // toggles its highlight class directly on the span, and (in Follow mode) scrolls so the playing line keeps its screen
   // position; wheel/touch/scroll keys drop Follow. ?t=a / ?t=a-b / #t=a,b set the start / a played-and-shaded range.
-  import { onMount, tick } from 'svelte';
+  // Paragraphs arrive compact (compactParagraph, the page's props) and are expanded once here; a paragraph is split into
+  // word spans (`live`) when it nears the viewport or playback, a deep link or a range needs it (upgrade).
+  import { onMount, tick, untrack } from 'svelte';
+  import { SvelteSet } from 'svelte/reactivity';
   import { media } from '../../lib/api.js';
   import { audioReady, audioWarmPath } from '../../lib/media-ready.js';
   import { liveRefresh } from '../../lib/live-data.js';
-  import { flattenWords, remasterOnly, wordAt, youtubeAtTime, picture, sameMediaRevision } from '../../lib/media.js';
+  import { expandParagraph, flattenWords, segmentWordAt, remasterOnly, wordAt, youtubeAtTime, picture, sameMediaRevision } from '../../lib/media.js';
   import { rangeFrom, formatTime, rangeParam } from '../../../api/lib/media/range.js';
   import MediaTranscript from './MediaTranscript.svelte';
   import MediaWaveform from './MediaWaveform.svelte';
@@ -35,14 +38,36 @@
   const ISSUE_LABEL = { muffled: 'muffled (narrow bandwidth)', noisy: 'background noise', hum: 'mains hum', reverberant: 'echoey room', clipped: 'distorted (clipped)', dropouts: 'dropouts', 'low-level': 'quiet or uneven levels', speed: 'speed off' };
   const qualityTitle = q ? [`Recording quality ${q.overall}`, q.primary_issue && q.primary_issue !== 'ok' ? ISSUE_LABEL[q.primary_issue] || q.primary_issue : 'clear',
     ...Object.entries(q.dimensions || {}).filter(([, x]) => x?.grade).map(([k, x]) => `${k} ${x.grade}`)].join(' · ') : '';
-  const flat = flattenWords(item.paragraphs);
+  const paragraphs = (item.paragraphs || []).map(expandParagraph);
+  const flat = flattenWords(paragraphs);
+  const paraStart = paragraphs.reduce((acc, p, i) => { acc.push(i ? acc[i - 1] + (paragraphs[i - 1].words?.length || 0) : 0); return acc; }, []);
+  /** Paragraph indexes the times [a, b] touch (b null: the one paragraph at a). */
+  const parasIn = (a, b) => {
+    if (b == null) { const k = wordAt(flat.starts, a + 0.02); return k >= 0 ? [flat.para[k]] : paragraphs.length ? [0] : []; }
+    return paragraphs.map((p, i) => i).filter((i) => (paragraphs[i].t1 ?? Infinity) >= a && (paragraphs[i].t0 ?? 0) <= b);
+  };
+  // the paragraphs rendered as word spans; the SSR range (?t=a-b) is split on the server so its shading is in the first paint
+  const live = new SvelteSet(initialRange ? parasIn(initialRange.start, initialRange.end ?? null) : []);
+  /** Split paragraph pi into word spans (idempotent); resolves once they are in the DOM. */
+  async function upgrade(pi) {
+    if (pi == null || pi < 0) return;
+    live.add(pi);
+    await tick();
+  }
   // audioInfo starts as the SSR data and is refreshed once on load (liveRefresh below): the page HTML is edge-cached
   let loaded = '';                             // the URL in the <audio> (audio.src is absolute; compare by ours)
   const ytBase = item.youtube || (item.source?.kind === 'youtube' ? item.source.url : null);
 
   let audio;                                   // <audio>
   let root = $state();                         // transcript container
-  let wordEls = [];                            // flat index → span
+  let wordEls = [];                            // flat index → span (filled as paragraphs are split)
+  const wordEl = (k) => {
+    if (k < 0) return null;
+    const el = wordEls[k];
+    if (el?.isConnected) return el;
+    return (wordEls[k] = root?.querySelector(`[data-k="${k}"]`) || null);
+  };
+  const paraEl = (t) => { const pi = parasIn(t, null)[0]; return pi != null ? document.getElementById(`para_${paragraphs[pi].n}`) : null; };
   let range = $state(initialRange?.end != null ? initialRange : null);
   let startAt = $state(initialRange?.start || 0);      // where the first play begins
   let limit = initialRange?.end ?? null;       // playback stops here (a ?t=a-b range)
@@ -97,10 +122,15 @@
   // ── highlight + follow ──
   function mark(k) {
     if (k === curK) return;
-    wordEls[curK]?.classList.remove('bg-highlight-playing!');
+    wordEl(curK)?.classList.remove('bg-highlight-playing!');
     curK = k;
-    const el = wordEls[k];
-    if (!el) return;
+    if (k < 0) return;
+    const el = wordEl(k);
+    if (!el) {                                  // plain text: split the paragraph, then mark (once — never a retry loop)
+      const fresh = !live.has(flat.para[k]);
+      upgrade(flat.para[k]).then(() => { if (curK === k && (fresh || wordEl(k))) { curK = -1; mark(k); } });
+      return;
+    }
     el.classList.add('bg-highlight-playing!');
     playingPara = flat.para[k];
     if (follow && playing) keepLine(el);
@@ -114,7 +144,7 @@
   const anchorFor = (el) => followAnchor(el?.getBoundingClientRect().top ?? null, window.innerHeight);
   function resync() {
     follow = true; anchorY = followAnchor(null, window.innerHeight); lastLineTop = null;
-    if (wordEls[curK]) keepLine(wordEls[curK], true);
+    if (wordEl(curK)) keepLine(wordEl(curK), true);
   }
 
   function frame() {
@@ -195,7 +225,7 @@
     const fresh = !unlocked;
     unlock();
     limit = end; note = ''; started = true; current = t;
-    follow = true; anchorY = anchorFor(el || wordEls[wordAt(flat.starts, t + 0.02)]); lastLineTop = null;
+    follow = true; anchorY = anchorFor(el || wordEl(wordAt(flat.starts, t + 0.02)) || paraEl(t)); lastLineTop = null;
     try {
       if (level === 'full') {
         const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
@@ -227,7 +257,7 @@
     if (limit != null && t >= limit - 0.1) return playFrom(range?.start ?? startAt, { end: range?.end ?? null });   // replay the range
     if (!started || (level === 'full' && (!loaded || audio.src.startsWith('blob:') || audio.error))) return playFrom(started ? current : startAt, { end: limit });
     if (level === 'clips' && (!clip || t >= clip.end - 0.3)) return playFrom(t, { end: limit });        // next clip
-    follow = true; anchorY = anchorFor(wordEls[curK]); lastLineTop = null;
+    follow = true; anchorY = anchorFor(wordEl(curK)); lastLineTop = null;
     audio.play().catch((e) => (note = `Could not play: ${e.message}`));
   }
   /** Wait until the audio object is in the edge store (202 + Retry-After while it is being prepared): "preparing audio". */
@@ -236,7 +266,7 @@
   const onword = (k, el) => playFrom(flat.starts[k], { el });
   const onpara = (pi, el) => {
     if (playing && playingPara === pi) { audio.pause(); return; }
-    const p = item.paragraphs[pi];
+    const p = paragraphs[pi];
     playFrom(p.t0 ?? p.words?.[0]?.[1] ?? 0, { el });
   };
   function jump(e, t, p, slug = null) {
@@ -257,17 +287,29 @@
       if (!s || s.isCollapsed || !root || !String(s).trim()) { sel = null; return; }
       const r = s.getRangeAt(0);
       if (!root.contains(r.commonAncestorContainer)) { sel = null; return; }
-      let a = -1, b = -1;
-      for (let k = 0; k < wordEls.length; k++) if (r.intersectsNode(wordEls[k])) { if (a < 0) a = k; b = k; } else if (a >= 0) break;
-      if (a < 0) { sel = null; return; }
+      // the first and last word touched, whether split into spans (data-k) or still plain text (data-s/data-e)
+      let first = null, lastEl = null;
+      for (const el of root.querySelectorAll('[data-k],[data-s]')) if (r.intersectsNode(el)) { first ??= el; lastEl = el; } else if (first) break;
+      const a = first ? wordOf(first, r.startContainer, r.startOffset, false) : -1;
+      let b = lastEl ? wordOf(lastEl, r.endContainer, r.endOffset, true) : -1;
+      if (a < 0 || b < a) { sel = null; return; }
       const box = r.getBoundingClientRect();
       // snap to the words selected, capped at 3 minutes (a clip is ≤ 180 s): the clip URL is stateless
       while (b > a && flat.ends[b] - flat.starts[a] > CLIP_MAX_MS / 1000) b--;
       const words = [];
-      for (let k = a; k <= b; k++) { const el = wordEls[k]; if (el && !el.classList.contains('hidden')) words.push(el.textContent); }
+      for (let k = a; k <= b; k++) { const w = paragraphs[flat.para[k]].words[flat.idx[k]]; if (!w[3]) words.push(w[0]); }
       sel = { start: flat.starts[a], end: Math.max(flat.ends[b], flat.starts[a] + 1), text: words.join(' '), x: Math.min(Math.max(8, box.left), window.innerWidth - 340), y: Math.min(box.bottom + 8, window.innerHeight - 64) };
       sharing = false;
     }, 150);
+  }
+  /** The flat word index at a range boundary inside el: a word span is itself; in plain text the caret offset finds the word
+   *  (a boundary outside el's text: its first word at the start of a selection, its last at the end). */
+  function wordOf(el, node, offset, isEnd) {
+    if (el.dataset.k != null) return Number(el.dataset.k);
+    const pi = Number(el.closest('[data-p]').dataset.p), p = paragraphs[pi], i0 = Number(el.dataset.s), i1 = Number(el.dataset.e);
+    const wi = node?.nodeType === 3 && el.contains(node) ? segmentWordAt(p.words, i0, i1, node.data, isEnd ? Math.max(0, offset - 1) : offset)
+      : isEnd ? i1 - 1 : i0;
+    return paraStart[pi] + wi;
   }
   function playSelection() {
     if (!sel) return;
@@ -314,12 +356,11 @@
       const warm = main && audioWarmPath(media.href(main));
       if (warm) fetch(warm, { method: 'POST' }).catch(() => {});
     }
-    wordEls = Array.from(root.querySelectorAll('[data-k]'));
     let r = rangeFrom({ search: location.search, hash: location.hash });
     // ?p=<paragraph_index> — a search hit on the transcript document: start at that paragraph
     const pq = new URLSearchParams(location.search).get('p');
     if (!r && pq != null && /^\d+$/.test(pq)) {
-      const ps = (item.paragraphs || []).filter((x) => x.pi != null && x.pi <= Number(pq));
+      const ps = paragraphs.filter((x) => x.pi != null && x.pi <= Number(pq));
       if (ps.length) r = { start: ps[ps.length - 1].t0, end: null };
     }
     const mq = new URLSearchParams(location.search).get('m');
@@ -327,18 +368,20 @@
     if (!r && mm) {
       r = { start: mm.t0_ms / 1000, end: mm.t1_ms / 1000 };
       momentNow = mm.key;
-      tick().then(() => document.getElementById(`moment-${mm.key}`)?.scrollIntoView({ block: 'center' }));
+      tick().then(() => document.getElementById(`moment-${mm.key}`)?.scrollIntoView({ block: 'center', behavior: 'instant' }));
     }
     if (r) {
       startAt = r.start; current = r.start; limit = r.end ?? null;
       range = r.end != null ? r : null;
-      tick().then(() => { const k = wordAt(flat.starts, r.start + 0.02); mark(k); wordEls[k]?.scrollIntoView({ block: 'center' }); });
+      // split the target paragraph(s) before marking and scrolling: the same text and layout, so nothing moves
+      parasIn(r.start, r.end ?? null).forEach((pi) => live.add(pi));
+      tick().then(() => { const k = wordAt(flat.starts, r.start + 0.02); mark(k); wordEl(k)?.scrollIntoView({ block: 'center', behavior: 'instant' }); });
     }
     // The hero is server-rendered outside this island. Refresh its description
     // along with the audio metadata so a cached page cannot hide editorial updates.
     const stopMetadata = liveRefresh(async () => {
       const d = await media.get(item.slug);
-      return {version:d.version, summary:d.summary, audio:d.audio, paragraphs:d.paragraphs};
+      return {version:d.version, summary:d.summary, audio:d.audio};
     }, d => {
       const description = document.querySelector('.talk-hero [data-talk-description]');
       if (description && typeof d.summary === 'string') {
@@ -383,6 +426,8 @@
   });
 
   $effect(() => { if (audio) audio.playbackRate = rate; });
+  // a shaded range (a moment, a selection played) is split into spans so its shading shows
+  $effect(() => { const r = range; if (r?.end != null) untrack(() => parasIn(r.start, r.end).forEach((pi) => live.add(pi))); });
   // the hero (TalkHero, server-rendered outside this island) spins its record and lights its lamp while playing
   $effect(() => {
     const on = playing;
@@ -503,7 +548,7 @@
           </ol>
         </section>
       {/if}
-      <MediaTranscript bind:root paragraphs={item.paragraphs} headings={item.headings || []} links={item.links || []} quotes={item.quotes || []} crossRefs={item.cross_references || []}
+      <MediaTranscript bind:root {paragraphs} {live} onnear={upgrade} headings={item.headings || []} links={item.links || []} quotes={item.quotes || []} crossRefs={item.cross_references || []}
         speakers={item.speakers || {}} {range} {canPlay} {playing} {playingPara} {onword} {onpara}
         {moments} slug={item.slug} speaker={item.speaker || ''} portrait={photo ? item.thumb.url : null} year={item.year} {onmoment} {momentNow} {skips} />
     </div>

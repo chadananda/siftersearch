@@ -3,16 +3,20 @@
   // highlight), a play button per paragraph (left margin ≥ lg, inline below), speaker labels at voice changes, quoted spans
   // as links (a click on a link opens it, never seeks; Alt-click plays), and "Quoted" / "Cross-reference" breakouts after their paragraph. Pure rendering: clicks go to onword/onpara;
   // the playing-word highlight is toggled on these spans by MediaPlayer (DOM classes, not reactive state, 60 fps).
+  // Page weight (11-14): a paragraph not in `live` renders as plain text (one node per segment, data-s/data-e = its word
+  // range, the same text and spacing as the spans, so no layout shift); it is split into word spans when it nears the
+  // viewport (onnear) or the player needs it. A click on plain text maps the caret to its word. live = null: all spans.
   // Typeset in the Fireside Room language: a measured serif column, subheaders as section breaks with a log time, a drop
   // cap, and the breakouts as cut-in "studio inserts" (styles at the bottom; tokens --radio-*, era tint --tint).
-  import { paragraphSegments, speakerLabels, transcriptClickWord } from '../../lib/media.js';
+  import { onMount } from 'svelte';
+  import { paragraphSegments, speakerLabels, transcriptClickWord, segmentText, segmentWordAt } from '../../lib/media.js';
   import { formatTime } from '../../../api/lib/media/range.js';
   import ShareRow from './ShareRow.svelte';
   import RecordLabel from './listening/RecordLabel.svelte';
   import { momentPath, momentShareText, SITE } from '../../lib/share.js';
 
   let { paragraphs = [], headings = [], quotes = [], links = [], crossRefs = [], speakers = {}, range = null, canPlay = false,
-    playingPara = -1, playing = false, onword, onpara, root = $bindable(),
+    playingPara = -1, playing = false, onword, onpara, root = $bindable(), live = null, onnear = null,
     moments = [], slug = '', speaker = '', portrait = null, year = null, onmoment = null, momentNow = null, skips = [] } = $props();
   // a dead gap (a tape flip, ≥ 20 s with no speech) before a paragraph: a quiet divider (the player skips the gap)
   const gapBefore = $derived(new Map(paragraphs.map((p, i) => [p.n, i ? (skips || []).find((g) => g.from >= paragraphs[i - 1].t1 - 2 && g.to <= p.t0 + 2) : null]).filter(([, g]) => g)));
@@ -33,6 +37,15 @@
   const wordClass = (w, inLink = false) => (w[3] ? 'hidden' : ['rounded-sm', canPlay && !inLink && 'cursor-pointer hover:bg-radio-brass-soft', inRange(w) && 'bg-highlight-range']);
   const inRange = (w) => !!range && range.end != null && w[1] >= range.start - 0.05 && w[2] <= range.end + 0.05;
 
+  const isLive = (pi) => !live || live.has(pi);
+
+  /** The caret under a point: { node, offset } (Firefox caretPositionFromPoint, else WebKit/Blink caretRangeFromPoint). */
+  function caretAt(x, y) {
+    if (document.caretPositionFromPoint) { const c = document.caretPositionFromPoint(x, y); return c && { node: c.offsetNode, offset: c.offset }; }
+    const r = document.caretRangeFromPoint?.(x, y);
+    return r && { node: r.startContainer, offset: r.startOffset };
+  }
+
   function click(e) {
     if (!canPlay) return;
     const sel = window.getSelection?.();
@@ -40,8 +53,23 @@
     const el = transcriptClickWord(e);                                      // inside a link: the link is the action
     if (!el) return;
     if (e.target.closest('a')) e.preventDefault();                          // Alt-click on a link: play it instead
-    onword?.(Number(el.dataset.k), el);
+    if (el.dataset.k != null) { onword?.(Number(el.dataset.k), el); return; }
+    // plain text: the word under the caret, else the paragraph's first word — a click always plays
+    const pi = Number(el.closest('[data-p]').dataset.p), p = paragraphs[pi], i0 = Number(el.dataset.s), i1 = Number(el.dataset.e);
+    const c = caretAt(e.clientX, e.clientY);
+    const wi = c && c.node?.nodeType === 3 && el.contains(c.node) ? segmentWordAt(p.words, i0, i1, c.node.data, c.offset) : 0;
+    onword?.(offsets[pi] + wi, el);
   }
+
+  // a paragraph nearing the viewport (600 px ahead) is split into word spans once
+  onMount(() => {
+    if (!live || !onnear || !root || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver((entries) => {
+      for (const en of entries) if (en.isIntersecting) { io.unobserve(en.target); onnear(Number(en.target.dataset.p)); }
+    }, { rootMargin: '600px 0px' });
+    root.querySelectorAll('[data-p]').forEach((el) => { if (!live.has(Number(el.dataset.p))) io.observe(el); });
+    return () => io.disconnect();
+  });
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions — words are a pointer shortcut; the
@@ -79,6 +107,14 @@
         </span>
       {/if}
       <p class="ptext">
+        {#if !isLive(pi)}
+          {#each segs as s, si (si)}
+            {#if s.quote}
+              <a href={s.quote.url} data-nav={s.quote.kind === 'quote' ? undefined : '1'} target={s.quote.kind === 'person' ? undefined : '_blank'} rel={s.quote.kind === 'person' ? undefined : 'noopener'} title={linkTitle(s.quote)}
+                class={s.quote.kind === 'quote' ? 'qlink' : s.quote.kind === 'person' ? 'nlink' : 'wlink'} data-s={s.i0} data-e={s.i1}>{segmentText(p.words, s.i0, s.i1, true)}</a>{' '}
+            {:else}<span data-s={s.i0} data-e={s.i1} class={canPlay ? 'cursor-pointer' : undefined}>{segmentText(p.words, s.i0, s.i1)}</span>{/if}
+          {/each}
+        {:else}
         {#each segs as s, si (si)}
           {#if s.quote}
             <a href={s.quote.url} data-nav={s.quote.kind === 'quote' ? undefined : '1'} target={s.quote.kind === 'person' ? undefined : '_blank'} rel={s.quote.kind === 'person' ? undefined : 'noopener'} title={linkTitle(s.quote)}
@@ -87,6 +123,7 @@
             {#each p.words.slice(s.i0, s.i1) as w, j (j)}<span data-k={offsets[pi] + s.i0 + j} class={wordClass(w)}>{w[0]}</span>{w[3] ? '' : ' '}{/each}
           {/if}
         {/each}
+        {/if}
       </p>
 
       {#each momentsBy.get(p.n) || [] as m (m.key)}
