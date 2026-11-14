@@ -22,6 +22,19 @@ describe('the question\'s presumption', () => {
     expect(AGENT_SYSTEM).toMatch(/one or two at most; offers to go further belong in the follow-up questions/);
     expect(AGENT_SYSTEM).toMatch(/never invent one/);
   });
+  it('succinct (Chad: shortest complete answer, more on request): a challenge gets a few short paragraphs and one or two passages; depth waits in the pills', () => {
+    expect(AGENT_SYSTEM).toMatch(/A why \/ how \/ isn't-it question .* is answered in a few short paragraphs/);
+    expect(AGENT_SYSTEM).toMatch(/the one or two passages that settle it, the strongest core passage first\. No section headings/);
+    expect(AGENT_SYSTEM).toMatch(/go in the follow-up questions, not the prose, unless the reader asked for depth or research/);
+    expect(AGENT_SYSTEM).toMatch(/a scholar's depth .* is for a reader who asks for depth or research/);
+    expect(AGENT_SYSTEM).not.toMatch(/the more cards breaking up the text, the better/);
+    expect(AGENT_SYSTEM).not.toMatch(/\b\d{2,4} words\b|at most \d+ cards/);   // no numeric caps (round-7 test, Chad)
+    expect(HOUSE_STYLE).toMatch(/in a few short paragraphs, with the one or two passages that settle it, the strongest core passage first\. Depth .* goes in the follow-up questions, not the prose, unless the person asked for depth or research/);
+  });
+  it('a question that reads as factual can still carry a presumption — judged by the model, not matched', () => {
+    expect(AGENT_SYSTEM).toMatch(/A question can read as purely factual .* and still carry one/);
+    expect(HOUSE_STYLE).toMatch(/A question can read as purely factual .* and still carry one/);
+  });
   it('the writer prompt says the same, apart from the factual-premise rule', () => {
     expect(HOUSE_STYLE).toMatch(/THE QUESTION'S PRESUMPTION \(Chad 11-14\) is a different thing from a factual premise/);
     expect(HOUSE_STYLE).toMatch(/Never accept the frame and argue within it; never invent an assumption/);
