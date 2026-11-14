@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-14T16:22:10.568Z",
+  "generated": "2026-11-14T16:35:23.055Z",
   "entries": [
     {
       "hash": "ceb2d4759",
@@ -741,20 +741,6 @@
       "date": "2026-11-01",
       "type": "Other",
       "description": "Canon and authoritative passes start with the first wave instead of after it (canon p50 788 ms, its own query 15–105 ms); query embedding stamped as 'embed' in the trace so a slow layer splits into Gemini vs Qdrant",
-      "scope": null
-    },
-    {
-      "hash": "43bed2867",
-      "date": "2026-11-01",
-      "type": "Other",
-      "description": "Anís round 9 done; next = speaker attribution, links, citation order",
-      "scope": null
-    },
-    {
-      "hash": "e1c1d0f48",
-      "date": "2026-11-01",
-      "type": "Other",
-      "description": "Anís round 9 state at laptop shutdown; citation source order (Chad 11-01)",
       "scope": null
     }
   ],
@@ -1524,20 +1510,6 @@
         "date": "2026-11-01",
         "type": "Other",
         "description": "Canon and authoritative passes start with the first wave instead of after it (canon p50 788 ms, its own query 15–105 ms); query embedding stamped as 'embed' in the trace so a slow layer splits into Gemini vs Qdrant",
-        "scope": null
-      },
-      {
-        "hash": "43bed2867",
-        "date": "2026-11-01",
-        "type": "Other",
-        "description": "Anís round 9 done; next = speaker attribution, links, citation order",
-        "scope": null
-      },
-      {
-        "hash": "e1c1d0f48",
-        "date": "2026-11-01",
-        "type": "Other",
-        "description": "Anís round 9 state at laptop shutdown; citation source order (Chad 11-01)",
         "scope": null
       }
     ]
