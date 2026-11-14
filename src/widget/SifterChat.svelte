@@ -73,6 +73,9 @@
     quote: ['M4 11h5v6H4z', 'M4 11c0-3 1.5-5 4-6', 'M14 11h5v6h-5z', 'M14 11c0-3 1.5-5 4-6'],
     book: ['M4 19.5V5a2 2 0 0 1 2-2h14v15H6.5a2.5 2.5 0 0 0 0 5H20', 'M8 7h8'],
     talk: ['M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z', 'M19 11a7 7 0 0 1-14 0', 'M12 18v3'],
+    speaker: ['M11 5 6 9H2v6h4l5 4V5z', 'M15.5 8.5a5 5 0 0 1 0 7', 'M19 5a10 10 0 0 1 0 14'],
+    stop: ['M7 7h10v10H7z'],
+    wave: ['M3 10v4', 'M7.5 6v12', 'M12 3v18', 'M16.5 7v10', 'M21 10v4'],
     compare: ['M4 4h7v16H4z', 'M13 4h7v16h-7z', 'M6.5 8h2', 'M15.5 8h2', 'M6.5 12h2', 'M15.5 12h2'],
   };
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '');
@@ -181,6 +184,7 @@
   const swipeEnd = (e) => { if (swipeX != null && e.changedTouches[0].clientX - swipeX < -60) drawerOpen = false; swipeX = null; };
   // shortcuts inside the panel: ⌘/Ctrl+Shift+O → a new conversation; Esc closes the innermost layer first
   function shortcut(e) {
+    if (e.key === 'Escape' && voiceOpen) { closeVoice(); return true; }
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'o' || e.key === 'O')) { e.preventDefault(); if (!busy) newConversation(); return true; }
     if (e.key === 'Escape' && shareSheet) { shareSheet = null; return true; }
     if (e.key === 'Escape' && (menuFor || renaming || confirmDel)) { menuFor = ''; renaming = ''; confirmDel = ''; return true; }
@@ -455,10 +459,13 @@
     scroll();
   }
 
-  async function send() {
-    const text = input.trim();
-    if (!text || busy) return;
-    input = '';
+  // opts (voice, P5): { text, mode: 'audio', onSpeak(delta), onDone(err?) } — the spoken question, the reply's text as it streams
+  // (to be spoken), the end of the stream. The written reply still lands in the thread as for any question.
+  async function send(opts = {}) {
+    if (opts instanceof Event) opts = {};
+    const text = String(opts.text ?? input).trim();
+    if (!text || busy) return false;
+    if (opts.text == null) input = '';
     errorMsg = '';
     pendBuf = ''; replay = ''; gotLive = false; streamDone = false; pendCites = null;
     statusText = ''; serverStatus = false; stopStatus(); thinkSteps = 0; rethink = false;
@@ -481,7 +488,7 @@
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ messages: history, widget_token: token, conversationId: activeId,
           ...(name ? { name } : {}), ...(mission ? { mission } : {}),
-          ...(cfg?.chatbotLocation ? { chatbot_location: cfg.chatbotLocation } : {}) }),
+          ...(cfg?.chatbotLocation ? { chatbot_location: cfg.chatbotLocation } : {}), ...(opts.mode ? { mode: opts.mode } : {}) }),
       });
       if (!res.ok || !res.body) throw new Error(`chat ${res.status}`);
       const reader = res.body.getReader();
@@ -499,8 +506,8 @@
           let ev; try { ev = JSON.parse(line.slice(6)); } catch { continue; }
           if (ev.type === 'stage' && ev.stage) { thinkSteps++; if (phase !== 'streaming') phase = ev.stage; else rethink = true; }
           else if (ev.type === 'status' && typeof ev.text === 'string') { statusText = ev.text; serverStatus = true; thinkSteps++; if (phase === 'streaming') rethink = true; }
-          else if (ev.type === 'text' && typeof ev.content === 'string') { gotLive = true; rethink = false; stopStatus(); pendBuf += ev.content; }
-          else if (ev.type === 'chunk' && typeof ev.text === 'string') { rethink = false; stopStatus(); if (gotLive) replay += ev.text; else pendBuf += ev.text; }
+          else if (ev.type === 'text' && typeof ev.content === 'string') { gotLive = true; rethink = false; stopStatus(); pendBuf += ev.content; opts.onSpeak?.(ev.content); }
+          else if (ev.type === 'chunk' && typeof ev.text === 'string') { rethink = false; stopStatus(); if (gotLive) replay += ev.text; else { pendBuf += ev.text; opts.onSpeak?.(ev.text); } }
           else if (ev.type === 'book' && ev.book?.title) { const last = messages[messages.length - 1]; if (last?.role === 'assistant') { last.book = ev.book; messages = [...messages]; } }
           // the reply's quoted blockquotes → passage cards; the book(s) the answer is about (both drawn once the reply is complete)
           // one found passage (in_work / find_passage, code-built reply) → its card: cover (a Star of the West issue's own scan), the
@@ -519,7 +526,9 @@
         }
       }
       streamDone = true;   // ticker drains the buffer, then finalizes
+      opts.onDone?.();
     } catch (e) {
+      opts.onDone?.(e);
       stopTicker(); stopStatus();
       messages = messages.slice(0, -1);
       messages = [...messages];
@@ -528,6 +537,7 @@
       phase = 'idle';
       scroll();
     }
+    return true;
   }
 
   // a source's own online page (Ocean of Lights, OceanLibrary …) first; our reader only when it has none (Chad 11-12); a source the reply already links is not repeated
@@ -651,6 +661,95 @@
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
   });
+
+  // ── Voice (P5): dictation, read aloud, conversation. The runtime is a separate bundle (anis-voice.js) fetched on first use
+  // (or on hover/focus of a voice button), so pages that never speak never load it. The audio element and AudioContext are
+  // created inside the tap that asks for sound: iOS Safari plays nothing that was not unlocked by a gesture.
+  const VOICE_V = typeof __VOICE_V__ !== 'undefined' ? __VOICE_V__ : '';
+  const canMic = typeof navigator !== 'undefined' && !!(navigator.mediaDevices?.getUserMedia || (typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)));
+  const SILENT = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+  let voiceLoad = null, au = null;
+  function loadVoice() {
+    if (window.__anisVoice) return Promise.resolve(window.__anisVoice);
+    return (voiceLoad ||= new Promise((res, rej) => {
+      const el = document.createElement('script');
+      el.src = `${api}/widget/anis-voice.js${VOICE_V ? `?v=${VOICE_V}` : ''}`; el.async = true;
+      el.onload = () => (window.__anisVoice ? res(window.__anisVoice) : rej(new Error('voice')));
+      el.onerror = () => { voiceLoad = null; rej(new Error('voice')); };
+      document.head.appendChild(el);
+    }));
+  }
+  const warmVoice = () => { loadVoice().catch(() => {}); };
+  function unlockAudio() {
+    if (!au) {
+      const audio = new Audio(); audio.setAttribute('playsinline', ''); audio.preload = 'auto';
+      let ctx = null; try { const C = window.AudioContext || window.webkitAudioContext; ctx = C ? new C() : null; } catch { ctx = null; }
+      au = { audio, ctx, primed: false };
+    }
+    if (!au.primed) {
+      au.primed = true;
+      try { au.audio.src = SILENT; au.audio.play()?.catch(() => {}); } catch { /* no audio */ }
+      try { if (window.speechSynthesis) window.speechSynthesis.speak(new SpeechSynthesisUtterance('')); } catch { /* no synthesis */ }
+    }
+    au.ctx?.resume?.()?.catch?.(() => {});
+    return au;
+  }
+  let voiceErr = $state('');
+  // dictation → the composer (the reader reviews and sends)
+  let dictation = $state(null);
+  async function dictate() {
+    if (dictation) { dictation.stop(); return; }
+    voiceErr = '';
+    const a = unlockAudio(), base = input.trim();
+    const join = (t) => (base ? `${base} ${t}` : t);
+    let V;
+    try { V = window.__anisVoice || await loadVoice(); } catch { voiceErr = 'Voice is unavailable just now.'; return; }
+    dictation = V.dictate({ api, ctx: a.ctx,
+      onInterim: (t) => { input = join(t); },
+      onFinal: (t) => { input = join(t); },
+      onError: (m) => { voiceErr = m; },
+      onEnd: () => { dictation = null; inputEl?.focus(); } });
+  }
+  // read one reply aloud (the speaker in its action bar); a second tap stops
+  let reading = $state(null);
+  async function readMsg(mi) {
+    const was = reading?.mi;
+    reading?.h.stop(); reading = null;
+    if (was === mi) return;
+    const a = unlockAudio();
+    let V;
+    try { V = window.__anisVoice || await loadVoice(); } catch { voiceErr = 'Voice is unavailable just now.'; return; }
+    const r = { mi, h: null };
+    reading = r;
+    r.h = V.readAloud({ api, audio: a.audio, md: plainReply(messages[mi]?.content || ''), onEnd: () => { if (reading === r) reading = null; } });
+  }
+  // hands-free conversation: a full-panel voice view
+  let voiceOpen = $state(false), vState = $state('idle'), vText = $state(''), vLevel = $state(1), vHeard = $state(''), vSaid = $state('');
+  let convo = null, orbEl = $state(null);
+  const whenIdle = () => new Promise((res) => { const t = setInterval(() => { if (!busy) { clearInterval(t); res(); } }, 150); });
+  async function openVoice() {
+    reading?.h.stop(); reading = null; dictation?.stop();
+    const a = unlockAudio();
+    voiceOpen = true; vState = 'idle'; vText = ''; vHeard = ''; vSaid = ''; vLevel = 1;
+    queueMicrotask(() => orbEl?.focus());
+    let V;
+    try { V = window.__anisVoice || await loadVoice(); } catch { vState = 'denied'; vText = 'Voice is unavailable just now.'; return; }
+    if (!voiceOpen) return;
+    convo = V.conversation({ api, audio: a.audio, ctx: a.ctx,
+      onState: (st, t) => { vState = st; vText = t; if (st === 'listening') vSaid = ''; },
+      onLevel: (l) => { vLevel = l; },
+      onHeard: (t) => { vHeard = t; vSaid = ''; },
+      onCaption: (t) => { vSaid = t; },
+      ask: async (text, h) => {
+        if (busy) await whenIdle();
+        if (!voiceOpen) return;
+        const sent = await send({ text, mode: 'audio', onSpeak: h.onText, onDone: h.onDone });
+        if (sent === false) h.onDone();
+      } });
+  }
+  function closeVoice() { convo?.close(); convo = null; voiceOpen = false; vLevel = 1; }
+  $effect(() => { if (!open && voiceOpen) closeVoice(); });
+  $effect(() => () => { convo?.close(); reading?.h.stop(); dictation?.stop(); });
 
   function onKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
   // The panel is its own world: keys and wheel/touch never reach the host page (whose shortcuts, e.g. Space = play/pause,
@@ -1059,6 +1158,7 @@
                       <button type="button" class="act" aria-label="Copy reply" title="Copy" onclick={() => copyMsg(mi)}>{@render ic(copiedAt === mi ? 'check' : 'copy')}</button>
                       <button type="button" class="act" aria-label="Share this answer" title="Share" onclick={() => shareMsg(mi)}>{@render ic('share')}</button>
                       <button type="button" class="act" aria-label="Copy sources" title="Copy sources" onclick={() => citeMsg(mi)}>{@render ic('cite')}</button>
+                      <button type="button" class="act" class:on={reading?.mi === mi} aria-pressed={reading?.mi === mi} aria-label={reading?.mi === mi ? 'Stop reading' : 'Read aloud'} title={reading?.mi === mi ? 'Stop' : 'Read aloud'} onclick={() => readMsg(mi)} onpointerenter={warmVoice}>{@render ic(reading?.mi === mi ? 'stop' : 'speaker')}</button>
                       <span class="act-gap" aria-hidden="true"></span>
                       <button type="button" class="act" class:on={m.vote === 1} aria-label="Good answer" aria-pressed={m.vote === 1} title="Good answer" onclick={() => voteMsg(mi, 1)}>{@render ic('up')}</button>
                       <button type="button" class="act" class:on={m.vote === -1} aria-label="Poor answer" aria-pressed={m.vote === -1} title="Poor answer" onclick={() => voteMsg(mi, -1)}>{@render ic('down')}</button>
@@ -1131,6 +1231,7 @@
             </div>
           </div>
         {/if}
+        {#if voiceErr}<p class="verr" role="alert"><span>{voiceErr}</span><button type="button" aria-label="Dismiss" onclick={() => (voiceErr = '')}>{@render ic('x')}</button></p>{/if}
         <footer>
           <textarea
             rows="1"
@@ -1142,11 +1243,35 @@
             disabled={busy}
             aria-label="Your question"
           ></textarea>
-          <button class="send" onclick={send} disabled={busy || !input.trim()} aria-label="Send">
+          {#if canMic}
+            <button type="button" class="mic" class:on={!!dictation} aria-pressed={!!dictation} aria-label={dictation ? 'Stop dictation' : 'Dictate'} title={dictation ? 'Stop' : 'Dictate'}
+              disabled={busy && !dictation} onclick={dictate} onpointerenter={warmVoice} onfocus={warmVoice}>{@render ic(dictation ? 'stop' : 'talk')}</button>
+          {/if}
+          {#if canMic && !input.trim() && !dictation}
+            <button type="button" class="send talk" onclick={openVoice} onpointerenter={warmVoice} onfocus={warmVoice} aria-label="Voice conversation" title="Voice conversation">{@render ic('wave')}</button>
+          {:else}
+          <button class="send" onclick={() => send()} disabled={busy || !input.trim()} aria-label="Send">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 11.2 20.2 3.4c.8-.4 1.6.5 1.2 1.3l-7.8 16.8c-.4.8-1.6.7-1.9-.2l-2-6.6a1 1 0 0 0-.7-.7l-6.6-2c-.9-.3-.9-1.5 0-1.9z" transform="rotate(3 12 12)"/></svg>
           </button>
+          {/if}
         </footer>
         </div>
+        {#if voiceOpen}
+          <div class="voice" data-state={vState} role="dialog" aria-modal="true" aria-label="Voice conversation">
+            <button type="button" class="v-close" aria-label="End voice conversation" title="Close" onclick={closeVoice}>{@render ic('x')}</button>
+            <div class="v-stage">
+              <button type="button" class="orb" bind:this={orbEl} style="--lvl:{vLevel}" aria-label={vState === 'paused' ? 'Resume' : 'Pause'}
+                disabled={vState === 'denied' || vState === 'idle'} onclick={() => convo?.pause()}>
+                <span class="orb-halo" aria-hidden="true"></span><span class="orb-core" aria-hidden="true"></span>
+              </button>
+              <p class="v-state" aria-live="polite">{vText}</p>
+            </div>
+            <div class="v-text">
+              {#if vHeard}<p class="v-q">{vHeard}</p>{/if}
+              {#if vSaid}<p class="v-a">{vSaid}</p>{/if}
+            </div>
+          </div>
+        {/if}
       </section>
     {:else}
       <button class="bubble-btn" aria-label="Open {cfg.name} chat" aria-expanded="false" onclick={togglePanel}>
@@ -1173,6 +1298,9 @@
     --rail-bg: #f4f0e7; --rail-card: #fffdf8; --rail-ink: #2a2620; --rail-muted: #8b806c; --rail-line: #e5ddcb;
     --rail-hover: rgba(110, 84, 30, .065); --rail-hover2: rgba(110, 84, 30, .11); --gold-ink: #a8822c; --danger: #b03a2e;
     --menu-shadow: 0 14px 34px -10px rgba(40, 28, 8, .3), 0 2px 6px rgba(40, 28, 8, .08);
+    /* voice (P5): the conversation view, the composer's mic */
+    --voice-bg: radial-gradient(120% 90% at 50% 36%, #fffdf8, #f2ebdc 72%); --voice-ink: #2a2620;
+    --mic-bg: #fffefb; --mic-line: #ddd5c2; --mic-ink: #6b6253;
   }
   .root.right { right: 20px; }
   .root.left { left: 20px; align-items: flex-start; }
@@ -1232,6 +1360,7 @@
 
   /* ── Panel ── */
   .panel {
+    position: relative;
     width: min(720px, calc(100vw - 40px)); height: min(760px, calc(100vh - 96px));
     background: linear-gradient(178deg, #fdfcf8, #f7f3ec);
     color: #24211c; border-radius: 16px; overflow: hidden;
@@ -1616,6 +1745,60 @@
   .send:hover:not(:disabled) { filter: brightness(1.12); }
   .send:active:not(:disabled) { transform: scale(.92); }
   .send:disabled { opacity: .38; cursor: default; }
+  .send.talk { padding: 12px; display: grid; place-items: center; }
+  .send.talk .ic { width: 22px; height: 22px; }
+
+  /* ── Voice (P5): composer mic, inline voice message, the conversation view ── */
+  .mic {
+    border: 1px solid var(--mic-line); border-radius: 12px; width: 44px; height: 44px; align-self: center; flex-shrink: 0; cursor: pointer;
+    background: var(--mic-bg); color: var(--mic-ink); display: grid; place-items: center; padding: 0;
+    transition: color .15s, border-color .15s, transform .12s;
+  }
+  .mic .ic { width: 18px; height: 18px; }
+  .mic:hover:not(:disabled) { color: var(--gold-ink); border-color: color-mix(in srgb, var(--gold) 55%, var(--mic-line)); }
+  .mic:active:not(:disabled) { transform: scale(.94); }
+  .mic:disabled { opacity: .4; cursor: default; }
+  .mic.on { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--mic-line)); animation: mic-pulse 1.5s ease-in-out infinite; }
+  @keyframes mic-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 30%, transparent); } 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--danger) 0%, transparent); } }
+  .verr { display: flex; align-items: center; gap: 8px; margin: 0 14px -4px; padding: 6px 4px 0 10px; font-size: 12.5px; line-height: 1.35; color: var(--danger); }
+  .verr span { flex: 1; }
+  .verr button { border: 0; background: none; color: inherit; opacity: .7; cursor: pointer; padding: 4px; display: grid; place-items: center; }
+  .verr .ic { width: 14px; height: 14px; }
+  .voice {
+    position: absolute; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 34px; padding: 64px 20px 48px; background: var(--voice-bg); color: var(--voice-ink); animation: fadeup .3s ease both;
+  }
+  .v-close {
+    position: absolute; top: max(12px, env(safe-area-inset-top, 0px)); right: 12px; width: 42px; height: 42px; border: 0; border-radius: 999px;
+    background: transparent; color: inherit; opacity: .7; cursor: pointer; display: grid; place-items: center;
+  }
+  .v-close:hover, .v-close:focus-visible { opacity: 1; background: var(--rail-hover2); outline: none; }
+  .v-close .ic { width: 18px; height: 18px; }
+  .v-stage { display: flex; flex-direction: column; align-items: center; gap: 26px; }
+  .orb { position: relative; width: 156px; height: 156px; border: 0; padding: 0; border-radius: 50%; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .orb:disabled { cursor: default; }
+  .orb:focus-visible { outline: 2px solid var(--gold); outline-offset: 14px; }
+  .orb-core, .orb-halo { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
+  .orb-core {
+    background: radial-gradient(circle at 36% 30%, #fff7de 0%, var(--gold-soft) 20%, var(--gold) 58%, color-mix(in srgb, var(--gold) 55%, #5a3d20) 100%);
+    box-shadow: 0 22px 60px -16px color-mix(in srgb, var(--gold) 70%, transparent), inset 0 -12px 30px rgba(90, 61, 32, .28);
+    transform: scale(var(--lvl, 1)); transition: transform .12s ease-out, opacity .3s, filter .3s;
+  }
+  .orb-halo {
+    background: radial-gradient(circle, color-mix(in srgb, var(--gold) 34%, transparent) 0%, transparent 68%);
+    transform: scale(calc(var(--lvl, 1) * 1.5)); opacity: .85; transition: transform .2s ease-out;
+  }
+  .voice[data-state='thinking'] .orb-core { animation: orb-think 1.8s ease-in-out infinite; }
+  .voice[data-state='speaking'] .orb-core { animation: orb-speak 1.2s ease-in-out infinite; }
+  .voice[data-state='speaking'] .orb-halo { animation: orb-halo 2.4s ease-in-out infinite; }
+  .voice[data-state='paused'] .orb-core, .voice[data-state='denied'] .orb-core, .voice[data-state='idle'] .orb-core { filter: saturate(.3); opacity: .6; }
+  @keyframes orb-think { 0%, 100% { transform: scale(.93); } 50% { transform: scale(1.01); } }
+  @keyframes orb-speak { 0%, 100% { transform: scale(1); } 30% { transform: scale(1.07); } 62% { transform: scale(.98); } }
+  @keyframes orb-halo { 0%, 100% { transform: scale(1.4); opacity: .55; } 50% { transform: scale(1.65); opacity: .9; } }
+  .v-state { margin: 0; min-height: 1.4em; font-family: var(--serif); font-size: 19px; letter-spacing: .01em; color: var(--rail-muted); text-align: center; }
+  .v-text { width: min(560px, 100%); min-height: 7em; display: flex; flex-direction: column; gap: 12px; text-align: center; }
+  .v-q { margin: 0; font-size: 14px; line-height: 1.4; color: var(--rail-muted); }
+  .v-a { margin: 0; font-family: var(--serif); font-size: 21px; line-height: 1.45; animation: fadeup .35s ease both; }
 
   /* ── Threads: the rail (fullscreen), the drawer (fullscreen, narrow), the overlay (floating widget) ── */
   .main { position: relative; flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
@@ -1751,7 +1934,9 @@
     .root { --quote: #dcc4a0; --panel-bg: #11151a;
       --rail-bg: #0c1014; --rail-card: #1a2029; --rail-ink: #e6e2d8; --rail-muted: #858d9b; --rail-line: #232a35;
       --rail-hover: rgba(255, 255, 255, .045); --rail-hover2: rgba(255, 255, 255, .085); --gold-ink: var(--gold); --danger: #e0786b;
-      --menu-shadow: 0 16px 40px -10px rgba(0, 0, 0, .6), 0 2px 6px rgba(0, 0, 0, .3); }
+      --menu-shadow: 0 16px 40px -10px rgba(0, 0, 0, .6), 0 2px 6px rgba(0, 0, 0, .3);
+      --voice-bg: radial-gradient(120% 90% at 50% 36%, #1a2028, #0b0f13 72%); --voice-ink: #e9e6dd;
+      --mic-bg: #171c23; --mic-line: #313a48; --mic-ink: #b9b3a6; }
     .tl-new, .tr.on { box-shadow: none; }
     .tr.on { box-shadow: inset 2px 0 0 var(--gold), 0 0 0 1px var(--rail-line); }
     .panel { background: linear-gradient(178deg, #14181e, #0e1217); color: #e9e6dd; }
@@ -1792,6 +1977,7 @@
     .stage { background-image: linear-gradient(90deg, #6d7789 0%, color-mix(in srgb, var(--accent) 40%, #cfe1ff) 45%, var(--gold-soft) 55%, #6d7789 100%); }
     footer { border-top: 1px solid #232a35; }
     textarea { background: #171c23; color: #e9e6dd; border-color: #313a48; }
+    .orb-core { box-shadow: 0 22px 70px -18px color-mix(in srgb, var(--gold) 55%, transparent), inset 0 -12px 30px rgba(0, 0, 0, .3); }
     textarea::placeholder { color: #6c7686; }
     .body { scrollbar-color: rgba(140,150,170,.35) transparent; }
     .body::-webkit-scrollbar-thumb { background: rgba(140,150,170,.3); }
@@ -1812,6 +1998,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .voice, .v-a, .mic.on, .voice .orb-core, .voice .orb-halo { animation: none; }
+    .orb-core, .orb-halo { transition: none; }
     .bubble-btn, .panel, .msg, .rule, .hist, .tr-menu, .toast, .share-scrim { animation: none; }
     .acts { transition: none; }
     .root.full .rail { transition: none; }

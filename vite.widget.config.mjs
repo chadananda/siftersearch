@@ -3,10 +3,16 @@
 // output is a committed artifact because the backend deploy path has no build step. Run: npm run build:widget.
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+
+// the lazy voice bundle's content hash (same as tower's bundleHash), so the element asks for exactly its build (immutable URL)
+const voiceV = (() => { try { return createHash('md5').update(readFileSync('api/static/widget/anis-voice.js', 'utf8')).digest('hex').slice(0, 10); } catch { return ''; } })();
 
 export default defineConfig({
   publicDir: false,   // do NOT copy the Astro public/ dir into the widget outDir
   plugins: [svelte({ compilerOptions: { customElement: true } })],
+  define: { __VOICE_V__: JSON.stringify(voiceV) },
   build: {
     lib: { entry: 'src/widget/element.js', formats: ['iife'], name: 'SifterChat', fileName: () => 'sifter-chat.js' },
     outDir: 'api/static/widget',

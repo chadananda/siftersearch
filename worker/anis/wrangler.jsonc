@@ -13,5 +13,7 @@
   "r2_buckets": [{ "binding": "ANIS_CACHE", "bucket_name": "anis-cache" }],
   "vectorize": [{ "binding": "ANIS_VEC", "index_name": "anis-research" }],
   // 10 turns a minute per visitor IP (each turn is a paid model call); over it → 429
-  "ratelimits": [{ "name": "CHAT_LIMIT", "namespace_id": "4801", "simple": { "limit": 10, "period": 60 } }]
+  "ratelimits": [{ "name": "CHAT_LIMIT", "namespace_id": "4801", "simple": { "limit": 10, "period": 60 } },
+    // voice (voice.js): a conversation speaks a reply sentence by sentence, so far more calls than turns; misses only (R2 hits are free)
+    { "name": "VOICE_LIMIT", "namespace_id": "4802", "simple": { "limit": 60, "period": 60 } }]
 }

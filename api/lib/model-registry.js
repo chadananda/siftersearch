@@ -599,6 +599,10 @@ export const MODEL_REGISTRY = {
   // input only ($0.011/1k neurons; clef 21,818 neurons/M, clef-flash 3,455/M); no output rate is listed.
   'clef': { provider: 'cloudflare', name: 'Clef (System-1, Workers AI)', type: 'classification', pricing: { input: 0.00024, output: 0 } },
   'clef-flash': { provider: 'cloudflare', name: 'Clef-flash (System-1, Workers AI)', type: 'classification', pricing: { input: 0.000038, output: 0 } },
+  // Anís voice (P5), Workers AI list price 2026-11-13: Whisper turbo $0.0005/audio minute (units = audio SECONDS → per 1k s);
+  // Deepgram aura-1 $0.015 per 1k characters (units = characters). Logged as prompt units by the edge (worker/anis/voice.js).
+  '@cf/openai/whisper-large-v3-turbo': { provider: 'cloudflare', name: 'Whisper large-v3 turbo (Workers AI)', type: 'transcription', pricing: { input: 0.00855, output: 0 } },
+  '@cf/deepgram/aura-1': { provider: 'cloudflare', name: 'Deepgram Aura-1 (Workers AI)', type: 'tts', pricing: { input: 0.015, output: 0 } },
   'gemini-embedding-2': {
     provider: 'google', name: 'Gemini Embedding 2', type: 'embedding',
     pricing: { input: 0.0002, output: 0 },     // $0.20 / 1M text (ai.google.dev pricing, checked 10-10)

@@ -2,7 +2,7 @@
 // deploy was invisible until caches expired (the home page kept an old Anis without the open hook). The loader now
 // points at /widget/sifter-chat.js?v=<content hash>: a new build is a new URL, and that URL can be cached forever.
 import { describe, it, expect } from 'vitest';
-import { versionedLoader, publicLoader, bundleHash, LOADER_CACHE } from '../../api/routes/widget.js';
+import { versionedLoader, publicLoader, bundleHash, pinnedAsset, LOADER_CACHE } from '../../api/routes/widget.js';
 
 describe('widget bundle versioning', () => {
   it('stamps the bundle URL in the loader with the content hash', () => {
@@ -46,5 +46,13 @@ describe('widget bundle versioning', () => {
     expect(out).toContain("var BUNDLE = api + '/widget/sifter-chat.js?v=beef01';");
     expect(out).toContain("'sifter-chat-' + ver");
     expect(out).toContain('api = "https://siftersearch.com"');
+  });
+  it('the element and the lazy voice bundle are immutable only at their own hash; the loader never', () => {
+    const hashes = { 'sifter-chat.js': 'aaa', 'anis-voice.js': 'bbb' };
+    expect(pinnedAsset('anis-voice.js', 'bbb', hashes)).toBe(true);
+    expect(pinnedAsset('anis-voice.js', 'aaa', hashes)).toBe(false);
+    expect(pinnedAsset('sifter-chat.js', 'aaa', hashes)).toBe(true);
+    expect(pinnedAsset('anis-voice.js', undefined, { 'anis-voice.js': undefined })).toBe(false);
+    expect(pinnedAsset('widget.js', 'x', { 'widget.js': 'x' })).toBe(false);
   });
 });

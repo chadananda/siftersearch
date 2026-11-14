@@ -37,15 +37,19 @@ const SITE_ORIGIN = (process.env.PUBLIC_WIDGET_ORIGIN || 'https://siftersearch.c
 const ALSO_PUBLIC = (process.env.PUBLIC_WIDGET_ORIGINS || 'https://anis.oceanlibrary.com').split(',').map((s) => s.trim().replace(/\/$/, '')).filter(Boolean);
 // The built files are re-read when they change on disk: a push that only rebuilds the bundle reloads no service (the coordinator
 // follows the import graph), so a boot-time copy served the old widget until an unrelated restart (Chad 11-13 "I don't see it").
+// The voice bundle (anis-voice.js, P5) is loaded only when a reader first uses voice; the element names it by its hash
+// (build-time __VOICE_V__), so it is immutable exactly like the element. Pure: which request is a pinned build.
+export const pinnedAsset = (file, v, hashes) => file !== 'widget.js' && !!v && v === hashes?.[file];
 const mtime = (file) => { try { return statSync(join(STATIC_DIR, file)).mtimeMs; } catch { return 0; } };
 let built = null;
 const current = () => {
   const now = Date.now();
   if (built && now - built.checked < 5000) return built;
-  const stamp = `${mtime('sifter-chat.js')}:${mtime('widget.js')}`;
+  const stamp = `${mtime('sifter-chat.js')}:${mtime('widget.js')}:${mtime('anis-voice.js')}`;
   if (built?.stamp === stamp) { built.checked = now; return built; }
-  const bundle = loadAsset('sifter-chat.js'), hash = bundleHash(bundle), loader = loadAsset('widget.js');
-  built = { stamp, checked: now, hash, assets: { 'widget.js': loader ? publicLoader(loader, hash, SITE_ORIGIN, ALSO_PUBLIC) : null, 'sifter-chat.js': bundle } };
+  const bundle = loadAsset('sifter-chat.js'), hash = bundleHash(bundle), loader = loadAsset('widget.js'), voice = loadAsset('anis-voice.js');
+  built = { stamp, checked: now, hash, hashes: { 'sifter-chat.js': hash, 'anis-voice.js': bundleHash(voice) },
+    assets: { 'widget.js': loader ? publicLoader(loader, hash, SITE_ORIGIN, ALSO_PUBLIC) : null, 'sifter-chat.js': bundle, 'anis-voice.js': voice } };
   return built;
 };
 const DEMO_HTML = loadAsset('demo.html');
@@ -74,13 +78,13 @@ export default async function widgetRoutes(fastify) {
   const apiOrigin = () => (process.env.PUBLIC_WIDGET_ORIGIN || 'https://siftersearch.com').replace(/\/$/, '');
 
   // ── Static assets (long-cached; bundle versioned by deploy) ─────────────────────────────────────────────────
-  for (const file of ['widget.js', 'sifter-chat.js']) {
-    const path = file === 'widget.js' ? '/widget.js' : '/widget/sifter-chat.js';
+  for (const file of ['widget.js', 'sifter-chat.js', 'anis-voice.js']) {
+    const path = file === 'widget.js' ? '/widget.js' : `/widget/${file}`;
     fastify.get(path, async (req, reply) => {
-      const { assets, hash: BUNDLE_HASH } = current(), body = assets[file];
+      const { assets, hashes } = current(), body = assets[file];
       if (!body) return reply.code(404).send('// widget asset not built — run: npm run build:widget');
       // A request for exactly this build (?v=<hash>) is immutable; the loader and unversioned requests stay short.
-      const pinned = file === 'sifter-chat.js' && req.query?.v === BUNDLE_HASH;
+      const pinned = pinnedAsset(file, req.query?.v, hashes);
       return reply.header('content-type', 'application/javascript; charset=utf-8')
         .header('cache-control', pinned ? 'public, max-age=31536000, immutable' : LOADER_CACHE)
         .header('access-control-allow-origin', '*').send(body);

@@ -13,6 +13,7 @@ import { finishLinks, templateFilter } from './links.js';
 import { backPills, pinnedQuestion } from './pills.js';
 import { triageLetter } from './triage.js';
 import { feedback } from './feedback.js';
+import { transcribeRoute, speakRoute } from './voice.js';
 import { shareDraft, sharePublish, shareDelete, published, discussionPage, notFoundPage, DISCUSSION_PATH } from './share.js';
 import { CHANNELS, MODES, channelOfMode, greetByName, speakable } from '../../api/lib/assistant/channels.js';
 const formSources = (xs) => xs.map((x) => ({ title: x?.title, url: x?.url ?? x?.source_url ?? null, text: x?.text ?? null }));
@@ -296,6 +297,12 @@ export async function discussionRoute(slug, env) {
     'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin' } });
 }
 
+/** Usage rows of an edge-only paid call (voice) → tower's ledger after the response (anis-impl-tools logUsage). */
+export const usageLog = (env, fetchFn = fetch) => (rows, ctx) => {
+  const p = remoteImpl(env, { turn: null, local: {}, fetchFn, ctx }).impl.logUsage(rows).catch((err) => console.warn(`[anis] voice usage log failed: ${err?.message}`));
+  if (ctx?.waitUntil) ctx.waitUntil(p);
+  return p;
+};
 const authed = (request, env) => env.TOWER_KEY && request.headers.get('x-internal-key') === env.TOWER_KEY;
 export default {
   async fetch(request, env, ctx) {
@@ -305,6 +312,8 @@ export default {
     if (pathname === '/api/chat/stream' && request.method === 'POST') return chat(request, env, ctx);
     if (pathname === '/api/chat/feedback' && request.method === 'POST') return feedback(request, env, { headers: cors(request) });   // thumbs on a reply (feedback.js)
     if (pathname === '/api/chat/share' || pathname.startsWith('/api/chat/share/')) return shareRoute(request, env, ctx);   // shared discussions (share.js)
+    if (pathname === '/api/chat/transcribe' && request.method === 'POST') return transcribeRoute(request, env, ctx, { headers: cors(request), log: usageLog(env) });   // voice (voice.js)
+    if (pathname === '/api/chat/speak' && request.method === 'POST') return speakRoute(request, env, ctx, { headers: cors(request), log: usageLog(env) });
     const disc = request.method === 'GET' || request.method === 'HEAD' ? pathname.match(DISCUSSION_PATH)?.[1] : null;
     if (disc) return discussionRoute(disc, env);
     if (pathname.startsWith('/_anis/') && request.method === 'POST') {

@@ -11,7 +11,7 @@ export const edgeExtras = {
   urlsOf: async (all) => { const u = await (await import('../lib/assistant/researcher.js')).serverFallback.urlOf(all, true); return Object.fromEntries(all.map((x) => [x.id, u(x)])); },
   workNotes: async (title) => (await import('../lib/assistant/tools.js')).run('work_notes_lookup', { title }, {}),
   // the Worker's Anthropic usage into the ledger (ai_usage) — every paid call counted, real readers never capped
-  logUsage: async (rows) => { const { logAIUsage } = await import('../lib/ai-services.js'); for (const r of rows || []) logAIUsage({ provider: 'anthropic', model: r.model, serviceType: 'chat', caller: r.caller, promptTokens: r.prompt_tokens || 0, completionTokens: r.completion_tokens || 0, cachedTokens: r.cached_tokens || 0, cacheWriteTokens: r.cache_write_tokens || 0 }); return (rows || []).length; },
+  logUsage: async (rows) => { const { logAIUsage } = await import('../lib/ai-services.js'); for (const r of rows || []) logAIUsage({ provider: r.provider || 'anthropic', model: r.model, serviceType: r.service_type || 'chat', caller: r.caller, promptTokens: r.prompt_tokens || 0, completionTokens: r.completion_tokens || 0, cachedTokens: r.cached_tokens || 0, cacheWriteTokens: r.cache_write_tokens || 0 }); return (rows || []).length; },
   upgradeLinks: async (strings) => { const o = await import('../lib/ocean-links.js'); return Promise.all(strings.map((s) => (o.needsUpgrade(String(s)) ? o.upgradeOceanLinks(s) : s))); },
 };
 // Map/Set results (translationsOf, encumberedAmong) cross the wire as {__map}/{__set}; the Worker revives them.

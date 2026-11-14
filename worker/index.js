@@ -163,6 +163,8 @@ export function createExports(manifest) {
         if (env.ANIS && url.pathname === '/api/chat/feedback' && request.method === 'POST') return env.ANIS.fetch(request);
         // shared discussions live at the edge (anis_shared): preview, publish, read, unpublish — every method, preflight included
         if (env.ANIS && (url.pathname === '/api/chat/share' || url.pathname.startsWith('/api/chat/share/'))) return env.ANIS.fetch(request);
+        // voice (worker/anis/voice.js): dictation/conversation transcripts and read-aloud audio come from the edge whichever engine answers
+        if (env.ANIS && (url.pathname === '/api/chat/transcribe' || url.pathname === '/api/chat/speak') && ['POST', 'OPTIONS'].includes(request.method)) return env.ANIS.fetch(request);
         // media files: R2 at the edge (worker/media.js); falls through to the plain proxy when not cacheable
         if (MEDIA_FILE.test(url.pathname)) { const r = await mediaFile(request, env, ctx, API_ORIGIN); if (r) return r; }
         // public pages + public API reads: edge stale-while-revalidate (worker/edge-cache.js) — any cached copy answers at once
