@@ -335,7 +335,7 @@
     }
     flushQuote(); flushList();
     // never waste space (Chad 11-12): one blank line at most, none around a quote or a table (they carry their own margin)
-    const html = out.join('\n').replace(/\n{3,}/g, '\n\n').replace(/\n+(<blockquote|<div class="rt"|<span class="ul"|<span class="h")/g, '$1').replace(/(<\/blockquote>|<\/div><\/div>|<span class="ul">.*?<\/span><\/span>|<span class="h">.*?<\/span>)\n+/g, '$1').trim();
+    const html = out.join('\n').replace(/\n{2,}/g, '<span class="pg"></span>').replace(/\n+(<blockquote|<div class="rt"|<span class="ul"|<span class="h"|<span class="pg")/g, '$1').replace(/(<\/blockquote>|<\/div><\/div>|<span class="ul">.*?<\/span><\/span>|<span class="h">.*?<\/span>|<span class="pg"><\/span>)\n+/g, '$1').replace(/<span class="pg"><\/span>(?=<blockquote|<div class="rt"|<span class="ul"|<span class="h")|(<\/blockquote>|<\/div><\/div>|<\/span><\/span>|<span class="h">.*?<\/span>)<span class="pg"><\/span>/g, '$1').trim();
     return styleQuotes(html);   // quoted words styled apart from Anís's own (Chad 11-04)
   }
   // Query-prep (perceived speed): while the user types their FIRST question, debounce
@@ -1019,11 +1019,12 @@
     .bubble :global(.rt-rows) { display: block; white-space: normal; }
   }
   .bubble :global(.qref) { font-style: normal; font-size: .86em; opacity: .85;  }
-  .bubble :global(.ul) { display: block; margin: .45em 0 .55em; }
+  .bubble :global(.ul) { display: block; margin: .3em 0 .4em 1.1em; }   /* indent organizes, not blank lines (Chad 11-13) */
+  .bubble :global(.pg) { display: block; height: .55em; }   /* a paragraph break: half a line, never a full blank one */
   .bubble :global(.h) { display: block; font-weight: 700; margin: 1em 0 .3em; }
   .bubble :global(.h:first-child) { margin-top: 0; }
   .bubble :global(.li) { display: block; padding-left: .95em; text-indent: -0.95em; }
-  .bubble :global(.li + .li) { margin-top: .2em; }
+  .bubble :global(.li + .li) { margin-top: .12em; }
 
   /* Streaming caret — a breathing quill of accent-to-gold light. */
   .caret {
