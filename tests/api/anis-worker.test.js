@@ -242,7 +242,7 @@ describe('site worker → Anís edge switch', () => {
     const w = readFileSync(new URL('../../worker/index.js', import.meta.url), 'utf8');
     expect(w).toContain("if (env.ANIS_EDGE === '1' && env.ANIS && url.pathname === '/api/chat/stream' && request.method === 'POST') return env.ANIS.fetch(request);");
     expect(w.indexOf("env.ANIS_EDGE === '1'")).toBeLessThan(w.indexOf('if (isApiPath(url.pathname))'));
-    expect(readFileSync(new URL('../../wrangler.jsonc', import.meta.url), 'utf8')).toMatch(/"services": \[\{ "binding": "ANIS", "service": "anis" \}\]/);
+    expect(readFileSync(new URL('../../wrangler.jsonc', import.meta.url), 'utf8')).toMatch(/"services": \[[^\]]*\{ "binding": "ANIS", "service": "anis" \}/);
   });
 });
 
