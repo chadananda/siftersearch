@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-14T01:50:57.460Z",
+  "generated": "2026-11-14T01:56:01.156Z",
   "entries": [
+    {
+      "hash": "a95e7be80",
+      "date": "2026-11-13",
+      "type": "Other",
+      "description": "Version bump (anis host images)",
+      "scope": null
+    },
     {
       "hash": "b5d9e2bc9",
       "date": "2026-11-13",
@@ -714,17 +721,17 @@
       "type": "Other",
       "description": "A talk outside 'done' carries no published_at. The repo clears it on every state write that leaves done, and the verify pass repairs the past rows once per pass.",
       "scope": null
-    },
-    {
-      "hash": "e7642395e",
-      "date": "2026-10-31",
-      "type": "Other",
-      "description": "Published = on air. published_at follows restored in the repo; the catalogue no longer stamps it.",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-11-13": [
+      {
+        "hash": "a95e7be80",
+        "date": "2026-11-13",
+        "type": "Other",
+        "description": "Version bump (anis host images)",
+        "scope": null
+      },
       {
         "hash": "b5d9e2bc9",
         "date": "2026-11-13",
@@ -1461,13 +1468,6 @@
         "date": "2026-10-31",
         "type": "Other",
         "description": "A talk outside 'done' carries no published_at. The repo clears it on every state write that leaves done, and the verify pass repairs the past rows once per pass.",
-        "scope": null
-      },
-      {
-        "hash": "e7642395e",
-        "date": "2026-10-31",
-        "type": "Other",
-        "description": "Published = on air. published_at follows restored in the repo; the catalogue no longer stamps it.",
         "scope": null
       }
     ]
