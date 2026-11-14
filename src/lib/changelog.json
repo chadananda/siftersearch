@@ -1,6 +1,27 @@
 {
-  "generated": "2026-11-14T01:57:10.259Z",
+  "generated": "2026-11-14T02:17:02.373Z",
   "entries": [
+    {
+      "hash": "acd357929",
+      "date": "2026-11-13",
+      "type": "Other",
+      "description": "A quotation searches phrases at the exact-recall setting",
+      "scope": null
+    },
+    {
+      "hash": "c4aaf0534",
+      "date": "2026-11-13",
+      "type": "Other",
+      "description": "A talk holding the reader's exact words leads (transcripts fully searchable)",
+      "scope": null
+    },
+    {
+      "hash": "f95cd7a17",
+      "date": "2026-11-13",
+      "type": "Other",
+      "description": "Version bump (anis sitemap)",
+      "scope": null
+    },
     {
       "hash": "4db6919d7",
       "date": "2026-11-13",
@@ -725,6 +746,27 @@
   ],
   "grouped": {
     "2026-11-13": [
+      {
+        "hash": "acd357929",
+        "date": "2026-11-13",
+        "type": "Other",
+        "description": "A quotation searches phrases at the exact-recall setting",
+        "scope": null
+      },
+      {
+        "hash": "c4aaf0534",
+        "date": "2026-11-13",
+        "type": "Other",
+        "description": "A talk holding the reader's exact words leads (transcripts fully searchable)",
+        "scope": null
+      },
+      {
+        "hash": "f95cd7a17",
+        "date": "2026-11-13",
+        "type": "Other",
+        "description": "Version bump (anis sitemap)",
+        "scope": null
+      },
       {
         "hash": "4db6919d7",
         "date": "2026-11-13",
