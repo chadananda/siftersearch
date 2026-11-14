@@ -3,6 +3,7 @@
 // Pure. Deps: md-valid. One rule BLOCKS: a reply ending in an offer to search loses that offer (dropSearchOffer); finalForm applies it,
 // with safeLinkText, at every reply's exit.
 import { safeLinkText, repairEmphasis } from './md-valid.js';
+import { sentencesOf } from './sentences.js';
 import { encodeMarker } from '../ool-range.js';
 
 // An offer to run a lookup Anís could run himself: "would you like me to look…", "I can look up X if you'd like", "shall I
@@ -90,7 +91,7 @@ export function dropSearchOffer(text) {
     const p = paras[i];
     if (!p.trim()) continue;
     if (STRUCTURED.test(p) || p.includes('\n')) break;
-    const sents = p.match(/[^.!?]+(?:[.!?]+["”’)*_]*|$)\s*/g) || [p];
+    const sents = sentencesOf(p);
     let n = sents.length;
     while (n > 0) {
       if (isSearchOffer(sents[n - 1])) n -= 1;
@@ -131,7 +132,7 @@ const NOT_SETTLED = /\b(?:texts|sources|library) I can search\b[^.\n]*\b(?:do no
 export function dropQuibbles(text, { question = '', format = null } = {}) {
   const asked = ASKED_GRAMMAR.test(String(question));
   return String(text || '').split(/\n{2,}/).map((para) => {
-    const sents = para.match(/[^.!?]+(?:[.!?]+["”’)]*|$)\s*/g) || [para];
+    const sents = sentencesOf(para);
     const kept = sents.filter((x) => !(!asked && QUIBBLE.test(x)) && !(format === 'language' && NOT_SETTLED.test(x)));
     return kept.join('').trim();
   }).filter(Boolean).join('\n\n');
@@ -580,7 +581,7 @@ function dropSentences(text, bad) {
   const lines = src.split('\n').map((line) => {
     if (/^\s*(?:>|\||#)/.test(line) || !bad(line)) return line;
     const lead = (line.match(/^\s*(?:[-*+]\s+|\d+[.)]\s+)?/) || [''])[0];
-    const sents = line.slice(lead.length).match(/[^.!?]+(?:[.!?]+["”’)*_]*|$)\s*/g) || [line.slice(lead.length)];
+    const sents = sentencesOf(line.slice(lead.length));
     const kept = sents.map((x) => {
       if (!bad(x)) return x;
       dropped += 1;
@@ -644,7 +645,7 @@ export function dropCutOff(text) {
   let dropped = 0;
   const out = String(text || '').split('\n').map((line) => {
     if (/^\s*(?:>|\|)/.test(line) || !line.trim()) return line;
-    const sents = line.match(/[^.!?]+(?:[.!?…]+["”’)*_]*|$)\s*/g) || [line];
+    const sents = sentencesOf(line);
     const kept = sents.filter((x) => { const y = x.replace(/\[[^\]]*\]\([^)]*\)/g, 'LINK');
       return !(((/[.!?]["”’)*_]*\s*$/.test(x) && CUT_OFF.test(y)) || (!/[.!?…:;"”’)*_]\s*$/.test(x) && OPEN_END.test(y))) && ++dropped); });
     return kept.length === sents.length ? line : kept.join('').trimEnd();
@@ -656,7 +657,7 @@ export function dropCutOff(text) {
 // "no account"). → the claim sentences (outside blockquotes), each with the plain words it names. Pure.
 const ABSENCE = /\b(?:the library (?:holds|has|gives|contains|offers|provides) (?:nothing|no (?:account|passage|record|mention|information|description))|(?:not|never|remains? un) ?identified in the library|the library does not (?:identify|name|record|describe) (?:him|her|them|this)|nothing in the library (?:on|about|identifies|describes)|no (?:account|passage|record|mention) (?:of|on|about) (?:him|her|them|this (?:man|woman|person))\b[^.!?\n]*\bin the library)/i;
 export const absenceClaims = (text) => String(text || '').split('\n').filter((l) => !/^\s*>/.test(l))
-  .flatMap((l) => l.match(/[^.!?]+(?:[.!?…]+|$)/g) || []).filter((x) => ABSENCE.test(x)).map((x) => x.trim());
+  .flatMap((l) => sentencesOf(l)).filter((x) => ABSENCE.test(x)).map((x) => x.trim());
 const plain = (s) => String(s).normalize('NFD').replace(/\p{M}/gu, '').replace(/[’'ʻʿʼ`‘]/g, '').toLowerCase();
 /** The claims no empty sweep backs: a claim is backed when it names a word (≥4 letters) of a name whose sweep found nothing. Pure. */
 export const unbackedAbsence = (text, sweeps = []) => {
@@ -669,7 +670,7 @@ export const unbackedAbsence = (text, sweeps = []) => {
 // sentences (outside blockquotes). Pure.
 const CONTENT_ABSENCE = /\b(?:(?:the )?library (?:does not|doesn[’']t|did not) (?:appear to |seem to )?(?:hold|have|carry|contain|include)|(?:which|that) the library (?:does not|doesn[’']t) (?:appear to |seem to )?(?:hold|have|carry|contain)|(?:holds?|has|carries) [^.!?\n]{0,60}\bonly as (?:opening|first|sample) pages|(?:these|the|my|those) (?:sources|passages|texts|results|searches) (?:show|give|contain|hold|turn up|have) (?:no|nothing)\b|I (?:also |still |simply |only )?(?:found|find|could find|have found|did not find|didn[’']t find|could not find|couldn[’']t find|cannot find|can[’']t find) (?:no|nothing|any)\b|I (?:also |still )?have(?: not|n[’']t) (?:yet )?(?:searched|looked|checked|found)\b|(?:is|are) not (?:in|held in) the library\b)/i;
 export const contentAbsence = (text) => String(text || '').split('\n').filter((l) => !/^\s*>/.test(l))
-  .flatMap((l) => l.match(/[^.!?]+(?:[.!?…]+|$)/g) || []).map((x) => x.trim()).filter((x) => CONTENT_ABSENCE.test(x.replace(/[“"][^”"]{0,600}[”"]/g, ' ')));
+  .flatMap((l) => sentencesOf(l)).map((x) => x.trim()).filter((x) => CONTENT_ABSENCE.test(x.replace(/[“"][^”"]{0,600}[”"]/g, ' ')));
 /** Did a search INSIDE a work come back empty this turn? (an absence may then be said — as what the text does not say). Pure. */
 export const emptyInWork = (steps = []) => steps.some((s) => !s.deferred && /^(?:search_in_work|extract_from_work)$/.test(s.tool) && !s.found);
 // A CONFLICT CLAIM (11-14 Taherzadeh: "The two accounts differ … I leave the point open" — the letter's "Arab believer in Baghdád" and
@@ -678,7 +679,7 @@ export const emptyInWork = (steps = []) => steps.some((s) => !s.deferred && /^(?
 // → the claim sentences (outside blockquotes). Pure.
 const CONFLICT = /\b(?:(?:the )?(?:two|these|both|the) (?:accounts|sources|passages|texts|readings|versions|statements) (?:differ|disagree|conflict|contradict)|(?:differs?|disagrees?) (?:from|with) [^.!?\n]{0,60}\b(?:account|words|statement|view)|\b(?:account|letter|passage|text|source|statement|version|record)s? (?:contradicts?|conflicts? with)\b|a different (?:man|person|woman|figure) from\b|(?:leave|leaves|leaving) (?:the|this) (?:point|question|matter) open|(?:would|will|do) not treat (?:it|this) as (?:resolved|settled)|(?:nothing|no passage) [^.!?\n]{0,40}\b(?:reconciles|settles|resolves) (?:them|this|it))/i;
 export const conflictClaims = (text) => String(text || '').split('\n').filter((l) => !/^\s*>/.test(l))
-  .flatMap((l) => l.match(/[^.!?]+(?:[.!?…]+|$)/g) || []).map((x) => x.trim()).filter((x) => CONFLICT.test(x.replace(/[“"][^”"]{0,600}[”"]/g, ' ')));
+  .flatMap((l) => sentencesOf(l)).map((x) => x.trim()).filter((x) => CONFLICT.test(x.replace(/[“"][^”"]{0,600}[”"]/g, ' ')));
 /** A paragraph that opens on a pronoun whose person is named only later ("There he names…" with Taherzadeh first named after it —
  *  11-14: a reorder moved his book's paragraph below the letter's). → the opening lines. Pure. */
 export function danglingOpens(text) {
@@ -700,7 +701,7 @@ export function dropNarration(text) {
   let dropped = 0;
   const out = String(text || '').split('\n').map((line) => {
     if (/^\s*(?:>|\|)/.test(line) || !line.trim()) return line;
-    const sents = line.match(/[^.!?]+(?:[.!?…]+["”’)*_]*|$)\s*/g) || [line];
+    const sents = sentencesOf(line);
     const kept = sents.filter((x) => !(isNarration(x) && ++dropped));
     return kept.length === sents.length ? line : kept.join('').trimEnd();
   }).join('\n').replace(/\n{3,}/g, '\n\n');
@@ -805,7 +806,7 @@ export function dropRebuildPreamble(text) {
   let dropped = 0;
   const head = lines.slice(0, at).map((line) => {
     if (!line.trim() || /^\s*>/.test(line)) return line;
-    const sents = line.match(/[^.!?]+(?:[.!?…]+["”’)*_]*|$)\s*/g) || [line];
+    const sents = sentencesOf(line);
     const kept = sents.filter((x) => !((REBUILD_META.test(x.replace(/[“"][^”"]{0,600}[”"]/g, ' ')) || isNarration(x)) && ++dropped));
     return kept.join('').trimEnd();
   });
@@ -831,7 +832,7 @@ export function fixCounts(text, n = null) {
   let changed = 0;
   const out = String(text || '').split('\n').map((line) => {
     if (/^\s*(?:>|\||[-*+]\s|\d+[.)]\s)/.test(line) || !line.trim()) return line;
-    const sents = line.match(/[^.!?]+(?:[.!?…]+["”’)*_]*|$)\s*/g) || [line];
+    const sents = sentencesOf(line);
     const before = changed;
     const kept = sents.filter((x) => !(ROWS_META.test(x.replace(/\([^)]*\)/g, ' ')) && ++changed)).map((x) => x
       .replace(COUNT_VERB, (m, verb, num, them) => { const v = numVal(num); if (v == null || v < 3 || v === n) return m; changed++; return n ? `${verb} ${numWord(n, num)}${them || ''}` : `${verb} ${them ? 'them' : 'the'}`; })
