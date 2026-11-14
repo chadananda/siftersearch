@@ -194,6 +194,7 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
         return out
     # 4. quiet v2 (Chad 11-01): apply the spans the GPU host decided and proved (post/quiet.json, quiet.py) to this working copy; no quiet.json = nothing is silenced and no quiet is recorded (never guess)
     qj = os.path.join(post, 'quiet.json')
+    if os.path.exists(os.path.join(post, 'sound.json')): out['sound'] = 'sound.json'   # v3 sound map of the original (quiet.py); tower takes it as enhanced/sound.json
     if not cfg.get('selftest') and os.path.exists(qj):
         try:
             if silence is None: import quiet; silence = lambda src_, q_: quiet.apply(src_, q_, src_ + '.quiet.flac')

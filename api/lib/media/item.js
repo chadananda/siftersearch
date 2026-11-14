@@ -503,7 +503,7 @@ export async function runItem(item, opts = {}, deps = {}) {
           const out = join(dir, 'enhanced', 'unipase.opus'), report = join(dir, 'enhanced', 'unipase.guard.json');   // the kept UniPASE stage (Opus 96k, never overwritten; Chad 11-01)
           // the worker already ran the word guard (scripts/media/worker/post.py) when its transcript hash still matches: take it, no CPU here
           const pod = await podPost(dir);
-          if (pod) { await podTake(dir, 'unipase.opus', out); await podTake(dir, 'quiet.json', join(dir, 'enhanced', 'quiet.json')).catch(() => {}); await podTake(dir, 'unipase.guard.json', report).catch(() => {}); }
+          if (pod) { await podTake(dir, 'unipase.opus', out); await podTake(dir, 'quiet.json', join(dir, 'enhanced', 'quiet.json')).catch(() => {}); await podTake(dir, 'sound.json', join(dir, 'enhanced', 'sound.json')).catch(() => {}); await podTake(dir, 'unipase.guard.json', report).catch(() => {}); }
           const g = pod ? pod.guard : await heavySlot(() => tools.remasterGuard({ original: join(dir, meta.original), unipase: cloud, work: join(dir, 'transcript.work.json'), asr: casr,
             // the reference: the ORIGINAL through the same model + settings as the copy (pods), else the production transcript
             ref: existsSync(join(dir, 'enhanced', 'unipase.asr_orig.json')) ? join(dir, 'enhanced', 'unipase.asr_orig.json') : join(dir, 'transcript.raw.json'), af: safeChain(orig), output: out, report }, { stop }));

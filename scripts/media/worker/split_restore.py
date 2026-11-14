@@ -15,7 +15,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.dirname(HERE))
 import post as postmod
 
-GUARD_OUT, REALIGN_OUT, QUIET_JSON = 'post/guard.out.json', 'post/realign.out.json', 'post/quiet.json'
+GUARD_OUT, REALIGN_OUT, QUIET_JSON, SOUND_JSON = 'post/guard.out.json', 'post/realign.out.json', 'post/quiet.json', 'post/sound.json'
 TRANSIT_OGG, TRANSIT_JSON = 'post/unipase.opus', 'post/transit.json'
 TRANSIT = {'codec': 'libopus', 'b': '96k', 'ar': 48000, 'ac': 1, 'application': 'audio'}
 
@@ -80,7 +80,7 @@ def decide_quiet(d, cfg, src, f, torch, worker):
         def heard(a, b):
             segs, _ = asr.transcribe(orig[int(a * 16000):int(b * 16000)], word_timestamps=True, vad_filter=False, beam_size=5, condition_on_previous_text=False)
             return any((s.words or s.text.strip()) for s in segs)
-        q = quiet.decide(dur, words, vo, vr, heard, lambda a, b: quiet.rms_db(f['flac'], a, b))
+        q = quiet.decide(dur, words, vo, vr, heard, lambda a, b: quiet.rms_db(f['flac'], a, b), orig=src, rem=f['flac'], sound_out=os.path.join(d, SOUND_JSON))
         del asr; gc.collect(); torch.cuda.empty_cache()
     bad = quiet.prove(q, words, vo, vr)
     if bad: raise RuntimeError('quiet: a silenced span holds speech: ' + json.dumps(bad[:3]))
