@@ -784,7 +784,7 @@
   // can't see inside the shadow root and would act on keys typed here). Escape closes the panel here, since it no longer bubbles.
   function isolateKey(e) {
     if (shortcut(e)) { e.stopPropagation(); return; }
-    if (e.key === 'Escape') { if (sampleOpen) sampleOpen = false; else open = false; }
+    if (e.key === 'Escape') { if (sampleOpen) sampleOpen = false; else if (!isFull) open = false; }
     trapTab(e);
     e.stopPropagation();
   }
@@ -862,7 +862,7 @@
     return () => window.removeEventListener('pointerdown', away, true);
   });
   $effect(() => {
-    const esc = (e) => { if (open && shortcut(e)) return; if (e.key !== 'Escape') return; if (sampleOpen) sampleOpen = false; else if (open) open = false; };
+    const esc = (e) => { if (open && shortcut(e)) return; if (e.key !== 'Escape') return; if (sampleOpen) sampleOpen = false; else if (open && !isFull) open = false; };
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
   });
@@ -1092,9 +1092,11 @@
                 {#if muted}<path d="M16 8.5 21 15M21 8.5 16 15"/>{:else}<path d="M16.5 9a4.2 4.2 0 0 1 0 6M18.8 6.8a7.5 7.5 0 0 1 0 10.4"/>{/if}
               </svg>
             </button>
+            {#if !isFull}<!-- full screen is the app itself: nothing to minimise to (Chad 11-14) -->
             <button class="icon close" aria-label="Close chat" onclick={togglePanel}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
             </button>
+            {/if}
           </span>
         </header>
         <div class="rule" aria-hidden="true"></div>
