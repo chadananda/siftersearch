@@ -3,10 +3,11 @@
 import { toolRunner, TOOL_CHARS } from './tool-runner.js';
 import { workNotes as workNotesLookup, asPassage, SAME_QUESTION } from './tool-defs.js';
 import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
-import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer } from './lint.js';
+import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts } from './lint.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
 import { expandTemplates } from './widgets/templates.js';
+import { readableTitle } from './widgets/card-text.js';
 import { byTier, coreFirst } from './source-tier.js';
 import { keepHeldLinks } from './held-links.js';
 
@@ -103,6 +104,7 @@ WRITING:
 - A broad question about a teaching or practice ("how do Bahá'ís pray", "what happens after death") gets a researched answer: a plain summary of 2–4 sentences, then the 3–5 passages that show where it comes from (each a short quotation with its ref, the tradition's scripture first), and an example when one helps (a short prayer, quoted whole). Not one source, not a single sample.
 - Replies are short and interesting: a few plain sentences between display cards. Wherever a passage can carry the point, show it as a card rather than write a paragraph — the more cards breaking up the text, the better.
 - A question about a person or an event ("who was Ṭáhirih", "tell me about Badasht") is ALWAYS answered in scenes — this is its short form: one opening sentence, then 3–5 scenes in order — who they were, the turning points, the end — each a line {{scene "Conference of Badasht" "1848: the old law is set aside" P4 P5}}: a short title, one line of your own, then the 1–2 passages (from the research held when there is some; the Writings or Shoghi Effendi first — God Passes By, Memorials of the Faithful) that record that moment, shown whole. A sentence or two of yours between scenes at most. Never only a paraphrase with a citation after it.
+- LENGTH is your judgment, from the question and the reader (what they have indicated: a newcomer, a researcher, a study-class tutor) — never a word count. Give the shortest answer that is complete for THAT reader; what you leave out is offered as follow-up questions under the reply, so detail the reader did not ask for (rulings, side stories, every source's variant) waits for them. A newcomer's story question gets the plain story: 2–3 scenes, one short passage each; a researcher's gets the detail and the sources they asked for.
 - Otherwise the shortest complete answer; more only on request (follow-up questions are offered under every reply). A short question gets 1–3 sentences; a request for a book gets its link and one or two sourced lines on it; a study question gets the passages that carry it, quoted, and nothing the reader did not ask for. A follow-up, objection or comparison in a conversation answers that one point: a direct sentence or two, then the 2–3 passages that settle it — never a fresh survey of the topic or of what earlier replies covered.
 - A word or vocabulary question (an Arabic or Persian term, a title, a phrase): rendering_lookup on it in Arabic script, then show it at work in one or two passages — the original line and its published English, each with its ref — and say how Shoghi Effendi renders it. Grammar or etymology you add yourself is marked in two words ("my reading"), never a paragraph about your sources. An original is quoted exactly as its passage gives it — never add vowel marks or change a letter; word-by-word glosses go in italics, never in quotation marks.
 - Documents and email: when the reader asks for something printed, saved or emailed, write the content itself — the system turns your reply into a PDF and emails it (asking for the address if it has none). Never say you cannot send email or make a document, and never describe the delivery yourself. A heading or label over a passage names what that passage itself says — a passage on fasting is never labelled as one on prayer.
@@ -120,7 +122,7 @@ WRITING:
 - NEVER NARRATE. The reader sees only the answer: never write about candidates, tools, searches, held research or what you will check next ("The candidate source is…", "I'll check the notes"). When your searches run out, write the answer from what you hold and say plainly what is not settled.
 - LINKS COME FROM PASSAGES. Cite with refs ([[P3]]) only; never type a library address or a paragraph id yourself — code makes every link from a passage you hold, and a typed one is removed.
 - CORE TEXTS FIRST (the Bahá'í Faith in play). Answer from the written texts of Bahá'u'lláh, the Báb and 'Abdu'l-Bahá and from Shoghi Effendi — in English and in the Persian and Arabic originals (originals_search; quote an original with its existing translation, never a new one) — and let them lead and carry the argument. A recorded talk of 'Abdu'l-Bahá may stand beside a written text when it adds something, named as spoken; a pilgrim's recollection after that; a scholar's book only for a point no Writing addresses, named as that writer's view. Quote 'Abdu'l-Bahá from His own text, never through a scholar who quotes Him. When your passages lead with a talk or a study, search the Writings on that point before writing.
-- HISTORY AND BIOGRAPHY keep scholarship. Judge each question's kind yourself and pass it as about on fused_search and research_lookup: "teaching" (what a text or the Faith teaches — the core texts suffice and commentary is left out) or "history" (an event, a date, who a person was). For history the same order holds — the Writings and Shoghi Effendi lead where they speak — but the histories and scholars (Nabíl, Balyuzi, Momen, Mázandarání, Nicolas, Taherzadeh…) are needed to unravel obscure figures: search them on purpose, by the person's name and its variants, for EACH person you have not yet identified before writing that the library holds nothing on them; name each scholar's claim as theirs ("Balyuzi identifies him as…"). The evidence decides an identification, and a correction from the reader is evidence: weigh it against the passages, never keep an earlier reading out of habit.
+- HISTORY AND BIOGRAPHY keep scholarship. Judge each question's kind yourself and pass it as about on fused_search and research_lookup: "teaching" (what a text or the Faith teaches — the core texts suffice and commentary is left out) or "history" (an event, a date, who a person was). For history the same order holds — the Writings and Shoghi Effendi lead where they speak, and Nabíl's The Dawn-Breakers (Shoghi Effendi's translation) is THE narrative source for the Báb's ministry and the Bábí period: tell the events from it and quote it (fused_search with about: "history" searches inside it; search_in_work on it for a chapter or a person). It is in the library: never write that the library does not give you Nabíl's text, or that no passage exists for a point, before searching inside it — but the histories and scholars (Nabíl, Balyuzi, Momen, Mázandarání, Nicolas, Taherzadeh…) are needed to unravel obscure figures: search them on purpose, by the person's name and its variants, for EACH person you have not yet identified before writing that the library holds nothing on them; name each scholar's claim as theirs ("Balyuzi identifies him as…"). The evidence decides an identification, and a correction from the reader is evidence: weigh it against the passages, never keep an earlier reading out of habit.
 - WHO WAS EACH OF THEM (an identification table or list): each person's evidence is a passage that DESCRIBES them — a role, an event, a fate. The text that merely names them (the list being explained) is never evidence of who they were. Before writing, search each person not yet identified separately (about: "history"; the name with diacritics, without, and the short name alone — "Turshízí", "Khu'í"); if still nothing, the row says "not identified in the library (searched: …)".
 - With the Bahá'í Faith in play, prefer, in order: the Writings of Bahá'u'lláh, the Báb and 'Abdu'l-Bahá; Shoghi Effendi; then compilations; "Uncompiled Published Letters" (or "Uncompiled Letters") only when nothing else holds the words. A recollection of a Central Figure's spoken words (pilgrim notes, a visitor's article) only when no Writing says it, and named as a recollection in a few words. Doctrine rests on the Writings and Shoghi Effendi; the Universal House of Justice speaks with authority on law and administration.
 - In a Bahá'í question, readings in the community's sense: "the House" = the Universal House of Justice, "the Master" = 'Abdu'l-Bahá, "the Guardian" = Shoghi Effendi, "the Blessed Beauty" = Bahá'u'lláh, "the Most Holy Book" = the Kitáb-i-Aqdas, "the Nine Year Plan" = 2022–2031.
@@ -141,11 +143,11 @@ export function renderRefs(text, { found, works }) {
   for (const [r, w] of works || []) if (w?.title) t = t.replace(new RegExp(`(\\*{1,2}|_)?${esc(w.title)}\\1?\\s*\\(?\\s*\\[\\[?${r}\\]\\]?\\s*\\)?(?!\\()`, 'g'), `[[${r}]]`);
   return t
     .replace(/\(\s*(\[\[?[PW]\d+(?:\s*[,;]\s*[PW]\d+)*\]\]?)\s*\)/g, '$1')   // "([[P1]])" → one pair of parens
-    .replace(/\*{0,2}\[\[?(B\d+)\]\]?\*{0,2}(?!\()/g, (m, r) => { const w = works.get(r); return w ? (w.url ? `[*${w.title}*](${w.url})` : `*${w.title}*`) : ''; })
+    .replace(/\*{0,2}\[\[?(B\d+)\]\]?\*{0,2}(?!\()/g, (m, r) => { const w = works.get(r), t = readableTitle(w?.title) || w?.title; return w && t ? (w.url ? `[*${t}*](${w.url})` : `*${t}*`) : ''; })
     .replace(/\s*\[\[?((?:[PW]\d+)(?:\s*[,;]\s*[PW]\d+)*)\]\]?(?!\()/g, (m, list) => {
       const seen = new Set();
       const links = list.split(/\s*[,;]\s*/).map((r) => found.get(r)).filter((p) => { const k = p?.document_id ?? p?.source_url; return p?.source_url && !seen.has(k) && seen.add(k); })
-        .map((p) => `[${p.web ? 'web: ' : ''}${clip(shortTitle(p.title || 'source'), 70)}](${p.source_url})`);
+        .map((p) => `[${p.web ? 'web: ' : ''}${clip(shortTitle(readableTitle(p.title) || 'source'), 70)}](${p.source_url})`);
       return links.length ? ` (${links.join('; ')})` : '';
     })
     .replace(/[ \t]+([.,;:!?])/g, '$1')
@@ -338,6 +340,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const held0 = () => [...found.values()].map((p) => ({ ...p, source_title: p.title }));
   let gate = null, live = '';
   const liveWidgets = [];
+  const carded = new Set();   // passages already shown in a card this turn (widgets/templates.js: one card per passage)
   const heldNowAll = () => [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
   // each released sentence is finished as the final reply is (Chad 11-13 "formatting live"): refs → links, quotations restored,
   // credited, linked and styled, links narrowed, a template → its widget at once (event first, then the text holding its marker)
@@ -349,7 +352,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     for (const [, ref] of String(core).matchAll(/\[\[?(B\d+)\]\]?/g)) {
       const w = works.get(ref);
       if (bookCards.has(ref) || [...bookCards.values()].some((b) => Number(b.id) === Number(w?.id)) || bookCards.size >= 3 || !w?.url || !(Number(w.id) > 0) || String(w.id).includes(':')) continue;
-      bookCards.set(ref, { id: Number(w.id), title: w.title, author: w.author ?? null, url: w.url, year: null, description: null,
+      bookCards.set(ref, { id: Number(w.id), title: readableTitle(w.title) || w.title, author: w.author ?? null, url: w.url, year: null, description: null,
         cover_url: `https://siftersearch.com/img/covers/${Number(w.id)}` });
       added = true;
     }
@@ -402,6 +405,20 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   };
   // every paragraph link is one a held passage carries (held-links.js); a typed one → the book, or its words
   const heldOnly = (t, ps) => keepHeldLinks(t, { passages: [...found.values(), ...(ps || []), ...(held?.passages || [])], works: [...works.values()], prior: messages }).text;
+  // LAYOUT, live (Dawn-Breakers battery 11-14): a piece ending in a lead-in ("Shoghi Effendi sets the scene:") is held until the next piece
+  // shows what it introduces — a card, a blockquote, a list — and dropped when prose comes instead (its card was dropped) or nothing does;
+  // a sentence cut off by a vanished ref goes; "the text I hold" → "these sources". The reader never sees the hole.
+  let pendingLead = '';
+  const settleLayout = (body) => {
+    let piece = pendingLead + body; pendingLead = '';
+    const lines = piece.split('\n');
+    let last = lines.length - 1; while (last >= 0 && !lines[last].trim()) last--;
+    if (last >= 0 && leadInAt(lines[last])) { pendingLead = lines.slice(last).join('\n'); piece = lines.slice(0, last).join('\n') + (last > 0 ? '\n' : ''); }
+    const [, lead, core, trail] = piece.match(/^(\s*)([\s\S]*?)(\s*)$/);
+    if (!core) return piece;
+    const t = unholdTexts(dropCutOff(dropDanglingLeadIn(core, { final: false }).text).text);
+    return t.trim() ? lead + t + trail : '';
+  };
   const finishLive = (s) => {
     const [, lead, core0, trail] = String(s).match(/^(\s*)([\s\S]*?)(\s*)$/);
     if (!core0) return s;
@@ -411,9 +428,9 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     citedWorkCards(core);
     const ret = heldNowAll();
     const t = linkQuotes(fixQuoteSpeakers(restoreElisions(renderRefs(core, { found, works }), ret, { asked: asked0 }).text, ret).text, ret).text;
-    const x = expandTemplates(markQuotes(t, ret).text, { found, works, books: bookCards, shown: shownCards() }, { start: liveWidgets.length });
+    const x = expandTemplates(markQuotes(t, ret).text, { found, works, books: bookCards, shown: shownCards(), carded }, { start: liveWidgets.length });
     for (const w of x.widgets) { liveWidgets.push(w); onEvent({ type: 'widget', widget: w }); }
-    return lead + links(heldOnly(x.text, ret), ret) + trail;
+    return settleLayout(lead + links(heldOnly(x.text, ret), ret) + trail);
   };
   const onText = (t) => {
     if (t.includes(NOT_FOUND)) { gate = false; return; }   // a not-found draft may be nudged into another round: never shown
@@ -505,8 +522,9 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const shown = streamed && live.trim() ? live : null;
   const offerless = dropSearchOffer(dropPreamble(shown ?? linked.text).trim());   // the research is his to run, never an offer (11-04 #163)
   // inline templates ({{quote P3}} …) → widget marker + fallback + data, last: the words are the passage's own, never re-grounded (widgets/templates.js)
-  const { text: reply, widgets } = shown != null ? { text: offerless.text, widgets: liveWidgets }
-    : ((x) => ({ ...x, text: links(heldOnly(x.text, retrieved), retrieved) }))(expandTemplates(markQuotes(offerless.text, retrieved).text, { found, works, books: bookCards, shown: shownCards() }));   // quoted words styled apart (Chad 11-04)
+  const tidy = (x) => (shown != null ? x : { ...x, text: unholdTexts(dropCutOff(dropDanglingLeadIn(x.text).text).text) });   // the streamed reply was tidied piece by piece
+  const { text: reply, widgets } = tidy(shown != null ? { text: offerless.text, widgets: liveWidgets }
+    : ((x) => ({ ...x, text: links(heldOnly(x.text, retrieved), retrieved) }))(expandTemplates(markQuotes(offerless.text, retrieved).text, { found, works, books: bookCards, shown: shownCards(), carded })));   // quoted words styled apart (Chad 11-04)
   const citations = [...[...works.values()].map((w) => ({ title: w.title, author: w.author, url: w.url, religion: w.religion, document_id: w.id, paragraph_index: null, text: '' })),
     ...retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url, religion: q.religion, document_id: q.doc_id, paragraph_index: q.paragraph_index ?? null, text: String(q.text).slice(0, 300) }))]
     .filter((c) => c.url && reply.includes(c.url));

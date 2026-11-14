@@ -1,7 +1,7 @@
 // The library tools behind refs (P# passages, W# web answers, B# works): toolRunner, show/fit/clip helpers. PURE — bundles for a Worker (agent-core.js).
 // Server-only defaults (rights, title finder, link maps) come in as opts.fallback; researcher.js wraps this with them. Deps: source-tier, head-of, forensics, tool-cache
 import { headOf } from '../text/head-of.js';
-import { byTier, coreFirst, isWrittenCore, misfiled, needsWritings, sourceTier, tierLabel } from './source-tier.js';
+import { NARRATIVE_DOCS, byTier, coreFirst, isNarrative, isWrittenCore, misfiled, needsWritings, sourceTier, tierLabel } from './source-tier.js';
 import { copyClass, COPY_CLASSES } from '../audit/forensics.js';
 import { canonicalTradition } from './tradition-name.js';
 import { translationLabel } from './tool-defs.js';
@@ -154,6 +154,10 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
     const early = impl.originals && /bah/i.test(String(tradition || '')) ? impl.originals(query).catch(() => []) : null;
     // a Bahá'í-scoped search starts the Writings pass beside it (11-12: run after it, the two searches took 2.5–4.8 s); used only when needed
     const wEarly = impl.writings && /bah/i.test(String(tradition || '')) ? impl.writings(query).catch(() => []) : null;
+    // a HISTORY question (Dawn-Breakers battery 11-14: Nabíl cited in 4 of 10 narrative replies) also searches inside Nabíl's
+    // narrative, started beside the main search and used only when the hits hold none of it
+    const history = about === 'history';
+    const nEarly = history && impl.searchIn && (!tradition || /bah/i.test(String(tradition))) ? impl.searchIn(query, NARRATIVE_DOCS[0]).catch(() => []) : null;
     let hits = (await impl.search(query, tradition)).slice(0, 8);
     // CORE FIRST (Chad 11-14, "Who is the Evil One": a scholar's study led, 'Abdu'l-Bahá quoted through it, then pilgrim notes,
     // the Writings fourth): the Writings are searched on the same point whenever the hits hold too few written core passages
@@ -165,6 +169,11 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
     } else if (impl.writings && !hits.length && /bah/i.test(String(tradition || ''))) {
       hits = (await (wEarly || impl.writings(query)).catch(() => [])).slice(0, 4);
     }
+    if (nEarly && !hits.some(isNarrative) && (!hits.length || bahaiSearch(tradition, hits))) {
+      const seen = new Set(hits.map((p) => p.id).filter((x) => x != null));
+      const told = ((await nEarly) || []).filter((p) => p.id == null || !seen.has(p.id)).slice(0, 3);
+      hits = [...hits.slice(0, 10 - told.length), ...told];
+    }
     const orig = await originalsFor(query, hits, early);
     hits = byTier(hits).slice(0, 10 - orig.length);
     // the agent's own-source pass (own-source.js preferOwnWork): a Writing quoted in a compilation or another's book → the writer's own work
@@ -175,7 +184,6 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
     // talks, recollections, the House → commentary last, and left out when the written core is enough (source-tier.js coreFirst)
     // — for a TEACHING question. A history or biography question (the agent's own judgment, `about`; Chad 11-14, Dawn-Breakers:
     // "we will need to pull in other sources to unravel many of these") keeps the same order and drops nothing
-    const history = about === 'history';
     const { kept, left } = history ? { kept: byTier(hits), left: 0 } : coreFirst(byTier(hits), orig.length);
     hits = kept;
     searched.push({ query, docs: hits.map((p) => p.document_id).filter((x) => x != null) });

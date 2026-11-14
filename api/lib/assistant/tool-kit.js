@@ -67,7 +67,7 @@ export function engineFilters(f = {}) {
 export const letterVariants = (s) => [...new Set([String(s), String(s).replace(/ي/g, 'ی').replace(/ك/g, 'ک'), String(s).replace(/ی/g, 'ي').replace(/ک/g, 'ك')])];
 
 // standing (source-tier.js, from metadata only) → the kinds trees rank and filter by
-const KIND = { writings: 'scripture', guardian: 'interpretation', house: 'guidance', compilation: 'compilation', reported: 'reported', secondary: 'scholarship' };
+const KIND = { writings: 'scripture', guardian: 'interpretation', narrative: 'history', house: 'guidance', compilation: 'compilation', reported: 'reported', secondary: 'scholarship' };
 /** A passage's standing as a Passage.authority kind: Bahá’í by source-tier, every other tradition by its own canon (tradition-authority); null only when truly unknown (no religion, web). Pure. */
 export const authorityKind = (p) => { try { return p.authority_kind ?? (typeof p.authority === 'string' ? p.authority : null) ?? KIND[sourceTier(p)] ?? traditionKind(p); } catch { return null; } };
 

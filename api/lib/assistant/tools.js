@@ -102,7 +102,7 @@ async function fastRows(query, engine, limit, ctx = {}) {
 }
 // The question's KIND, judged by the agent (Chad 11-14, Dawn-Breakers pilot): a teaching question answers from the core texts and
 // leaves commentary out once they suffice; a history or biography question keeps the same order but never drops scholarship.
-const ABOUT = { type: 'string', enum: ['teaching', 'history'], description: 'The question\'s kind, your judgment: "teaching" (what a text or the Faith teaches — commentary is left out once the core texts answer) or "history" (an event, a date, who a person was — scholarship and histories kept beside the core texts). Default teaching' };
+const ABOUT = { type: 'string', enum: ['teaching', 'history'], description: 'The question\'s kind, your judgment: "teaching" (what a text or the Faith teaches — commentary is left out once the core texts answer) or "history" (an event, a date, who a person was — Nabíl\'s The Dawn-Breakers is searched as the narrative source, and scholarship and histories are kept beside the core texts). Default teaching' };
 const SEARCH_INPUT = (extra = {}) => ({ type: 'object', additionalProperties: false, required: ['query'], properties: {
   query: str('Words to search for, as the texts would say them'), filters: FILTERS, limit: LIMIT(8), ...extra } });
 const P_EX = { id: 1201, document_id: 12, paragraph_index: 4, title: 'Gleanings from the Writings of Bahá’u’lláh', author: "Bahá'u'lláh", religion: "Baha'i",

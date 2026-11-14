@@ -14,7 +14,7 @@
         "teaching",
         "history"
        ],
-       "description": "The question's kind, your judgment: \"teaching\" (what a text or the Faith teaches — commentary is left out once the core texts answer) or \"history\" (an event, a date, who a person was — scholarship and histories kept beside the core texts). Default teaching"
+       "description": "The question's kind, your judgment: \"teaching\" (what a text or the Faith teaches — commentary is left out once the core texts answer) or \"history\" (an event, a date, who a person was — Nabíl's The Dawn-Breakers is searched as the narrative source, and scholarship and histories are kept beside the core texts). Default teaching"
       },
       "question": {
        "type": "string",
@@ -242,7 +242,7 @@
         "teaching",
         "history"
        ],
-       "description": "The question's kind, your judgment: \"teaching\" (what a text or the Faith teaches — commentary is left out once the core texts answer) or \"history\" (an event, a date, who a person was — scholarship and histories kept beside the core texts). Default teaching"
+       "description": "The question's kind, your judgment: \"teaching\" (what a text or the Faith teaches — commentary is left out once the core texts answer) or \"history\" (an event, a date, who a person was — Nabíl's The Dawn-Breakers is searched as the narrative source, and scholarship and histories are kept beside the core texts). Default teaching"
       },
       "layers": {
        "type": "array",

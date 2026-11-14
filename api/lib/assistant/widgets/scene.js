@@ -1,12 +1,13 @@
 // Display widget `scene`: one moment of a person's or an event's story, told by its record — the book's cover, the scene's title and
 // one line, then the passage(s) that record it, each linked to its place. {{scene "Conference of Badasht" "1848: the old law is set aside" P4 P5}}.
 // The title and line are the writer's; the words are the passages' own. Pure.
+import { cleanCardText, isPdfDump, readableTitle } from './card-text.js';
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 const coverOf = (id) => (Number(id) > 0 ? `https://siftersearch.com/img/covers/${Number(id)}` : null);   // the cover by doc id (no cover → 404 → the card's drawn cover)
 export function fromRefs(refs, { found }, [title, line] = []) {
-  const passages = refs.map((r) => found?.get(r)).filter((p) => p?.text && p.source_url)
-    .map((p) => ({ text: String(p.text).trim(), url: p.source_url, title: p.title ?? null, author: p.author ?? null, place: p.place ?? null }));
+  const passages = refs.map((r) => found?.get(r)).filter((p) => p?.text && p.source_url && !isPdfDump(p.text))
+    .map((p) => ({ text: cleanCardText(p.text), url: p.source_url, title: readableTitle(p.title), author: p.author ?? null, place: p.place ?? null }));
   if (!title?.trim() || !passages.length) return null;
   const lead = refs.map((r) => found?.get(r)).find((p) => p?.cover_url);
   return { kind: 'scene', title: title.trim(), line: line?.trim() || null, cover_url: lead?.cover_url ?? coverOf(found?.get(refs[0])?.document_id), passages };

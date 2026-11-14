@@ -596,7 +596,47 @@ function dropSentences(text, bad) {
 // sentence is removed wherever it stands (outside blockquotes and tables). A reply that is ONLY narration comes back empty — the caller re-asks. Pure.
 const NARRATION = /\b(?:held research|research_lookup|quotation_candidates|search_in_work|fused_search|tool (?:results?|calls?|output)|the (?:search|tool)s? (?:returned|found|gave|show)|candidate (?:sources?|passages?|works?)|the candidates?\b|(?:looks?|seems?) like the best source|best (?:candidate|lead))/i;
 const PLAN = /^\s*(?:i['’]ll|i will|i['’]m going to|let me(?! know)|next,? i|i need to|i should|i can now|i['’]d (?:need|have) to)\b[^.!?\n]{0,200}\b(?:check|look|search|verify|consult|find|read|confirm|pull|trace|open|examine|dig)\b/i;
-export const isNarration = (s) => { const t = String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '); return NARRATION.test(t) || PLAN.test(t); };
+// SELF-SOURCED DENIAL (Dawn-Breakers battery 11-14, dbp:004 — doc 21308 in the library): "The library does not give me Nabíl's own chapter … in
+// a form I can quote" talks about the tools and is false; the sentence goes (the prompt has him search inside the work instead).
+const LIBRARY_DENIAL = /\bthe library (?:does not|doesn['’]t|did not|didn['’]t|cannot|can['’]t) (?:give|show|offer|hand|let) me\b|\bin (?:a|any) form I can (?:quote|cite|use)\b/i;
+export const isNarration = (s) => { const t = String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '); return NARRATION.test(t) || PLAN.test(t) || LIBRARY_DENIAL.test(t); };
+/** "the text I hold" / "the passages I have" (dbp:002 "**What is not settled by the text I hold**") → "these sources": the reader sees texts, not
+ *  what Anís holds. Outside blockquotes. Pure. */
+export const unholdTexts = (text) => String(text || '').split('\n').map((l) => (/^\s*>/.test(l) ? l
+  : l.replace(/\b(?:the|these|my) (?:texts?|passages?|sources?|excerpts?|material) (?:I (?:hold|have(?: here)?|can see|was given|am holding)|in hand|available to me)\b/gi, 'these sources'))).join('\n');
+
+// LAYOUT AROUND CARDS (Dawn-Breakers battery 11-14, 6 of 10 replies). A LEAD-IN — a line whose last sentence ends in ":" ("Shoghi Effendi
+// sets the scene:") — must be followed by what it introduces: a card (widget marker or template), a blockquote, a list or a table. When
+// its card was dropped (a PDF page, a passage already carded, a ref not in hand) the lead-in goes too. `final`: a lead-in with nothing
+// after it goes; otherwise it is left for the next piece (a streamed reply). → { text, dropped }. Pure.
+const INTRODUCED = /^\s*(?:<!-- widget:|\{\{|>|\||[-*+]\s|\d+[.)]\s|#)/;
+const LEAD_IN = /(?:^|(?<=[.!?…]["”’)*_]*\s+))[^.!?\n]*:[*_]*\s*$/;
+export const leadInAt = (line) => !/^\s*(?:>|\||#|<!--|\{\{|[-*+]\s|\d+[.)]\s)/.test(line) && line.trim().length <= 400 && LEAD_IN.test(line);
+export function dropDanglingLeadIn(text, { final = true } = {}) {
+  const lines = String(text || '').split('\n');
+  let dropped = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (!leadInAt(lines[i])) continue;
+    let j = i + 1; while (j < lines.length && !lines[j].trim()) j++;
+    if (j < lines.length ? INTRODUCED.test(lines[j]) : !final) continue;
+    lines[i] = lines[i].replace(LEAD_IN, '').trimEnd(); dropped++;
+  }
+  if (!dropped) return { text: String(text || ''), dropped };
+  return { text: lines.join('\n').replace(/\n{3,}/g, '\n\n').trim(), dropped };
+}
+// A CUT-OFF SENTENCE: a sentence whose object vanished (a work ref with no work rendered to nothing — dbp:002 "Shoghi Effendi also quotes this
+// testimony in.") ends on a preposition or article. The sentence goes. Outside blockquotes and tables. → { text, dropped }. Pure.
+const CUT_OFF = /\b(?:in|of|from|by|with|at|into|the|an?|and)\s*[.!?]["”’)*_]*\s*$/i;
+export function dropCutOff(text) {
+  let dropped = 0;
+  const out = String(text || '').split('\n').map((line) => {
+    if (/^\s*(?:>|\|)/.test(line) || !line.trim()) return line;
+    const sents = line.match(/[^.!?]+(?:[.!?…]+["”’)*_]*|$)\s*/g) || [line];
+    const kept = sents.filter((x) => !(/[.!?]["”’)*_]*\s*$/.test(x) && CUT_OFF.test(x.replace(/\[[^\]]*\]\([^)]*\)/g, 'LINK')) && ++dropped));
+    return kept.length === sents.length ? line : kept.join('').trimEnd();
+  }).join('\n');
+  return { text: dropped ? out.replace(/\n{3,}/g, '\n\n').trim() : String(text || ''), dropped };
+}
 export function dropNarration(text) {
   let dropped = 0;
   const out = String(text || '').split('\n').map((line) => {

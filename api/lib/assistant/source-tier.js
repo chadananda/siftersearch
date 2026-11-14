@@ -1,6 +1,6 @@
 // SOURCE TIER of a Bahá'í passage, from metadata the library already has (writer fold, collection, docType) — never from its
 // words (Chad 11-04: "'Abdu'l-Baha's talks are not totally authoritative (similar to pilgrim notes), the original tablets are
-// authoritative"). writings > guardian > compilation (a Writings compilation's unattributed passage) > reported (talks,
+// authoritative"). writings > guardian > narrative (Nabíl's Dawn-Breakers) > compilation (a Writings compilation's unattributed passage) > reported (talks,
 // pilgrims' notes) > house (law, administration) > secondary.
 // Labels the passage heads the researcher and the writer read, and orders a search's passages. Pure. Deps: canonical, doctrinal-rank.
 import { docType } from '../rights/canonical.js';
@@ -37,7 +37,17 @@ export const AUTHENTICATED_WORKS = [
 ];
 const authenticatedWork = (title) => AUTHENTICATED_WORKS.find((w) => w.re.test(String(title || '')));
 
-/** → 'writings' | 'guardian' | 'compilation' | 'reported' | 'house' | 'secondary' for a Bahá'í passage; null for other traditions and web
+/** THE NARRATIVE (Chad 11-14, Dawn-Breakers battery: Nabíl was held back as 'secondary' and left out by coreFirst — "The library does
+ *  not give me Nabíl's own chapter" with doc 21308 in the library): Nabíl's history in Shoghi Effendi's translation is THE narrative
+ *  source for the Bábí period, after the Writings and Shoghi Effendi. By title (a whole-book copy, also a file-name title), never a
+ *  letter or study that names it in its title ("Letters of Living, Dawn-Breakers, Quddús" by the House). NARRATIVE_DOCS: the
+ *  library's copy searched inside on a history question that found none of it (tool-runner searchLibrary). */
+const NARRATIVE_TITLE = /^(?:the\s+)?dawn[-\s]?breakers\b|nab[ií]l['’]?s\s+narrative|[-_]the[-_]dawn[-_]breakers/i;
+export const NARRATIVE_DOCS = [21308];
+const narrativeWork = (p, author) => NARRATIVE_TITLE.test(String(p.title ?? p.source_title ?? '').trim()) && !HOUSE.test(author);
+export const isNarrative = (p = {}) => !!p && !p.web && (NARRATIVE_DOCS.includes(Number(p.document_id ?? p.doc_id)) || narrativeWork(p, keyOf(p.author ?? p.source_author)));
+
+/** → 'writings' | 'guardian' | 'narrative' | 'compilation' | 'reported' | 'house' | 'secondary' for a Bahá'í passage; null for other traditions and web
  *  results (they keep their own standing). p: { author|source_author, book_author, title|source_title, collection, religion }. */
 export function sourceTier(p = {}) {
   if (!p || p.web) return null;
@@ -46,6 +56,7 @@ export function sourceTier(p = {}) {
   if (!isBahai(p) && !central && !HOUSE.test(author)) return null;
   const doc = { title: p.title ?? p.source_title, collection: p.collection, author: p.author ?? p.source_author };
   const kind = docType(doc);
+  if (isBahai(p) && narrativeWork(p, author)) return 'narrative';        // Nabíl's paragraphs, the voices he quotes, the Guardian's translation copy
   if (WRITINGS.has(author) && authenticatedWork(doc.title)) return 'writings';   // before any talk rule: SAQ sits in "Core Talks"
   if (isTalk(p.collection)) return 'secondary';                          // a modern speaker's recorded talk: commentary
   if (kind === 'pilgrim-notes' || /pilgrim notes/i.test(String(p.collection || ''))) return 'reported';
@@ -80,7 +91,7 @@ export function tierGap(p = {}) {
   return 'no-religion';
 }
 
-export const TIER_ORDER = ['writings', 'guardian', 'compilation', 'reported', 'house', 'secondary'];
+export const TIER_ORDER = ['writings', 'guardian', 'narrative', 'compilation', 'reported', 'house', 'secondary'];
 // within reported speech, a Central Figure's recorded talk before a pilgrim's recollection (Chad 11-14: "it's OK to use talks
 // but better to use written texts"; pilgrim notes after talks, scholarship last)
 const isPilgrim = (p) => docType({ title: p.title ?? p.source_title, collection: p.collection, author: p.author ?? p.source_author }) === 'pilgrim-notes' || /pilgrim notes/i.test(String(p.collection || ''));
@@ -145,6 +156,7 @@ export const coreFirst = (ps = [], originals = 0) => {
 export const TIER_LABEL = {
   writings: 'WRITINGS (a written text of the Báb, Bahá’u’lláh or ‘Abdu’l-Bahá — authoritative)',
   guardian: 'SHOGHI EFFENDI (authoritative interpretation)',
+  narrative: 'THE NARRATIVE (Nabíl’s The Dawn-Breakers, translated by Shoghi Effendi — THE narrative source for the Báb’s ministry and the Bábí period: tell the events from it and quote it; the Writings and Shoghi Effendi lead where they speak to the same event; name it as Nabíl’s account)',
   compilation: 'COMPILATION OF THE WRITINGS (this passage’s writer is not attributed — cite the compilation by name; do not attribute it to a Central Figure unless another passage confirms who wrote it)',
   reported: 'REPORTED SPEECH (a talk or a pilgrim’s recollection, not a written text — a written text on the same point leads the argument; use this beside it when it adds something, named as spoken: "in a talk recorded in…")',
   house: 'UNIVERSAL HOUSE OF JUSTICE (law and administration — no doctrinal or interpretive authority)',
