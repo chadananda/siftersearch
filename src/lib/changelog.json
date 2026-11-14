@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-14T01:56:01.156Z",
+  "generated": "2026-11-14T01:57:10.259Z",
   "entries": [
+    {
+      "hash": "4db6919d7",
+      "date": "2026-11-13",
+      "type": "Other",
+      "description": "Version bump (Anís app icons + SEO)",
+      "scope": null
+    },
     {
       "hash": "a95e7be80",
       "date": "2026-11-13",
@@ -714,17 +721,17 @@
       "type": "Other",
       "description": "A flipped remaster tower cannot finish goes to a worker; a requeue orders the worker remaster",
       "scope": null
-    },
-    {
-      "hash": "94a5cc20b",
-      "date": "2026-10-31",
-      "type": "Other",
-      "description": "A talk outside 'done' carries no published_at. The repo clears it on every state write that leaves done, and the verify pass repairs the past rows once per pass.",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-11-13": [
+      {
+        "hash": "4db6919d7",
+        "date": "2026-11-13",
+        "type": "Other",
+        "description": "Version bump (Anís app icons + SEO)",
+        "scope": null
+      },
       {
         "hash": "a95e7be80",
         "date": "2026-11-13",
@@ -1461,13 +1468,6 @@
         "date": "2026-10-31",
         "type": "Other",
         "description": "A flipped remaster tower cannot finish goes to a worker; a requeue orders the worker remaster",
-        "scope": null
-      },
-      {
-        "hash": "94a5cc20b",
-        "date": "2026-10-31",
-        "type": "Other",
-        "description": "A talk outside 'done' carries no published_at. The repo clears it on every state write that leaves done, and the verify pass repairs the past rows once per pass.",
         "scope": null
       }
     ]
