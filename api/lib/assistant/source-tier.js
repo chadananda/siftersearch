@@ -55,22 +55,23 @@ export const isNarrative = (p = {}) => !!p && !p.web && (NARRATIVE_DOCS.includes
  *  these have lower status than written tablets and books, but still higher than any other authority, including administrative
  *  authorities such as ITC, NSA, LSA, ABM, CBC, NTC, RTC and UHJ"). A paragraph authored by a Central Figure or Shoghi Effendi takes
  *  their tier only in their own document: in a pilgrim's notes it is reported speech (doc 9495, May Maxwell's "Pilgrimage (Extracts)",
- *  paragraphs authored Shoghi Effendi, read 'guardian'); in a document of the House, its Research Department or another administrative
- *  body it is that body's quotation, 'house' (doc 20822, the Research Department's "Issues Related to the Study of the Bahá'í Faith",
- *  a paragraph authored Bahá'u'lláh read 'writings', so a House passage leading the reply was never caught — case 1xebxqv). The words
+ *  paragraphs authored Shoghi Effendi, read 'guardian'); in a document of the House or its Research Department it is the House's
+ *  quotation, 'house', and in another administrative body's it ranks as that body's own documents do, 'secondary' (doc 20822,
+ *  the Research Department's "Issues Related to the Study of the Bahá'í Faith", a paragraph authored Bahá'u'lláh read 'writings', so a House passage leading the reply was never caught — case 1xebxqv). The words
  *  may still be cited as a Writing once verified in the Writings themselves. Research sets captured before 11-14 carry no book_author
  *  or collection: the title and the document id then decide; REPORTED_DOCS / HOUSE_DOCS name documents whose title cannot. */
 export const REPORTED_DOCS = [9495];
 export const HOUSE_DOCS = [20822];
 const REPORTED_TITLE = /\bpilgrims?['’]?s?\s+notes?\b|^(?:(?:an?|my|the)\s+)?(?:early\s+)?pilgrimage\b|\bhaifa notes\b/i;
-const ADMIN_CONTAINER = /universalhouseofjustice|researchdepartment|spiritualassembly|internationalteachingcent(?:re|er)|continentalboard|boardofcounsell?ors|auxiliaryboard|teachingcommittee|departmentofthesecretariat/;
-const adminBody = (k) => ADMIN_CONTAINER.test(k) && !EDITED.test(k);
+// the container's body: the House or its Research Department → 'house'; any other administrative body (ADMIN, above) → 'secondary',
+// as its own documents are; an edited volume is neither
+const bodyTier = (k) => (houseWrote(k) ? 'house' : ADMIN.test(k) && !EDITED.test(k) ? 'secondary' : null);
 // a title naming the paragraph's own writer is theirs, whoever it is addressed to ("Letters of Shoghi Effendi to the National Spiritual Assembly…")
 const containerTier = (p, title, author) => {
   const id = Number(p.document_id ?? p.doc_id), t = keyOf(title), own = t.includes(author);
   if (REPORTED_DOCS.includes(id) || (!own && REPORTED_TITLE.test(String(title || '').trim()))) return 'reported';
-  if (HOUSE_DOCS.includes(id) || [p.book_author, p.collection].some((s) => adminBody(keyOf(s))) || (!own && adminBody(t))) return 'house';
-  return null;
+  if (HOUSE_DOCS.includes(id)) return 'house';
+  return [keyOf(p.book_author), keyOf(p.collection), own ? '' : t].map(bodyTier).find(Boolean) ?? null;
 };
 // no book_author and no collection (an old research set): a title that says compilation and does not name the paragraph's writer
 // ("Selections from the Writings of the Báb" names him) does not confirm the writer — the compilation tier, not 'writings'

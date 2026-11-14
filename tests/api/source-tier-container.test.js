@@ -22,17 +22,17 @@ describe('pilgrim notes: reported, whoever is quoted', () => {
   });
 });
 
-describe('administrative bodies: the House tier, not the quoted figure’s', () => {
+describe('administrative bodies: the body’s tier, not the quoted figure’s', () => {
   it('doc 20822-like: a Research Department compilation paragraph authored Bahá’u’lláh', () => {
     expect(sourceTier({ author: 'Bahá’u’lláh', book_author: 'Research Department of the Universal House of Justice', title: ISSUES, religion: B })).toBe('house');
     expect(sourceTier({ author: 'Bahá’u’lláh', title: ISSUES, religion: B, collection: 'Research Department Compilations' })).toBe('house');
     expect(sourceTier({ author: 'Bahá’u’lláh', title: ISSUES, religion: B, document_id: 20822 })).toBe('house');             // old set: id only
     expect(HOUSE_DOCS).toContain(20822);
   });
-  it('NSA, LSA, ITC, ABM documents and House letters by title', () => {
-    expect(sourceTier({ author: 'Shoghi Effendi', book_author: 'National Spiritual Assembly of the United States', title: 'Guidelines', religion: B })).toBe('house');
-    expect(sourceTier({ author: '‘Abdu’l-Bahá', book_author: 'International Teaching Centre', title: 'Notes', religion: B })).toBe('house');
-    expect(sourceTier({ author: 'Bahá’u’lláh', book_author: 'Auxiliary Board member', title: 'Notes', religion: B })).toBe('house');
+  it('NSA, ITC, ABM documents rank as those bodies’ own (secondary); House letters by title', () => {
+    expect(sourceTier({ author: 'Shoghi Effendi', book_author: 'National Spiritual Assembly of the United States', title: 'Guidelines', religion: B })).toBe('secondary');
+    expect(sourceTier({ author: '‘Abdu’l-Bahá', book_author: 'International Teaching Centre', title: 'Notes', religion: B })).toBe('secondary');
+    expect(sourceTier({ author: 'Bahá’u’lláh', book_author: 'Auxiliary Board member', title: 'Notes', religion: B })).toBe('secondary');
     expect(sourceTier({ author: 'Bahá’u’lláh', title: 'Letter from the Universal House of Justice dated 1 May 2000', religion: B })).toBe('house');
   });
   it('an edited volume is not the House’s own words; a letter TO an assembly stays its writer’s', () => {
@@ -59,6 +59,6 @@ describe('leadSource on the 1xebxqv shape (old research set, no book_author)', (
   it('a House passage authored Bahá’u’lláh quoted before Gleanings → the lead rewrite fires', () => {
     const found = new Map([['P1', { author: 'Bahá’u’lláh', title: ISSUES, religion: B, document_id: 20822 }],
       ['P2', { author: 'Bahá’u’lláh', title: 'Gleanings from the Writings of Bahá’u’lláh', religion: B, document_id: 1 }]]);
-    expect(leadSource('{{quote P1}}\n\nBahá’u’lláh wrote:\n\n{{quote P2}}', found)).toMatchObject({ first: 'P1', core: 'P2', firstTier: 'house' });
+    expect(leadSource('{{quote P1}}\n\nBahá’u’lláh wrote:\n\n{{quote P2}}', found)).toMatchObject({ first: 'P1', core: 'P2', firstTier: 'house', coreTier: 'writings' });
   });
 });
