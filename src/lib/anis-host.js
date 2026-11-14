@@ -12,7 +12,7 @@ export const isAnisHost = (url) => {
 };
 
 // the sections whose designed Astro pages render on the Anís host (the rest still use worker/anis/*)
-export const ASTRO_SECTIONS = ['media'];
+export const ASTRO_SECTIONS = ['media', 'bio'];
 const ASTRO_ROUTE = { media: [/^\/media(\/.*)?$/, (p) => p], bio: [/^\/bio(\/[^/]+)?\/?$/, (p) => p.replace(/^\/bio/, '/biography')],
   discuss: [/^\/discuss(\/[a-z0-9][a-z0-9-]{0,160})?\/?$/, (p) => p.replace(/^\/discuss/, '/dialogue')] };
 
@@ -42,6 +42,9 @@ export function anisHref(href) {
   if (ON_ANIS.test(p)) { const rel = `${p}${u.search}${u.hash}`; return abs ? `${ANIS_ORIGIN}${rel}` : rel; }
   return anisUrl(u.href) || null;
 }
+
+/** A name that opens a title, heading or list entry: first letter capitalised ("the Báb" → "The Báb"); mid-sentence uses keep the stored form. */
+export const capName = (s) => String(s || '').replace(/^\p{Ll}/u, (c) => c.toUpperCase());
 
 /** A title or description on the Anís host: the Anís brand, never SifterSearch ("… — SifterSearch Media" → "… — Anís"). */
 export const anisTitle = (s) => String(s ?? '').replace(/\s+—\s+SifterSearch(\s+Media)?\s*$/, ' — Anís').replace(/SifterSearch Media|SifterSearch/g, 'Anís');

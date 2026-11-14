@@ -45,7 +45,7 @@ const API_ROUTES = [
 
 // Public SSR pages (none reads cookies; only /admin's middleware does). Fresh = the page's own s-maxage, else 60 s.
 // /discuss = the Anís host's published discussions (worker/anis/discuss.js); siftersearch.com/discuss 301s there, so the path key is the Anís page's own.
-// /doc = the Anís host's unique library texts (worker/anis/doc-pages.js), the same way. /bio + /media on the Anís host: worker/anis/people.js, talks.js (keys: anisCacheKey).
+// /doc = the Anís host's unique library texts (worker/anis/doc-pages.js), the same way. /bio + /media on the Anís host: the designed Astro pages rendered there (src/lib/anis-host.js; keys: anisCacheKey).
 const HTML_PAGES = /^\/(|media(\/.*)?|library(\/.*)?|biography(\/.*)?|docs(\/.*)?|who-was-at\/.+|dialogue(\/.*)?|discuss(\/.*)?|doc(\/.*)?|bio(\/.*)?|research(\/.*)?|document\/.+|m\/.+|about|changelog|privacy|terms|contact|contribute|dewey|sourcehunt)\/?$/;
 // The library sitemap (index + parts): SSR endpoints rendering XML, cached like pages but validated as a whole sitemap.
 const XML_PAGES = /^\/sitemap-(library(-[a-z0-9-]+)?|biography)\.xml$/;

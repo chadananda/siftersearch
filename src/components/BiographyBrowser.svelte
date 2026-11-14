@@ -6,8 +6,12 @@
   import { ikUrl, ikSrcset } from '../lib/imagekit.js';
   import { fade } from 'svelte/transition';
   import { flip } from 'svelte/animate';
+  import { isAnisHost, anisHref } from '../lib/anis-host.js';
   const API = import.meta.env.PUBLIC_API_URL || '';
   const PER_PAGE = 60;
+  // on anis.oceanlibrary.com a source link goes through the Anís link policy (null = no public page there: plain text)
+  const onAnis = typeof location !== 'undefined' && isAnisHost(location.href);
+  const citeHref = (u) => (u && onAnis ? anisHref(u) : u);
   // ImageKit (webp by default); always an explicit width; fo-face centres the square crop on the face.
   // srcsets: exact per-DPR sizes requested from the CDN (house rule — the browser never resizes).
   const cardImg = (p) => ikUrl(p, 'w-220,h-220,fo-face,q-80');
@@ -17,7 +21,7 @@
   const drawerImg = (p) => ikUrl(p, 'w-340,h-420,fo-face,q-85');   // fixed 3:4 face-crop → reserved box, no reflow
   const drawerSrc = (p) => ikSrcset(p, [340, 680], { ratio: 340 / 420, q: 85, fo: 'face' });
 
-  // SSG: the page prerenders with initialData baked in (instant paint), then this island hydrates into search
+  // SSR: the page renders with initialData baked in (instant paint), then this island hydrates into search
   const { initialData = null } = $props();
   // fold away diacritics AND apostrophes entirely so transliteration variants collapse to one skeleton:
   // Ni'matu'lláh / Nimatu'lláh / Ni'matu'lláhi all → "nimatullah"(+i), then bidirectional prefix-match unifies them
@@ -560,7 +564,7 @@
           <ul class="facts2">
             {#each selected.characterizations as c}
               <li>
-                <span class="f-stmt">{c.quote}</span>{#if c.url}<a class="f-cite" href={c.url} target="_blank" rel="noopener">{c.cite || c.source} →</a>{:else}<span class="f-cite">{c.cite || c.source}</span>{/if}
+                <span class="f-stmt">{c.quote}</span>{#if citeHref(c.url)}<a class="f-cite" href={citeHref(c.url)} target="_blank" rel="noopener">{c.cite || c.source} →</a>{:else}<span class="f-cite">{c.cite || c.source}</span>{/if}
                 {#if c.proof}<span class="f-proof">“{c.proof}”</span>{/if}
               </li>
             {/each}

@@ -2,10 +2,14 @@
 // One person's life page: summary, dated timeline, relationships and journeys — synthesized from the dossier's cited
 // facts (scripts/bio/build-timelines.mjs) — every line linked to the passages it rests on (range links on OceanLibrary).
 // SSR from GET /api/v1/people/:id (server-side: absolute API origin, no key needed). Pilot 2026-10-09 (Immerse parity).
+// On anis.oceanlibrary.com (/bio/<slug>, Chad 11-14) only cited claims render: a claim with no linkable source, and the
+// stored summary (uncited prose), are left off at render time; stored data is never edited.
 import { svcFixed } from '../../lib/imagekit.js';
 import Layout from '../../layouts/Layout.astro';
-import NavBar from '../../components/common/NavBar.svelte';
-import { bioRoute, bioJsonLd } from '../../lib/bio-route.js';
+import SiteNav from '../../components/anis/SiteNav.astro';
+import ReportError from '../../components/anis/ReportError.astro';
+import { isAnisHost, anisHref, capName, ANIS_ORIGIN } from '../../lib/anis-host.js';
+import { bioRoute, bioJsonLd, bioView, REL_LABEL } from '../../lib/bio-route.js';
 
 const API = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 // key = slug | an old slug | a numeric id → the API resolves it; only the current slug renders, the rest 301 to it
@@ -20,7 +24,9 @@ try {
 const route = bioRoute(resolved);
 if (route.action === 'notfound') return new Response(null, { status: 404 });
 if (route.action === 'redirect') return new Response(null, { status: 301, headers: { Location: route.location, 'Cache-Control': 'public, max-age=3600, s-maxage=3600' } });
-const { id, canonical } = route;
+const { id } = route;
+const anis = isAnisHost(Astro.url);
+const canonical = anis ? `${ANIS_ORIGIN}/bio/${route.slug}` : route.canonical;
 
 let p = null;
 try {
@@ -30,54 +36,42 @@ try {
 } catch { /* rendered as unavailable below */ }
 
 const t = p?.timeline || null;
-const src = t?.sources || {};
-// one running footnote number per cited fact, in order of first use
-const order = [];
-const num = (k) => { if (!order.includes(k)) order.push(k); return order.indexOf(k) + 1; };
-const notes = (keys = []) => keys.filter((k) => src[k]).map((k) => ({ n: num(k), k, ...src[k] }));
-const events = (t?.events || []).map((e) => ({ ...e, notes: notes(e.cites) }));
-const REL_LABEL = { family: 'Family', teacher: 'Teachers', student: 'Students', companion: 'Companions', guardian: 'Guardians',
-  protector: 'Protectors', patron: 'Patrons', captor: 'Captors', adversary: 'Adversaries', persecutor: 'Persecutors',
-  correspondent: 'Correspondents', successor: 'Successors', other: 'Others' };
-const relGroups = Object.entries((t?.relationships || []).reduce((g, r) => ((g[r.type] ||= []).push({ ...r, notes: notes(r.cites) }), g), {}))
-  .sort(([a], [b]) => Object.keys(REL_LABEL).indexOf(a) - Object.keys(REL_LABEL).indexOf(b));
-const journeys = (t?.journeys || []).map((j) => ({ ...j, notes: notes(j.cites) }));
-const footnotes = order.map((k, i) => ({ n: i + 1, ...src[k] }));
-
-const years = events.map((e) => e.year).filter(Boolean);
-const life = years.length ? `${Math.min(...years)}–${p?.death?.year || Math.max(...years)}` : (p?.death?.year ? `d. ${p.death.year}` : '');
+// cited claims only on the Anís host: a source must link somewhere public there (anisHref)
+const { events, relGroups, journeys, footnotes, life } = bioView(p, anis ? { linkable: anisHref } : {});
+const name = capName(p?.name);
 const aliases = (p?.aliases || []).filter((a) => typeof a === 'string' && a !== p?.name).slice(0, 6);
-const title = p ? `${p.name}${life ? ` (${life})` : ''} — life and sources` : 'Biography';
-const description = p?.summary ? p.summary.slice(0, 220) : `Life timeline of ${p?.name || 'this figure'} with cited sources.`;
+const title = p ? `${name}${life ? ` (${life})` : ''} — life and sources${anis ? ' — Anís' : ''}` : 'Biography';
+const description = anis && p ? `The life of ${p.name}${life ? ` (${life})` : ''}: every claim linked to its source.`
+  : p?.summary ? p.summary.slice(0, 220) : `Life timeline of ${p?.name || 'this figure'} with cited sources.`;
 const tip = (f) => `${f.source || 'Source'}${f.cite ? ` · ${f.cite}` : ''}${f.proof ? ` — “${String(f.proof).slice(0, 200)}”` : ''}`;
 Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=900, stale-while-revalidate=3600');
 ---
 
-<Layout title={title} description={description} canonical={canonical}>
-  {p && <script type="application/ld+json" slot="head" set:html={JSON.stringify(bioJsonLd(p, canonical))} />}
-  <NavBar client:idle currentPage="biography" />
+<Layout title={title} description={description} canonical={canonical} anisPage={p ? { type: 'person', slug: route.slug, title: name } : null}>
+  {p && <script type="application/ld+json" slot="head" set:html={JSON.stringify(bioJsonLd(anis ? { ...p, name, summary: description } : p, canonical))} />}
+  <SiteNav currentPage="biography" />
   <main class="bio">
     {!p ? (
       <p class="bio-note">This biography could not be loaded just now. Please try again in a moment.</p>
     ) : (
       <>
         <header class="bio-head">
-          {p.portrait && <img class="bio-portrait" {...svcFixed(p.portrait, 112, 140, { extra: 'fo-face,e-sharpen' })} alt={`Portrait of ${p.name}`} width="112" height="140" />}
+          {p.portrait && <img class="bio-portrait" {...svcFixed(p.portrait, 112, 140, { extra: 'fo-face,e-sharpen' })} alt={`Portrait of ${name}`} width="112" height="140" />}
           <div>
             <p class="bio-kicker"><a href="/biography">Biographical archive</a>{p.side && <> · {p.side}</>}</p>
-            <h1>{p.name}{life && <span class="bio-life">{life}</span>}</h1>
+            <h1>{name}{life && <span class="bio-life">{life}</span>}</h1>
             {aliases.length > 0 && <p class="bio-aka">Also known as {aliases.join(' · ')}</p>}
             <p class="bio-reach">{p.mentionCount?.toLocaleString?.() ?? 0} mentions across {p.books?.length ?? 0} books in the library</p>
           </div>
         </header>
 
-        {p.summary && <p class="bio-summary">{p.summary}</p>}
+        {p.summary && !anis && <p class="bio-summary">{p.summary}</p>}
 
         {!t ? (
           <p class="bio-note">The timeline for this person has not been written yet.</p>
         ) : (
           <>
-            <section class="bio-sec">
+            {events.length > 0 && <section class="bio-sec">
               <h2>Timeline</h2>
               <ol class="bio-tl">
                 {events.map((e) => (
@@ -92,7 +86,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=900, 
                   </li>
                 ))}
               </ol>
-            </section>
+            </section>}
 
             {relGroups.length > 0 && (
               <section class="bio-sec">
@@ -132,6 +126,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=900, 
             </section>
           </>
         )}
+        {anis && <ReportError kind="bio" slug={route.slug} />}
       </>
     )}
   </main>

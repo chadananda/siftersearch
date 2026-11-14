@@ -1,37 +1,31 @@
 ---
-// Prerendered (SSG) at build time: the cast data is baked in so the page paints instantly with static cards
-// + CSS animations; the search/filter island hydrates passively (client:idle). Rebuild to refresh the data.
+// The biographical archive (/biography; on anis.oceanlibrary.com /bio). SSR, edge-cached (worker/edge-cache.js): the cast
+// data is in the first view, so the page paints full cards at once and the search/filter island hydrates onto it
+// (client:idle). Built on the public API (/api/v1/people …), the same endpoints any third-party consumer uses.
+// No data → 503 (never an empty shell that fills in client-side; the edge keeps serving its last good copy).
 
 import Layout from '../layouts/Layout.astro';
-import NavBar from '../components/common/NavBar.svelte';
+import SiteNav from '../components/anis/SiteNav.astro';
 import BiographyBrowser from '../components/BiographyBrowser.svelte';
 
-// Prerender MUST bake the cast data so the static page paints full content (cards + hero) — the island then
-// hydrates interactivity onto that existing DOM. Never ship an empty shell that fills in client-side: retry,
-// and fail the build rather than deploy a page that reflows content in on load.
-// Proof of concept: the page is built entirely on the official public API (/api/v1/people …), the same
-// endpoints any third-party consumer would use — not the internal /api/graph/bio/* routes.
 const API = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
-// The full cast (~600 people, ~440KB) is a heavy query — ~9s warm, and slower when tower-nas is also grounding.
-// Retry patiently with backoff (generous timeout) so a transient blip under load doesn't fail the build, but still
-// REFUSE to ship an empty page (baked data = no reflow on load; that's the whole point of prerendering here).
+// the full cast (~600 people, ~440KB) is a heavy query: one patient retry, then 503
 let initialData = null;
-for (let attempt = 0; attempt < 6 && !initialData?.people?.length; attempt++) {
-  if (attempt > 0) await new Promise((r) => setTimeout(r, 3000));   // let the API/cache recover between tries
+for (let attempt = 0; attempt < 2 && !initialData?.people?.length; attempt++) {
+  if (attempt > 0) await new Promise((r) => setTimeout(r, 1500));
   try {
-    const res = await fetch(`${API}/api/v1/people?limit=2000`, { signal: AbortSignal.timeout(45000) });
+    const res = await fetch(`${API}/api/v1/people?limit=2000`, { signal: AbortSignal.timeout(30000) });
     if (res.ok) initialData = await res.json();
-  } catch (e) { /* transient — retry */ }
+  } catch { /* transient — retry */ }
 }
-if (!initialData?.people?.length) {
-  throw new Error('biography prerender: /api/v1/people returned no data after 6 tries — refusing to ship an empty page (is tower-nas up?)');
-}
+if (!initialData?.people?.length) return new Response('The biographical archive is briefly unavailable. Please try again in a moment.', { status: 503, headers: { 'Retry-After': '60', 'Cache-Control': 'no-store' } });
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=900, stale-while-revalidate=3600');
 ---
 
 <Layout
   title="Biographical Archive — SifterSearch"
   description="A searchable archive of the people of early Bábí and Bahá'í history — kings and martyrs, scholars and villagers — with portraits, relationships, and sources drawn from across the library."
 >
-  <NavBar client:load currentPage="biography" />
+  <SiteNav currentPage="biography" />
   <BiographyBrowser client:idle initialData={initialData} />
 </Layout>
