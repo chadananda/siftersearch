@@ -6,7 +6,7 @@ export const smartQuotes = (s = '') => String(s)
 export const isOrnament = (s) => /^\s*(\*\s*)+$/.test(s || '');
 // Row → { o, t, orn } ready to render (English smart-quoted, dividers flagged)
 export const prepRow = (r) => (isOrnament(r.o) || (isOrnament(r.t) && !r.o)) ? { o: '', t: '', orn: true } : { o: r.o || '', t: smartQuotes(r.t || ''), orn: false };
-export const sbsUrl = (base, id, offset = 0, limit = 400) => `${base}/api/v1/documents/${encodeURIComponent(id)}/sbs?offset=${offset}&limit=${limit}`;
+export const sbsUrl = (base, id, offset = 0, limit = 400) => `${base}/api/library/documents/${encodeURIComponent(id)}/sbs?offset=${offset}&limit=${limit}`;
 // Follow next_offset until done; `first` (already fetched page) is optional. Returns { doc, sections, paragraphs }.
 export async function loadAll(fetchFn, base, id, first = null) {
   let page = first, offset = 0, paragraphs = [], doc, sections = [];

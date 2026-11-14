@@ -8,7 +8,7 @@ const fx = JSON.parse(readFileSync('tests/fixtures/sbs-sample.json', 'utf8'));
 describe('sbs helpers', () => {
   it('smart quotes', () => { expect(smartQuotes('"Love," he said, \'it\'s\'')).toBe('“Love,” he said, ‘it’s’'); });
   it('ornaments', () => { expect(isOrnament(' * * * ')).toBe(true); expect(isOrnament('a*')).toBe(false); expect(prepRow({ o: '*', t: '*' }).orn).toBe(true); expect(prepRow({ o: 'x', t: '"y"' }).t).toBe('“y”'); });
-  it('section starts + css string + url', () => { expect(sectionStarts(fx.sections).get(5).i).toBe(1); expect(cssString('a"b\\')).toBe('a\\"b\\\\'); expect(sbsUrl('http://x', 'a b', 400)).toContain('a%20b/sbs?offset=400'); });
+  it('section starts + css string + url', () => { expect(sectionStarts(fx.sections).get(5).i).toBe(1); expect(cssString('a"b\\')).toBe('a\\"b\\\\'); expect(sbsUrl('http://x', 'a b', 400)).toBe('http://x/api/library/documents/a%20b/sbs?offset=400&limit=400'); });
   it('loadAll follows next_offset', async () => {
     const pages = { 0: { ...fx, paragraphs: fx.paragraphs.slice(0, 4), next_offset: 4 }, 4: { ...fx, sections: [], paragraphs: fx.paragraphs.slice(4), next_offset: null } };
     const calls = []; const f = async (u) => { const o = +/offset=(\d+)/.exec(u)[1]; calls.push(o); return { ok: true, json: async () => pages[o] }; };
