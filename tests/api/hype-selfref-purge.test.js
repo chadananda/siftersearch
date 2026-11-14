@@ -61,4 +61,12 @@ describe('hype-selfref-purge', () => {
     expect(parseStoredHypItems(raw).map((i) => i.q)).toEqual([OK]);
     expect(parseStoredHypItems(raw, { slots: true }).length).toBe(2);
   });
+  it('fault yesNo retires yes/no slots only (seeker ones too) and counts paragraphs left with no question', async () => {
+    const f = fakes([...rows(), { id: 4, doc_id: 7, hyp_questions: JSON.stringify([{ q: 'Can I know God?', seeker: true }]) }]);
+    const r = await hypeSelfrefPurgeJob({ apply: true, fault: 'yesNo' }, f.deps);
+    expect(r).toMatchObject({ fault: 'yesNo', paragraphs: 2, questions: 2, emptied: 1 });
+    expect(JSON.parse(f.db.get(1).hyp_questions)[1]).toEqual({ q: '', dropped: 'yesNo', was: YES });
+    expect(JSON.parse(f.db.get(1).hyp_questions)[0]).toBe(SELF);
+    await expect(hypeSelfrefPurgeJob({ fault: 'namedBook' }, f.deps)).rejects.toMatchObject({ statusCode: 400 });
+  });
 });
