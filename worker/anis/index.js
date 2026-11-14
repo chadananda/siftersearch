@@ -57,18 +57,45 @@ export const nativeFetchCreate = (env, model, fetchFn = fetch, trace = null) => 
 };
 
 // ── tower's research tools over HTTP (anis-impl-tools.js); researchLookup/Capture are local (D1/Vectorize) ──
-export function remoteImpl(env, { turn, local, fetchFn = fetch }) {
-  const stat = { ms: 0, calls: 0, by: {} };   // by: fn → [calls, ms] (where tower time goes)
-  const call = async (fn, args) => {
+// Library reads (books, talks, people, documents, passages) are cached in R2 (Chad 11-13 "they should all be cached in R2"):
+// tower answers a lookup once; afterwards the edge serves it, and past FRESH_MS it serves the copy while refreshing in the background.
+// Not cached: usage logging, the web, probes, generated documents, rights (encumberedAmong: must be current).
+export const CACHED_TOOLS = new Set(['around', 'bookCard', 'extractFromWork', 'findPassage', 'original', 'originals', 'ownSource', 'search', 'searchBy', 'searchIn',
+  'searchInWork', 'sourceOf', 'talkSearch', 'trace', 'translation', 'translationsOf', 'upgradeLinks', 'urlsOf', 'whole', 'wordStudy', 'work', 'workNotes', 'writings']);
+const FRESH_MS = 3 * 864e5;
+export const toolKey = async (fn, args) => `tool/${fn}/${[...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(args ?? []))))]
+  .map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 40)}`;
+
+export function remoteImpl(env, { turn, local, fetchFn = fetch, ctx = null }) {
+  const stat = { ms: 0, calls: 0, by: {}, cached: 0 };   // by: fn → [calls, ms] (where tower time goes); cached = served from R2
+  const tower = async (fn, args) => {
     const t0 = Date.now();
     try {
       const r = await fetchFn(`${env.TOWER_URL}/api/v1/anis/tool/${fn}`, { method: 'POST', signal: AbortSignal.timeout(40000),
         headers: { 'content-type': 'application/json', 'x-internal-key': env.TOWER_KEY }, body: JSON.stringify({ args, turn }) });
       if (!r.ok) throw new Error(`tower ${fn} ${r.status}`);
-      const j = JSON.parse(await r.text(), revive);
+      const text = await r.text(), j = JSON.parse(text, revive);
       if (j.error) throw new Error(j.error);
-      return j.out;
+      return { out: j.out, text };
     } finally { const d = Date.now() - t0; stat.ms += d; stat.calls++; const b = (stat.by[fn] ||= [0, 0]); b[0]++; b[1] += d; }
+  };
+  const store = (key, text) => env.ANIS_CACHE.put(key, text, { customMetadata: { at: String(Date.now()) } }).catch(() => {});
+  const later = (p) => (ctx?.waitUntil ? ctx.waitUntil(p) : p.catch(() => {}));
+  const call = async (fn, args) => {
+    if (!env.ANIS_CACHE || !CACHED_TOOLS.has(fn)) return (await tower(fn, args)).out;
+    const key = await toolKey(fn, args);
+    const hit = await env.ANIS_CACHE.get(key).catch(() => null);
+    if (hit) {
+      const j = JSON.parse(await hit.text(), revive);
+      if (j.out != null) {   // an empty answer is never served from the cache: the library may have it now
+        stat.cached++;
+        if (Date.now() - Number(hit.customMetadata?.at || 0) > FRESH_MS) later(tower(fn, args).then((r) => r.out != null && store(key, r.text)));
+        return j.out;
+      }
+    }
+    const r = await tower(fn, args);
+    if (r.out != null) later(store(key, r.text));
+    return r.out;
   };
   const impl = Object.fromEntries(snapshot.impl.map((fn) => [fn, (...args) => call(fn, args)]));
   return { impl: { ...impl, ...local }, stat };
@@ -179,7 +206,7 @@ export async function chat(request, env, ctx, deps = {}) {
           held = { same, asked: lookQ, status: hit.set.status, question: hit.set.question, passages: hit.set.passages };
         } else if (canon) { researchQ = canon; held = { question: canon }; }
       }
-      const { impl, stat } = remoteImpl(env, { turn, local, fetchFn });
+      const { impl, stat } = remoteImpl(env, { turn, local, fetchFn, ctx });
       const model = modelFor('anis-agent').model, create = metered(deps.create || nativeFetchCreate(env, model, fetchFn, body.trace ? trace : null), model, 'anis-agent-edge', tally);
       const A = await agentAnswer({ messages, onEvent: emit, frame, tools: impl, toolDefs: snapshot.tools, runner: runnerFor(impl), held, links: (t, ps) => finishLinks(formPass(t, { sources: formSources(ps) }).text, [...ps, ...(held?.passages || [])]).text,
         create: async (p) => { rounds++; const t = Date.now(), rec = [null, null]; roundMs.push(rec); const r = await create(p);
@@ -207,7 +234,7 @@ export async function chat(request, env, ctx, deps = {}) {
         lookup: (q) => lookup(env, q), capture: (q, ps) => capture(env, q, ps),
         research: async (q) => { const r = runnerFor(impl)(impl, { search: 'fused_search' }); await r.run.fused_search({ query: q }); return [...r.found.values()]; } });
       if (items.length) emit({ type: 'followups', items });
-      const timings = { total_ms: Date.now() - t0, first_text_ms: firstText, tower_ms: stat.ms, tower_calls: stat.calls, tower_by: stat.by, rounds, round_ms: roundMs, restate_ms: restateMs, restated: canon, widgets: (A.widgets || []).map((w) => w.kind), links: { narrowed: fin.narrowed, unplaced: fin.unplaced }, ...(body.trace ? { trace } : {}), research: sim == null ? null : { similarity: +sim.toFixed(3), question: matchedQ }, asked: researchQ };
+      const timings = { total_ms: Date.now() - t0, first_text_ms: firstText, tower_ms: stat.ms, tower_calls: stat.calls, cached_calls: stat.cached, tower_by: stat.by, rounds, round_ms: roundMs, restate_ms: restateMs, restated: canon, widgets: (A.widgets || []).map((w) => w.kind), links: { narrowed: fin.narrowed, unplaced: fin.unplaced }, ...(body.trace ? { trace } : {}), research: sim == null ? null : { similarity: +sim.toFixed(3), question: matchedQ }, asked: researchQ };
       emit({ type: 'complete', citations: cites, ...(A.talks?.length ? { talks: A.talks } : {}), meta: { engine: 'anis-edge', mode, retrieved_count: A.retrieved.length, gate_passed: true, conversation_id: conversationId, format: 'agent', timings } });
       // a letter carries each card's quotation markdown (its marker dropped); a document keeps the markers — the PDF draws the widgets there
       if (!C.stream) out = { reply: mode === 'email' ? reply.replace(/<!-- widget:[^>]*-->\s*/g, '') : reply, mode, status: 'answered', triage: await triageP,
