@@ -69,7 +69,9 @@ export function anisText(text, { docOf = () => null } = {}) {
   return s
     .replace(MD_LINK, (all, label, u) => { if (!isOwnHost(hostOf(u))) return all; const a = anisUrl(u, { doc: docOf(u) }); return a ? `[${label}](${a})` : label; })
     .replace(ATTR, (all, k, qt, u) => { if (!isOwnHost(hostOf(u))) return all; const a = anisUrl(u, { doc: docOf(u) }) || `${ANIS_ORIGIN}/`; return `${k}=${qt}${a}${qt}`; })
-    .replace(BARE, (all) => { const u = all.replace(/^\(?<?|>?\)?$/g, ''); const a = anisUrl(u, { doc: docOf(u) }); return a ? all.replace(u, a) : ''; });
+    .replace(BARE, (all) => {   // sentence punctuation after a bare address is prose, not path ("…/document/430." keeps its link)
+      const u = all.replace(/^\(?<?|>?\)?$/g, '').replace(/[.,;:!?]+$/, ''); const tail = all.slice(all.indexOf(u) + u.length);
+      const a = anisUrl(u, { doc: docOf(u) }); return a ? all.replace(u, a) : tail.replace(/^>?\)?/, ''); });
 }
 
 /** Every string in an event / tool result made Anís-safe; an object's own document (document_id + title + author) resolves its reader links. */

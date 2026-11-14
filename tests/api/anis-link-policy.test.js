@@ -47,6 +47,15 @@ describe('Anís fallback', () => {
   it('a collaborator copy is still preferred', () => {
     expect(anisLinkFor({ ...doc, source_url: 'https://bahai-library.com/gate' }, 1).url).toBe('https://bahai-library.com/gate');
   });
+  it('a doc whose wrong OceanLibrary link was cleared (source-url-mismatch) reaches Anís as its /doc page, in hits and in prose', () => {
+    const cleared = { id: 9, doc_id: 430, title: 'Revelation', author: 'Adib Taherzadeh', text: 'x' };
+    const hits = [{ ...cleared, url: linkFor({ document_id: 430, title: 'Revelation', author: 'Adib Taherzadeh', source_url: null }, 12).url },
+      { ...cleared, url: 'https://siftersearch.com/document/430' }];
+    expect(anisDeep({ hits }).hits.map((h) => h.url)).toEqual([`${ANIS_ORIGIN}/doc/revelation-adib-taherzadeh-430#p12`, `${ANIS_ORIGIN}/doc/revelation-adib-taherzadeh-430`]);
+    // a bare address ending a sentence keeps its link (the period was read as path and the whole address deleted)
+    expect(anisText('See https://siftersearch.com/document/430. Or (https://siftersearch.com/document/431), https://siftersearch.com/admin/x!'))
+      .toBe(`See ${ANIS_ORIGIN}/doc/430. Or (${ANIS_ORIGIN}/doc/431), !`);
+  });
   it('maps every siftersearch content page to its Anís page', () => {
     expect(anisUrl('https://siftersearch.com/dialogue/on-justice')).toBe(`${ANIS_ORIGIN}/discuss/on-justice`);
     expect(anisUrl('https://siftersearch.com/biography/quddus')).toBe(`${ANIS_ORIGIN}/bio/quddus`);
