@@ -112,7 +112,7 @@ export function wordSafe(form, fns) {
   return Object.fromEntries(Object.entries(fns).map(([rule, fn]) => [rule, (text, ...a) => {
     const r = fn(text, ...a), out = typeof r === 'string' ? r : r?.text;
     if (typeof text !== 'string' || typeof out !== 'string' || out === text) return r;
-    const k = keepsWords(text, out, r?.offers || []);
+    const k = keepsWords(text, out, [...(r?.offers || []), ...(r?.cuts || [])]);   // cuts: a clause a transform names (lint.js butKeeps)
     if (!k.ok) {
       if (form.unsafe.length < 20) form.unsafe.push(rule);
       if (typeof r === 'string') return text;

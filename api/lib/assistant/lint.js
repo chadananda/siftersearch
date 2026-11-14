@@ -35,8 +35,10 @@ export const isDeflection = (s) => DEFLECTION.test(String(s || '').replace(/[“
 // A COVERAGE DISCLAIMER (11-11 email, "What can you tell me about Quddus?"): "The texts I can search here do not provide a full
 // account of Quddús, but they do preserve …" opened a reply that then answered from The Dawn-Breakers. A disclaimer of
 // completeness says nothing the answer doesn't show; it is dropped when the reply cites a source (a reply with no link keeps it).
+// 11-14 reader text: "…do not provide …, but rather point to the work…" became "Rather point to the work…" (no subject). Only the negative
+// clause goes, and only when a whole sentence remains ("The texts I can search here point to the work…"); otherwise the sentence stays whole.
 export const COVERAGE_DISCLAIMER = /\b(?:texts|sources|library|passages|materials?)\s+(?:I\s+(?:can\s+search|have|found|searched)|available(?:\s+to\s+me)?)(?:\s+here)?\s+(?:do\s+not|don['’]t|does\s+not|doesn['’]t|cannot|can['’]t)\s+(?:provide|give|offer|contain|hold|include|present|preserve)\s+(?:a\s+|an\s+)?(?:full|complete|comprehensive|detailed|extensive|thorough|whole|entire)\b/i;
-export const dropCoverageDisclaimer = (text) => (/\]\(https?:\/\//.test(String(text || '')) ? dropSentences(text, (s) => COVERAGE_DISCLAIMER.test(String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '))) : { text: String(text || ''), dropped: 0 });
+export const dropCoverageDisclaimer = (text) => (/\]\(https?:\/\//.test(String(text || '')) ? dropSentences(text, (s) => COVERAGE_DISCLAIMER.test(String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' ')), { fragment: 'keep' }) : { text: String(text || ''), dropped: 0 });
 // AN UNCHECKED DISCLAIMER (Chad 11-14 replay, "Where does 'Let your vision be world-embracing' come from?"): "I did not check the
 // section number or the original Persian/Arabic text." — what was not looked up is found or left out, never announced. Dropped
 // sentence by sentence, quoted material excepted; the BUT rule keeps a clause after "but". Pure.
@@ -574,25 +576,47 @@ const BUT = /^(.*?),?\s+(?:but|however|though|although|still)\s*,?\s+(.+)$/is;
 export const dropSearchDenial = (text) => dropSentences(text, isSearchDenial);
 // THE DEFLECTION — BLOCKING, same rules as the denial: the sentence telling the reader to ask differently goes, the rest stays. Pure.
 export const dropDeflection = (text) => dropSentences(text, isDeflection);
-function dropSentences(text, bad) {
+// THE BUT RULE: "X, but Y" with X the bad part keeps Y only as a whole sentence (never a capitalised fragment, 11-14 "Rather point to …").
+// Y with its own subject ("but they do preserve …") stands alone; a bare predicate ("but rather point to …", "but do preserve …") takes X's
+// subject when X is "<subject> <negated verb> …" ("The texts I can search here point to …"); anything else is a fragment → null.
+// cut = the words taken out of the sentence (declared to keepsWords, which allows a mid-sentence cut only when named). Pure.
+const PRONOUN = /^(?:I|it|they|he|she|we|you|there|this|that|these|those)\b/i;
+const DETERMINER = /^(?:a|an|the|his|her|its|their|our|my|your|some|any|no|one|each|every|both|all|many|few|several|such)\b/i;
+const NEGATED = /^(.+?)\s+(?:(?:do|does|did|can|could|will|would|should|may|might|must|have|has|had|is|are|was|were)\s+not|(?:do|does|did|ca|could|wo|would|should|must|have|has|had|is|are|was|were)n['’]t|cannot)\b/i;
+export function butKeeps(sentence, bad) {
+  const x = String(sentence || ''), b = x.match(BUT);
+  if (!b || !bad(b[1]) || bad(b[2])) return null;
+  const y = b[2], at = x.length - y.length, lead = y.match(/^(?:rather|instead)\s*,?\s+/i)?.[0] || '', r = y.slice(lead.length);
+  const first = r.replace(/^[*_\[“"‘'(]+/, '');
+  if (!lead && (PRONOUN.test(first) || DETERMINER.test(first) || /^\p{Lu}/u.test(first))) return { text: `${y.charAt(0).toUpperCase()}${y.slice(1)}`, cut: [] };
+  if (lead && PRONOUN.test(first) && !/^(?:this|that|these|those)\b/i.test(first)) return { text: `${r.charAt(0).toUpperCase()}${r.slice(1)}`, cut: [x.slice(0, at + lead.length).trim()] };
+  if (!/^\p{Ll}/u.test(first) || DETERMINER.test(first) || PRONOUN.test(first)) return null;
+  const n = b[1].match(NEGATED), subj = n?.[1]?.trim();
+  if (!subj || /[,;:]|\b(?:and|but|or)\b/i.test(subj) || subj.length > 120) return null;
+  const from = x.indexOf(subj) + subj.length;
+  return { text: `${x.slice(0, from)} ${r}`, cut: [x.slice(from, at + lead.length).trim()] };
+}
+function dropSentences(text, bad, { fragment = 'drop' } = {}) {
   const src = String(text || '');
   if (!bad(src.split('\n').filter((l) => !/^\s*(?:>|\||#)/.test(l)).join('\n'))) return { text: src, dropped: 0 };
   let dropped = 0;
+  const cuts = [];
   const lines = src.split('\n').map((line) => {
     if (/^\s*(?:>|\||#)/.test(line) || !bad(line)) return line;
     const lead = (line.match(/^\s*(?:[-*+]\s+|\d+[.)]\s+)?/) || [''])[0];
     const sents = sentencesOf(line.slice(lead.length));
     const kept = sents.map((x) => {
       if (!bad(x)) return x;
+      const k = butKeeps(x.trim(), bad), b = x.trim().match(BUT);
+      if (!k && fragment === 'keep' && b && bad(b[1]) && !bad(b[2])) return x;   // only a fragment would remain: the sentence stays whole
       dropped += 1;
-      const b = x.match(BUT);
-      if (b && bad(b[1]) && !bad(b[2])) return `${b[2].charAt(0).toUpperCase()}${b[2].slice(1)}`;
+      if (k) { cuts.push(...k.cut); return `${k.text}${/\s$/.test(x) ? ' ' : ''}`; }
       return '';
     }).join('').replace(/\s{2,}/g, ' ').trim();
     return kept ? `${lead}${kept}` : '';
   });
   const out = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-  return out ? { text: out, dropped } : { text: src, dropped: 0 };
+  return out ? { text: out, dropped, ...(cuts.length ? { cuts } : {}) } : { text: src, dropped: 0 };
 }
 
 // INTERNAL NARRATION — BLOCKING (11-14 round 4: "The candidate source here is a scholarly book…", "The glossary notes … look like the best
