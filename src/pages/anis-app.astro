@@ -2,6 +2,7 @@
 // anis.oceanlibrary.com — Anís as a standalone app (Chad 11-13): the widget, opened full screen, with the web-app head
 // (manifest, service worker, Apple home-screen tags, safe areas). Served at the host root by worker/anis-app.js.
 // Own head, not Layout: this is Ocean 2.0's assistant, not a SifterSearch page.
+import pkg from '../../package.json';
 const ORIGIN = 'https://anis.oceanlibrary.com';
 const title = 'Anís — Ocean AI Research Assistant';
 const description = "Ask Anís about the world's sacred and scholarly texts — answers quoted and cited from the Ocean library.";
@@ -69,7 +70,7 @@ const ld = { '@context': 'https://schema.org', '@type': 'WebApplication', name: 
     </ul>
     <noscript><p>Anís needs JavaScript to run.</p></noscript>
   </main>
-  <script is:inline src="/widget.js" data-key="wgt_house_siftersearch" data-name="Anís" data-opened="1" data-fullscreen="1" async></script>
+  <script is:inline src="/widget.js" data-key="wgt_house_siftersearch" data-name="Anís" data-opened="1" data-fullscreen="1" data-version={pkg.version} async></script>
   <script is:inline>
     if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('/anis-sw.js', { scope: '/' }).catch(() => {}));
   </script>

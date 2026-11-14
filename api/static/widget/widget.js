@@ -31,7 +31,7 @@
     el.setAttribute('token', key);
     el.setAttribute('api', api);
     // Pass through optional data-* overrides to the element.
-    ['accent', 'name', 'mission', 'samples', 'opened', 'fullscreen'].forEach(function (a) {
+    ['accent', 'name', 'mission', 'samples', 'opened', 'fullscreen', 'version'].forEach(function (a) {
       var v = script.getAttribute('data-' + a);
       if (v) el.setAttribute(a, v);
     });

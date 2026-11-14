@@ -52,5 +52,6 @@ describe('Anís app host', () => {
   it('the page has structured data and a crawlable heading', () => {
     const page = fs.readFileSync('src/pages/anis-app.astro', 'utf8');
     for (const t of ["'@type': 'WebApplication'", '<h1>', 'summary_large_image', 'og-1200x630.png']) expect(page).toContain(t);
+    expect(page).toContain('data-version={pkg.version}');   // the app shows its build beside the title (Chad 11-13)
   });
 });

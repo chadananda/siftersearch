@@ -18,7 +18,7 @@
   import SideBySide from '../components/widgets/SideBySide.svelte';
   import { widgetSegments } from '../../api/lib/assistant/widgets/segments.js';
   import { BUILD, tagFor } from './version.js';
-  let { token = '', api = 'https://siftersearch.com', accent = '', name = '', mission = '', opened = '', samples = '', fullscreen = '' } = $props();
+  let { token = '', api = 'https://siftersearch.com', accent = '', name = '', mission = '', opened = '', samples = '', fullscreen = '', version = '' } = $props();   // version: shown beside the title (the Anís app passes its build, Chad 11-13); never part of the name the model uses
   // sample-questions menu (header icon; one showcase question per strategy): on by default (Chad 11-10); a host turns it off with
   // samples="off"/"false", a reader with ?anis-samples=0 (remembered on this browser; ?anis-samples brings it back)
   let showSamples = $state(true);
@@ -537,7 +537,7 @@
         <header>
           <a class="roundel" href="https://oceanlibrary.com" target="_blank" rel="noopener" title="Open Ocean 2.0" aria-label="Open Ocean 2.0 (oceanlibrary.com) in a new tab"><svg viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" d={OCEAN_D}/></svg></a>
           <span class="titles">
-            <span class="title">{cfg.name}</span>
+            <span class="title">{cfg.name}{#if version}<span class="ver" title={BUILD ? `widget ${BUILD}` : null}>v{version}</span>{/if}</span>
             <span class="subtitle">Ocean companion</span>
           </span>
           <span class="hbtns">
@@ -795,6 +795,7 @@
   .roundel svg { width: 100%; height: 100%; display: block; }
   .titles { display: flex; flex-direction: column; min-width: 0; flex: 1; line-height: 1.25; }
   .title { font-family: var(--serif); font-weight: 600; font-size: 17.5px; letter-spacing: .01em; }
+  .ver { font-family: system-ui, sans-serif; font-weight: 400; font-size: 11px; letter-spacing: .02em; opacity: .6; margin-left: .45em; }
   .subtitle { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; opacity: .72; }
   .hbtns { display: flex; align-items: center; gap: 2px; }
   .icon {
