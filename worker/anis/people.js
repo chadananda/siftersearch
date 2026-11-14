@@ -31,6 +31,8 @@ export const fold = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u0
 // "Ask Anís about …": the app opens with the question (the chat reads ?ask=)
 // every outbound link through the Anís link policy (collaborator first, never our old host); null = no public page
 export const outHref = (u) => (typeof u === 'string' && u ? anisUrl(u) : null);
+/** A name that opens a title, heading or list entry: first letter capitalised ("the Báb" → "The Báb"); mid-sentence uses keep the stored form. */
+export const capName = (s) => String(s || '').replace(/^\p{Ll}/u, (c) => c.toUpperCase());
 export const clip = (s, n) => { const t = String(s || '').replace(/\s+/g, ' ').trim(); return t.length <= n ? t : `${t.slice(0, n - 1).replace(/\s+\S*$/, '')}…`; };
 
 /** A citation's authority rank: the Writings and Shoghi Effendi first, then Nabíl (The Dawn-Breakers), then the rest (≤ 70). */
@@ -127,18 +129,19 @@ const BORN = /\b(birth|born)\b/i, DIED = /\b(death|died|passing|passed|martyr(do
 
 /**
  * "Report an error" (Chad 11-14): a reader's note → the Anís feedback store (POST /api/chat/feedback, D1 anis_feedback),
- * conversation_id = <kind>-<slug>, vote down, the note as its question. Round = a per-report number, so reports don't overwrite each other.
+ * conversation_id = <kind>-<slug>-<time><random> (unique per report, so two never overwrite each other; ≤ 64 chars), round 1, vote down,
+ * the note as its question. Talks use it too: /api/media/:slug/feedback takes signed-in siftersearch users only, and Anís readers are anonymous.
  */
 export const reportError = (kind, slug) => `<details class="report"><summary>Report an error</summary>
-<form data-report="${esc(`${kind}-${slug}`.slice(0, 64))}"><label for="rq">What is wrong on this page?</label><textarea id="rq" name="q" maxlength="300" rows="3" required></textarea><button class="btn" type="submit">Send</button><p class="meta" role="status"></p></form>
+<form data-report="${esc(`${kind}-${slug}`.slice(0, 48))}"><label for="rq">What is wrong on this page?</label><textarea id="rq" name="q" maxlength="300" rows="3" required></textarea><button class="btn" type="submit">Send</button><p class="meta" role="status"></p></form>
 <script type="module">{const f=document.querySelector('[data-report]');f.onsubmit=async(e)=>{e.preventDefault();const s=f.querySelector('[role=status]');
-try{const r=await fetch('/api/chat/feedback',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({conversation_id:f.dataset.report,round:1+Math.floor(Math.random()*500),vote:'down',question:f.q.value})});
+try{const r=await fetch('/api/chat/feedback',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({conversation_id:f.dataset.report+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),round:1,vote:'down',question:f.q.value})});
 s.textContent=r.ok?'Thank you. We will check it.':'Could not send. Please try again.';if(r.ok)f.q.value=''}catch{s.textContent='Could not send. Please try again.'}}}</script></details>`;
 
 /** schema.org Person. */
 export function personLd(p, url, image) {
   const alt = spellings(p), d = lifeDates(p);
-  return { '@context': 'https://schema.org', '@type': 'Person', '@id': url, name: p.name, url, mainEntityOfPage: url,
+  return { '@context': 'https://schema.org', '@type': 'Person', '@id': url, name: capName(p.name), url, mainEntityOfPage: url,
     ...(alt.length ? { alternateName: alt } : {}), ...(image ? { image } : {}),
     ...(d.birthYear ? { birthDate: String(d.birthYear) } : {}), ...(d.deathYear ? { deathDate: String(d.deathYear) } : {}) };
 }
@@ -172,7 +175,7 @@ export function bioPage(p, ctx = {}) {
 <p class="crumb"><a href="/bio">All biographies</a></p>
 <div class="hero">${portrait}<div>
 <p class="kicker">${esc(roleOf(p.side) === 'Others' ? 'Biography' : roleOf(p.side))}</p>
-<h1>${esc(p.name)}</h1>
+<h1>${esc(capName(p.name))}</h1>
 ${alt.length ? `<p class="also">Also written ${alt.map(esc).join(' · ')}</p>` : ''}
 </div></div>
 ${d.born || d.died ? `<dl class="facts">${d.born ? `<dt>Born</dt><dd>${esc(d.born)}</dd>` : ''}${d.died ? `<dt>${p.death?.martyr ? 'Martyred' : 'Died'}</dt><dd>${esc(d.died)}</dd>` : ''}</dl>` : ''}
@@ -190,7 +193,7 @@ ${reportError('bio', p.slug)}
 <aside class="cta" aria-label="Ask"><p>Want to know more about ${esc(p.name)}?</p>${askLink(`Ask Anís about ${p.name}`, `Tell me about ${p.name}`, 'btn')}</aside>`;
   const years = [ld.birthYear, ld.deathYear].some(Boolean) ? ` (${ld.birthYear || '?'}–${ld.deathYear || ''})` : '';
   const description = `The life of ${p.name}${years}: every claim linked to its source.`;
-  return shell({ type: 'profile', title: `${p.name} — Biography — Anís`, description, url, image: ogImg, ld: personLd(p, url, ogImg), page: { type: 'person', slug: p.slug, title: p.name } }, body);
+  return shell({ type: 'profile', title: `${capName(p.name)} — Biography — Anís`, description, url, image: ogImg, ld: personLd(p, url, ogImg), page: { type: 'person', slug: p.slug, title: capName(p.name) } }, body);
 }
 
 /** The live part of a page (Cached SSR + live refresh): src/lib/live-data.js's liveRefresh, inlined, patches one number. */
@@ -204,7 +207,7 @@ export function bioIndexPage(rows) {
   const letter = (r) => (fold(r.name)[0] || '#').toUpperCase();
   const groups = list.reduce((g, r) => ((g[letter(r)] ||= []).push(r), g), {});
   const item = (r) => { const sub = [roleOf(r.side) === 'Others' ? null : roleOf(r.side), r.death?.year ? `d. ${r.death.year}` : null].filter(Boolean).join(' · ');
-    return `<li><a href="/bio/${esc(r.slug)}">${esc(r.name)}</a>${sub ? `<p>${esc(sub)}</p>` : ''}</li>`; };
+    return `<li><a href="/bio/${esc(r.slug)}">${esc(capName(r.name))}</a>${sub ? `<p>${esc(sub)}</p>` : ''}</li>`; };
   const byRole = list.reduce((g, r) => ((g[roleOf(r.side)] ||= []).push(r), g), {});
   const roleOrder = [...ROLES.map(([r]) => r), 'Opponents', 'Others'].filter((r) => byRole[r]);
   const byPeriod = list.reduce((g, r) => { const p = periodOf(r.death?.year); if (p) (g[p] ||= []).push(r); return g; }, {});
@@ -212,7 +215,7 @@ export function bioIndexPage(rows) {
   const rid = (r) => `r-${fold(r).replace(/ /g, '-')}`;
   const description = 'Lives of the Báb, Bahá’u’lláh, ‘Abdu’l-Bahá, the heroes of Bábí and Bahá’í history and the people around them — every claim cited to its source.';
   const ld = { '@context': 'https://schema.org', '@type': 'CollectionPage', '@id': url, url, name: 'Biographies', description,
-    mainEntity: { '@type': 'ItemList', numberOfItems: list.length, itemListElement: list.slice(0, 500).map((r, i) => ({ '@type': 'ListItem', position: i + 1, url: bioUrl(r.slug), name: r.name })) } };
+    mainEntity: { '@type': 'ItemList', numberOfItems: list.length, itemListElement: list.slice(0, 500).map((r, i) => ({ '@type': 'ListItem', position: i + 1, url: bioUrl(r.slug), name: capName(r.name) })) } };
   return shell({ type: 'website', title: 'Biographies — Anís, Ocean AI Research Assistant', description, url, ld }, `<p class="kicker">Biographies</p>
 <h1>Biographies</h1>
 <p class="summary">${esc(description)}</p>
@@ -221,8 +224,8 @@ export function bioIndexPage(rows) {
 <nav aria-label="By role"><h2>By role</h2><ul class="chips">${roleOrder.map((r) => `<li><a href="#${rid(r)}">${esc(r)} (${byRole[r].length})</a></li>`).join('')}</ul></nav>
 ${periods.length ? `<nav aria-label="By period"><h2>By period</h2><ul class="chips">${periods.map((l, i) => `<li><a href="#p-${i}">${esc(l)} (${byPeriod[l].length})</a></li>`).join('')}</ul></nav>` : ''}
 ${Object.entries(groups).map(([l, rs]) => `<h2 id="l-${l}">${l}</h2><ul class="list">${rs.map(item).join('')}</ul>`).join('\n')}
-${roleOrder.map((r) => `<h2 id="${rid(r)}">${esc(r)}</h2><ul class="chips">${byRole[r].map((x) => `<li><a href="/bio/${esc(x.slug)}">${esc(x.name)}</a></li>`).join('')}</ul>`).join('\n')}
-${periods.map((l, i) => `<h2 id="p-${i}">${esc(l)}</h2><p class="meta">People who died in this period.</p><ul class="chips">${byPeriod[l].map((x) => `<li><a href="/bio/${esc(x.slug)}">${esc(x.name)}</a></li>`).join('')}</ul>`).join('\n')}
+${roleOrder.map((r) => `<h2 id="${rid(r)}">${esc(r)}</h2><ul class="chips">${byRole[r].map((x) => `<li><a href="/bio/${esc(x.slug)}">${esc(capName(x.name))}</a></li>`).join('')}</ul>`).join('\n')}
+${periods.map((l, i) => `<h2 id="p-${i}">${esc(l)}</h2><p class="meta">People who died in this period.</p><ul class="chips">${byPeriod[l].map((x) => `<li><a href="/bio/${esc(x.slug)}">${esc(capName(x.name))}</a></li>`).join('')}</ul>`).join('\n')}
 <aside class="cta" aria-label="Ask"><p>Looking for someone else?</p><a class="btn" href="/">Ask Anís</a></aside>
 ${liveCount('/api/v1/people?limit=1', '(d)=>d.total')}`);
 }

@@ -47,6 +47,7 @@ describe('/media', () => {
     expect(h).toContain('href="/bio/hooper-dunbar"');
     expect(h).toMatch(/href="#t=65"/);
     expect(h).toMatch(/Ask Anís about this talk/);
+    expect(h).toContain('data-report="media-dunbar-a-talk"');   // Report an error (anonymous readers → the Anís feedback store)
   });
   it('never plays a talk that is not a finished remaster', () => {
     expect(listeningAudio({ audio: { ...TALK.audio, remastered: false } })).toBe(null);

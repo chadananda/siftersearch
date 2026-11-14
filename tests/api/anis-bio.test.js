@@ -1,6 +1,6 @@
 // Biographies on the Anís host (worker/anis/people.js): /bio + /bio/<slug>, cited claims only, 301/404, sitemap, edge cache.
 import { describe, it, expect } from 'vitest';
-import { BIO_PATH, BIOGRAPHY_PATH, bioUrl, bioSlug, sourceRank, bioPage, bioResponse, bioSitemapUrls, reportError } from '../../worker/anis/people.js';
+import { BIO_PATH, BIOGRAPHY_PATH, bioUrl, bioSlug, sourceRank, bioPage, bioIndexPage, bioResponse, bioSitemapUrls, reportError, capName } from '../../worker/anis/people.js';
 import { policyFor } from '../../worker/edge-cache.js';
 
 const API = 'https://api.test';
@@ -89,6 +89,24 @@ describe('/bio', () => {
     expect(bioPage(p)).not.toMatch(/<dt>(Born|Martyred|Died)<\/dt>/);
     expect(bioPage(PERSON)).toMatch(/<dt>Born<\/dt>/);
     expect(reportError('bio', 'x')).toContain('/api/chat/feedback');
+  });
+  it('gives every error report its own id, so two reports never overwrite each other', () => {
+    const h = reportError('bio', 'a'.repeat(80));
+    expect(h).toContain('data-report="bio-' + 'a'.repeat(44) + '"');   // ≤ 48 + a 14-char time/random suffix ≤ 64
+    expect(h).toMatch(/f\.dataset\.report\+'-'\+Date\.now\(\)\.toString\(36\)\+Math\.random\(\)/);
+    expect(h).toContain('round:1,');
+  });
+  it('capitalises a name that opens a title, heading or entry, never mid-sentence', () => {
+    expect(capName('the Báb')).toBe('The Báb');
+    expect(capName('‘Abdu’l-Bahá')).toBe('‘Abdu’l-Bahá');
+    const p = { ...PERSON, name: 'the Báb', slug: 'the-bab' };
+    const h = bioPage(p);
+    expect(h).toContain('<title>The Báb — Biography — Anís</title>');
+    expect(h).toContain('<h1>The Báb</h1>');
+    expect(h).toMatch(/"@type":"Person","@id":"[^"]+","name":"The Báb"/);
+    expect(h).toMatch(/og:title" content="The Báb/);
+    expect(h).toContain('The life of the Báb');
+    expect(bioIndexPage([{ name: 'the Báb', slug: 'the-bab' }])).toContain('>The Báb</a>');
   });
   it('the sitemap lists every biography (the index alone when the origin fails)', async () => {
     const b = await bioSitemapUrls({ api: API, fetchFn: origin({ '/api/v1/people/sitemap': { people: [{ id: 7, slug: 'tahirih' }] } }) });

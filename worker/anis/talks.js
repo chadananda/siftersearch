@@ -3,7 +3,7 @@
 // siftersearch.com/media[/<slug>] pages 301 here. Only a published remaster ever plays — never the original (CLAUDE.md).
 import { esc, ORIGIN } from './share.js';
 import { askLink } from './content-widget.js';
-import { shell, imgTag, localImg, outHref, clip, read, optional, html, moved, unavailable, liveCount, fold } from './people.js';
+import { shell, imgTag, localImg, outHref, clip, read, optional, html, moved, unavailable, liveCount, fold, capName, reportError } from './people.js';
 import { svcFixed } from '../../src/lib/imagekit.js';
 
 export const MEDIA_PATH = /^\/media(?:\/([a-z0-9][a-z0-9_-]{0,160}))?\/?$/i;
@@ -80,9 +80,10 @@ ${item.summary ? `<p class="summary">${esc(item.summary)}</p>` : ''}
 <hr class="rule">
 ${toc ? `<h2>Contents</h2><ol class="toc">${toc}</ol>` : ''}
 ${passages ? `<h2>Passages quoted and referred to</h2><ul class="qs">${passages}</ul>` : ''}
-${persons.length ? `<h2>People in this talk</h2><ul class="chips">${persons.map(([h, n]) => `<li><a href="${esc(h)}">${esc(n)}</a></li>`).join('')}</ul>` : ''}
+${persons.length ? `<h2>People in this talk</h2><ul class="chips">${persons.map(([h, n]) => `<li><a href="${esc(h)}">${esc(capName(n))}</a></li>`).join('')}</ul>` : ''}
 ${paras ? `<h2>Transcript</h2><div class="tx">\n${paras}\n</div>` : ''}
 </article>
+${reportError('media', item.slug)}
 <aside class="cta" aria-label="Ask"><p>Questions about this talk?</p>${askLink('Ask Anís about this talk', `Tell me about the talk “${item.title}”${item.speaker ? ` by ${item.speaker}` : ''}`, 'btn')}</aside>
 ${audio ? SEEK : ''}`;
   const description = clip(item.summary || `${item.title}${item.speaker ? `, a talk by ${item.speaker}` : ''}.`, 160);

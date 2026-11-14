@@ -91,8 +91,7 @@ export default defineConfig({
         if (page.includes('/admin')) return false;
         if (page.includes('/sitemap-library')) return false;
         if (page.includes('/sitemap-dialogue')) return false;
-        if (page.includes('/sitemap-biography')) return false;
-        if (page.match(/\/biography\/[^/]+/)) return false;   // slug pages live in sitemap-biography.xml
+        if (page.match(/\/(biography|media)\/?$/)) return false;   // 301 to anis.oceanlibrary.com (/bio, /media) — listed in its /anis-sitemap.xml
         // Dialogue pages live in their own sitemap-dialogue.xml so we can
         // include only published ones. Strip them all from the main index.
         if (page.match(/\/dialogue\//)) return false;
@@ -106,8 +105,7 @@ export default defineConfig({
       }),
       // (sitemap-library.xml is a sitemap INDEX, submitted via robots.txt — never listed as a page)
       customPages: [
-        'https://siftersearch.com/sitemap-dialogue.xml',
-        'https://siftersearch.com/sitemap-biography.xml'
+        'https://siftersearch.com/sitemap-dialogue.xml'
       ]
     }),
     // No PWA — SSR + Cloudflare edge caching + browser prefetch handles performance.
