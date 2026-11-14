@@ -11,10 +11,13 @@ const walk = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.is
   : /\.(astro|svelte)$/.test(e.name) ? [join(d, e.name)] : []));
 const strip = (s) => s.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
+// Pages that don't use Layout own their <head>: anis-app.astro is the standalone anis.oceanlibrary.com app shell.
+const OWN_HEAD = new Set(['src/layouts/Layout.astro', 'src/pages/anis-app.astro']);
+
 describe('one canonical per page', () => {
   it('no page or component emits its own <link rel="canonical"> or og:url (Layout does, once)', () => {
     const offenders = walk(join(ROOT, 'src')).map((f) => [relative(ROOT, f), strip(readFileSync(f, 'utf8'))])
-      .filter(([f, s]) => f !== 'src/layouts/Layout.astro' && (/rel=["']canonical["']/.test(s) || /property=["']og:url["']/.test(s)))
+      .filter(([f, s]) => !OWN_HEAD.has(f) && (/rel=["']canonical["']/.test(s) || /property=["']og:url["']/.test(s)))
       .map(([f]) => f);
     expect(offenders).toEqual([]);
   });
