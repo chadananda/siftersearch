@@ -23,7 +23,8 @@ describe('edited volumes', () => {
   it('a Central Figure quoted inside a supervised anthology is a pointer, not the text', () => {
     const p = { ...B, author: '‘Abdu’l-Bahá', book_author: 'The Universal House of Justice (prepared under its supervision)', title: 'An Annual Record, Volume IX' };
     expect(sourceTier(p)).toBe('secondary');
-    expect(sourceTier({ ...p, book_author: 'The Universal House of Justice' })).toBe('writings');   // the House's own compilation: unchanged
+    // the House's own compilation: the House's quotation (Chad 11-14, the container governs — source-tier-container.test.js)
+    expect(sourceTier({ ...p, book_author: 'The Universal House of Justice' })).toBe('house');
   });
   it('a plain scholar\'s book is untouched', () => {
     expect(sourceTier({ ...B, author: 'A. Scholar', title: 'A Study' })).toBe('secondary');

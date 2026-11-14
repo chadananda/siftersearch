@@ -51,6 +51,31 @@ export const NARRATIVE_DOCS = [21308];
 const narrativeWork = (p, author) => NARRATIVE_TITLE.test(String(p.title ?? p.source_title ?? '').trim()) && !HOUSE.test(author);
 export const isNarrative = (p = {}) => !!p && !p.web && (NARRATIVE_DOCS.includes(Number(p.document_id ?? p.doc_id)) || narrativeWork(p, keyOf(p.author ?? p.source_author)));
 
+/** THE CONTAINER GOVERNS (Chad 11-14: "Talks by Central figures, eyewitness accounts of statements by Central Figures (Pilgrim Notes)
+ *  these have lower status than written tablets and books, but still higher than any other authority, including administrative
+ *  authorities such as ITC, NSA, LSA, ABM, CBC, NTC, RTC and UHJ"). A paragraph authored by a Central Figure or Shoghi Effendi takes
+ *  their tier only in their own document: in a pilgrim's notes it is reported speech (doc 9495, May Maxwell's "Pilgrimage (Extracts)",
+ *  paragraphs authored Shoghi Effendi, read 'guardian'); in a document of the House, its Research Department or another administrative
+ *  body it is that body's quotation, 'house' (doc 20822, the Research Department's "Issues Related to the Study of the Bahá'í Faith",
+ *  a paragraph authored Bahá'u'lláh read 'writings', so a House passage leading the reply was never caught — case 1xebxqv). The words
+ *  may still be cited as a Writing once verified in the Writings themselves. Research sets captured before 11-14 carry no book_author
+ *  or collection: the title and the document id then decide; REPORTED_DOCS / HOUSE_DOCS name documents whose title cannot. */
+export const REPORTED_DOCS = [9495];
+export const HOUSE_DOCS = [20822];
+const REPORTED_TITLE = /\bpilgrims?['’]?s?\s+notes?\b|^(?:(?:an?|my|the)\s+)?(?:early\s+)?pilgrimage\b|\bhaifa notes\b/i;
+const ADMIN = /universalhouseofjustice|researchdepartment|spiritualassembly|internationalteachingcent(?:re|er)|continentalboard|boardofcounsell?ors|auxiliaryboard|teachingcommittee|departmentofthesecretariat/;
+const adminBody = (k) => ADMIN.test(k) && !EDITED.test(k);
+// a title naming the paragraph's own writer is theirs, whoever it is addressed to ("Letters of Shoghi Effendi to the National Spiritual Assembly…")
+const containerTier = (p, title, author) => {
+  const id = Number(p.document_id ?? p.doc_id), t = keyOf(title), own = t.includes(author);
+  if (REPORTED_DOCS.includes(id) || (!own && REPORTED_TITLE.test(String(title || '').trim()))) return 'reported';
+  if (HOUSE_DOCS.includes(id) || [p.book_author, p.collection].some((s) => adminBody(keyOf(s))) || (!own && adminBody(t))) return 'house';
+  return null;
+};
+// no book_author and no collection (an old research set): a title that says compilation and does not name the paragraph's writer
+// ("Selections from the Writings of the Báb" names him) does not confirm the writer — the compilation tier, not 'writings'
+const unconfirmed = (p, title, kind, author) => !p.book_author && !p.collection && kind === 'compilation' && !keyOf(title).includes(author);
+
 /** → 'writings' | 'guardian' | 'narrative' | 'compilation' | 'reported' | 'house' | 'secondary' for a Bahá'í passage; null for other traditions and web
  *  results (they keep their own standing). p: { author|source_author, book_author, title|source_title, collection, religion }. */
 export function sourceTier(p = {}) {
@@ -65,6 +90,9 @@ export function sourceTier(p = {}) {
   if (WRITINGS.has(author) && authenticatedWork(doc.title)) return 'writings';   // before any talk rule: SAQ sits in "Core Talks"
   if (isTalk(p.collection)) return 'secondary';                          // a modern speaker's recorded talk: commentary
   if (kind === 'pilgrim-notes' || /pilgrim notes/i.test(String(p.collection || ''))) return 'reported';
+  const container = central && containerTier(p, doc.title, author);
+  if (container) return container;                                     // a pilgrim's notes, a House or Research Department document
+  if (central && unconfirmed(p, doc.title, kind, author)) return 'compilation';
   if (kind === 'talk') return central ? 'reported' : 'secondary';       // a Central Figure's spoken words, as recorded
   if (central && reportedWork(doc.title)) return 'reported';            // Promulgation, Paris Talks, London… (titles that don't say "talk")
   // a Central Figure quoted inside another writer's book is a pointer to the text, not the text (the writer traces it)
