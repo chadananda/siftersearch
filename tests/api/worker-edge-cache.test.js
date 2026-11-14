@@ -21,7 +21,7 @@ describe('policyFor', () => {
     expect(pol('/api/library/tree')).toMatchObject({ mode: 'cache' });
     expect(pol('/api/v1/people/123')).toMatchObject({ mode: 'cache' });
     expect(pol('/api/v1/people/slug/abdul-baha-abbas-effendi')).toMatchObject({ mode: 'cache', kind: 'api' });
-    expect(pol('/sitemap-biography.xml')).toMatchObject({ mode: 'cache', kind: 'xml' });
+    expect(pol('/sitemap-biography.xml').mode).toBe('bypass');   // retired: bios are in /anis-sitemap.xml
     // the reader (SSR first view + load-more) and its tablet box; a signed-in editor (Authorization) bypasses
     expect(pol('/api/library/by-path/bahai/bahaullah/bahaullah_the-kitab-i-iqan?limit=40')).toMatchObject({ mode: 'cache', fresh: 300, l2: false });
     expect(pol('/api/library/resolve-paths?p=/library/bahai/bahai-books/william-sears_release-the-sun')).toMatchObject({ mode: 'cache', fresh: 3600, l2: false });

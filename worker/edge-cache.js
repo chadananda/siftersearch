@@ -49,7 +49,7 @@ const API_ROUTES = [
 // /doc, /bio, /media, /discuss on the Anís host: Astro pages rendered there (src/lib/anis-host.js ASTRO_SECTIONS; keys: anisCacheKey).
 const HTML_PAGES = /^\/(|media(\/.*)?|library(\/.*)?|biography(\/.*)?|docs(\/.*)?|who-was-at\/.+|dialogue(\/.*)?|discuss(\/.*)?|doc(\/.*)?|bio(\/.*)?|research(\/.*)?|document\/.+|m\/.+|about|changelog|privacy|terms|contact|contribute|dewey|sourcehunt)\/?$/;
 // The library sitemap (index + parts): SSR endpoints rendering XML, cached like pages but validated as a whole sitemap.
-const XML_PAGES = /^\/sitemap-(library(-[a-z0-9-]+)?|biography)\.xml$/;
+const XML_PAGES = /^\/sitemap-library(-[a-z0-9-]+)?\.xml$/;
 const HTML_NEVER = /^\/(admin|profile|settings|referrals|print|community\/(new|post)|support\/success)(\/|$)/;
 const TRACKING = /^(utm_.*|fbclid|gclid|msclkid|mc_cid|mc_eid|ref)$/;
 
