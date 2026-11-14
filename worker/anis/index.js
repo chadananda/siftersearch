@@ -228,7 +228,7 @@ export async function chat(request, env, ctx, deps = {}) {
       const bioRows = await bioP, bio = renderBio(bioRows);
       const readerNote = `${traditionLine({ audience, rows: bioRows })}${bio ? `\n\n${bio}` : ''}`;
       const model = modelFor('anis-agent').model, create = metered(deps.create || nativeFetchCreate(env, model, fetchFn, body.trace ? trace : null), model, 'anis-agent-edge', tally);
-      const A = await agentAnswer({ messages, onEvent: emit, frame, tools: impl, toolDefs: [...snapshot.tools, NOTE_INDICATION_TOOL], reader: readerNote, runner: runnerFor(impl), held, links: (t, ps) => finishLinks(formPass(t, { sources: formSources(ps) }).text, [...ps, ...(held?.passages || [])]).text,
+      const A = await agentAnswer({ messages, onEvent: emit, frame, tools: impl, toolDefs: [...snapshot.tools, NOTE_INDICATION_TOOL], reader: readerNote, firstVisit: mode === 'chat' && body.first_visit === true, runner: runnerFor(impl), held, links: (t, ps) => finishLinks(formPass(t, { sources: formSources(ps) }).text, [...ps, ...(held?.passages || [])]).text,
         create: async (p) => { rounds++; const t = Date.now(), rec = [null, null]; roundMs.push(rec); const r = await create(p);
           if (!p.stream) { rec[0] = rec[1] = Date.now() - t; return r; }
           return (async function* () { for await (const c of r) { rec[0] ??= Date.now() - t; yield c; } rec[1] = Date.now() - t; })(); }, workNotes: (title) => impl.workNotes(title).catch(() => ({ work: null, notes: [] })) });

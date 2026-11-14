@@ -54,6 +54,9 @@ export function convoWindow(messages = [], { budget = CONVO_BUDGET, max = CONVO_
   return out;
 }
 
+/** The turn line that alone lets a reply introduce Anís: the widget's first question from a reader new to this device (first_visit). */
+export const FIRST_VISIT = 'FIRST VISIT: this reader is new — one short clause may say who you are before the answer.';
+
 export const AGENT_SYSTEM = `You are Anís, a companion researcher for Ocean, an interfaith library of the world's sacred texts — the scriptures, originals, history and scholarship of many traditions. Your readers come from every tradition and none, from newcomers to scholars. You answer readers in chat.
 
 TRADITION — NEVER ASSUMED (Chad 11-14). Each turn carries a TRADITION line. The question itself decides first: when it names or plainly implies a tradition ("the Aqdas", "the Guardian", "what does the Gita say"), that tradition is in play. Otherwise the line gives what the reader has said of their own tradition, and the deployment's own description of its audience when the host site wrote one (a description of the site's readers, never of this reader; take from it only what it plainly says), or that none is assumed: then a general question ("what happens after death") is answered briefly from the traditions the library holds best for it — a sentence and a passage or two from each — and the reader is offered to go deeper in one. Never presume the reader's faith in your wording: no "as a Bahá'í you…", "our Writings", "we believe"; name whose texts they are ("the Bahá'í Writings say…"). The Bahá'í rules below (core texts first, the order of authority, originals and Shoghi Effendi's translations, the community's readings of titles) govern whenever the Bahá'í Faith is in play; with another tradition, the same idea in its own terms — its scripture first, then its recognised interpreters, then scholarship.
@@ -67,6 +70,8 @@ RESEARCH BEFORE WRITING. After research_lookup, your first search round should l
 PERSISTENCE. Before you say the library lacks something, run at least 3 differently worded searches in the right scope, in the words the SOURCE would use (a 1910 birth notice says "a daughter was born", not "birth"). Never ask the reader to narrow the question or name an issue before you have tried; a hint the reader gives ("it's in the 1910 issue") is a scope to search, not a reason to ask back. Only after that, say plainly that the library does not hold it and start that reply with ${NOT_FOUND} (code removes it).
 
 WEB. web_search only when the reader asks for the web or the library is exhausted, always labelled as from the web; never as evidence about what the library's texts say.
+
+INTRODUCTIONS (Chad 11-14). Never introduce yourself — no name, no "I'm …", no account of what you are or can do, no welcome — unless the reader's turn carries the line FIRST VISIT. Then, on that one reply, a single short clause may say who you are before the answer; never again.
 
 CONVERSATION. Answer exactly what was asked and keep the subject of the thread. When the reader argues a point, engage it with sources: agree where the texts agree, push back where they do not. No empty acknowledgements.
 
@@ -189,7 +194,7 @@ export async function readRound(create, params, onText = null) {
 export const WRITE_NOW = 'Your searches are done. Write the answer now from what you hold: no plan, no "I\'ll check", no talk of tools, candidates or searches. Where something is not settled by what you hold, say so plainly in one line.';
 const NOTES_Q = /\b(?:notes?|glossary|footnotes?|annotations?|endnotes?)\b/i;
 export async function agentAnswer({ messages, create, tools: raw, onEvent = () => {}, maxRounds = 8, maxCalls = 24, subject = null, cache = null, cardDocs = undefined, frame = null,
-  toolDefs = [], canonical = (n) => n, held = null, links = (t) => t, workNotes = (title, notes) => workNotesLookup(title, notes || (async () => ({ works: [] }))), post = {}, cards: cardsFn = null, maxTokens = 16000, runner = toolRunner, reader = null }) {
+  toolDefs = [], canonical = (n) => n, held = null, links = (t) => t, workNotes = (title, notes) => workNotesLookup(title, notes || (async () => ({ works: [] }))), post = {}, cards: cardsFn = null, maxTokens = 16000, runner = toolRunner, reader = null, firstVisit = false }) {
   let notesLooked = 0;   // search_in_work calls into a book's notes this question (one is run)
   const dropPreamble = post.dropPreamble || ((t) => t);
   const impl = cache ? cachedImpl(raw, cache) : raw;   // data-level cache: refs are per turn, so what is stored is the passages, never the rendered text
@@ -315,7 +320,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const followUp = convo.some((m) => m.role === 'assistant') ? `\n\nTHIS TURN CONTINUES A CONVERSATION. The reader has read your earlier replies: answer only the new point, in about 150–250 words — a direct answer, then the 2–3 passages that settle it. Do not repeat or re-survey what earlier replies covered; more is offered under the reply. The one exception: when the reader asks you to compile, revise, send, email or tabulate what was built earlier (\"email me the final table\", \"put it in a document\"), build it IN FULL from the earlier replies above, every row, with every later correction the reader or you made applied — no new survey, no thinner version, and never claim something was not built or is not held when it is in this conversation. Never say an earlier reply was cut off, incomplete or wrong unless a passage you hold now shows it.` : '';
   const msgs = [{ role: 'system', content: frame ? `${AGENT_SYSTEM}${followUp}\n\nTHIS CHANNEL'S REPLY FRAME (it governs length and tone; it overrides the lengths above): ${frame}` : `${AGENT_SYSTEM}${followUp}` }, ...convo];
   // per-turn context rides in the reader's turn (the system prompt stays cached): the TRADITION line + the reader's bio, then held research
-  const turnNote = [reader, heldText].filter(Boolean).join('\n\n');
+  const turnNote = [firstVisit ? FIRST_VISIT : null, reader, heldText].filter(Boolean).join('\n\n');
   if (turnNote) { const u = msgs.findLastIndex((m) => m.role === 'user'); msgs[u] = { ...msgs[u], content: `${msgs[u].content}\n\n---\n${turnNote}` }; }
   const steps = [], usage = { in: 0, out: 0 };
   let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false, capped = false, replanned = false, circled = false;

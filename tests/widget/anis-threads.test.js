@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   threadTitle, upsertThread, removeThread, pruneThreads, groupThreads, filterThreads, messagesText, firstQuestion,
-  openStore, loadIndex, saveIndex, loadMessages, saveMessages, dropThreadData, idxKey, threadKey, activeKey, legacyKey, newThreadId,
+  openStore, loadIndex, saveIndex, loadMessages, saveMessages, dropThreadData, idxKey, threadKey, activeKey, legacyKey, newThreadId, isFirstVisit, markSeen, seenKey,
 } from '../../src/widget/threads.js';
 
 const mem = (init = {}) => { const m = new Map(Object.entries(init)); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), m }; };
@@ -113,5 +113,25 @@ describe('storage', () => {
     const a = newThreadId(), b = newThreadId();
     expect(a).not.toBe(b);
     expect(a.length).toBeLessThanOrEqual(64);
+  });
+});
+
+describe('introduce once (isFirstVisit / markSeen)', () => {
+  it('a fresh device is a first visit; after markSeen it is not', () => {
+    const s = mem();
+    expect(isFirstVisit(s, 't')).toBe(true);
+    markSeen(s, 't');
+    expect(s.getItem(seenKey('t'))).toBe('1');
+    expect(isFirstVisit(s, 't')).toBe(false);
+    expect(isFirstVisit(s, 'other')).toBe(true);   // per deployment token
+  });
+  it('a reader from before the flag (threads listed) is returning', () => {
+    const s = mem({ [idxKey('t')]: JSON.stringify([{ id: 'a', title: 'A', updated: 1 }]) });
+    expect(isFirstVisit(s, 't')).toBe(false);
+  });
+  it('storage that throws reads as a first visit; markSeen never throws', () => {
+    const bad = { getItem() { throw new Error('denied'); }, setItem() { throw new Error('denied'); }, removeItem() {} };
+    expect(isFirstVisit(bad, 't')).toBe(true);
+    expect(() => markSeen(bad, 't')).not.toThrow();
   });
 });

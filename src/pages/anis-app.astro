@@ -18,6 +18,7 @@ const mount = `window.__sifterChatLoader=true;function anisMount(){if(document.q
 const prep = `(function(){try{var r=document.querySelector('[data-anis-shell]').shadowRoot;if(!r)return;var t='${TOKEN}',L=localStorage;`
   + `if(L.getItem('anis-rail')==='0'){var p=r.querySelector('.panel');if(p)p.classList.remove('railed')}`
   + `var a=L.getItem('anis-thread-active:'+t);if(!a){var ix=JSON.parse(L.getItem('anis-threads:'+t)||'[]');a=ix[0]&&ix[0].id}`
+  + `if(L.getItem('sifter-chat-seen:'+t)||JSON.parse(L.getItem('anis-threads:'+t)||'[]').length){r.querySelectorAll('.wl-mark,.wl-sub').forEach(function(x){x.remove()})}`   // introduce once (threads.js isFirstVisit)
   + `var m=a?JSON.parse(L.getItem('anis-thread:'+t+':'+a)||'[]'):[];if(m.some&&m.some(function(x){return x&&x.role==='user'})){var w=r.querySelector('.welcome');if(w)w.remove()}`
   + `r.addEventListener('click',function(e){var c=e.target.closest&&e.target.closest('.wl-card');if(c&&!window.__anisPending){var q=c.querySelector('.wl-q');window.__anisPending=q&&q.textContent;c.disabled=true}})`
   + `}catch(e){}})()`;

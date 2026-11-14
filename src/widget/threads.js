@@ -116,3 +116,13 @@ export function openStore(storage, token, now = Date.now()) {
   if (!active) active = index[0]?.id || newThreadId();
   return { index, active };
 }
+
+// ── Introduce once (Chad 11-14: "the introduction is only for the first time"). A reader who has asked anything on this
+// device — the seen flag, or any listed thread (readers from before the flag) — gets no introduction again: a quiet empty
+// state, and no `first_visit` on their turns. Storage that throws (private mode) reads as a first visit.
+export const seenKey = (token) => `sifter-chat-seen:${token}`;
+export function isFirstVisit(storage, token) {
+  try { if (storage.getItem(seenKey(token))) return false; } catch { return true; }
+  return !loadIndex(storage, token).length;
+}
+export function markSeen(storage, token) { try { storage.setItem(seenKey(token), '1'); } catch { /* private mode */ } }
