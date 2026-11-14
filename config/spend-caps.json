@@ -34,6 +34,15 @@
       ]
     },
     {
+      "group": "media-content-cut",
+      "exact": [
+        "media-content",
+        "media-headings",
+        "media-quotes",
+        "media-verify"
+      ]
+    },
+    {
       "group": "media",
       "prefix": [
         "media-"
@@ -133,6 +142,13 @@
         "from": "2026-11-12",
         "usd": 5,
         "why": "side-by-side sentence alignment (public page, reader-triggered, cached per text pair): its own group so a crawler can never spend 'other'"
+      }
+    ],
+    "media-content-cut": [
+      {
+        "from": "2026-11-14",
+        "usd": 35,
+        "_note": "Chad 11-14: content-only listening copies approved (backfill ~2,900 talks, ~$20-35). Only the content-cut chain (content → headings → quotes); the rest of media LLM stays paused at $0"
       }
     ]
   },
