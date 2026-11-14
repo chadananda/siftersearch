@@ -212,3 +212,21 @@ describe('agent: the answer streams, verified sentences only', () => {
     expect(r.streamed).toBe(false);
   });
 });
+
+// the answer IS a book → its card at once, from the cited [B#] (Chad 11-13: "What is the most important Baha'i Doctrinal book?" >> Iqan card)
+describe('agent: a cited work shows its book card', () => {
+  const chunks = (parts, tc = null) => ({ async *[Symbol.asyncIterator]() {
+    for (const p of parts) yield { choices: [{ delta: { content: p } }] };
+    if (tc) yield { choices: [{ delta: { tool_calls: [{ index: 0, id: 'x', function: { name: tc, arguments: '{"title":"Iqan"}' } }] } }] };
+    yield { choices: [], usage: { prompt_tokens: 5, completion_tokens: 7 } };
+  } });
+  it('the reply cites [[B1]] → one books event with the cover by id', async () => {
+    let n = 0; const ev = [];
+    const create = async () => (n++ === 0 ? chunks(['Let me look.'], 'document_search')
+      : chunks(['Shoghi Effendi names the Kitáb-i-Íqán [[B1]] foremost among the treasures of the Revelation, the key to all scripture before it. ', 'Read it first [[B1]].']));
+    await agentAnswer({ messages: [{ role: 'user', content: "What is the most important Baha'i doctrinal book?" }], tools, onEvent: (e) => ev.push(e), create });
+    const books = ev.filter((e) => e.type === 'books');
+    expect(books).toHaveLength(1);
+    expect(books[0].books[0]).toMatchObject({ id: 1, title: 'The Kitáb-i-Íqán', cover_url: 'https://siftersearch.com/img/covers/1' });
+  });
+});

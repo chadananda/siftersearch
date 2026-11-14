@@ -229,9 +229,23 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const heldNowAll = () => [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
   // each released sentence is finished as the final reply is (Chad 11-13 "formatting live"): refs → links, quotations restored,
   // credited, linked and styled, links narrowed, a template → its widget at once (event first, then the text holding its marker)
+  // a work the reply cites ([[B#]]) is its answer's book: its card shows as the sentence naming it is released (Chad 11-13
+  // "the answer could be a book card"), from the ref the agent wrote — the work found, its cover by doc id
+  const citedWorkCards = (core) => {
+    let added = false;
+    for (const [, ref] of String(core).matchAll(/\[\[?(B\d+)\]\]?/g)) {
+      const w = works.get(ref);
+      if (bookCards.has(ref) || bookCards.size >= 3 || !w?.url || !(Number(w.id) > 0) || String(w.id).includes(':')) continue;
+      bookCards.set(ref, { id: Number(w.id), title: w.title, author: w.author ?? null, url: w.url, year: null, description: null,
+        cover_url: `https://siftersearch.com/img/covers/${Number(w.id)}` });
+      added = true;
+    }
+    if (added) onEvent({ type: 'books', books: [...bookCards.values()].slice(0, 3) });
+  };
   const finishLive = (s) => {
     const [, lead, core, trail] = String(s).match(/^(\s*)([\s\S]*?)(\s*)$/);
     if (!core) return s;
+    citedWorkCards(core);
     const ret = heldNowAll();
     const t = linkQuotes(fixQuoteSpeakers(restoreElisions(renderRefs(core, { found, works }), ret, { asked: asked0 }).text, ret).text, ret).text;
     const x = expandTemplates(markQuotes(t, ret).text, { found, works, books: bookCards }, { start: liveWidgets.length });
@@ -290,6 +304,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     for (const { tc, out } of outs) msgs.push({ role: 'tool', tool_call_id: tc.id, content: clip(out, TOOL_CHARS) });
   }
   final = final.replaceAll(NOT_FOUND, '').trim();
+  citedWorkCards(final);   // a short reply never streamed: the work it names still gets its card (idempotent after a stream)
   // code does the grounding: refs → links, unverifiable quotations out, speakers fixed, quotations linked, no preamble
   const retrieved = [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
   const rendered = renderRefs(final, { found, works });
