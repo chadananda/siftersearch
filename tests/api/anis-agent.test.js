@@ -181,6 +181,44 @@ describe('source questions', async () => {
     expect(cards.at(-1)?.[0]).toMatchObject({ id: 3, url: 'https://oceanlibrary.com/gleanings', cover_url: 'https://siftersearch.com/img/covers/3' });
     expect(r.reply).toContain('(https://oceanlibrary.com/gleanings)');
   });
+  // Chad 11-14 replay: research held for the question (an earlier answer: Gleanings ¶260 + ¶261, a UHJ letter) answered with NO trace —
+  // an intro, the neighbouring paragraph as a second card, "I did not check the section number…". The agent is told a source question
+  // traces even so; once the trace found the source, code drops cards/sentences resting on held research or the source's own neighbours.
+  const HELD = { same: true, status: 'answered', question: `Where does "${Q}" come from?`, passages: [
+    { id: 260, text: 'The paragraph before.', title: 'Gleanings from the Writings of Bahá’u’lláh', author: "Bahá'u'lláh", source_url: 'https://oceanlibrary.com/gleanings?paraId=p116', document_id: 3 },
+    { id: 900, text: 'A letter citing it.', title: 'A letter of the Universal House of Justice', author: 'Universal House of Justice', source_url: 'https://oceanlibrary.com/uhj#p2', document_id: 5 }] };
+  const DRAFT = `{{quote P3}}\n\nThe passage just before it adds more [[P1]].\n\n{{quote P1}}\n\nThe House of Justice cites it [[P2]].\n\nFrom [Gleanings from the Writings of Bahá’u’lláh](https://oceanlibrary.com/gleanings?paraId=p117), quoting the [Lawḥ-i-Maqṣúd](https://oceanoflights.org/maqsud#p4).\n\nI did not check the section number or the original Persian/Arabic text.`;
+  const traceFirst = (final) => { const seen = []; let n = 0; const create = async (p) => { seen.push(p);
+    return n++ === 0 ? { choices: [{ message: { content: '', tool_calls: [{ id: 'a', function: { name: 'quotation_candidates', arguments: JSON.stringify({ quotation: Q }) } }] } }] } : final(p); }; return { create, seen }; };
+  it('held research: the turn tells the agent a source question still traces first (and the edge tool says so)', async () => {
+    const { create, seen } = traceFirst(() => ({ choices: [{ message: { content: '{{quote P3}}' } }] }));
+    await agentAnswer({ messages: [{ role: 'user', content: `Where does "${Q}" come from?` }], tools: { ...T, sourceOf: async () => SA }, held: HELD, create });
+    expect(seen[0].messages.findLast((m) => m.role === 'user').content).toMatch(/SOURCE QUESTION[^\n]*quotation_candidates first even so/);
+    expect(seen[0].messages[0].content).toMatch(/quotation_candidates FIRST and ALONE — EVEN WHEN RESEARCH IS HELD/);
+    const snap = (await import('../../worker/anis/agent-tools.json', { with: { type: 'json' } })).default;
+    expect(snap.tools.find((t) => t.function.name === 'quotation_candidates').function.description).toMatch(/even when research is held/);
+  });
+  it('after the trace: no neighbouring paragraph, no held citing letter, no "I did not check" — written whole', async () => {
+    const { create } = traceFirst(() => ({ choices: [{ message: { content: DRAFT } }] }));
+    const r = await agentAnswer({ messages: [{ role: 'user', content: `Where does "${Q}" come from?` }], tools: { ...T, sourceOf: async () => SA }, held: HELD, create });
+    expect(r.widgets.filter((w) => w.kind === 'quote')).toHaveLength(1);
+    expect(r.reply).not.toMatch(/p116|uhj#p2|just before|House of Justice|did not check/);
+    expect(r.reply).toContain('https://oceanoflights.org/maqsud#p4');
+  });
+  it('after the trace: the same guard on a streamed reply', async () => {
+    const ev = [];
+    const parts = DRAFT.split(/(?<=\n\n)/);
+    const { create } = traceFirst(() => ({ async *[Symbol.asyncIterator]() { for (const c of parts) yield { choices: [{ delta: { content: c } }] }; yield { choices: [], usage: {} }; } }));
+    const r = await agentAnswer({ messages: [{ role: 'user', content: `Where does "${Q}" come from?` }], tools: { ...T, sourceOf: async () => SA }, held: HELD, create, onEvent: (e) => ev.push(e) });
+    const text = ev.filter((e) => e.type === 'text').map((e) => e.content).join('');
+    expect(text).toContain('https://oceanoflights.org/maqsud#p4');
+    expect(text + r.reply).not.toMatch(/p116|uhj#p2|just before|House of Justice|did not check/);
+    expect(ev.filter((e) => e.type === 'widget' && e.widget.kind === 'quote')).toHaveLength(1);
+  });
+  it('no trace this turn → held passages are cited as before (the guard is keyed on the trace, not the wording)', async () => {
+    const r = await agentAnswer({ messages: [{ role: 'user', content: 'Tell me about it' }], tools: T, held: HELD, create: async () => ({ choices: [{ message: { content: 'The House of Justice cites it [[P2]].' } }] }) });
+    expect(r.reply).toContain('uhj#p2');
+  });
   it('whole_lookup reads the whole prayer a found passage belongs to (11-12: the Short Obligatory Prayer lost its last line)', async () => {
     const whole = vi.fn(async () => ({ passages: [{ id: 8, text: 'I bear witness, O my God…', document_id: 3, paragraph_index: 4 }, { id: 9, text: 'There is none other God but Thee, the Help in Peril, the Self-Subsisting.', document_id: 3, paragraph_index: 5 }] }));
     const { run } = toolRunner({ ...T, whole });

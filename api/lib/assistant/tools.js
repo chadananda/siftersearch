@@ -607,7 +607,7 @@ const ENTRIES = [
   // quotation_candidates: the sourcehunt engine with NO model — phrase + keyword layers, holds() on the wording, links; the decision is a tree node (judge.passages)
   { name: 'quotation_candidates', label: 'Quotation Candidates', kind: 'tool', outputName: 'Passage[]', cost: C(true, 900),
     purpose: 'Where a quotation may come from: the passage holding its words (source), the original tablet, works quoting it — each with a containment score; deterministic, no model.',
-    description: 'Candidates for where a quotation comes from: its published source (core literature), the original-language tablet, other works quoting it; each with a score (the share of the quotation’s words the passage holds). Judging which candidate is right is the caller’s decision.',
+    description: 'WHERE WORDS COME FROM: the reader quotes words and asks where they are from, who wrote or said them, or whether they are authentic. Call this FIRST and ALONE for such a question — even when research is held for it (held research never traces a source) and before any library search. Returns the published source passage (core literature) with the one line to write under it (the source linked and, when known, the original tablet on Ocean of Lights); the reader also sees the book\'s card.',
     input: { type: 'object', additionalProperties: false, required: ['quotation'], properties: { quotation: str('The quotation as the reader gave it'),
       tradition: { ...nul('string'), description: 'The tradition the reader named (any): its own core is the source, its own-language edition the original. Absent = the whole library' } } }, output: PASSAGES,
     example: { input: { quotation: 'The earth is but one country, and mankind its citizens' },

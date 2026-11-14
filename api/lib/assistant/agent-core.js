@@ -3,7 +3,7 @@
 import { toolRunner, TOOL_CHARS } from './tool-runner.js';
 import { workNotes as workNotesLookup, asPassage, SAME_QUESTION } from './tool-defs.js';
 import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
-import { dropSearchOffer } from './lint.js';
+import { dropSearchOffer, dropUncheckedDisclaimer, isUncheckedDisclaimer } from './lint.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
 import { expandTemplates } from './widgets/templates.js';
@@ -44,7 +44,7 @@ TOOLS — use them before answering; call several at once when they are independ
 - talk_search: a TALK, lecture or recording in the media library, by speaker, topic or title (any spelling). When the reader asks for a talk, answer with the talk — the reader sees its card; write its title in italics (never in quotation marks) and its speaker, no [[ref]], no URL — and no passages unless they ask. Talks are library documents: use this, never document_search, for a recording.
 - work_notes_lookup: sourced lines on a core work's importance — only when the reader asks ABOUT a book (its importance, what it is); never when they only ask for it.
 - fused_search: passages. Phrase the query in the words the texts would use. When the reader wants one writer's words ("where does 'Abdu'l-Bahá say…"), set author to that writer and leave the name out of the query. Try another wording before concluding anything is missing.
-- SOURCE QUESTIONS (a reader gives a quotation, or asks where words come from, who said them, whether they are authentic): call quotation_candidates FIRST and ALONE; fused_search the distinctive phrase only when it finds no source. The answer is the SOURCE passage as its card ({{quote P#}}) — the reader also sees the book's card — then the one "From …" line the tool gives, exactly as given (it links the source and, when known, the original tablet). Nothing else: no introduction, no other copies or spelling variants, no letters, compilations or secondary works that cite it, no neighbouring passages, no commentary — each only when the reader asks. Original-language text only when asked for. If the reader named a different author, one short line saying who wrote it. No source holds the words → say so plainly, with at most one near passage marked as such; never attribute from memory.
+- SOURCE QUESTIONS (a reader gives a quotation, or asks where words come from, who said them, whether they are authentic): call quotation_candidates FIRST and ALONE — EVEN WHEN RESEARCH IS HELD for the question (held research never traces a source; it is not the answer to a source question); fused_search the distinctive phrase only when it finds no source. The answer is the SOURCE passage as its card ({{quote P#}}) — the reader also sees the book's card — then the one "From …" line the tool gives, exactly as given (it links the source and, when known, the original tablet). Nothing else: no introduction, no other copies or spelling variants, no letters, compilations or secondary works that cite it, no neighbouring passages, no commentary, never what you did or did not check — each only when the reader asks. Original-language text only when asked for. If the reader named a different author, one short line saying who wrote it. No source holds the words → say so plainly, with at most one near passage marked as such; never attribute from memory.
 - context_lookup, quotation_candidates (where a quotation comes from), original_lookup, translation_lookup, rendering_lookup, source_trace (a letter or scholar stating a teaching → the primary passages), web_search (last resort; label it as from the web, never as scripture).
 
 WRITING:
@@ -55,6 +55,7 @@ WRITING:
 - Otherwise the shortest complete answer; more only on request (follow-up questions are offered under every reply). A short question gets 1–3 sentences; a request for a book gets its link and one or two sourced lines on it; a study question gets the passages that carry it, quoted, and nothing the reader did not ask for. A follow-up, objection or comparison in a conversation answers that one point: a direct sentence or two, then the 2–3 passages that settle it — never a fresh survey of the topic or of what earlier replies covered.
 - A word or vocabulary question (an Arabic or Persian term, a title, a phrase): rendering_lookup on it in Arabic script, then show it at work in one or two passages — the original line and its published English, each with its ref — and say how Shoghi Effendi renders it. Grammar or etymology you add yourself is marked in two words ("my reading"), never a paragraph about your sources. An original is quoted exactly as its passage gives it — never add vowel marks or change a letter; word-by-word glosses go in italics, never in quotation marks.
 - Documents and email: when the reader asks for something printed, saved or emailed, write the content itself — the system turns your reply into a PDF and emails it (asking for the address if it has none). Never say you cannot send email or make a document, and never describe the delivery yourself. A heading or label over a passage names what that passage itself says — a passage on fasting is never labelled as one on prayer.
+- Never say what you did not check, verify or look up ("I did not check the section number…"): find it, or leave it out.
 - Speak about the texts, never about your tools: no "the excerpt I can see", "the library does not link", "my search returned". If something was not found, say once, plainly, that you found no such text. Capitalise He/His/Him for Bahá'u'lláh, the Báb and 'Abdu'l-Bahá.
 - Cite with refs: put [[P3]] right after the words that come from passage P3; write a book's name as [[B1]] (code turns it into the linked title). Never write a URL. Never use a ref you were not given.
 - Display templates, when they help the reader: a line holding only {{quote P3}} shows passage P3 whole as a card (the key passage of an answer; do not also type its words); {{book B1}} shows the book's card where you recommend a work; {{side_by_side P1 P4}} sets an original beside its translation; {{scene "Title" "line" P4 P5}} shows a moment of a story with the passages that record it. Optional — plain prose with refs is always fine.
@@ -152,6 +153,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   // the strategy tools (agent-strategies.js): their data → refs here; passages they gave are remembered for the cards
   const bookCards = new Map(), fromStrategy = new Set();
   const give = (ps) => ps.map((x) => { const r = add(asPassage(x)); if (r) fromStrategy.add(r); return r; }).filter(Boolean);
+  const heldRefs = new Set(), giveHeld = (ps) => { const refs = give(ps); for (const r of refs) heldRefs.add(r); return refs; };
   if (impl.bookCard) run.book_card = async (a) => {
     const r = await impl.bookCard(a);
     if (!r) return `no work or section like "${a.title}" in the library — try document_search with another spelling, or fused_search for passages that name it`;
@@ -164,9 +166,11 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   // source passage quotation_candidates found gets its card by code, never by the agent's choice; the agent is told the [B#] to name it with.
   // book_card's own lookup (cover, edition); failing that, the work from the passage (cover by doc id). One card per work.
   const qc = run.quotation_candidates;
+  let source = null;   // { ref, doc } of the source passage the trace found this turn (sourceOnly below)
   if (qc) run.quotation_candidates = async (a) => {
     const before = new Set(found.keys()), out = await qc(a);
-    const src = [...found].find(([ref, p]) => !before.has(ref) && p.role === 'source')?.[1];
+    const hit = [...found].find(([ref, p]) => !before.has(ref) && p.role === 'source'), src = hit?.[1];
+    if (hit && !source) source = { ref: hit[0], doc: Number(src.document_id) || null };
     if (!src || !(Number(src.document_id) > 0) || [...bookCards.values()].some((b) => Number(b.id) === Number(src.document_id))) return out;
     let line = null;
     if (run.book_card && src.title) {
@@ -218,7 +222,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     if (!r?.passages?.length) return 'no research held for this question yet — research it with the tools';
     const same = r.similarity >= SAME_QUESTION;
     if (same && r.question) researchQ = r.question;   // a reworded question grows the set it matched, not a duplicate
-    return `${same ? `research held for this question (${r.status}): these passages answered it before — answer from them; search only for a point the reader raises that they do not cover` : `research held for an EARLIER question ("${r.question}"; you judge: if it asks the same thing, treat it as this question's research and answer from it; if only related, start from it and search for the rest; if unrelated, ignore it) (${r.status})`}\n\n${show(give(r.passages))}`;   // a hit answers from the held research (11-13: hits re-searched 9–15 tower calls, 15–20 s)
+    return `${same ? `research held for this question (${r.status}): these passages answered it before — answer from them; search only for a point the reader raises that they do not cover` : `research held for an EARLIER question ("${r.question}"; you judge: if it asks the same thing, treat it as this question's research and answer from it; if only related, start from it and search for the rest; if unrelated, ignore it) (${r.status})`}\n\n${show(giveHeld(r.passages))}`;   // a hit answers from the held research (11-13: hits re-searched 9–15 tower calls, 15–20 s)
   };
   // research looked up BEFORE the first round (the Worker, on a same-question hit): it rides in the reader's turn, not a tool result —
   // the API holds a reply written after a tool result until it is complete (11-13: first word 5–6 s after research_lookup; in the turn, 0.9 s)
@@ -226,9 +230,9 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   if (held?.passages?.length) {
     // same: this question's set (grows it). Close but not same: an EARLIER question's set the agent judges; answered with no search → it was the same question
     if (held.same) researchQ = held.question;
-    const head = held.same ? `RESEARCH HELD FOR THIS QUESTION (${held.status}): these passages answered it before and hold its quotations — choose the quotes, scenes and cards from them and answer with NO search. Search only if the reader asks for something specific (a named work, date or detail) that none of them holds.`
-      : `RESEARCH HELD FOR AN EARLIER QUESTION ("${held.question}", ${held.status}) — you judge: if the reader asks about the same subject in other words (\"tell me about X\" = \"who was X?\"; a casual or misspelt form = the canonical one), it IS this question: answer from these passages with no searching. If it asks something narrower or different, start from them and search only for the rest; if unrelated, ignore them and research.`;
-    heldText = `${head} research_lookup is already done this turn — do not call it.\n\n${show(give(held.passages))}`;
+    const head = held.same ? `RESEARCH HELD FOR THIS QUESTION (${held.status}): these passages answered it before and hold its quotations — choose the quotes, scenes and cards from them and answer with NO search. Search only if the reader asks for something specific (a named work, date or detail) that none of them holds. The one exception: a SOURCE QUESTION (the reader quotes words and asks where they come from, who said them, whether they are authentic) — call quotation_candidates first even so; these passages do not trace a source.`
+      : `RESEARCH HELD FOR AN EARLIER QUESTION ("${held.question}", ${held.status}) — you judge: if the reader asks about the same subject in other words (\"tell me about X\" = \"who was X?\"; a casual or misspelt form = the canonical one), it IS this question: answer from these passages with no searching. If it asks something narrower or different, start from them and search only for the rest; if unrelated, ignore them and research. A SOURCE QUESTION (where quoted words come from) always calls quotation_candidates first.`;
+    heldText = `${head} research_lookup is already done this turn — do not call it.\n\n${show(giveHeld(held.passages))}`;
   } else if (held?.question) {
     researchQ = held.question;   // the canonical restatement: what this turn's research is saved under
     heldText = 'NO RESEARCH HELD for this question yet — research_lookup is already done this turn; do not call it. Research it with the tools.';
@@ -269,9 +273,28 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     }
     if (added) onEvent({ type: 'books', books: [...bookCards.values()].slice(0, 3) });
   };
+  // A SOURCE ANSWER SHOWS ITS SOURCE (Chad 11-14 replay: the held research's neighbouring Gleanings paragraph came back as a second card):
+  // once quotation_candidates found the source, a card or a sentence resting only on held research or on another paragraph of the
+  // source's own work is dropped by code — keyed on the tool's result, never on the question's wording. A passage a later tool
+  // fetched on purpose (the original, a translation) stays. Raw text ([[P#]], {{…}}), before refs render.
+  const offSource = (ref) => source && ref !== source.ref && found.has(ref) && (heldRefs.has(ref) || (source.doc && Number(found.get(ref)?.document_id) === source.doc));
+  const sourceOnly = (text) => {
+    if (!source) return text;
+    const refsOf = (x) => [...String(x).matchAll(/\bP\d+\b/g)].map((m) => m[0]);
+    const offAll = (x) => { const refs = refsOf(x); return refs.length > 0 && refs.every(offSource); };
+    return String(text).split('\n').map((line) => {
+      const tpl = line.replace(/\{\{\s*(?:quote|side_by_side|scene)\b[^}]*\}\}/g, (t) => (offAll(t) ? '' : t));
+      if (tpl !== line && !tpl.trim()) return '';
+      const sents = tpl.match(/[^.!?]+(?:[.!?]+["”’)*_]*|$)\s*/g) || [tpl];
+      return sents.filter((x) => !(/\[\[P\d+\]\]/.test(x) && !/\{\{/.test(x) && offAll((x.match(/\[\[P\d+\]\]/g) || []).join(' ')))).join('');
+    }).join('\n').replace(/\n{3,}/g, '\n\n');
+  };
   const finishLive = (s) => {
-    const [, lead, core, trail] = String(s).match(/^(\s*)([\s\S]*?)(\s*)$/);
-    if (!core) return s;
+    const [, lead, core0, trail] = String(s).match(/^(\s*)([\s\S]*?)(\s*)$/);
+    if (!core0) return s;
+    const c1 = sourceOnly(core0), d = dropUncheckedDisclaimer(c1);
+    const core = (d.dropped ? d.text : isUncheckedDisclaimer(c1) ? '' : c1).trim();   // a released piece that is only the disclaimer (lint never empties a text)
+    if (!core) return '';
     citedWorkCards(core);
     const ret = heldNowAll();
     const t = linkQuotes(fixQuoteSpeakers(restoreElisions(renderRefs(core, { found, works }), ret, { asked: asked0 }).text, ret).text, ret).text;
@@ -281,7 +304,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   };
   const onText = (t) => {
     if (t.includes(NOT_FOUND)) { gate = false; return; }   // a not-found draft may be nudged into another round: never shown
-    gate ??= createSentenceGate(held0(), (s) => { const c = finishLive(s); live += c; onEvent({ type: 'text', content: c }); }, { asked: asked0 });
+    gate ??= createSentenceGate(held0(), (s) => { const c = finishLive(s); if (!c) return; live += c; onEvent({ type: 'text', content: c }); }, { asked: asked0 });
     if (gate) gate.push(t);
   };
   for (let round = 0; round < maxRounds; round++) {
@@ -334,7 +357,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   citedWorkCards(final);   // a short reply never streamed: the work it names still gets its card (idempotent after a stream)
   // code does the grounding: refs → links, unverifiable quotations out, speakers fixed, quotations linked, no preamble
   const retrieved = [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
-  const rendered = renderRefs(final, { found, works });
+  const rendered = renderRefs(dropUncheckedDisclaimer(sourceOnly(final)).text, { found, works });
   const asked = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const whole = restoreElisions(rendered, retrieved, { asked });   // a "…" bridging the passage's own words → its contiguous words (11-04 #161/#138)
   const guarded = dropUnverified(whole.text, retrieved, { asked });

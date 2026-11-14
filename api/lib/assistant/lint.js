@@ -36,6 +36,12 @@ export const isDeflection = (s) => DEFLECTION.test(String(s || '').replace(/[“
 // completeness says nothing the answer doesn't show; it is dropped when the reply cites a source (a reply with no link keeps it).
 export const COVERAGE_DISCLAIMER = /\b(?:texts|sources|library|passages|materials?)\s+(?:I\s+(?:can\s+search|have|found|searched)|available(?:\s+to\s+me)?)(?:\s+here)?\s+(?:do\s+not|don['’]t|does\s+not|doesn['’]t|cannot|can['’]t)\s+(?:provide|give|offer|contain|hold|include|present|preserve)\s+(?:a\s+|an\s+)?(?:full|complete|comprehensive|detailed|extensive|thorough|whole|entire)\b/i;
 export const dropCoverageDisclaimer = (text) => (/\]\(https?:\/\//.test(String(text || '')) ? dropSentences(text, (s) => COVERAGE_DISCLAIMER.test(String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '))) : { text: String(text || ''), dropped: 0 });
+// AN UNCHECKED DISCLAIMER (Chad 11-14 replay, "Where does 'Let your vision be world-embracing' come from?"): "I did not check the
+// section number or the original Persian/Arabic text." — what was not looked up is found or left out, never announced. Dropped
+// sentence by sentence, quoted material excepted; the BUT rule keeps a clause after "but". Pure.
+export const UNCHECKED_DISCLAIMER = /\bI\s+(?:did\s+not|didn['’]t|have\s+not|haven['’]t|had\s+not|could\s+not|couldn['’]t|cannot|can['’]t|was\s+(?:not\s+able|unable)\s+to|wasn['’]t\s+able\s+to|am\s+(?:not\s+able|unable)\s+to)\s+(?:yet\s+|fully\s+|independently\s+|separately\s+)?(?:check(?:ed)?|verif(?:y|ied)|confirm(?:ed)?|look(?:ed)?\s+(?:up|at|into)|consult(?:ed)?|compare[d]?|trace[d]?|examine[d]?)\b/i;
+export const isUncheckedDisclaimer = (s) => UNCHECKED_DISCLAIMER.test(String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '));
+export const dropUncheckedDisclaimer = (text) => dropSentences(text, isUncheckedDisclaimer);
 export const LINT = [
   { id: 'we-bahais', re: /\bwe\s+bah[aá]['’]?[ií]s?\b/i, why: 'speaks for a community' },
   { id: 'the-position', re: /\bthe\s+(bah[aá]['’]?[ií]|christian|muslim|islamic|jewish|buddhist|hindu)\s+position\s+is\b/i, why: 'a reading presented as a tradition\'s position' },

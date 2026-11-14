@@ -60,3 +60,13 @@ describe('dropSearchOffer — blocking', () => {
     expect(dropSearchOffer(body)).toEqual({ text: body, dropped: 0 });
   });
 });
+
+// Chad 11-14 replay: "I did not check the section number or the original Persian/Arabic text." — found or left out, never announced
+describe('dropUncheckedDisclaimer', async () => {
+  const { dropUncheckedDisclaimer, isUncheckedDisclaimer } = await import('../../api/lib/assistant/lint.js');
+  it.each(['I did not check the section number or the original Persian/Arabic text.', "I haven't verified the date.", 'I could not confirm the translator.', 'I was unable to look up the original.'])('flags: %s', (s) => expect(isUncheckedDisclaimer(s)).toBe(true));
+  it.each(['He did not check his pride.', 'Bahá’u’lláh says "I did not check" in no text.', 'I found it in Gleanings.'])('keeps: %s', (s) => expect(isUncheckedDisclaimer(s)).toBe(false));
+  it('drops the sentence, keeps the rest', () => {
+    expect(dropUncheckedDisclaimer('From [Gleanings](https://o/g). I did not check the section number.').text).toBe('From [Gleanings](https://o/g).');
+  });
+});
