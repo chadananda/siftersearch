@@ -53,3 +53,17 @@ describe('/media on the Anís host', () => {
     expect(t[1].lastmod).toBe('2026-11-01');
   });
 });
+
+describe('the player stages its audio on the Anís host', () => {
+  const src = readFileSync(new URL('../../worker/index.js', import.meta.url), 'utf8');
+  it('handles POST /_media/warm in the anis-host branch, before the app routes send unknown paths home', () => {
+    const branch = src.slice(src.indexOf('if (url.hostname === SHORT_HOST)'), src.indexOf('const a = await anisAppRoute(url, env);'));
+    expect(branch).toMatch(/url\.pathname === '\/_media\/warm' && request\.method === 'POST'\) return warmMedia\(/);
+  });
+});
+describe('anisHref keeps the media staging path on the host', () => {
+  it('/_media/warm stays relative', async () => {
+    const { anisHref } = await import('../../src/lib/anis-host.js');
+    expect(anisHref('/_media/warm?slug=a')).toBe('/_media/warm?slug=a');
+  });
+});

@@ -26,7 +26,7 @@ export function astroPath(p, sections = ASTRO_SECTIONS) {
 export const anisPath = (p) => p.replace(/^\/biography(?=\/|$)/, '/bio').replace(/^\/dialogue(?=\/|$)/, '/discuss');
 
 // paths the Anís host answers (anything else there goes home to oceanlibrary.com)
-const ON_ANIS = /^\/($|media(\/|$)|bio(\/|$)|discuss(\/|$)|doc(\/|$)|d\/|api\/|img\/|_astro\/|fonts\/|anis-app\/|widget|favicon|anis-sitemap\.xml$)/;
+const ON_ANIS = /^\/($|media(\/|$)|bio(\/|$)|discuss(\/|$)|doc(\/|$)|d\/|api\/|_media\/|img\/|_astro\/|fonts\/|anis-app\/|widget|favicon|anis-sitemap\.xml$)/;
 
 /**
  * A link on a page rendered on the Anís host → where it points there: a page the host serves keeps its path; anything else

@@ -154,6 +154,8 @@ export function createExports(manifest) {
             const urls = await als.run({ env, ctx, tainted: false, test: null }, async () => (await Promise.all([discussSitemapUrls, docSitemapUrls, bioSitemapUrls, mediaSitemapUrls].map((f) => f({ api: API_ORIGIN })))).flat());
             return new Response(sitemapXml(urls), { headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=3600' } });
           }
+          // the designed player asks this host to stage its audio copy (src/lib/media-ready.js); without this it 301s to oceanlibrary.com
+          if (url.pathname === '/_media/warm' && request.method === 'POST') return warmMedia(url, env, API_ORIGIN);
           const a = await anisAppRoute(url, env);
           if (a instanceof Response) return a;
           if (url.pathname.startsWith('/img/') && env.IMG) return env.IMG.fetch(request);   // covers/portraits: the image Worker (service binding), same as siftersearch.com/img/*
