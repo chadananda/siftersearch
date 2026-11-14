@@ -74,15 +74,16 @@ export function imagesFor({ doc = null, para = null, person = null, place = null
   if (place && !doc) { const k = fold(place); return IMAGES.filter((x) => x.places.some((p) => fold(p) === k)).slice(0, max); }
   if (doc == null || !illustrated(doc)) return [];
   const chapter = chapterOf(doc, para);
-  if (chapter == null) return [];
   const main = !!INDEX.docs?.[doc], hay = fold(text);
-  const inChapter = IMAGES.filter((x) => x.chapter === chapter);
+  const inChapter = chapter == null ? [] : IMAGES.filter((x) => x.chapter === chapter);
   // 1. the plate facing the paragraph
   const facing = main && para != null ? inChapter.filter((x) => x.para === para) : [];
   if (facing.length) return facing.slice(0, max);
-  // 2. the portrait of the question's subject outranks any caption match ("Who was Muḥammad Sháh?" → his portrait on every card)
+  // 2. the portrait of the question's subject outranks any caption match ("Who was Muḥammad Sháh?" → his portrait on every card).
+  // Chapter-free: a footnote or the epilogue (live 11-14, fn_324 "Muḥammad Sháh died…": no paragraph, no chapter) still shows it.
   const subj = portraitsIn(fold(subject))[0];
   if (subj) return [subj];
+  if (chapter == null) return portraitsIn(hay).slice(0, 1);
   // 3. a plate of this chapter whose caption names a person, or a site, the passage names; nearness only breaks ties
   const fit = inChapter.map((x) => {
     let s = 0;

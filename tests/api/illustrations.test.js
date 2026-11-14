@@ -177,6 +177,15 @@ describe('live: the right plate or none', async () => {
     const d = WIDGETS.scene.fromRefs(['P1'], { found: new Map([['P1', p]]), subject }, [live.shah2.scene.title, live.shah2.scene.line]);
     expect(d.image.id).toBe('db-229-muhammad-shah');
   });
+  it('live bc148b423: a Dawn-Breakers FOOTNOTE (no paragraph, no chapter) on "Who was Muḥammad Sháh?" still shows his portrait', () => {
+    const { footnote, godPassesBy, question, scene: sc } = live.shah3;
+    const found = new Map([['P1', card(godPassesBy)], ['P2', card(footnote)]]);
+    const subject = { text: question, names: [], earlier: null };
+    expect(WIDGETS.scene.fromRefs(['P1', 'P2'], { found, subject }, [sc.title, sc.line]).image.id).toBe('db-229-muhammad-shah');
+    expect(imagesFor({ doc: DB, para: null, text: footnote.text }).map((x) => x.id)).toEqual(['db-229-muhammad-shah']);   // the footnote names him
+    expect(imagesFor({ doc: DB, para: null, text: 'See the Journal Asiatique, 1866, tome 7.' })).toEqual([]);   // no chapter, no person: nothing
+    expect(imagesFor({ doc: 21310, para: null, text: godPassesBy.text, subject: question })).toEqual([]);   // not an illustrated work
+  });
   it('the subject\'s portrait outranks a caption match; a named site still binds', () => {
     const quddus = 'They came to the house of the father of Quddús in Bárfurúsh, where Quddús was living.';
     const at = imageById('db-182-house-quddus');

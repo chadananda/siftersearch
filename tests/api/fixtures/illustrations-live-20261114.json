@@ -44,5 +44,29 @@
    "paragraph_index": 350,
    "text": "In those days Siyyid Yaḥyá was residing in Ṭihrán in the house of Mírzá Luṭf-‘Alí, the Master of Ceremonies to the S̱háh, as the honoured guest of his Imperial Majesty. The S̱háh confidentially signified through Mírzá Luṭf-‘Alí his desire and pleasure that Siyyid Yaḥyá should proceed to S̱híráz and investigate the matter in person. “Tell him from us,” commanded the sovereign, “that inasmuch as we repose the utmost confidence in his integrity, and admire his moral and intellectual standards, and regard him as the most suitable among the divines of our realm, we expect him to proceed to S̱híráz, to enquire thoroughly into the episode of the Siyyid-i-Báb, and to inform us of the results of his investigations. We shall then know what measures it behoves us to take.”"
   }
+ },
+ "shah3": {
+  "note": "live check of bc148b423: the only Dawn-Breakers passage was a footnote (fn_324, EPILOGUE, no paragraph/chapter) and drew no plate",
+  "question": "Who was Muḥammad Sháh?",
+  "scene": {
+   "title": "Death of the Sháh",
+   "line": "He died on 4 September 1848; Áqásí fell, and the young Náṣiri'd-Dín Sháh and Amír-Niẓám began the persecutions"
+  },
+  "godPassesBy": {
+   "document_id": 21310,
+   "paragraph_index": null,
+   "text": "This fierce, nation-wide controversy had assumed alarming proportions when Muḥammad S̱háh finally succumbed to his illness, precipitating by his death the downfall of his favorite and all-powerful minister, Ḥájí Mírzá Áqásí, who, soon stripped of the treasures he had amassed, fell into disgrace, was expelled from the capital, and sought refuge in Karbilá. The seventeen year old Náṣiri’d-Dín Mírzá ascended the throne, leaving the direction of affairs to the obdurate, the iron-hearted Amír-Niẓám, Mírzá Taqí Ḵhán, who, without consulting his fellow-ministers, decreed that immediate and condign punishment be inflicted on the hapless Bábís. Governors, magistrates and civil servants, throughout the provinces, instigated by the monstrous campaign of vilification conducted by the clergy, and prompted by their lust for pecuniary rewards, vied in their respective spheres with each other in hounding and heaping indignities on the adherents of an outlawed Faith. For the first time in the Faith’s history a systematic campaign in which the civil and ecclesiastical powers were banded together was being launched against it, a campaign that was to culminate in the horrors experienced by Bahá’u’lláh in the Síyáh-C̱hál of Ṭihrán and His subsequent banishment to ‘Iráq. Government, clergy and people arose, as one man, to assault and exterminate their common enemy. In remote and isolated centers the scattered disciples of a persecuted community were pitilessly struck down by the sword of their foes, while in centers where large numbers had congregated measures were taken in self-defense, which, misconstrued by a cunning and deceitful adversary, served in their turn to inflame still further the hostility of the authorities, and multiply the outrages perpetrated by the oppressor. In the East at S̱hayḵh Ṭabarsí, in the south in Nayríz, in the west in Zanján, and in the capital itself, massacres, upheavals, demonstrations, engagements, sieges, acts of treachery proclaimed, in rapid succession, the violence of the storm which had broken out, and exposed the bankruptcy, and blackened the annals, of a proud yet degenerate people.",
+   "title": "God Passes By",
+   "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_101&selectionString=god_passes_by_ocean_en_5k.0~god_passes_by_ocean_en_5k.1812",
+   "place": "Chapter III, #3.6"
+  },
+  "footnote": {
+   "document_id": 21308,
+   "paragraph_index": null,
+   "text": "Muḥammad S̱háh died on the eve of the sixth of S̱havvál (September 4, 1848 A.D.). “There was an interregnum of about two months. A provisional government was formed comprising four administrators under the presidency of the widow of the deceased S̱háh. Finally after much hesitation, the lawful heir, the young Prince Náṣiri’d-Dín Mírzá, governor of Áḏhirbáyján was permitted to ascend the throne.” (Journal Asiatique, 1866, tome 7, p. 367.) {language=\"en\"}",
+   "title": "The Dawn-Breakers",
+   "url": "https://oceanlibrary.com/dawn-breakers_nabil?paraId=fn_324",
+   "place": "EPILOGUE"
+  }
  }
 }
