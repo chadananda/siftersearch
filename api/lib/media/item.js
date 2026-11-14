@@ -27,7 +27,7 @@ import { revertInsertions } from './faithfulness.js';
 import { coverageCheck, coverageGaps, onWorker, silentIn } from './coverage.js';
 import { repairParagraphLoops, publishProblems } from './loops.js';
 import { fixMojibake } from './text-repair.js';
-import { contentParagraphs, cutsOfMeta } from './content-map.js';
+import { contentParagraphs, contentRecord, cutsOfMeta } from './content-map.js';
 import { buildVocab, CORE_TERMS, promptTerms } from './vocab.js';
 import { transcriptMarkdown, pageHtml } from './render.js';
 import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights.js';
@@ -882,10 +882,9 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (stage === 'content') {
       // CONTENT MAP (rules §8): the model marks the talk vs songs/prayers/MC/thanks; content-map.js turns it into word-snapped cuts that trim applies to the web copies
       const work = await readJson(join(dir, 'transcript.work.json'));
-      const C = await import('./content-map.js');
       const sound = (await readJson(join(dir, 'enhanced', 'sound.json'), { music: [] }))?.music || [];
       const raw = llm.contentTalk ? await llm.contentTalk(work.paragraphs, { title: meta.title, speaker: meta.speaker, event: meta.event, year: meta.year, place: meta.place }, { spend, sound }) : {};
-      meta.content = C.contentRecord({ raw, paragraphs: work.paragraphs, duration: meta.duration_s, at: d.now() });
+      meta.content = contentRecord({ raw, paragraphs: work.paragraphs, duration: meta.duration_s, at: d.now() });
       if (!raw?.segments?.length) meta.content.review ||= 'no segments from the model';
       rec.cuts = meta.content.cuts.length; rec.kept_s = meta.content.kept_s; if (meta.content.review) rec.review = meta.content.review;
     }
