@@ -16,7 +16,9 @@ describe('Anís app host', () => {
     expect(r.headers.get('content-type')).toContain('manifest+json');
     const m = await r.json();
     expect(m).toMatchObject({ display: 'standalone', scope: '/', short_name: 'Anís' });
-    expect(m.icons.some((i) => i.purpose === 'maskable')).toBe(true);
+    for (const p of ['any', 'maskable', 'monochrome']) expect(m.icons.some((i) => i.purpose === p)).toBe(true);
+    expect(m.prefer_related_applications).toBe(false);
+    for (const f of ['store-1024.png', 'play-feature-1024x500.png', 'og-1200x630.png', 'favicon.ico']) expect(fs.existsSync(`public/anis-app/${f}`)).toBe(true);
     for (const i of MANIFEST.icons) expect(fs.existsSync(`public${i.src}`)).toBe(true);
     expect(JSON.stringify(m)).not.toMatch(/sifter/i);
   });
@@ -37,5 +39,18 @@ describe('Anís app host', () => {
     for (const t of ['apple-mobile-web-app-capable', 'apple-mobile-web-app-status-bar-style', 'apple-touch-icon', 'viewport-fit=cover', '/anis.webmanifest', '/anis-sw.js'])
       expect(page).toContain(t);
     expect(page.replace(/data-key="[^"]+"/, '').replace(/^\/\/.*$/gm, '')).not.toMatch(/siftersearch/i);
+  });
+  it('the host has its own robots and sitemap, and root icons come from the app\'s files', async () => {
+    const robots = await at('/robots.txt').text();
+    expect(robots).toContain('Disallow: /api/');
+    expect(robots).toContain('Sitemap: https://anis.oceanlibrary.com/sitemap.xml');
+    expect(await at('/sitemap.xml').text()).toContain('<loc>https://anis.oceanlibrary.com/</loc>');
+    const asked = [];
+    await anisAppRoute(new URL('https://anis.oceanlibrary.com/favicon.ico'), { ASSETS: { fetch: (u) => { asked.push(String(u)); return new Response('x'); } } });
+    expect(asked).toEqual(['https://anis.oceanlibrary.com/anis-app/favicon.ico']);
+  });
+  it('the page has structured data and a crawlable heading', () => {
+    const page = fs.readFileSync('src/pages/anis-app.astro', 'utf8');
+    for (const t of ["'@type': 'WebApplication'", '<h1>', 'summary_large_image', 'og-1200x630.png']) expect(page).toContain(t);
   });
 });

@@ -11,10 +11,13 @@ export const MANIFEST = {
   short_name: 'Anís',
   description: "Ask Anís about the world's sacred and scholarly texts — answers quoted and cited from the Ocean library.",
   lang: 'en',
+  dir: 'ltr',
   start_url: '/?source=app',
   scope: '/',
   display: 'standalone',
   display_override: ['standalone', 'minimal-ui'],
+  launch_handler: { client_mode: ['focus-existing', 'auto'] },   // one chat window, not a new one per launch
+  prefer_related_applications: false,   // true would stop browsers offering the install
   orientation: 'any',
   background_color: COLOR,
   theme_color: COLOR,
@@ -22,7 +25,9 @@ export const MANIFEST = {
   icons: [
     { src: '/anis-app/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
     { src: '/anis-app/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+    { src: '/anis-app/maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
     { src: '/anis-app/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    { src: '/anis-app/monochrome-512.png', sizes: '512x512', type: 'image/png', purpose: 'monochrome' },   // Android themed icons, notifications
   ],
 };
 
@@ -55,12 +60,23 @@ export function assetLinks(env = {}) {
     target: { namespace: 'android_app', package_name: pkg, sha256_cert_fingerprints: fps } }] : [];
 }
 
-/** On the app host: the app's own files → a Response; the root → the page path to render; anything else → null. */
+const ORIGIN = 'https://anis.oceanlibrary.com';
+// the host's own robots and sitemap (not the main site's): the app page is the one page to index; /api and the widget are not pages
+export const ROBOTS = `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /widget\n\nSitemap: ${ORIGIN}/sitemap.xml\n`;
+export const SITEMAP = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${ORIGIN}/</loc><changefreq>weekly</changefreq></url></urlset>\n`;
+// browsers and search engines ask for these at the root; the files live with the app's icons
+const ROOT_ICONS = { '/favicon.ico': '/anis-app/favicon.ico', '/apple-touch-icon.png': '/anis-app/apple-touch-icon.png', '/apple-touch-icon-precomposed.png': '/anis-app/apple-touch-icon.png' };
+
+/** On the app host: the app's own files → a Response (a Promise for a root icon, read from the static assets); the root →
+ *  the page path to render; anything else → null. */
 export function anisAppRoute(url, env) {
   const p = url.pathname;
   if (p === '/anis.webmanifest') return new Response(JSON.stringify(MANIFEST), { headers: { 'content-type': 'application/manifest+json', 'cache-control': 'public, max-age=3600' } });
   if (p === '/anis-sw.js') return new Response(SW, { headers: { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-cache', 'service-worker-allowed': '/' } });
   if (p === '/.well-known/assetlinks.json') return Response.json(assetLinks(env), { headers: { 'cache-control': 'public, max-age=3600' } });
+  if (p === '/robots.txt') return new Response(ROBOTS, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'public, max-age=3600' } });
+  if (p === '/sitemap.xml') return new Response(SITEMAP, { headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=3600' } });
+  if (ROOT_ICONS[p] && env?.ASSETS) return env.ASSETS.fetch(new URL(ROOT_ICONS[p], url));
   if (p === '/' || p === APP_PAGE) return APP_PAGE;
   return null;
 }

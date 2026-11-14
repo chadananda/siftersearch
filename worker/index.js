@@ -112,7 +112,7 @@ export function createExports(manifest) {
       async fetch(request, env, ctx) {
         const url = new URL(request.url);
         if (url.hostname === SHORT_HOST) {   // anis.oceanlibrary.com: Anís as an installable app at the root (worker/anis-app.js)
-          const a = anisAppRoute(url, env);
+          const a = await anisAppRoute(url, env);
           if (a instanceof Response) return a;
           if (url.pathname.startsWith('/img/') && env.IMG) return env.IMG.fetch(request);   // covers/portraits: the image Worker (service binding), same as siftersearch.com/img/*
           if (a && request.method === 'GET') return handle(manifest, app, new Request(new URL(a, url), request), env, ctx);

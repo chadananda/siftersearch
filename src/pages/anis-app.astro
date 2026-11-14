@@ -5,6 +5,11 @@
 const ORIGIN = 'https://anis.oceanlibrary.com';
 const title = 'Anís — Ocean AI Research Assistant';
 const description = "Ask Anís about the world's sacred and scholarly texts — answers quoted and cited from the Ocean library.";
+// structured data for search engines: the app itself, free, on the web and (once listed) the stores
+const ld = { '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Anís', alternateName: title, url: `${ORIGIN}/`, description,
+  applicationCategory: 'ReferenceApplication', operatingSystem: 'Web, iOS, Android, Windows', browserRequirements: 'Requires JavaScript',
+  image: `${ORIGIN}/anis-app/store-1024.png`, inLanguage: 'en', isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  publisher: { '@type': 'Organization', name: 'Ocean 2.0', url: 'https://oceanlibrary.com/', logo: `${ORIGIN}/anis-app/icon-512.png` } };
 ---
 <!doctype html>
 <html lang="en" style="background:#0a162a;color:#e6edf6;">
@@ -19,8 +24,15 @@ const description = "Ask Anís about the world's sacred and scholarly texts — 
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:url" content={`${ORIGIN}/`} />
-  <meta property="og:image" content={`${ORIGIN}/anis-app/icon-512.png`} />
-  <meta name="twitter:card" content="summary" />
+  <meta property="og:image" content={`${ORIGIN}/anis-app/og-1200x630.png`} />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Anís — Ocean AI Research Assistant" />
+  <meta property="og:locale" content="en_US" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={`${ORIGIN}/anis-app/og-1200x630.png`} />
   <link rel="manifest" href="/anis.webmanifest" />
   <meta name="theme-color" content="#0a162a" />
   <meta name="color-scheme" content="dark" />
@@ -31,15 +43,32 @@ const description = "Ask Anís about the world's sacred and scholarly texts — 
   <meta name="application-name" content="Anís" />
   <meta name="format-detection" content="telephone=no" />
   <link rel="apple-touch-icon" href="/anis-app/apple-touch-icon.png" />
+  <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/anis-app/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="48x48" href="/anis-app/favicon-48.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/anis-app/icon-192.png" />
+  <script type="application/ld+json" set:html={JSON.stringify(ld)} />
   <style>
     html, body { margin: 0; height: 100%; background: #0a162a; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
     body { min-height: 100dvh; }
-    noscript p { font: 16px/1.5 system-ui, sans-serif; padding: 2rem; color: #e6edf6; }
+    .intro { font: 16px/1.55 system-ui, sans-serif; color: #e6edf6; max-width: 40rem; margin: 0 auto; padding: 3rem 1.25rem; }
+    .intro h1 { font: 600 1.6rem/1.25 Georgia, serif; margin: 0 0 .75rem; }
+    .intro li { margin: .25rem 0; color: #9fb3cc; }
   </style>
 </head>
 <body>
-  <noscript><p>Anís needs JavaScript to run.</p></noscript>
+  <!-- what the app is, in the page itself (search engines, link previews, the moment before the chat opens over it) -->
+  <main class="intro">
+    <h1>Anís — Ocean AI Research Assistant</h1>
+    <p>{description} Ask in your own words; Anís searches the library and answers with the passages themselves, each linked to its source — books, talks and recordings included.</p>
+    <p>For example:</p>
+    <ul>
+      <li>What did ‘Abdu’l-Bahá say about the harmony of science and religion?</li>
+      <li>Find a recorded talk on the Covenant.</li>
+      <li>Where does the phrase “the earth is but one country” come from?</li>
+    </ul>
+    <noscript><p>Anís needs JavaScript to run.</p></noscript>
+  </main>
   <script is:inline src="/widget.js" data-key="wgt_house_siftersearch" data-name="Anís" data-opened="1" data-fullscreen="1" async></script>
   <script is:inline>
     if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('/anis-sw.js', { scope: '/' }).catch(() => {}));
