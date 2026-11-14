@@ -1,13 +1,12 @@
-// Anís reader indications bio + no assumed tradition (Chad 11-14): neutral base prompt, TRADITION line (host → bio → none), the note_indication
+// Anís reader indications bio + no assumed tradition (Chad 11-14): neutral base prompt, TRADITION line (question → bio → the deployment's audience description → none; no host list), the note_indication
 // tool (validation, D1 row, silent), bio rendering (cap, evidence, order), chat + letter turns carry the bio, GET/DELETE /api/chat/bio.
 import { describe, it, expect } from 'vitest';
 import Database from 'better-sqlite3';
 import { readFileSync } from 'node:fs';
 import worker, { chat } from '../../worker/anis/index.js';
 import { AGENT_SYSTEM } from '../../api/lib/assistant/agent-core.js';
-import { validIndication, renderBio, mergeIndications, traditionLine, hostTradition, BIO_MAX } from '../../api/lib/assistant/indications.js';
+import { validIndication, renderBio, mergeIndications, traditionLine, BIO_MAX } from '../../api/lib/assistant/indications.js';
 import { readerOf, noteIndication, loadBio } from '../../worker/anis/bio.js';
-import hosts from '../../config/anis-hosts.json';
 
 const mkEnv = () => {
   const db = new Database(':memory:');
@@ -31,6 +30,7 @@ const rig = (env, script) => {
       if (!body.stream) return new Response(JSON.stringify({ content: [{ type: 'text', text: JSON.stringify(body.system || '').includes('canonical form') ? 'NONE' : '["Next?"]' }], stop_reason: 'end_turn', usage: {} }));
       return script.shift()();
     }
+    if (String(url).includes('/api/v1/widget/config/')) { seen.config = (seen.config || 0) + 1; return new Response(JSON.stringify(env.profile || { name: 'Anís', audience: null })); }
     return new Response(JSON.stringify({ out: null }));
   };
   const ctx = { waitUntil: (p) => pending.push(p) };
@@ -54,28 +54,36 @@ describe('tradition is never assumed', () => {
     expect(AGENT_SYSTEM).toMatch(/CORE TEXTS FIRST \(the Bahá'í Faith in play\)/);
     expect(AGENT_SYSTEM).toMatch(/note_indication/);
   });
-  it('hosts: oceanlibrary.com and its subdomains are Bahá\'í-specific; siftersearch.com and unknown hosts are neutral', () => {
-    expect(hostTradition('anis.oceanlibrary.com', hosts)).toBe("Bahá'í Faith");
-    expect(hostTradition('oceanlibrary.com', hosts)).toBe("Bahá'í Faith");
-    expect(hostTradition('notoceanlibrary.com', hosts)).toBe(null);
-    expect(hostTradition('siftersearch.com', hosts)).toBe(null);
-    expect(hostTradition(null, hosts)).toBe(null);
+  it('identity: a companion researcher for Ocean, an interfaith library; no host list exists', () => {
+    expect(AGENT_SYSTEM).toMatch(/companion researcher for Ocean, an interfaith library/);
+    expect(AGENT_SYSTEM).not.toMatch(/Bahá'í Writings most fully/);
+    expect(readFileSync('worker/anis/index.js', 'utf8')).not.toMatch(/anis-hosts|oceanlibrary/);
   });
-  it('the TRADITION line: host first, then what the reader said, else none — the question itself always decides first', () => {
+  it('the TRADITION line: the reader\'s own words, then the deployment\'s audience text (quoted, never mapped), else none — the question always decides first', () => {
     const rows = [{ kind: 'tradition', value: 'Catholic', evidence: "I'm a Catholic", at: 1 }];
-    expect(traditionLine({ host: 'anis.oceanlibrary.com', tradition: "Bahá'í Faith", rows })).toMatch(/Otherwise the Bahá'í Faith: this host site/);
-    expect(traditionLine({ host: 'siftersearch.com', rows })).toMatch(/theirs is Catholic \("I'm a Catholic"\)/);
-    const none = traditionLine({ host: 'siftersearch.com' });
-    expect(none).toMatch(/none is assumed/);
-    for (const l of [none, traditionLine({ rows })]) expect(l).toMatch(/^TRADITION: If the question itself names or plainly implies a tradition/);
+    const aud = "Bahá'ís and Bahá'í seekers";
+    const none = traditionLine({});
+    expect(none).toMatch(/none is assumed: this is an interfaith library/);
+    const onlyAud = traditionLine({ audience: aud });
+    expect(onlyAud).toMatch(/Otherwise this deployment describes its audience as: "Bahá'ís and Bahá'í seekers"/);
+    expect(onlyAud).not.toMatch(/none is assumed/);
+    const both = traditionLine({ audience: aud, rows });
+    expect(both.indexOf('theirs is Catholic')).toBeLessThan(both.indexOf('describes its audience'));
+    expect(traditionLine({ rows })).toMatch(/theirs is Catholic \("I'm a Catholic"\)/);
+    expect(traditionLine({ audience: 'x'.repeat(900) }).length).toBeLessThan(700);
+    for (const l of [none, onlyAud, both]) expect(l).toMatch(/^TRADITION: If the question itself names or plainly implies a tradition/);
   });
-  it('a neutral host turn carries "none assumed"; a Bahá\'í host turn carries the Bahá\'í Faith; the system prompt is the same for both', async () => {
+  it('no description → "none assumed" on any host; the profile\'s audience (or a page\'s data-audience) rides in the turn; the system prompt is the same', async () => {
     const a = rig(mkEnv(), [() => say('Many traditions speak of it.')]);
-    await a.post();
+    await a.post({}, { origin: 'https://anis.oceanlibrary.com' });
     expect(a.agentTurn()).toMatch(/TRADITION: .*none is assumed/);
-    const b = rig(mkEnv(), [() => say('The soul progresses.')]);
-    await b.post({}, { origin: 'https://anis.oceanlibrary.com' });
-    expect(b.agentTurn()).toMatch(/Otherwise the Bahá'í Faith: this host site \(anis.oceanlibrary.com\)/);
+    const env = mkEnv(); env.profile = { name: 'Anís', audience: "Bahá'ís and Bahá'í seekers" };
+    const b = rig(env, [() => say('The soul progresses.')]);
+    await b.post({ widget_token: 'wgt_audience_test' });
+    expect(b.agentTurn()).toMatch(/describes its audience as: \\"Bahá'ís and Bahá'í seekers\\"/);
+    const c = rig(mkEnv(), [() => say('ok')]);
+    await c.post({ audience: 'Students of comparative religion' });
+    expect(c.agentTurn()).toMatch(/describes its audience as: \\"Students of comparative religion\\"/);
     const sys = (r) => JSON.stringify(r.seen.anthropic.find((x) => x.stream).system);
     expect(sys(a)).toBe(sys(b));
   });

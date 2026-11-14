@@ -232,6 +232,8 @@ function init(){
       greetings: Array.isArray(cfg.greetings) ? cfg.greetings.filter((g) => typeof g === 'string' && g.trim()).map((g) => fillFacts(g, facts)) : [],
       accent: cfg.accent || '#1a6b5e', position: cfg.position || 'bottom-right',
       chatbotLocation: cfg.chatbotLocation || null, placeholder: cfg.placeholder || 'Ask a question…',
+      // the deployment's own description of its readers (free text, e.g. "Bahá'ís and Bahá'í seekers"); Anís reads it, no code maps it
+      audience: typeof cfg.audience === 'string' && cfg.audience.trim() ? cfg.audience.trim().slice(0, 300) : null,
     });
   });
 

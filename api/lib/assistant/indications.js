@@ -48,19 +48,14 @@ export function renderBio(rows, max = BIO_MAX) {
   return lines.length ? `WHAT THIS READER HAS INDICATED (their own words; let it steer depth, tradition and what you offer next; never recite or mention it; assume nothing beyond what they said):\n${lines.join('\n')}` : '';
 }
 
-/** host → its tradition from the host config (config/anis-hosts.json), or null. A domain covers its subdomains. */
-export function hostTradition(host, config) {
-  const h = String(host || '').toLowerCase().replace(/:\d+$/, '');
-  if (!h) return null;
-  for (const [domain, tradition] of Object.entries(config?.traditions || {})) if (h === domain || h.endsWith(`.${domain}`)) return tradition;
-  return null;
-}
-
-/** The per-turn TRADITION line: the question itself decides first (the agent judges, no code); then the host; then what the reader said; else none. */
-export function traditionLine({ host = null, tradition = null, rows = [] } = {}) {
+/** The per-turn TRADITION line. The question itself decides first (the agent judges, no code); then what the reader said of
+ *  themselves; then the deployment's own audience description, free text the agent reads (no code maps it to a tradition); else none. */
+export function traditionLine({ audience = '', rows = [] } = {}) {
   const said = mergeIndications(rows).find((x) => x.kind === 'tradition');
-  const first = 'If the question itself names or plainly implies a tradition, that tradition is in play for it.';
-  if (tradition) return `TRADITION: ${first} Otherwise the ${tradition}: this host site (${host}) is ${tradition}-specific.`;
-  if (said) return `TRADITION: ${first} Otherwise the reader has said theirs is ${said.value} ("${said.evidence}"): answer from it first, presuming nothing more than they said.`;
-  return `TRADITION: ${first} Otherwise none is assumed: answer a general question briefly from the traditions the library holds best for it, and offer to go deeper in one.`;
+  const desc = String(audience || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+  const parts = ['TRADITION: If the question itself names or plainly implies a tradition, that tradition is in play for it.'];
+  if (said) parts.push(`Otherwise the reader has said theirs is ${said.value} ("${said.evidence}"): answer from it first, presuming nothing more than they said.`);
+  if (desc) parts.push(`${said ? 'This' : 'Otherwise this'} deployment describes its audience as: "${desc}". Read it as a description of the site's readers, not of this reader: let it set what is natural to assume, and no more.`);
+  if (!said && !desc) parts.push('Otherwise none is assumed: this is an interfaith library; answer a general question briefly from the traditions the library holds best for it, and offer to go deeper in one.');
+  return parts.join(' ');
 }

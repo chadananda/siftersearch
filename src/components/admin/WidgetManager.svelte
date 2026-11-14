@@ -47,7 +47,7 @@
   }
 
   function openCreate() {
-    editing = { name: '', domainsText: '', tier: 'free', greeting: '', accent: '#1a6b5e', position: 'bottom-right', placeholder: '', chatbotLocation: '', instructions: '', defaultTradition: '', extra: {} };
+    editing = { name: '', domainsText: '', tier: 'free', greeting: '', accent: '#1a6b5e', position: 'bottom-right', placeholder: '', chatbotLocation: '', instructions: '', audience: '', defaultTradition: '', extra: {} };
   }
 
   function openEdit(p) {
@@ -62,6 +62,7 @@
       placeholder: p.config.placeholder || '',
       chatbotLocation: p.config.chatbotLocation || '',
       instructions: p.config.instructions || '',
+      audience: p.config.audience || '',
       defaultTradition: p.config.default_tradition || '',
       extra: p.config   // keys this form doesn't show survive a save (a save once wiped default_tradition)
     };
@@ -78,6 +79,7 @@
       config: {
         ...(editing.extra || {}),
         instructions: editing.instructions.trim() || undefined,
+        audience: editing.audience.trim() || undefined,
         default_tradition: editing.defaultTradition.trim() || undefined,
         ...(editing.greeting && { greeting: editing.greeting }),
         ...(editing.accent && { accent: editing.accent }),
@@ -199,6 +201,9 @@
           </label>
           <label class="wide">Instructions for Anís on this site <span class="hint">(how this deployment differs — audience, emphasis, tone; up to 600 characters)</span>
             <textarea rows="3" maxlength="600" bind:value={editing.instructions} placeholder="e.g. Visitors are new to the Bahá'í Faith; keep answers short and point to the site's introductory pages." aria-label="Instructions for Anís on this site"></textarea>
+          </label>
+          <label class="wide">Audience <span class="hint">(who reads this site, in a line; Anís reads it to judge what is natural to assume — left empty, it assumes nothing: Ocean is interfaith; up to 300 characters)</span>
+            <input type="text" maxlength="300" bind:value={editing.audience} placeholder="e.g. Bahá'ís and people exploring the Bahá'í Faith" aria-label="Audience of this site" />
           </label>
           <label>Home tradition <span class="hint">(answers default to it unless the visitor asks about another)</span>
             <input type="text" bind:value={editing.defaultTradition} placeholder="e.g. Baha'i" aria-label="Home tradition" />
