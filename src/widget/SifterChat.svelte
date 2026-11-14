@@ -12,6 +12,7 @@
   import { untrack } from 'svelte';
   import { ANIS_SAMPLES, ANIS_WELCOME, pickStarters } from '../lib/anis-samples.js';
   import { headingOf, olItem } from './rich-line.js';
+  import { follower } from './follow.js';
   import { thinkDepth } from './think.js';
   import { sky } from './think-sky.js';
   import { richLinks } from './rich-link.js';
@@ -148,7 +149,7 @@
     messages = loadMessages(LS(), token, id);
     if (!messages.some((m) => m.role === 'user')) messages = greet();
     errorMsg = ''; onetap = onetap === 'offer' ? 'hidden' : onetap;
-    scroll();
+    scroll(true);
   }
   function railToggle() { railOpen = !railOpen; try { localStorage.setItem('anis-rail', railOpen ? '1' : '0'); } catch { /* ok */ } }
   function renameStart(t) { menuFor = ''; renaming = t.id; renameText = t.title; }
@@ -256,7 +257,10 @@
   });
 
   const persist = () => { if (activeId) saveMessages(LS(), token, activeId, messages); touchThread(); };
-  const scroll = () => queueMicrotask(() => { if (bodyEl) bodyEl.scrollTop = bodyEl.scrollHeight; });
+  // streaming follows the bottom only while the reader is there; scrolling up lets go at once (follow.js). force = the reader's own act.
+  let fol = null;
+  const followBody = (node) => { fol = follower(node); queueMicrotask(() => fol?.scroll(true)); return { destroy() { fol?.detach(); fol = null; } }; };
+  const scroll = (force) => queueMicrotask(() => fol?.scroll(force));
 
   // ── Sound: two synthesized notes, nothing else. Quiet, warm, muteable. No audio files. ──────────
   let actx = null;
@@ -414,7 +418,7 @@
       setActive(newThreadId()); messages = ms; errorMsg = '';
       saveMessages(LS(), token, activeId, messages);
       threads = upsertThread(threads, { id: activeId, title: threadTitle(d.title || firstQuestion(ms)), updated: Date.now() }); saveIndex(LS(), token, threads);
-      scroll(); setTimeout(() => inputEl?.focus(), 50);
+      scroll(true); setTimeout(() => inputEl?.focus(), 50);
     } catch { toast('That discussion is no longer available'); }
   }
   function voteMsg(mi, v) {
@@ -501,7 +505,7 @@
     sndSend();
     track('message_sent', { q: text.slice(0, 400) });
     t0 = Date.now();
-    scroll();
+    scroll(true);
     stopTicker();
     ticker = setInterval(step, 34);
     const history = messages.slice(0, -1).filter((m) => !m.pending).map((m) => ({ role: m.role, content: m.content })).slice(-12);
@@ -833,7 +837,7 @@
     open = !open;
     if (open) {
       checkVersion();
-      scroll();
+      scroll(true);
       setTimeout(() => inputEl?.focus(), 400);
       if (!openedOnce) { openedOnce = true; track('open'); }
     }
@@ -1109,7 +1113,7 @@
               {@render threadList()}
             </div>
           {/if}
-          <div class="body" bind:this={bodyEl} role="log" aria-live="polite">
+          <div class="body" bind:this={bodyEl} use:followBody role="log" aria-live="polite">
             {#if isFull && !messages.some((m) => m.role === 'user')}
               <section class="welcome" aria-labelledby="wl-h">
                 <span class="wl-mark" aria-hidden="true"><svg viewBox="0 0 512 512"><path fill="currentColor" d={OCEAN_D}/></svg></span>
