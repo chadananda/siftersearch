@@ -49,16 +49,18 @@ const ld = { '@context': 'https://schema.org', '@type': 'WebApplication', name: 
   <link rel="icon" type="image/png" sizes="48x48" href="/anis-app/favicon-48.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/anis-app/icon-192.png" />
   <script type="application/ld+json" set:html={JSON.stringify(ld)} />
+  <script is:inline>document.documentElement.classList.add('js')</script>
   <style>
     html, body { margin: 0; height: 100%; background: #0a162a; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
     body { min-height: 100dvh; }
     .intro { font: 16px/1.55 system-ui, sans-serif; color: #e6edf6; max-width: 40rem; margin: 0 auto; padding: 3rem 1.25rem; }
     .intro h1 { font: 600 1.6rem/1.25 Georgia, serif; margin: 0 0 .75rem; }
     .intro li { margin: .25rem 0; color: #9fb3cc; }
+    .js .intro { visibility: hidden; }   /* in the HTML for search engines, never painted before the chat opens over it (11-13 "flash of another Anís screen") */
   </style>
 </head>
 <body>
-  <!-- what the app is, in the page itself (search engines, link previews, the moment before the chat opens over it) -->
+  <!-- what the app is, in the page itself (search engines, link previews, no-JS readers); hidden when JS runs -->
   <main class="intro">
     <h1>Anís — Ocean AI Research Assistant</h1>
     <p>{description} Ask in your own words; Anís searches the library and answers with the passages themselves, each linked to its source — books, talks and recordings included.</p>
