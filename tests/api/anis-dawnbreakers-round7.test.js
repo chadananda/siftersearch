@@ -5,13 +5,13 @@
 import { describe, it, expect } from 'vitest';
 import { sourceTier, coreFirst, byTier, isNarrative, TIER_ORDER } from '../../api/lib/assistant/source-tier.js';
 import { toolRunner } from '../../api/lib/assistant/researcher.js';
-import { cleanCardText, isPdfDump, readableTitle } from '../../api/lib/assistant/widgets/card-text.js';
+import { cleanCardText, isPdfDump, readableTitle, isSiteRoot } from '../../api/lib/assistant/widgets/card-text.js';
 import { fromRefs as quoteFrom } from '../../api/lib/assistant/widgets/quote.js';
 import { fromRefs as sceneFrom } from '../../api/lib/assistant/widgets/scene.js';
 import { expandTemplates } from '../../api/lib/assistant/widgets/templates.js';
-import { dropDanglingLeadIn, dropCutOff, unholdTexts, dropNarration, unbackedAbsence } from '../../api/lib/assistant/lint.js';
+import { dropDanglingLeadIn, dropCutOff, unholdTexts, dropNarration, unbackedAbsence, absenceClaims, unappliedCorrection, correctedRows, dropUncheckedDisclaimer } from '../../api/lib/assistant/lint.js';
 import { HISTORY_WORKS, nameVariants } from '../../api/lib/assistant/history-sweep.js';
-import { agentAnswer, AGENT_SYSTEM } from '../../api/lib/assistant/agent-core.js';
+import { agentAnswer, AGENT_SYSTEM, renderRefs } from '../../api/lib/assistant/agent-core.js';
 
 const B = "Baha'i";
 const NABIL = { id: 165, document_id: 21308, title: 'The Dawn-Breakers', author: 'Nabil Zarandi', religion: B, source_url: 'https://oceanlibrary.com/dawn-breakers#p165',
@@ -199,5 +199,55 @@ describe('5 · the person lookup searches inside the histories', () => {
     expect(msgs.findLast((m) => m.role === 'tool').content).toMatch(/through a vision while in prayer/);
     expect(r.reply).not.toMatch(/gives no account/);
     expect(r.reply).toMatch(/Nabíl records/);
+  });
+});
+
+// Round-6 live evidence (11-14, sessions/anis/.claude/context/iqan-r6-t1..4.md, srcr6.txt) — the real excerpts.
+const ROW11 = "| 11 † | **Mullá Báqir** | The sources disagree on which man is meant. **Reading A (Ṭabarsí brother):** Mullá Báqir-i-Kandí, brother of Mullá Mihdí. ([The Dawn-Breakers](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1305)). The Spanish Íqán notes agree. **Reading B (Letter of the Living):** Mullá Muḥammad-Báqir-i-Tabrízí, who lived to attain Bahá'u'lláh's presence. | Kitáb-i-Íqán |";
+const ROW10 = "| 10 † | **Mullá Mihdíy-i-Kandí** | Martyred at Ṭabarsí, with his brother Mullá Báqir. | Dawn-Breakers |";
+const CORRECTION = '#11 is the brother of Mullá Mihdíy-i-Kandí';
+describe('6 · round-6 live evidence', () => {
+  it('a reader correction the sources support is applied, not left as two readings', () => {
+    expect(correctedRows(CORRECTION)).toEqual([11]);
+    expect(unappliedCorrection(CORRECTION, `| # | Name | Who | Source |\n|---|---|---|---|\n${ROW10}\n${ROW11}`)).toEqual([11]);
+    const fixed = "| 11 † | **Mullá Báqir-i-Kandí** | Brother of Mullá Mihdíy-i-Kandí, with him at Ṭabarsí. (Some read the name as the Letter of the Living, Mullá Muḥammad-Báqir-i-Tabrízí.) | Dawn-Breakers |";
+    expect(unappliedCorrection(CORRECTION, `${ROW10}\n${fixed}`)).toEqual([]);
+    expect(unappliedCorrection('can you add a column for dates?', `${ROW10}\n${ROW11}`)).toEqual([]);   // no row named → no gate
+  });
+  it('the left-open row sends the agent back once, with the reader\'s words', async () => {
+    const seen = [];
+    const create = async (p) => { seen.push(p); return { choices: [{ message: { content: seen.length === 1 ? `${ROW10}\n${ROW11}` : `${ROW10}\n| 11 † | **Mullá Báqir-i-Kandí** | Brother of Mullá Mihdí, at Ṭabarsí. | Dawn-Breakers |` } }] }; };
+    const r = await agentAnswer({ messages: [{ role: 'user', content: 'list them' }, { role: 'assistant', content: `${ROW10}\n${ROW11}` }, { role: 'user', content: CORRECTION }], create,
+      tools: { search: async () => [], writings: async () => [], translationsOf: async () => new Map() } });
+    const asks = seen.at(-1).messages.filter((m) => m.role === 'user' && /The reader corrected row 11/.test(m.content));
+    expect(asks).toHaveLength(1);
+    expect(asks[0].content).toMatch(/#11 is the brother of Mullá Mihdíy-i-Kandí/);
+    expect(r.reply).not.toMatch(/Reading B/);
+    expect(AGENT_SYSTEM + '').toBeTruthy();
+  });
+  it('"remains unidentified in the library" (row 5, Sa\'íd-i-Bárfurúshí) is an absence claim the sweep must back', () => {
+    const row5 = "| 5 † | **Mullá Sa‘íd-i-Bárfurúshí** | Not identified in the Writings or in Shoghi Effendi. The Íqán's Mullá Sa‘íd remains unidentified in the library. | Kitáb-i-Íqán (name only) |";
+    expect(absenceClaims(row5).some((c) => /remains unidentified in the library/.test(c))).toBe(true);
+    expect(unbackedAbsence(row5, [])).not.toHaveLength(0);
+    expect(unbackedAbsence(row5, [{ variants: ['Sa‘íd-i-Bárfurúshí', 'Said-i-Barfurushi'], n: 0 }])).toHaveLength(0);
+    expect(absenceClaims('The library does not identify him beyond the name.')).toHaveLength(1);
+  });
+  it('a file-name title reads as a title, and a bare site root is never the link', () => {
+    expect(readableTitle('bab-kutob-03-1-2-en-notes')).not.toMatch(/bab-kutob/);
+    expect(isSiteRoot('https://oceanoflights.org/')).toBe(true);
+    expect(isSiteRoot('https://oceanoflights.org/file/bab-kutob-03-1-2-en-notes.pdf')).toBe(false);
+    const found = new Map([['P1', { document_id: 9, title: 'Ẓuhúru\'l-Ḥaqq', source_url: 'https://oceanoflights.org/' }],
+      ['P2', { document_id: 8, title: 'bab-kutob-03-1-2-en-notes', source_url: 'https://oceanoflights.org/file/bab-kutob-03-1-2-en-notes.pdf' }]]);
+    const out = renderRefs('Sa‘ídu\'l-‘Ulamá\' persecuted them [[P1]]. A note [[P2]].', { found, works: new Map() });
+    expect(out).not.toMatch(/\]\(https:\/\/oceanoflights\.org\/\)/);
+    expect(out).toMatch(/\*Ẓuhúru'l-Ḥaqq\*/);
+    expect(out).not.toMatch(/\[bab-kutob/);
+  });
+  it('a section number "from memory" never reaches the reader (srcr6)', () => {
+    const t = 'This passage is from Gleanings. I\'m giving the section number from memory, so check it against the edition: it is, I believe, Gleanings CXXXII. It speaks of the Day of God.';
+    const out = dropUncheckedDisclaimer(t).text;
+    expect(out).not.toMatch(/memory|CXXXII|I believe/);
+    expect(out).toMatch(/It speaks of the Day of God/);
+    expect(AGENT_SYSTEM).toMatch(/never from memory/);
   });
 });

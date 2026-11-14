@@ -40,7 +40,10 @@ export const dropCoverageDisclaimer = (text) => (/\]\(https?:\/\//.test(String(t
 // section number or the original Persian/Arabic text." — what was not looked up is found or left out, never announced. Dropped
 // sentence by sentence, quoted material excepted; the BUT rule keeps a clause after "but". Pure.
 export const UNCHECKED_DISCLAIMER = /\bI\s+(?:did\s+not|didn['’]t|have\s+not|haven['’]t|had\s+not|could\s+not|couldn['’]t|cannot|can['’]t|was\s+(?:not\s+able|unable)\s+to|wasn['’]t\s+able\s+to|am\s+(?:not\s+able|unable)\s+to)\s+(?:yet\s+|fully\s+|independently\s+|separately\s+)?(?:check(?:ed)?|verif(?:y|ied)|confirm(?:ed)?|look(?:ed)?\s+(?:up|at|into)|consult(?:ed)?|compare[d]?|trace[d]?|examine[d]?)\b/i;
-export const isUncheckedDisclaimer = (s) => UNCHECKED_DISCLAIMER.test(String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '));
+// A PLACE FROM MEMORY (Íqán r6 srcr6: "I'm giving the section number from memory, so check it against the edition: it is, I believe,
+// Gleanings CXXXII."): a section, chapter or number comes from the passage's own place, never memory — the hedged sentence goes.
+export const MEMORY_HEDGE = /\bfrom (?:my )?memory\b|\bcheck (?:it|this|that|them|the (?:number|section|reference)) against the (?:edition|book|text)\b|\bI (?:believe|think|recall)\b[^.!?\n]{0,80}\b(?:section|chapter|number|verse|paragraph|page|¶|[IVXLC]{3,})\b/i;
+export const isUncheckedDisclaimer = (s) => { const t = String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '); return UNCHECKED_DISCLAIMER.test(t) || MEMORY_HEDGE.test(t); };
 export const dropUncheckedDisclaimer = (text) => dropSentences(text, isUncheckedDisclaimer);
 export const LINT = [
   { id: 'we-bahais', re: /\bwe\s+bah[aá]['’]?[ií]s?\b/i, why: 'speaks for a community' },
@@ -640,7 +643,7 @@ export function dropCutOff(text) {
 // AN ABSENCE CLAIM about a person ("the library gives no account of him", "not identified in the library") — allowed only after a search
 // INSIDE the histories on that name came back empty (history-sweep.js; Dawn-Breakers battery 11-14: Basṭámí's vision is in 21308, yet
 // "no account"). → the claim sentences (outside blockquotes), each with the plain words it names. Pure.
-const ABSENCE = /\b(?:the library (?:holds|has|gives|contains|offers|provides) (?:nothing|no (?:account|passage|record|mention|information|description))|(?:not|never) identified in the library|nothing in the library (?:on|about|identifies|describes)|no (?:account|passage|record|mention) (?:of|on|about) (?:him|her|them|this (?:man|woman|person))\b[^.!?\n]*\bin the library)/i;
+const ABSENCE = /\b(?:the library (?:holds|has|gives|contains|offers|provides) (?:nothing|no (?:account|passage|record|mention|information|description))|(?:not|never|remains? un) ?identified in the library|the library does not (?:identify|name|record|describe) (?:him|her|them|this)|nothing in the library (?:on|about|identifies|describes)|no (?:account|passage|record|mention) (?:of|on|about) (?:him|her|them|this (?:man|woman|person))\b[^.!?\n]*\bin the library)/i;
 export const absenceClaims = (text) => String(text || '').split('\n').filter((l) => !/^\s*>/.test(l))
   .flatMap((l) => l.match(/[^.!?]+(?:[.!?…]+|$)/g) || []).filter((x) => ABSENCE.test(x)).map((x) => x.trim());
 const plain = (s) => String(s).normalize('NFD').replace(/\p{M}/gu, '').replace(/[’'ʻʿʼ`‘]/g, '').toLowerCase();
@@ -700,7 +703,7 @@ export function numberedRows(text) {
     if (!/^\s*\|/.test(l)) { close(); continue; }
     if (sep(l)) continue;
     const cells = l.split('|').slice(1, -1).map((c) => c.trim());
-    const n = /^\d{1,3}$/.test(cells[0] || '') ? Number(cells[0]) : null;
+    const m = /^(\d{1,3})\.?\s*[†‡*✝]*$/.exec(cells[0] || ''), n = m ? Number(m[1]) : null;   // "11 †": a marked row is still row 11 (Íqán r6 t4)
     if (n != null) cur.push({ n, name: cells[1] || '', text: stripLinks(cells.slice(1).join(' ')) });
   }
   close();
@@ -728,4 +731,16 @@ export function tableDrift(sourceText, rebuiltText) {
     }
   }
   return missing.length || added.length || renamed.length || moved.length ? { missing, added, renamed, moved } : null;
+}
+
+// A READER'S CORRECTION LEFT OPEN (Íqán r6 t4, 11-14): the reader names a row ("#11 is the brother of Mullá Mihdíy-i-Kandí") and the
+// rewritten row still offers both readings ("The sources disagree… Reading A… Reading B"). → the row numbers the reader's last message
+// names whose row in the reply still hedges between readings. Pure.
+const OPEN_READINGS = /\b(?:sources? (?:disagree|split|differ)|reading a\b[\s\S]*\breading b\b|two readings|identification (?:is )?(?:unsettled|uncertain|disputed))/i;
+export const correctedRows = (readerText) => [...new Set([...String(readerText || '').matchAll(/(?:#|\b(?:row|number|no\.?|item|entry)\s*#?\s*)(\d{1,3})\b/gi)].map((m) => Number(m[1])))];
+export function unappliedCorrection(readerText, reply) {
+  const named = correctedRows(readerText);
+  if (!named.length || !/\b(?:is|was|are|were|means?|should be|not|isn'?t|wasn'?t)\b/i.test(String(readerText))) return [];
+  const rows = new Map(numberedRows(reply).map((r) => [r.n, r]));
+  return named.filter((n) => rows.has(n) && OPEN_READINGS.test(rows.get(n).text));
 }

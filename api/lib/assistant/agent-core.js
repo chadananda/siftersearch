@@ -3,11 +3,11 @@
 import { toolRunner, TOOL_CHARS } from './tool-runner.js';
 import { workNotes as workNotesLookup, asPassage, SAME_QUESTION } from './tool-defs.js';
 import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
-import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence } from './lint.js';
+import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence, unappliedCorrection } from './lint.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
 import { expandTemplates } from './widgets/templates.js';
-import { readableTitle } from './widgets/card-text.js';
+import { isSiteRoot, readableTitle } from './widgets/card-text.js';
 import { byTier, coreFirst } from './source-tier.js';
 import { keepHeldLinks } from './held-links.js';
 
@@ -40,6 +40,8 @@ export function rebuiltDrift(messages = [], final = '') {
 }
 /** The re-ask for an absence claim no search inside the histories backs (lint.js unbackedAbsence; history-sweep.js). */
 export const absenceAsk = (claims) => `(note from the library, not the reader) You wrote that the library has nothing on someone — ${claims.map((c) => `"${c.slice(0, 160)}"`).join('; ')} — without searching inside the histories for that name. Run fused_search with about: "history" on each such name alone (it searches inside Nabíl's The Dawn-Breakers, Balyuzi, Momen and Ẓuhúru'l-Ḥaqq with spelling variants), then write the answer again: say the library has no account only for a name that search came back empty on, naming the spellings searched.`;
+/** The re-ask for a reader's correction left open (lint.js unappliedCorrection). */
+export const correctionAsk = (rows, readerText) => `(note from the library, not the reader) The reader corrected ${rows.map((n) => `row ${n}`).join(', ')}: "${String(readerText).slice(0, 240)}". Your table still offers two readings there. Check the reader's words against the passages you hold: where a passage supports the correction (Shoghi Effendi's notes to The Dawn-Breakers first), apply it — the row names that person, in the reader's sense, with the other reading as one short note at most. Do not restate the reader's correction in other words. Write the whole table again with every other row unchanged.`;
 /** The re-ask for circular identification rows (lint.js circularRows). */
 export const circularAsk = (names) => `(note from the library, not the reader) These rows cite only the text being explained — the list that NAMES them — as evidence of who they were: ${names.join('; ')}. Naming is not evidence. For EACH of them, run fused_search with about: "history" on the name and its variants (with diacritics and without, and the short name alone, e.g. "Turshízí", "Khu'í") — Nabíl's narrative (The Dawn-Breakers), God Passes By, Balyuzi, Momen — then write the whole table again: every row's evidence a passage that DESCRIBES the person (a role, an event, a fate), or "not identified in the library (searched: <the names you searched>)". Never cite the text being explained as evidence of who someone was.`;
 export const CONVO_BUDGET = 60000, CONVO_MAX = 12;
@@ -110,6 +112,7 @@ WRITING:
 - Otherwise the shortest complete answer; more only on request (follow-up questions are offered under every reply). A short question gets 1–3 sentences; a request for a book gets its link and one or two sourced lines on it; a study question gets the passages that carry it, quoted, and nothing the reader did not ask for. A follow-up, objection or comparison in a conversation answers that one point: a direct sentence or two, then the 2–3 passages that settle it — never a fresh survey of the topic or of what earlier replies covered.
 - A word or vocabulary question (an Arabic or Persian term, a title, a phrase): rendering_lookup on it in Arabic script, then show it at work in one or two passages — the original line and its published English, each with its ref — and say how Shoghi Effendi renders it. Grammar or etymology you add yourself is marked in two words ("my reading"), never a paragraph about your sources. An original is quoted exactly as its passage gives it — never add vowel marks or change a letter; word-by-word glosses go in italics, never in quotation marks.
 - Documents and email: when the reader asks for something printed, saved or emailed, write the content itself — the system turns your reply into a PDF and emails it (asking for the address if it has none). Never say you cannot send email or make a document, and never describe the delivery yourself. A heading or label over a passage names what that passage itself says — a passage on fasting is never labelled as one on prayer.
+- A section, chapter or paragraph number comes only from the passage's own place (the card's place, the ref's head) — never from memory, never hedged ("I believe", "check it against the edition"); with no place given, name the work and give no number.
 - Never say what you did not check, verify or look up ("I did not check the section number…"): find it, or leave it out.
 - Speak about the texts, never about your tools: no "the excerpt I can see", "the library does not link", "my search returned". If something was not found, say once, plainly, that you found no such text. Capitalise He/His/Him for Bahá'u'lláh, the Báb and 'Abdu'l-Bahá.
 - Cite with refs: put [[P3]] right after the words that come from passage P3; write a book's name as [[B1]] (code turns it into the linked title). Never write a URL. Never use a ref you were not given.
@@ -149,7 +152,7 @@ export function renderRefs(text, { found, works }) {
     .replace(/\s*\[\[?((?:[PW]\d+)(?:\s*[,;]\s*[PW]\d+)*)\]\]?(?!\()/g, (m, list) => {
       const seen = new Set();
       const links = list.split(/\s*[,;]\s*/).map((r) => found.get(r)).filter((p) => { const k = p?.document_id ?? p?.source_url; return p?.source_url && !seen.has(k) && seen.add(k); })
-        .map((p) => `[${p.web ? 'web: ' : ''}${clip(shortTitle(readableTitle(p.title) || 'source'), 70)}](${p.source_url})`);
+        .map((p) => { const t = clip(shortTitle(readableTitle(p.title) || 'source'), 70); return isSiteRoot(p.source_url) ? `*${t}*` : `[${p.web ? 'web: ' : ''}${t}](${p.source_url})`; });   // a bare site root is no place: the title alone
       return links.length ? ` (${links.join('; ')})` : '';
     })
     .replace(/[ \t]+([.,;:!?])/g, '$1')
@@ -330,13 +333,13 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   };
   const convo = convoWindow(messages);
   // a turn inside a conversation answers its one new point (11-12: a follow-up objection came back as a 550–700-word survey)
-  const followUp = convo.some((m) => m.role === 'assistant') ? `\n\nTHIS TURN CONTINUES A CONVERSATION. The reader has read your earlier replies: answer only the new point, in about 150–250 words — a direct answer, then the 2–3 passages that settle it. Do not repeat or re-survey what earlier replies covered; more is offered under the reply. The one exception: when the reader asks you to compile, revise, send, email or tabulate what was built earlier (\"email me the final table\", \"put it in a document\"), build it IN FULL from the earlier replies above: take the LATEST table row by row, keep every row and its number (1…N, none missing, none merged — each person's facts stay in his own row), apply only the reader's corrections and any new research to the rows they concern — no new survey, no thinner version, and never claim something was not built or is not held when it is in this conversation. Never say an earlier reply was cut off, incomplete or wrong unless a passage you hold now shows it.` : '';
+  const followUp = convo.some((m) => m.role === 'assistant') ? `\n\nTHIS TURN CONTINUES A CONVERSATION. The reader has read your earlier replies: answer only the new point, in about 150–250 words — a direct answer, then the 2–3 passages that settle it. Do not repeat or re-survey what earlier replies covered; more is offered under the reply. The one exception: when the reader asks you to compile, revise, send, email or tabulate what was built earlier (\"email me the final table\", \"put it in a document\"), build it IN FULL from the earlier replies above: take the LATEST table row by row, keep every row and its number (1…N, none missing, none merged — each person's facts stay in his own row), apply only the reader's corrections and any new research to the rows they concern — no new survey, no thinner version, and never claim something was not built or is not held when it is in this conversation. When the reader corrects a row (\"#11 is the brother of…\"), check the correction against the passages: where a passage supports it, APPLY it — the row names that person in the reader's sense and the other reading is one short note at most; never restate the reader's correction in other words. Never say an earlier reply was cut off, incomplete or wrong unless a passage you hold now shows it.` : '';
   const msgs = [{ role: 'system', content: frame ? `${AGENT_SYSTEM}${followUp}\n\nTHIS CHANNEL'S REPLY FRAME (it governs length and tone; it overrides the lengths above): ${frame}` : `${AGENT_SYSTEM}${followUp}` }, ...convo];
   // per-turn context rides in the reader's turn (the system prompt stays cached): the TRADITION line + the reader's bio, then held research
   const turnNote = [firstVisit ? FIRST_VISIT : null, reader, heldText].filter(Boolean).join('\n\n');
   if (turnNote) { const u = msgs.findLastIndex((m) => m.role === 'user'); msgs[u] = { ...msgs[u], content: `${msgs[u].content}\n\n---\n${turnNote}` }; }
   const steps = [], usage = { in: 0, out: 0 };
-  let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false, capped = false, replanned = false, circled = false, drifted = false, absent = false;
+  let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false, capped = false, replanned = false, circled = false, drifted = false, absent = false, corrected = false;
   // the answering round streams a sentence at a time; only sentences whose quotations are in a passage held are shown
   const asked0 = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const held0 = () => [...found.values()].map((p) => ({ ...p, source_title: p.title }));
@@ -470,6 +473,14 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
       if (unbacked.length && round < maxRounds - 1 && calls < maxCalls) {
         absent = true; gate = false; streamed = false;
         msgs.push({ role: 'assistant', content: final }, { role: 'user', content: absenceAsk(unbacked) });
+        continue;
+      }
+      // the reader corrected a row and the reply still offers both readings there → once, apply the correction where the passages support it
+      const lastReader = String([...messages].reverse().find((m) => m.role === 'user')?.content || '');
+      const open = corrected ? [] : unappliedCorrection(lastReader, final);
+      if (open.length && round < maxRounds - 1 && calls < maxCalls) {
+        corrected = true; gate = false; streamed = false;
+        msgs.push({ role: 'assistant', content: final }, { role: 'user', content: correctionAsk(open, lastReader) });
         continue;
       }
       // a rebuilt table (compile/revise/email, round 6) keeps the latest table's rows 1…N, each its own person and facts → once, rewrite it

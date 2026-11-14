@@ -7,6 +7,7 @@ import { canonicalTradition } from './tradition-name.js';
 import { translationLabel } from './tool-defs.js';
 import { part } from './tool-cache.js';
 import { HISTORY_NAMES, sweepHistory } from './history-sweep.js';
+import { isSiteRoot } from './widgets/card-text.js';
 
 export const PASSAGE_CHARS = 4000;   // = prompt.js PASSAGE_CHARS (a passage's shown length)
 
@@ -95,8 +96,10 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
   const works = new Map();   // ref → a library work { title, author, url } (document_search)
   let pn = 0, wn = 0;
   const addWork = (w) => { const dup = [...works.values()].find((x) => x.id === w.id); if (dup) return dup.ref; const ref = `B${works.size + 1}`; works.set(ref, { ...w, ref }); return ref; };
-  const add = (p, web = false) => {
-    if (!p?.text) return null;
+  const add = (p0, web = false) => {
+    if (!p0?.text) return null;
+    // a bare site root is no place in the work (Íqán r6: "[Ẓuhúru'l-Ḥaqq](https://oceanoflights.org/)"): the passage's own deep link when it has one
+    const p = isSiteRoot(p0.source_url) && p0.url && !isSiteRoot(p0.url) ? { ...p0, source_url: p0.url } : p0;
     const dup = [...found.values()].find((x) => (p.id && x.id === p.id) || (x.text === p.text && x.title === p.title));
     if (dup) return dup.ref;
     const ref = web ? `W${++wn}` : `P${++pn}`;

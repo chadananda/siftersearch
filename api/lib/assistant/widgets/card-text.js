@@ -37,3 +37,6 @@ export const readableTitle = (title) => {
     .replace(/[-_]notes$/i, ' (notes)').replace(/^\d+[-_]/, '').replace(/[-_]+/g, ' ').trim();
   return rest && /\p{L}{3}/u.test(rest) ? rest.charAt(0).toUpperCase() + rest.slice(1) : null;
 };
+
+/** A site's bare root ("https://oceanoflights.org/") is no place in a work: never a citation's link (Íqán r6 t2/t4 Ẓuhúru'l-Ḥaqq). Pure. */
+export const isSiteRoot = (u) => { try { const x = new URL(String(u)); return x.pathname.replace(/\/+$/, '') === '' && !x.search && !x.hash; } catch { return false; } };
