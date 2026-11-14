@@ -1452,6 +1452,7 @@
   }
   .avatar svg { width: 100%; height: 100%; display: block; }
   .bubblewrap { max-width: 84%; min-width: 0; }
+  .msg.assistant .bubblewrap { flex: 1 1 auto; max-width: 100%; }   /* replies use the whole column; only the reader's own words sit narrower (Chad 11-14) */
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .bubble.follow { margin-top: 8px; }
   /* ── Cards (Chad 11-13): one rhythm for every widget — set in from the prose, clear air above and below, compact inside;
@@ -1459,6 +1460,7 @@
   .book, .talk, .qcard, .scene, .bubble :global(.sbs-wrap) { white-space: normal; }   /* inside a pre-wrap bubble: template whitespace is never a blank line */
   .qcard-text { white-space: pre-wrap; }
   .book, .talk, .qcard, .scene { clear: both; box-sizing: border-box; margin: 16px 0 16px 14px; max-width: min(500px, calc(100% - 14px)); }
+  .qcard { max-width: calc(100% - 14px); }   /* quotes: set in by the indent, sharing the prose's right margin — no wasted width (Chad 11-14) */
   .kicker { font: 600 10px/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif; letter-spacing: .14em; text-transform: uppercase; }
   .ext { width: 12px; height: 12px; margin-left: 4px; vertical-align: -1.5px; transition: transform .2s; }
   a:hover > .ext { transform: translateX(2px); }
@@ -1926,7 +1928,7 @@
     .root.full .panel:not(.railed) .rail, .h-menu { display: none; }
     .root.full .panel.railed .hide-railed { display: none; }
     /* the reading column: centred, a comfortable measure, beside the rail */
-    .root.full .body > *, .root.full footer { width: 100%; max-width: 860px; margin-inline: auto; }
+    .root.full .body > *, .root.full footer { width: 100%; max-width: 960px; margin-inline: auto; }
   }
   @media (max-width: 899px) {
     .h-rail, .r-collapse { display: none; }
