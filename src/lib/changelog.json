@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-14T17:16:39.974Z",
+  "generated": "2026-11-14T17:44:22.851Z",
   "entries": [
+    {
+      "hash": "970913265",
+      "date": "2026-11-14",
+      "type": "Other",
+      "description": "Content stage cuts non-talk spans (songs, prayers, MC, thanks, dead gaps) from the web copy",
+      "scope": null
+    },
     {
       "hash": "9df30b2a2",
       "date": "2026-11-14",
@@ -749,24 +756,17 @@
       "type": "Other",
       "description": "Hype collection keeps full vectors in RAM (on_disk false, applied live 11-02: hype x6 0.38→0.18 s, x30 1.4→0.55 s)",
       "scope": null
-    },
-    {
-      "hash": "cab8d616f",
-      "date": "2026-11-01",
-      "type": "Other",
-      "description": "Bahai-library tag index pages excluded from every search (Anís cited 'Tag: …' pages); phrase+hype rescore oversampling 4→2 (measured 29–30/30 top-30 agreement, half the disk reads)",
-      "scope": null
-    },
-    {
-      "hash": "acb27e030",
-      "date": "2026-11-01",
-      "type": "Other",
-      "description": "Under SEARCH_QDRANT=only, multiIndexSearch without meili:false runs the flat Qdrant form — the retired Meili main layer had been routing to qdrantClassic, a whole nested multiIndexSearch (two fan-outs, rankings and hydrations per search; chat executeSearch and the Anís agent called it that way)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-11-14": [
+      {
+        "hash": "970913265",
+        "date": "2026-11-14",
+        "type": "Other",
+        "description": "Content stage cuts non-talk spans (songs, prayers, MC, thanks, dead gaps) from the web copy",
+        "scope": null
+      },
       {
         "hash": "9df30b2a2",
         "date": "2026-11-14",
@@ -1536,22 +1536,6 @@
         "date": "2026-11-02",
         "type": "Other",
         "description": "Hype collection keeps full vectors in RAM (on_disk false, applied live 11-02: hype x6 0.38→0.18 s, x30 1.4→0.55 s)",
-        "scope": null
-      }
-    ],
-    "2026-11-01": [
-      {
-        "hash": "cab8d616f",
-        "date": "2026-11-01",
-        "type": "Other",
-        "description": "Bahai-library tag index pages excluded from every search (Anís cited 'Tag: …' pages); phrase+hype rescore oversampling 4→2 (measured 29–30/30 top-30 agreement, half the disk reads)",
-        "scope": null
-      },
-      {
-        "hash": "acb27e030",
-        "date": "2026-11-01",
-        "type": "Other",
-        "description": "Under SEARCH_QDRANT=only, multiIndexSearch without meili:false runs the flat Qdrant form — the retired Meili main layer had been routing to qdrantClassic, a whole nested multiIndexSearch (two fan-outs, rankings and hydrations per search; chat executeSearch and the Anís agent called it that way)",
         "scope": null
       }
     ]
