@@ -79,6 +79,15 @@
       {
         "from": "2026-11-08",
         "usd": 20
+      },
+      {
+        "from": "2026-11-15",
+        "usd": 35,
+        "why": "Chad 11-14 one-off: full Dawn-Breakers battery (341 turns, ~$31) on the 11-15 UTC day"
+      },
+      {
+        "from": "2026-11-16",
+        "usd": 20
       }
     ],
     "other": [
@@ -172,6 +181,17 @@
       },
       {
         "from": "2026-11-13",
+        "usd": 20,
+        "background_usd": 15
+      },
+      {
+        "from": "2026-11-15",
+        "usd": 55,
+        "background_usd": 15,
+        "why": "Chad 11-14 one-off $35 Dawn-Breakers battery (anis group); provider total raised so it does not undercut it, background unchanged"
+      },
+      {
+        "from": "2026-11-16",
         "usd": 20,
         "background_usd": 15
       }
