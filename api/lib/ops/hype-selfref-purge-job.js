@@ -32,7 +32,7 @@ export async function hypeSelfrefPurgeJob(params = {}, deps = {}) {
       const next = arr.map((x) => {
         if (isImp(x)) return x;
         const q = typeof x === 'string' ? x : x?.q ?? x?.question ?? '';
-        if (!q || d.fault(q, titles.get(r.doc_id), { seeker: !!x?.seeker }) !== fault) return x;
+        if (!q || d.fault(q, titles.get(r.doc_id), { seeker: !!x?.seeker, closed: x?.closed === true }) !== fault) return x;
         hit++;
         const s = { q, paraId: r.id, docId: r.doc_id };
         if (reservoir.length < SAMPLES) reservoir.push(s); else { const j = Math.floor(d.rand() * (questions + hit)); if (j < SAMPLES) reservoir[j] = s; }

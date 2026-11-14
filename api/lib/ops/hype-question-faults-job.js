@@ -22,7 +22,7 @@ export async function hypeQuestionFaultsJob(params = {}, deps = {}) {
         const q = typeof x === 'string' ? x : x?.q ?? x?.question ?? '';
         if (!q) continue;
         scanned++;
-        const f = d.fault(q, titles.get(r.doc_id), { seeker: !!x?.seeker });
+        const f = d.fault(q, titles.get(r.doc_id), { seeker: !!x?.seeker, closed: x?.closed === true });
         if (!f) continue;
         faulty++; byFault[f] = (byFault[f] || 0) + 1;
         const s = { q, paraId: r.id, docId: r.doc_id, fault: f };

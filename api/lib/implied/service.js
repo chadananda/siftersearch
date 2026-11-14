@@ -210,7 +210,7 @@ export async function sampleQuestions({ fault = 'yesNo', n = 20, rater = '', ski
     const rows = await window(1 + Math.floor(rand() * maxId), WIN), found = [], cands = [];
     for (const r of rows) {
       const hits = repo.splitHyp(r.hyp_questions).stated.map((x, k) => ({ x, k, q: typeof x === 'string' ? x : x?.q ?? x?.question ?? '' })).filter((h) => String(h.q).trim());
-      for (const h of hits) if ((fault === 'any' || questionFault(h.q, r.d_title, { seeker: !!h.x?.seeker }) === fault) && !seen.has(`${r.id}|${h.k}`)) cands.push({ r, h });
+      for (const h of hits) if ((fault === 'any' || questionFault(h.q, r.d_title, { seeker: !!h.x?.seeker, closed: h.x?.closed === true }) === fault) && !seen.has(`${r.id}|${h.k}`)) cands.push({ r, h });
     }
     if (cands.length) {
       const { r, h } = cands[Math.floor(rand() * cands.length)];
