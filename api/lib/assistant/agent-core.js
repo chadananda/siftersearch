@@ -5,6 +5,7 @@ import { workNotes as workNotesLookup, asPassage, SAME_QUESTION } from './tool-d
 import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
 import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence, contentAbsence, emptyInWork, conflictClaims, danglingOpens, askedSource, unappliedCorrection, dropSearchedNote, dropRebuildPreamble, fixCounts, wantsTable, dropSourceSpeculation, dropLinkDebris, duplicateRows, noteDuplicateRows, recapitalise, pointsAbove, dropAbovePointer, unlinkSiteRoots, rebuildsTable, isRebuildMeta } from './lint.js';
 import { DEPTH, hasDepth, dropDepth, dropOffers, deHead, liveDeHead, firstQuoted, leadSource, leadAsk, reorderQuotes } from './reply-form.js';
+import { sentencesOf } from './sentences.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
 import { expandTemplates, mendTemplates, blockquoteCards } from './widgets/templates.js';
@@ -451,7 +452,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     return String(text).split('\n').map((line) => {
       const tpl = line.replace(/\{\{\s*(?:quote|side_by_side|scene)\b[^}]*\}\}/g, (t) => (offAll(t) ? '' : t));
       if (tpl !== line && !tpl.trim()) return '';
-      const sents = tpl.match(/[^.!?]+(?:[.!?]+["”’)*_]*|$)\s*/g) || [tpl];
+      const sents = sentencesOf(tpl);
       return sents.filter((x) => !(/\[\[P\d+\]\]/.test(x) && !/\{\{/.test(x) && offAll((x.match(/\[\[P\d+\]\]/g) || []).join(' ')))).join('');
     }).join('\n').replace(/\n{3,}/g, '\n\n');
   };

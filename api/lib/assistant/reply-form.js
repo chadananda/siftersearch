@@ -4,6 +4,7 @@
 // Shoghi Effendi, then talks and pilgrim notes, then the House and every other body, then commentary). Pure. Deps: lint, source-tier.
 import { isSearchOffer, isOffer } from './lint.js';
 import { sourceTier, rankOf, TIER_ORDER } from './source-tier.js';
+import { sentencesOf } from './sentences.js';
 
 /** The agent starts its reply with this when IT decides the reader asked for depth or research (its judgement, never a keyword test).
  *  Stripped before anything is shown, as NOT_FOUND is. Without it the reply is a short answer: no run-in section heads. */
@@ -26,7 +27,7 @@ const I_CLAUSE = /^([\s\S]*?\S)\s*[,;]?\s+(?:and|but|so)\s+(I\s+(?:can|could)(?:
 export const isFirstPersonOffer = (s) => I_OFFER.test(unquote(s));
 export const isOfferSentence = (s) => isSearchOffer(s) || isOffer(s) || isInvite(s) || isFirstPersonOffer(s);
 
-const sentences = (line) => line.match(/[^.!?]+(?:[.!?]+["”’)*_]*|$)\s*/g) || [line];
+const sentences = sentencesOf;   // abbreviations stay inside a sentence (sentences.js)
 
 /** → { text, offers }: every offer or invitation sentence in the prose goes (a following "Just ask." with it); blockquotes, tables,
  *  lists, headings and templates are never touched, and the reply is never emptied (allowEmpty: a streamed piece that is only an offer goes). `offers` are the removed sentences, for the pills. */

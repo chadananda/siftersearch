@@ -1,6 +1,7 @@
 // Reply form checks (Chad 11-14, Reddit rounds 3–4): offers → pills, section heads → prose by code unless the agent chose depth, core text quoted first. Form only, never intent.
 import { describe, it, expect } from 'vitest';
 import { sourceTier } from '../../api/lib/assistant/source-tier.js';
+import { sentencesOf } from '../../api/lib/assistant/sentences.js';
 import { DEPTH, hasDepth, dropDepth, dropOffers, isInvite, isOfferSentence, runInHeads, deHead, liveDeHead, firstQuoted, quotedRefs, leadSource, leadAsk, reorderQuotes, offerPill, withOfferPill } from '../../api/lib/assistant/reply-form.js';
 
 const B = 'Bahá’í';
@@ -340,6 +341,26 @@ describe('agent: one rewrite for form, offers kept for the pills', () => {
     expect(r.agent.form).toMatchObject({ rewritten: true, reordered: false, leadAfter: { firstTier: 'house' } });
     expect(r.reply.indexOf('prejudice and disdain')).toBeLessThan(r.reply.indexOf('Show forbearance'));
   });
+  it('a letter written on behalf of Shoghi Effendi IS Shoghi Effendi: quoted before his own book, no rewrite and no reorder (Chad 10-03)', async () => {
+    const OB = { id: 921, title: 'Lights of Guidance', author: 'Written on behalf of Shoghi Effendi', religion: B, source_url: 'https://oceanlibrary.com/lights#p1', text: 'The Bahá’í teachings on sexual morality centre on marriage and the family.' };
+    const SE = { id: 922, title: 'The Advent of Divine Justice', author: 'Shoghi Effendi', book_author: 'Shoghi Effendi', religion: B, source_url: 'https://oceanlibrary.com/advent#p30', text: 'A chaste and holy life must be made the controlling principle.' };
+    expect(sourceTier(OB)).toBe('guardian');
+    for (const a of ['Written on behalf of the Universal House of Justice', 'Department of the Secretariat on behalf of the Universal House of Justice'])
+      expect(sourceTier({ ...OB, author: a })).toBe('house');
+    const text = 'A letter written on his behalf explains:\n\n{{quote P1}}\n\nShoghi Effendi writes:\n\n{{quote P2}}', found = new Map([['P1', OB], ['P2', SE]]);
+    expect(leadSource(text, found)).toBe(null);
+    expect(reorderQuotes(text, found)).toBe(null);
+    const seen = [];
+    const r = await agentAnswer({ messages: [{ role: 'user', content: 'What is the Bahá’í view of chastity?' }], tools: { search: async () => [] },
+      held: { same: true, status: 'candidate', question: 'What is the Bahá’í view of chastity?', passages: [OB, SE] },
+      create: async (p) => { seen.push(p);
+        const turn = p.messages.findLast((m) => m.role === 'user' && /HELD/.test(m.content))?.content || '';
+        const ref = (t) => turn.match(new RegExp(`(P\\d+)[^\\n]*${t}`))?.[1];
+        return say(`A letter written on his behalf explains:\n\n{{quote ${ref('Lights of')}}}\n\nShoghi Effendi writes:\n\n{{quote ${ref('Advent of')}}}`); } });
+    expect(seen).toHaveLength(1);
+    expect(r.agent.form).toMatchObject({ lead: null, rewritten: false, reordered: false });
+    expect(r.reply.indexOf('sexual morality')).toBeLessThan(r.reply.indexOf('chaste and holy'));
+  });
   it('a plain reply is not rewritten; a closing offer leaves the prose and is returned for the pills', async () => {
     const seen = [];
     const r = await agentAnswer({ messages: [{ role: 'user', content: 'What is the Iqan?' }], tools, create: async (p) => { seen.push(p);
@@ -357,3 +378,29 @@ describe('agent: one rewrite for form, offers kept for the pills', () => {
     expect(text).not.toMatch(/welcome to ask/);
   });
 });
+
+describe('abbreviations stay inside their sentence (tz4 live, edge 1e544da3: "Date and recipient. H. (1865)")', () => {
+  const TZ = '**Date and recipient.** Revealed in 1281 A.H. (1865) for Aḥmad, a native of Yazd. He wrote it in Adrianople.\n\nMore follows.';
+  const words = (t) => t.replace(/\*\*/g, '').split(/\s+/).filter(Boolean);
+  it('deHead and liveDeHead keep every word of the A.H. sentence', () => {
+    expect(words(deHead(TZ).text)).toEqual(words(TZ));
+    const live = liveDeHead(), out = [];
+    for (const p of ['**Date and recipient.** Revealed in 1281 A.', 'H. ', '(1865) for Aḥmad, a native of Yazd. ', 'He wrote it in Adrianople.\n\n', 'More follows.']) out.push(...live.push(p));
+    out.push(...live.flush());
+    expect(words(out.join(''))).toEqual(words(TZ));
+    expect(out.join('')).toContain('Date and recipient. Revealed in 1281 A.H. (1865) for Aḥmad');
+  });
+  it('the sentence splitter never ends a sentence at A.H., A.D., B.E., e.g., i.e., vol., ch., p., pp., no., initials, Mr. or Dr.', () => {
+    const s = 'Revealed in 1281 A.H. (1865) for Aḥmad. See vol. 2, ch. 3, p. 45 and pp. 50–52, no. 7, e.g. this, i.e. that. Mr. Smith and Dr. Jones met J. E. Esslemont in 1920 A.D., 77 B.E. here. It rests on a. Next.';
+    const r = sentencesOf(s);
+    expect(r.join('')).toBe(s);
+    expect(r.map((x) => x.trim())).toEqual(['Revealed in 1281 A.H. (1865) for Aḥmad.', 'See vol. 2, ch. 3, p. 45 and pp. 50–52, no. 7, e.g. this, i.e. that.',
+      'Mr. Smith and Dr. Jones met J. E. Esslemont in 1920 A.D., 77 B.E. here.', 'It rests on a.', 'Next.']);
+  });
+  it('an offer after an abbreviation is still one sentence, and the A.H. sentence is never taken for an offer', () => {
+    const r = dropOffers('Revealed in 1281 A.H. (1865) for Aḥmad.\n\nI can say more about the Tablet of Aḥmad if you like.');
+    expect(r.text).toBe('Revealed in 1281 A.H. (1865) for Aḥmad.');
+    expect(r.offers).toHaveLength(1);
+  });
+});
+

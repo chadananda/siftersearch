@@ -18,7 +18,9 @@ const houseWrote = (k) => HOUSE.test(k) && !EDITED.test(k);
 // above "any other authority, including … ITC, NSA, LSA, ABM, CBC, NTC, RTC and UHJ"; doc 9296, the ITC's guidance on pilgrim notes)
 const ADMIN = /spiritualassembl|teachingcent(?:re|er)|boardofcounsel|counsellors|auxiliaryboard|teachingcommittee|^(?:nsa|lsa|itc|abm|cbc|ntc|rtc)(?:of|$)/;
 const isBahai = (p) => /bah[aá]/i.test(String(p?.religion || ''));
-const keyOf = (s) => foldKey(s);
+// a letter written ON BEHALF of Shoghi Effendi IS Shoghi Effendi (Chad 10-03): its writer key is his. One on behalf of the House stays the House's.
+const ON_BEHALF_SE = /\bon\s+(?:his\s+)?behalf\s+of\s+(?:the\s+)?(?:beloved\s+)?(?:guardian|shoghi\s+effendi)\b/i;
+const keyOf = (s) => (ON_BEHALF_SE.test(String(s ?? '')) ? GUARDIAN : foldKey(s));
 
 /** Works by a Central Figure that are REPORTED, not written, though their titles don't say "talk": talks taken down by others.
  *  The Western public talks are "imperfect renderings" of statements "partially understood" (Chad 11-04). Chad's domain
