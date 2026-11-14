@@ -37,5 +37,5 @@
     "enabled": true
   },
   // the Anís edge Worker (worker/anis); used only while the ANIS_EDGE secret is "1" (worker/index.js)
-  "services": [{ "binding": "ANIS", "service": "anis" }]
+  "services": [{ "binding": "ANIS", "service": "anis" }, { "binding": "IMG", "service": "siftersearch-img" }]
 }

@@ -114,6 +114,7 @@ export function createExports(manifest) {
         if (url.hostname === SHORT_HOST) {   // anis.oceanlibrary.com: Anís as an installable app at the root (worker/anis-app.js)
           const a = anisAppRoute(url, env);
           if (a instanceof Response) return a;
+          if (url.pathname.startsWith('/img/') && env.IMG) return env.IMG.fetch(request);   // covers/portraits: the image Worker (service binding), same as siftersearch.com/img/*
           if (a && request.method === 'GET') return handle(manifest, app, new Request(new URL(a, url), request), env, ctx);
         }
         { const s = shortHost(request, { base: env.DOCS_PUBLIC_URL || undefined, pass: isApiPath }); if (s) return s; }   // anis.oceanlibrary.com: short links, the widget + API
