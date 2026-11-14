@@ -156,6 +156,8 @@ export function createExports(manifest) {
         // Anís at the edge (worker/anis, service binding ANIS): chat turns go there only while the ANIS_EDGE secret is '1' —
         // flip with `wrangler secret put ANIS_EDGE` (no build); delete it → tower again
         if (env.ANIS_EDGE === '1' && env.ANIS && url.pathname === '/api/chat/stream' && request.method === 'POST') return env.ANIS.fetch(request);
+        // a reader's thumbs on a reply are stored at the edge (anis_feedback) whichever engine answered
+        if (env.ANIS && url.pathname === '/api/chat/feedback' && request.method === 'POST') return env.ANIS.fetch(request);
         // media files: R2 at the edge (worker/media.js); falls through to the plain proxy when not cacheable
         if (MEDIA_FILE.test(url.pathname)) { const r = await mediaFile(request, env, ctx, API_ORIGIN); if (r) return r; }
         // public pages + public API reads: edge stale-while-revalidate (worker/edge-cache.js) — any cached copy answers at once

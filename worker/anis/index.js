@@ -12,6 +12,7 @@ import { restate, underPriceBoundary } from './restate.js';
 import { finishLinks, templateFilter } from './links.js';
 import { backPills, pinnedQuestion } from './pills.js';
 import { triageLetter } from './triage.js';
+import { feedback } from './feedback.js';
 import { CHANNELS, MODES, channelOfMode, greetByName, speakable } from '../../api/lib/assistant/channels.js';
 const formSources = (xs) => xs.map((x) => ({ title: x?.title, url: x?.url ?? x?.source_url ?? null, text: x?.text ?? null }));
 import snapshot from './agent-tools.json';
@@ -264,6 +265,7 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(request) });
     if (pathname === '/healthz') return json({ ok: true, service: 'anis' });
     if (pathname === '/api/chat/stream' && request.method === 'POST') return chat(request, env, ctx);
+    if (pathname === '/api/chat/feedback' && request.method === 'POST') return feedback(request, env, { headers: cors(request) });   // thumbs on a reply (feedback.js)
     if (pathname.startsWith('/_anis/') && request.method === 'POST') {
       if (!authed(request, env)) return json({ error: 'unauthorized' }, 401);
       const b = await request.json().catch(() => ({}));

@@ -18,6 +18,7 @@
   import SideBySide from '../components/widgets/SideBySide.svelte';
   import { widgetSegments } from '../../api/lib/assistant/widgets/segments.js';
   import { BUILD, tagFor } from './version.js';
+  import { plainReply, replyHtml, replySources, referenceList, questionIndex, roundOf, answerTurns, rewind } from './reply-actions.js';
   import { openStore, loadMessages, saveMessages, saveIndex, upsertThread, removeThread, pruneThreads, dropThreadData, groupThreads,
     filterThreads, messagesText, threadTitle, firstQuestion, newThreadId, activeKey } from './threads.js';
   let { token = '', api = 'https://siftersearch.com', accent = '', name = '', mission = '', opened = '', samples = '', fullscreen = '', version = '' } = $props();   // version: shown beside the title (the Anís app passes its build, Chad 11-13); never part of the name the model uses
@@ -57,6 +58,12 @@
     trash: ['M3 6h18', 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6', 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'],
     x: ['M6 6l12 12', 'M18 6 6 18'],
     user: ['M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2', 'M12 3a4 4 0 1 0 0 8a4 4 0 1 0 0-8z'],
+    copy: ['M10 8h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z', 'M5 16H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'],
+    check: ['M20 6 9 17l-5-5'],
+    cite: ['M4 6h11', 'M4 12h16', 'M4 18h9', 'M19 4v4', 'M17 6h4'],
+    up: ['M7 10v11', 'M15 5.9 14 10h5.8a2 2 0 0 1 1.9 2.6l-2.3 7A2 2 0 0 1 17.5 21H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h2.8a2 2 0 0 0 1.8-1.1L12 2a3.1 3.1 0 0 1 3 3.9z'],
+    down: ['M17 14V3', 'M9 18.1 10 14H4.2a2 2 0 0 1-1.9-2.6l2.3-7A2 2 0 0 1 6.5 3H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-2.8a2 2 0 0 0-1.8 1.1L12 22a3.1 3.1 0 0 1-3-3.9z'],
+    retry: ['M3 12a9 9 0 1 0 9-9 9.8 9.8 0 0 0-6.7 2.7L3 8', 'M3 3v5h5'],
   };
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '');
   const reveal = (node) => { queueMicrotask(() => node.scrollIntoView?.({ block: 'nearest' })); };
@@ -278,6 +285,67 @@
     try { localStorage.removeItem(`sifter-chat-sid:${token}`); } catch { /* private mode */ }
     newConversation();
   }
+  // ── Reply actions (copy / share / cite / thumbs / retry; a question's copy / edit) — helpers in reply-actions.js ──
+  let toastText = $state(''), toastTimer = null, copiedAt = $state(-1), editAt = $state(-1), editText = $state('');
+  function toast(t) { toastText = t; clearTimeout(toastTimer); toastTimer = setTimeout(() => (toastText = ''), 1800); }
+  async function clip(text, html) {
+    try {
+      if (html && navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+        await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) })]);
+        return true;
+      }
+    } catch { /* plain text below */ }
+    try { await navigator.clipboard.writeText(text); return true; } catch { /* older browsers below */ }
+    try {
+      const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); return ok;
+    } catch { return false; }
+  }
+  async function copyMsg(mi) {
+    const m = messages[mi];
+    const ok = m.role === 'user' ? await clip(m.content) : await clip(plainReply(m.content), replyHtml(m.content));
+    if (!ok) { toast('Could not copy'); return; }
+    copiedAt = mi; setTimeout(() => { if (copiedAt === mi) copiedAt = -1; }, 1600); toast('Copied');
+  }
+  async function citeMsg(mi) {
+    const list = referenceList(replySources(messages[mi]));
+    toast(!list ? 'No sources linked' : (await clip(list)) ? 'Sources copied' : 'Could not copy');
+  }
+  // one answer published as a discussion (P3: /api/chat/share; the preview modal goes before this call)
+  async function shareMsg(mi) {
+    const turns = answerTurns(messages, mi);
+    if (!turns) return;
+    try {
+      const r = await fetch(`${api}/api/chat/share`, { method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ scope: 'answer', turns, conversation_id: activeId, round: roundOf(messages, mi) }) });
+      const url = r.ok ? (await r.json())?.url : null;
+      if (!url) throw new Error(`share ${r.status}`);
+      if (navigator.share && matchMedia('(hover: none)').matches) { await navigator.share({ title: turns[0].content.slice(0, 80), url }).catch(() => {}); return; }
+      toast((await clip(url)) ? 'Link copied' : 'Could not copy');
+    } catch { toast('Sharing is not available yet'); }
+  }
+  function voteMsg(mi, v) {
+    const m = messages[mi], vote = m.vote === v ? 0 : v, qi = questionIndex(messages, mi);
+    m.vote = vote; messages = [...messages]; persist();
+    if (vote) toast('Thank you');
+    fetch(`${api}/api/chat/feedback`, { method: 'POST', headers: { 'content-type': 'application/json' }, keepalive: true,
+      body: JSON.stringify({ conversation_id: activeId, round: roundOf(messages, mi), vote: vote === 1 ? 'up' : vote === -1 ? 'down' : 'none', question: qi >= 0 ? messages[qi].content : '' }) }).catch(() => {});
+    track('answer_vote', { vote });
+  }
+  // retry a reply / send an edited question: the thread is cut back to that question and it is asked again
+  function reask(mi, text) {
+    if (busy) return;
+    const r = rewind(messages, mi, text);
+    if (!r) return;
+    editAt = -1; messages = r.keep; input = r.ask; send();
+  }
+  function editStart(mi) { if (busy) return; editAt = mi; editText = messages[mi].content; }
+  function editKey(e, mi) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); reask(mi, editText); }
+    else if (e.key === 'Escape') { e.stopPropagation(); editAt = -1; }
+  }
+  const growEdit = (node) => { const fit = () => { node.style.height = 'auto'; node.style.height = `${node.scrollHeight}px`; }; fit(); node.focus(); node.addEventListener('input', fit); };
+
   function toggleMute() { muted = !muted; try { localStorage.setItem('sifter-chat-mute', muted ? '1' : '0'); } catch { /* ok */ } }
 
   // ── Paced streaming: words flow onto the page evenly, catching up if the buffer grows. ─────────
@@ -896,12 +964,29 @@
                         {@html renderRich((m.pending ? settled : (x) => x)(m.book ? withoutBookLead(m.content, m.book) : m.passages?.length && !m.pending ? withoutQuote(m.content) : m.content))}{#if m.pending}<span class="caret" aria-hidden="true"></span>{/if}
                         {/if}
                       {/if}
+                    {:else if editAt === mi}<textarea class="edit" bind:value={editText} use:growEdit onkeydown={(e) => editKey(e, mi)} aria-label="Edit your question"></textarea><span class="edit-btns"><button type="button" class="eb" onclick={() => (editAt = -1)}>Cancel</button><button type="button" class="eb go" disabled={!editText.trim()} onclick={() => reask(mi, editText)}>Send</button></span>
                     {:else}{m.content}{/if}
                   </div>
                   {/if}
                   {#each m.talks || [] as t (t.slug)}{@render talkCard(t)}{/each}
                   {#each m.books || [] as b (b.id)}{@render bookCard(b)}{/each}
                   <!-- no source pills (Chad 11-12): the reply's citations are its links; the cards show the books -->
+                  {#if m.role === 'user' && editAt !== mi}
+                    <div class="acts qa">
+                      <button type="button" class="act" aria-label="Copy question" title="Copy" onclick={() => copyMsg(mi)}>{@render ic(copiedAt === mi ? 'check' : 'copy')}</button>
+                      <button type="button" class="act" aria-label="Edit question" title="Edit" disabled={busy} onclick={() => editStart(mi)}>{@render ic('rename')}</button>
+                    </div>
+                  {:else if m.role === 'assistant' && m.done && !m.pending && mi > 0 && questionIndex(messages, mi) >= 0}
+                    <div class="acts" class:last={mi === messages.length - 1} role="toolbar" aria-label="Reply actions">
+                      <button type="button" class="act" aria-label="Copy reply" title="Copy" onclick={() => copyMsg(mi)}>{@render ic(copiedAt === mi ? 'check' : 'copy')}</button>
+                      <button type="button" class="act" aria-label="Share this answer" title="Share" onclick={() => shareMsg(mi)}>{@render ic('share')}</button>
+                      <button type="button" class="act" aria-label="Copy sources" title="Copy sources" onclick={() => citeMsg(mi)}>{@render ic('cite')}</button>
+                      <span class="act-gap" aria-hidden="true"></span>
+                      <button type="button" class="act" class:on={m.vote === 1} aria-label="Good answer" aria-pressed={m.vote === 1} title="Good answer" onclick={() => voteMsg(mi, 1)}>{@render ic('up')}</button>
+                      <button type="button" class="act" class:on={m.vote === -1} aria-label="Poor answer" aria-pressed={m.vote === -1} title="Poor answer" onclick={() => voteMsg(mi, -1)}>{@render ic('down')}</button>
+                      {#if mi === messages.length - 1}<button type="button" class="act" aria-label="Ask again" title="Ask again" disabled={busy} onclick={() => reask(mi)}>{@render ic('retry')}</button>{/if}
+                    </div>
+                  {/if}
                   {#if m.followups?.length && !m.pending && mi === messages.length - 1}
                     <div class="nextq">{#each m.followups as q}<button type="button" disabled={busy} onclick={() => { input = q; send(); }}>{q}</button>{/each}</div>
                   {/if}
@@ -928,6 +1013,7 @@
             {/if}
           </div>
         </div>
+        {#if toastText}<div class="toast" role="status">{@render ic('check')}{toastText}</div>{/if}
         <footer>
           <textarea
             rows="1"
@@ -1268,6 +1354,33 @@
 
   .error { color: #a33; font-size: 13px; padding: 4px 2px; }
 
+  /* reply actions: quiet icons under a reply; shown on hover/focus, always on the last reply and on touch */
+  .acts { display: flex; align-items: center; gap: 2px; margin: 4px 0 0 2px; opacity: 0; transition: opacity .18s; }
+  .msg:hover .acts, .acts:focus-within, .acts.last { opacity: 1; }
+  .acts.qa { justify-content: flex-end; margin: 4px 2px 0 0; }
+  .act-gap { width: 6px; }
+  .act { width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: none; cursor: pointer;
+    color: #9a8f7a; transition: background .15s, color .15s; }
+  .act .ic { width: 16px; height: 16px; }
+  .act:hover:not(:disabled) { color: #4a4234; background: var(--rail-hover); }
+  .act:focus-visible { outline: 2px solid color-mix(in srgb, var(--gold) 70%, transparent); outline-offset: 1px; }
+  .act.on { color: var(--gold-ink); }
+  .act.on .ic { fill: color-mix(in srgb, var(--gold) 22%, transparent); }
+  .act:disabled { opacity: .4; cursor: default; }
+  @media (hover: none) { .acts { opacity: 1; } .act { width: 36px; height: 36px; } }
+  .msg.user .bubblewrap:has(.edit) { flex: 1 1 auto; max-width: 92%; }
+  .msg.user .bubble .edit { display: block; width: 100%; min-height: 44px; resize: none; padding: 0; border: 0; outline: 0; background: none; color: inherit; font: inherit; line-height: inherit; }
+  .edit-btns { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; white-space: normal; }
+  .eb { font: 500 12.5px/1 system-ui, -apple-system, 'Segoe UI', sans-serif; padding: 7px 12px; border-radius: 999px; cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, .45); background: transparent; color: #fff; }
+  .eb.go { background: #fff; color: var(--accent-deep); border-color: #fff; }
+  .eb:disabled { opacity: .5; cursor: default; }
+  .toast { position: absolute; left: 50%; bottom: 88px; z-index: 30; transform: translateX(-50%); display: flex; align-items: center; gap: 7px;
+    padding: 8px 14px 8px 11px; border-radius: 999px; font: 500 13px/1 system-ui, -apple-system, 'Segoe UI', sans-serif; white-space: nowrap;
+    background: #24211c; color: #f6f1e4; box-shadow: 0 10px 28px -8px rgba(20, 14, 4, .45); animation: toast-in .22s cubic-bezier(.22, 1, .36, 1); pointer-events: none; }
+  .toast .ic { width: 15px; height: 15px; color: var(--gold); }
+  @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 6px); } }
+
   footer { display: flex; gap: 9px; padding: 12px 14px 8px; background: transparent; }
   .sample-list { position: absolute; top: 62px; left: 10px; right: 10px; z-index: 30; max-height: 55vh; overflow-y: auto; display: flex; flex-direction: column; background: #fff; color: #1e293b; border: 1px solid rgba(128,128,128,.35); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
   .sample-item { display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 8px 12px; background: transparent; border: 0; border-bottom: 1px solid rgba(128,128,128,.15); color: inherit; cursor: pointer; }
@@ -1432,6 +1545,10 @@
     .bubble.lit::first-letter { color: color-mix(in srgb, var(--accent) 45%, #cfe1ff); }
     .bubble :global(a) { color: color-mix(in srgb, var(--accent) 30%, #cfe1ff); }
     .nextq button { color: #c4cddb; border-color: rgba(196, 205, 219, .3); }   /* subtle, never unreadable (Chad 11-12) */
+    .act { color: #7d8697; }
+    .act:hover:not(:disabled) { color: #e6e2d8; }
+    .toast { background: #e9e4d6; color: #1a1712; box-shadow: 0 10px 28px -8px rgba(0, 0, 0, .6); }
+    .toast .ic { color: #8a6a22; }
     .nextq button:hover:not(:disabled) { color: #eef1f6; border-color: rgba(196, 205, 219, .55); }
     .stage { background-image: linear-gradient(90deg, #6d7789 0%, color-mix(in srgb, var(--accent) 40%, #cfe1ff) 45%, var(--gold-soft) 55%, #6d7789 100%); }
     footer { border-top: 1px solid #232a35; }
@@ -1456,7 +1573,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .bubble-btn, .panel, .msg, .rule, .hist, .tr-menu { animation: none; }
+    .bubble-btn, .panel, .msg, .rule, .hist, .tr-menu, .toast { animation: none; }
+    .acts { transition: none; }
     .root.full .rail { transition: none; }
     .stage { animation: none; color: #9a8f7a; background: none; }
     .caret { animation: none; opacity: .75; }
