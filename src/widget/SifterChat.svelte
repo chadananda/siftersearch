@@ -25,6 +25,7 @@
   import { BUILD, tagFor } from './version.js';
   import { loadTheme, saveTheme, nextTheme, isDark, bioRows } from './prefs.js';
   import { loadConfig, saveConfig, bootConfig } from './boot.js';
+  import { pageContext, askLabel, askQuestion, fullModeHref, threadParam, askParam, loadOpen, saveOpen, startOpen } from './page-context.js';
   import { plainReply, replyHtml, replySources, referenceList, questionIndex, roundOf, answerTurns, rewind, shareTurns, fromShared } from './reply-actions.js';
   import { openStore, loadMessages, saveMessages, saveIndex, upsertThread, removeThread, pruneThreads, dropThreadData, groupThreads,
     filterThreads, messagesText, threadTitle, firstQuestion, newThreadId, activeKey, addShare, dropShares, isFirstVisit, markSeen } from './threads.js';
@@ -65,6 +66,7 @@
     trash: ['M3 6h18', 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6', 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'],
     x: ['M6 6l12 12', 'M18 6 6 18'],
     link: ['M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7', 'M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7'],
+    expand: ['M15 3h6v6', 'M9 21H3v-6', 'M21 3l-7 7', 'M3 21l7-7'],
     open: ['M15 3h6v6', 'M10 14 21 3', 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'],
     unshare: ['M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7', 'M12 15V9', 'm3 3 18 18'],
     user: ['M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2', 'M12 3a4 4 0 1 0 0 8a4 4 0 1 0 0-8z'],
@@ -90,8 +92,13 @@
   const reveal = (node) => { queueMicrotask(() => node.scrollIntoView?.({ block: 'nearest' })); };
   const focusSel = (node) => { node.focus(); node.select(); };
   const focusIn = (node) => { queueMicrotask(() => node.querySelector('button.go, input, button')?.focus?.()); };
+  const LS = () => { try { return localStorage; } catch { return { getItem: () => null, setItem() {}, removeItem() {} }; } };
   let cfg = $state(null);
-  let open = $state(!!opened);   // `opened` = handed over open by the previous build's self-update
+  // on an Anís content page (window.anisPage, worker/anis/content-widget.js): the page it sits on; the widget opens on load only
+  // when the reader left it open there, on a wide screen (page-context.js) — never on a first visit
+  const pageCtx = typeof window !== 'undefined' ? pageContext(window.anisPage) : null;
+  const wideNow = () => { try { return matchMedia('(min-width: 641px)').matches; } catch { return false; } };
+  let open = $state(!!opened || (!!pageCtx && !fullscreen && startOpen({ remembered: loadOpen(LS(), token), wide: wideNow() })));   // `opened` = handed over open by the previous build's self-update
   let denied = $state(false);
   let messages = $state([]);        // {role, content, citations?, pending?, done?, lit?}
   let input = $state('');
@@ -130,7 +137,6 @@
   let menuFor = $state('');            // thread whose ⋯ menu is open
   let renaming = $state(''), renameText = $state('');
   let confirmDel = $state('');
-  const LS = () => { try { return localStorage; } catch { return { getItem: () => null, setItem() {}, removeItem() {} }; } };
   try { railOpen = localStorage.getItem('anis-rail') !== '0'; } catch { /* private mode */ }
   // introduce once (Chad 11-14): a returning reader sees a quiet empty state and Anís never re-introduces itself (threads.js)
   let firstVisit = $state(isFirstVisit(LS(), token));
@@ -234,7 +240,7 @@
       started = true; cfg = c; greet = mkGreet(c);
       { const st = openStore(LS(), token); threads = st.index; setActive(st.active); messages = loadMessages(LS(), token, st.active); }
       if (!messages.some((m) => m.role === 'user')) messages = greet();   // only a greeting kept → a fresh one (live facts, new starter pills)
-      continueShared();
+      continueShared(); openFromUrl(); takeAsk();
       track('widget_load');
       maybeOfferOnetap();   // a restored transcript may already qualify — don't wait for the next answer
     };
@@ -431,6 +437,34 @@
       scroll(true); setTimeout(() => inputEl?.focus(), 50);
     } catch { toast('That discussion is no longer available'); }
   }
+  // the app opened from the widget's "Open full Anís" (/?t=<thread>) or a content page's "Ask Anís about …" link in a new tab (/?ask=)
+  function openFromUrl() {
+    if (!isFull || typeof location === 'undefined') return;
+    const t = threadParam(location.search), q = askParam(location.search);
+    if (!t && !q) return;
+    try { const u = new URL(location.href); u.searchParams.delete('t'); u.searchParams.delete('ask'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } catch { /* ok */ }
+    if (t && (threads.some((x) => x.id === t) || loadMessages(LS(), token, t).length)) {
+      setActive(t); messages = loadMessages(LS(), token, t);
+      if (!messages.some((m) => m.role === 'user')) messages = greet();
+      scroll(true);
+    }
+    if (q) askHere(q);
+  }
+  // "Ask about this …" / a page's "Ask Anís about …": in place; a thread already under way keeps its subject, so a new one starts
+  function askHere(q) {
+    if (!q || busy) return;
+    if (!open) togglePanel();
+    if (messages.some((m) => m.role === 'user')) newConversation();
+    input = q; send();
+  }
+  // a click on a page's "Ask Anís about …" before the widget was ready (content-widget.js keeps it in window.__anisAsk)
+  function takeAsk() {
+    const q = typeof window !== 'undefined' && typeof window.__anisAsk === 'string' ? window.__anisAsk.trim().slice(0, 500) : '';
+    if (!q) return;
+    window.__anisAsk = '';
+    askHere(q);
+  }
+  const fullHref = $derived(typeof location !== 'undefined' ? fullModeHref(location.host, activeId) : '/');
   function voteMsg(mi, v) {
     const m = messages[mi], vote = m.vote === v ? 0 : v, qi = questionIndex(messages, mi);
     m.vote = vote; messages = [...messages]; persist();
@@ -889,12 +923,14 @@
       setTimeout(() => inputEl?.focus(), 400);
       if (!openedOnce) { openedOnce = true; track('open'); }
     }
+    if (pageCtx && !isFull) saveOpen(LS(), token, open);   // remembered per reader, content pages only
   }
   // Host pages can open Anis from their own UI (the SifterSearch home page does): dispatch
   //   window.dispatchEvent(new CustomEvent('sifter-chat:open', { detail: { q: 'optional question' } }))
   $effect(() => {
     const onOpen = (e) => {
       const q = e?.detail?.q;
+      if (e?.detail?.send && typeof q === 'string' && q.trim()) { if (cfg) { window.__anisAsk = ''; askHere(q.trim().slice(0, 500)); } return; }   // not booted yet: start() takes window.__anisAsk
       if (typeof q === 'string' && q.trim()) input = q.trim().slice(0, 500);
       if (!open) togglePanel();
     };
@@ -1118,6 +1154,9 @@
               </div>
             {/if}
             {/if}
+            {#if !isFull}<!-- back to full mode with this conversation open (Chad 11-14); a real link: a new tab works too -->
+            <a class="icon expand" href={fullHref} title="Open full Anís" aria-label="Open full Anís">{@render ic('expand')}</a>
+            {/if}
             {#if !isFull}<!-- full screen is the app itself: nothing to minimise to (Chad 11-14) -->
             <button class="icon close" aria-label="Close chat" onclick={togglePanel}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -1218,8 +1257,8 @@
                       {#if mi === messages.length - 1}<button type="button" class="act" aria-label="Ask again" title="Ask again" disabled={busy} onclick={() => reask(mi)}>{@render ic('retry')}</button>{/if}
                     </div>
                   {/if}
-                  {#if m.followups?.length && !m.pending && mi === messages.length - 1}
-                    <div class="nextq">{#each m.followups as q}<button type="button" disabled={busy} onclick={() => { input = q; send(); }}>{q}</button>{/each}</div>
+                  {#if (m.followups?.length || pageCtx) && !m.pending && mi === messages.length - 1}
+                    <div class="nextq">{#if pageCtx && !messages.some((x) => x.role === 'user')}<button type="button" class="page-ask" disabled={busy} onclick={() => askHere(askQuestion(pageCtx))}>{askLabel(pageCtx)}</button>{/if}{#each m.followups || [] as q}<button type="button" disabled={busy} onclick={() => { input = q; send(); }}>{q}</button>{/each}</div>
                   {/if}
                 </div>
               </div>
@@ -1486,6 +1525,7 @@
     width: 34px; height: 34px; padding: 7px; border-radius: 8px; transition: opacity .15s, background .15s;
   }
   .icon svg { width: 100%; height: 100%; display: block; }
+  a.icon { display: inline-block; box-sizing: border-box; }
   .icon:hover { opacity: 1; background: rgba(255,255,255,.14); }
 
   /* Gilded rule — draws itself across on open. The illumination motif. */
@@ -1701,6 +1741,7 @@
   .nextq { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
   .nextq button { font: inherit; font-size: 12.5px; line-height: 1.3; text-align: left; cursor: pointer; padding: 4px 11px; border-radius: 13px;
     color: var(--accent-deep); background: transparent; border: 1px solid color-mix(in srgb, var(--accent-deep) 35%, transparent); }
+  .nextq .page-ask { font-weight: 600; border-color: color-mix(in srgb, var(--gold) 70%, transparent); }
   .nextq button:hover:not(:disabled) { background: color-mix(in srgb, var(--gold) 12%, transparent); }
   .nextq button:disabled { opacity: .5; cursor: default; }
 

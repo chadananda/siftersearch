@@ -1,0 +1,7 @@
+---
+// The Anís widget on an anis.oceanlibrary.com content page rendered by Astro (the Worker-rendered pages use the same
+// worker/anis/content-widget.js). Place just before </body>. Props: type (discussion|text|person|talk), slug, title.
+import { widgetEmbed } from '../../worker/anis/content-widget.js';
+const { type, slug = '', title } = Astro.props;
+---
+<Fragment set:html={widgetEmbed({ type, slug, title })} />

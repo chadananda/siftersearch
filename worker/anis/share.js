@@ -3,6 +3,7 @@
 // Haiku (metered) naming the reader's personal details as exact redactions + a neutral title and summary. Two steps: share = a
 // draft the reader previews; publish = the reader's click (title editable). The owner key (returned once, stored hashed) unpublishes.
 import { replyHtml } from '../../src/widget/reply-actions.js';
+import { widgetEmbed, themeVars, THEME_PREP } from './content-widget.js';
 
 export const ORIGIN = 'https://anis.oceanlibrary.com';
 // slugs always hold a hyphen: /d/<code> without one is a PDF short link (worker/short-links.js SHORT_PATH)
@@ -135,8 +136,7 @@ export function discussionLd(d) {
     comment: rest.map((t, i) => ({ '@type': 'Comment', position: i + 1, text: plain(t.content).slice(0, 5000), datePublished: at, author: t.role === 'assistant' ? anis : reader })) };
 }
 
-const CSS = `:root{--bg:#f9f6f0;--card:#fffdf8;--ink:#22201b;--muted:#5f5747;--line:#e5ddcb;--gold:#c8a24b;--gold-ink:#7d5f1c;--link:#6e4f12;--quote:#6b4a2b;--btn:#14203a;--btn-ink:#f6efdc;--serif:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;--sans:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;color-scheme:light dark}
-@media (prefers-color-scheme:dark){:root{--bg:#11151a;--card:#171c23;--ink:#e9e6dd;--muted:#a9afb9;--line:#2a313c;--gold-ink:#d9b866;--link:#e6c77e;--quote:#dcc4a0;--btn:#c8a24b;--btn-ink:#14181e}}
+const CSS = `${themeVars("--bg:#f9f6f0;--card:#fffdf8;--ink:#22201b;--muted:#5f5747;--line:#e5ddcb;--gold:#c8a24b;--gold-ink:#7d5f1c;--link:#6e4f12;--quote:#6b4a2b;--btn:#14203a;--btn-ink:#f6efdc;--serif:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;--sans:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;color-scheme:light dark", "--bg:#11151a;--card:#171c23;--ink:#e9e6dd;--muted:#a9afb9;--line:#2a313c;--gold-ink:#d9b866;--link:#e6c77e;--quote:#dcc4a0;--btn:#c8a24b;--btn-ink:#14181e;color-scheme:dark")}
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 var(--serif);overflow-wrap:break-word}
 a{color:var(--link);text-decoration-thickness:1px;text-underline-offset:3px}
@@ -186,12 +186,13 @@ ${o.canonical ? `<link rel="canonical" href="${esc(o.canonical)}">` : '<meta nam
 <meta name="theme-color" content="#f9f6f0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#11151a" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
+${THEME_PREP}
 <link rel="icon" href="/anis-app/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/png" sizes="32x32" href="/anis-app/favicon-32.png">
 <link rel="apple-touch-icon" href="/anis-app/apple-touch-icon.png">
 ${o.extra || ''}<style>${CSS}</style>
 </head>`;
-export const TOP = `<header class="top"><div class="wrap"><a class="brand" href="/"><span class="mark" aria-hidden="true">A</span>Anís <small>Ocean AI Research Assistant</small></a><a class="ask" href="/">Ask a question</a></div></header>`;
+export const TOP = `<header class="top"><div class="wrap"><a class="brand" href="/"><span class="mark" aria-hidden="true">A</span>Anís <small>Ocean AI Research Assistant</small></a><a class="ask" href="/" data-anis-back>Back to Anís</a></div></header>`;
 const FOOT = `<footer><div class="wrap"><p>Shared by a reader from Anís, the Ocean AI Research Assistant of Ocean 2.0. Personal details are removed before a discussion is published.</p><p>Answers quote and link their sources — read each passage in its context in the <a href="https://oceanlibrary.com/">Ocean Library</a>.</p></div></footer>`;
 
 /** The public discussion page: server-rendered, no script but JSON-LD, inline CSS, light + dark. */
@@ -233,6 +234,7 @@ ${body}
 <aside class="cta" aria-label="Continue"><p>Have a question of your own about this?</p><a class="btn" href="/?from=${esc(d.slug)}">Continue this conversation in Anís</a></aside>
 </main>
 ${FOOT}
+${widgetEmbed({ type: 'discussion', slug: d.slug, title: d.title })}
 </body>
 </html>`;
 }
@@ -243,6 +245,7 @@ ${TOP}
 <main class="wrap"><p class="kicker">Not found</p><h1>This discussion is not available</h1><p class="summary">It may have been unpublished by the reader who shared it.</p>
 <aside class="cta" aria-label="Ask"><a class="btn" href="/">Ask Anís a question</a></aside></main>
 ${FOOT}
+${widgetEmbed(null)}
 </body>
 </html>`;
 

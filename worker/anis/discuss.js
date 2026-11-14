@@ -2,6 +2,7 @@
 // /api/v1/dialogs) at anis.oceanlibrary.com/discuss/<slug> + an index at /discuss, in the look of the shared /d/ pages
 // (share.js head/CSS). Canonical = this URL (siftersearch.com/dialogue/<slug> 301s here). Edge-cached by the site Worker.
 import { esc, fmtDate, answerHtml, plain, head, TOP, titleFrom, ORIGIN } from './share.js';
+import { widgetEmbed } from './content-widget.js';
 
 export const DISCUSS_PATH = /^\/discuss(?:\/([a-z0-9][a-z0-9-]{0,160}))?\/?$/;
 export const DISCUSS_API = /^\/api\/chat\/discuss\/([a-z0-9][a-z0-9-]{0,160})$/;
@@ -100,6 +101,7 @@ ${TOP}
 ${main}
 </main>
 ${FOOT}
+${widgetEmbed(o.page)}
 </body>
 </html>`;
 
@@ -110,7 +112,7 @@ export function discussPage(disc) {
   const body = disc.rounds.map((r) => `<section class="turn q"><p class="who">Question</p><h2>${esc(plain(r.title || r.question))}</h2>${r.title ? `<p class="ask-full">${esc(plain(r.question))}</p>` : ''}</section>
 <section class="turn"><p class="who">Anís</p><div class="a">${r.gist ? `<p class="gist">${esc(plain(r.gist))}</p>` : ''}${answerHtml(r.answer)}</div></section>`).join('\n');
   const n = disc.rounds.length;
-  return page({ type: 'article', title: `${disc.title} — Anís`, description, url, ld: discussLd(disc) }, `<article>
+  return page({ type: 'article', title: `${disc.title} — Anís`, description, url, ld: discussLd(disc), page: { type: 'discussion', slug: disc.slug, title: disc.title } }, `<article>
 <p class="crumb"><a href="/discuss">All discussions</a></p>
 <p class="kicker">${esc(disc.topic ? topicLabel(disc.topic) : 'A discussion with Anís')}</p>
 <h1>${esc(disc.title)}</h1>

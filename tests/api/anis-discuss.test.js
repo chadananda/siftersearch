@@ -4,6 +4,9 @@ import fs from 'node:fs';
 import { DISCUSS_PATH, DISCUSS_API, DIALOGUE_PATH, discussSlug, discussUrl, parseRounds, fromDialog, discussResponse, discussTurns, discussSitemapUrls, when } from '../../worker/anis/discuss.js';
 import { policyFor, cacheKey } from '../../worker/edge-cache.js';
 import { sitemapXml } from '../../worker/anis-app.js';
+import { THEME_PREP } from '../../worker/anis/content-widget.js';
+// The page minus the Anís widget embed and theme prep (shared shell, tested in anis-content-widget.test.js).
+const noWidget = (h) => h.replace(THEME_PREP, '').replace(/<script>window\.anisPage=[\s\S]*?<\/script><script>[\s\S]*?<\/script>/, '');
 
 const MD = `### How do Bahá'í texts interpret 'Seal of the Prophets'?
 
@@ -79,8 +82,8 @@ describe('Anís published discussions', () => {
     expect(html).toContain('href="https://oceanlibrary.com/kitab-i-iqan_bahaullah#p172"');
     expect(html).toContain(`href="/?discuss=${DIALOG.slug}">Continue this conversation with Anís</a>`);
     expect(html).toContain('Comparative religion');
-    expect(html).not.toMatch(/siftersearch|jafar/i);
-    expect(html).not.toMatch(/<script(?! type="application\/ld\+json")/);
+    expect(noWidget(html)).not.toMatch(/siftersearch|jafar/i);
+    expect(noWidget(html)).not.toMatch(/<script(?! type="application\/ld\+json")/);
   });
   it('404s an unknown slug (noindex, not cacheable) and taints when tower fails', async () => {
     const miss = await discussResponse('no-such-discussion', { api: API, fetchFn: tower() });

@@ -7,6 +7,9 @@ import worker, { shareRoute } from '../../worker/anis/index.js';
 import { scrub, cleanUrl, normTurns, parseSanitize, applyRedactions, slugFor, titleFrom, sanitize, sanitizeMessages, discussionPage, discussionLd,
   notFoundPage, DISCUSSION_PATH, SLUG } from '../../worker/anis/share.js';
 import { SHORT_PATH } from '../../worker/short-links.js';
+import { THEME_PREP } from '../../worker/anis/content-widget.js';
+// The page minus the Anís widget embed and theme prep (shared shell, tested in anis-content-widget.test.js).
+const noWidget = (h) => h.replace(THEME_PREP, '').replace(/<script>window\.anisPage=[\s\S]*?<\/script><script>[\s\S]*?<\/script>/, '');
 
 const mkEnv = () => {
   const db = new Database(':memory:'); db.exec(readFileSync('worker/d1/anis/0018_anis_shared.sql', 'utf8'));
@@ -193,7 +196,7 @@ describe('the public page', () => {
     expect(html).toContain('<meta property="og:image" content="https://anis.oceanlibrary.com/anis-app/og-1200x630.png">');
     expect(html).toContain('<meta name="twitter:card" content="summary_large_image">');
     expect(html).toContain('<meta name="viewport" content="width=device-width, initial-scale=1">');
-    expect(html).not.toMatch(/siftersearch/i);
+    expect(noWidget(html)).not.toMatch(/siftersearch/i);
     expect(html).not.toContain('noindex');
   });
   it('a sequential outline: one h1, questions h2, answer headings h3', () => {
@@ -205,12 +208,12 @@ describe('the public page', () => {
   it('the continue button opens the app with the discussion', () => {
     expect(html).toContain('<a class="btn" href="/?from=marriage-abcd1234">Continue this conversation in Anís</a>');
   });
-  it('JSON-LD DiscussionForumPosting with comments; no script but JSON-LD', () => {
+  it('JSON-LD DiscussionForumPosting with comments; no script but JSON-LD and the widget', () => {
     const ld = discussionLd(d);
     expect(ld).toMatchObject({ '@type': 'DiscussionForumPosting', headline: d.title, url: 'https://anis.oceanlibrary.com/d/marriage-abcd1234', commentCount: 3, datePublished: '2026-11-13T00:00:00.000Z' });
     expect(ld.comment[0].author.name).toMatch(/Anís/);
     expect(ld.comment[1].author['@type']).toBe('Person');
-    const blocks = [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)];
+    const blocks = [...noWidget(html).matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)];
     expect(blocks).toHaveLength(1);
     expect(blocks[0][1]).toBe(' type="application/ld+json"');
     expect(JSON.parse(blocks[0][2])['@type']).toBe('DiscussionForumPosting');
