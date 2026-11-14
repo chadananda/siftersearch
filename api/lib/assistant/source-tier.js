@@ -13,6 +13,10 @@ const HOUSE = /universalhouseofjustice|researchdepartment/;
 // The Bahá'í World): its articles are other people's (11-04: Hatcher's essay in BW XVIII was replied as "the House quotes it")
 const EDITED = /preparedunder|supervision|undertheauspices|editor|editedby/;
 const houseWrote = (k) => HOUSE.test(k) && !EDITED.test(k);
+// every other administrative body — an Assembly (NSA, LSA), the Teaching Centre, Counsellors, Auxiliary Boards, teaching committees —
+// ranks no higher than the House: never 'reported', even when filed under Pilgrim Notes (Chad 11-14: talks and pilgrim notes rank
+// above "any other authority, including … ITC, NSA, LSA, ABM, CBC, NTC, RTC and UHJ"; doc 9296, the ITC's guidance on pilgrim notes)
+const ADMIN = /spiritualassembl|teachingcent(?:re|er)|boardofcounsel|counsellors|auxiliaryboard|teachingcommittee|^(?:nsa|lsa|itc|abm|cbc|ntc|rtc)(?:of|$)/;
 const isBahai = (p) => /bah[aá]/i.test(String(p?.religion || ''));
 const keyOf = (s) => foldKey(s);
 
@@ -57,6 +61,7 @@ export function sourceTier(p = {}) {
   const doc = { title: p.title ?? p.source_title, collection: p.collection, author: p.author ?? p.source_author };
   const kind = docType(doc);
   if (isBahai(p) && narrativeWork(p, author)) return 'narrative';        // Nabíl's paragraphs, the voices he quotes, the Guardian's translation copy
+  if (!central && ADMIN.test(author)) return 'secondary';                // an Assembly's, the Teaching Centre's, a Counsellor's own document
   if (WRITINGS.has(author) && authenticatedWork(doc.title)) return 'writings';   // before any talk rule: SAQ sits in "Core Talks"
   if (isTalk(p.collection)) return 'secondary';                          // a modern speaker's recorded talk: commentary
   if (kind === 'pilgrim-notes' || /pilgrim notes/i.test(String(p.collection || ''))) return 'reported';
@@ -95,7 +100,7 @@ export const TIER_ORDER = ['writings', 'guardian', 'narrative', 'compilation', '
 // within reported speech, a Central Figure's recorded talk before a pilgrim's recollection (Chad 11-14: "it's OK to use talks
 // but better to use written texts"; pilgrim notes after talks, scholarship last)
 const isPilgrim = (p) => docType({ title: p.title ?? p.source_title, collection: p.collection, author: p.author ?? p.source_author }) === 'pilgrim-notes' || /pilgrim notes/i.test(String(p.collection || ''));
-const rankOf = (p) => { const t = sourceTier(p); const i = TIER_ORDER.indexOf(t); return i < 0 ? TIER_ORDER.length : i + (t === 'reported' && isPilgrim(p) ? 0.5 : 0); };
+export const rankOf = (p) => { const t = sourceTier(p); const i = TIER_ORDER.indexOf(t); return i < 0 ? TIER_ORDER.length : i + (t === 'reported' && isPilgrim(p) ? 0.5 : 0); };
 
 // Within one tier, the authorized or published translation before an individual's (feedback citation source order; round 5: a
 // compilation on justice led with Juan Cole's translation of the Manakji tablet). From metadata only: the 'Tablet Translations'

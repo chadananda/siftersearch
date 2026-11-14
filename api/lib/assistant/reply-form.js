@@ -1,9 +1,9 @@
 // REPLY FORM checks (Chad 11-14, Reddit round 3): what the reply LOOKS like, never what the question means (no intent by words; md-valid.js is the
 // precedent). Offers out of the prose and into the pills; section heads only when the agent itself chose depth (its marker) — otherwise
-// turned into plain prose by code (deHead; a rewrite cleared 5 of 17 at +10 s); a pilgrim note / talk / commentary never quoted ahead of a
-// written core passage the same reply quotes. Pure. Deps: lint, source-tier.
+// turned into plain prose by code (deHead; a rewrite cleared 5 of 17 at +10 s); quotations in rank order (the Writings and
+// Shoghi Effendi, then talks and pilgrim notes, then the House and every other body, then commentary). Pure. Deps: lint, source-tier.
 import { isSearchOffer, isOffer } from './lint.js';
-import { sourceTier, isWrittenCore } from './source-tier.js';
+import { sourceTier, rankOf } from './source-tier.js';
 
 /** The agent starts its reply with this when IT decides the reader asked for depth or research (its judgement, never a keyword test).
  *  Stripped before anything is shown, as NOT_FOUND is. Without it the reply is a short answer: no run-in section heads. */
@@ -143,23 +143,33 @@ export function quotedRefs(text) {
   return hits.sort((a, b) => a[0] - b[0]).map(([, r]) => r).filter((r) => !seen.has(r) && seen.add(r));
 }
 
-const BELOW_CORE = new Set(['reported', 'house', 'secondary']);
-/** → { first, core } when the first quoted passage is a talk / pilgrim note, a House letter or commentary while a written core passage
- *  (the Writings, Shoghi Effendi) is quoted later in the same reply; else null. `found`: Map ref → passage. Order only — never what is quoted. */
+// Rank order of quotations (Chad 11-14): the Writings, Shoghi Effendi, a compilation of the Writings, then talks and pilgrim notes
+// (a Central Figure's words as recorded) — above every administrative body, the House included — then commentary. TIER_ORDER
+// (source-tier.js) by whole tier: the talk-before-pilgrim half step is not worth a rewrite. Nabíl's narrative keeps its place in
+// a story (scenes run in time order), and a passage with no Bahá'í tier (another tradition, the web) is not ranked.
+const tierOf = (p) => { const t = sourceTier(p); return t && t !== 'narrative' ? Math.floor(rankOf(p)) : null; };
+/** → { first, core, firstTier, coreTier, order, tiers } when a quoted passage comes before one of higher rank (`first` before
+ *  `core`); `order` is every ranked quotation in rank order (ties keep the reply's order); else null. `found`: Map ref → passage.
+ *  Order only — never what is quoted. */
 export function leadSource(text, found) {
   const get = (r) => found?.get?.(r);
-  const refs = quotedRefs(text).filter((r) => get(r));
-  if (refs.length < 2 || !BELOW_CORE.has(sourceTier(get(refs[0])))) return null;
-  const core = refs.slice(1).find((r) => isWrittenCore(get(r)));
-  return core ? { first: refs[0], core, firstTier: sourceTier(get(refs[0])) } : null;
+  const refs = quotedRefs(text).filter((r) => get(r) && tierOf(get(r)) != null);
+  for (let j = 1; j < refs.length; j++) {
+    const i = refs.slice(0, j).findIndex((r) => tierOf(get(r)) > tierOf(get(refs[j])));
+    if (i < 0) continue;
+    const order = refs.map((r, k) => [r, k]).sort((x, y) => tierOf(get(x[0])) - tierOf(get(y[0])) || x[1] - y[1]).map(([r]) => r);
+    return { first: refs[i], core: refs[j], firstTier: sourceTier(get(refs[i])), coreTier: sourceTier(get(refs[j])), order, tiers: Object.fromEntries(order.map((r) => [r, sourceTier(get(r))])) };
+  }
+  return null;
 }
 /** The first quoted passage that the turn holds, with its tier and writers — telemetry (timings.form.first), never shown. */
 export function firstQuoted(text, found) {
   const ref = quotedRefs(text).find((r) => found?.get?.(r)), p = ref && found.get(ref);
   return p ? { ref, tier: sourceTier(p), author: p.author ?? p.source_author ?? null, book_author: p.book_author ?? null } : null;
 }
-const KIND = { reported: 'a talk or pilgrim’s recollection', house: 'a letter of the House of Justice', secondary: 'commentary' };
-export const leadAsk = ({ first, core, firstTier }) => `(note from the library, not the reader) Your first quotation, ${first}, is ${KIND[firstTier] || 'not a written core text'}, and you also quote ${core}, a written core text (the Writings or Shoghi Effendi). The core text leads: write the reply again with ${core} quoted first; keep ${first} after it only if it adds something, named for what it is.`;
+const KIND = { writings: 'the Writings', guardian: 'Shoghi Effendi', compilation: 'a compilation of the Writings', reported: 'a talk or pilgrim’s note', house: 'a House of Justice letter', secondary: 'commentary or an institution’s letter' };
+const kindOf = (t) => KIND[t] || 'another source';
+export const leadAsk = ({ first, core, firstTier, coreTier, order = [core, first], tiers = {} }) => `(note from the library, not the reader) ${first} (${kindOf(firstTier)}) is quoted before ${core} (${kindOf(coreTier)}). Write the reply again with the quotations in this order: ${order.map((r) => `${r} (${kindOf(tiers[r])})`).join(', ')}. Keep a quotation only if it adds something. Say nothing in the reply about this order.`;
 
 // ---- the offer becomes a pill ----
 const STOP = new Set('about also could deeper further more into like would what which their there these those this that with from have your just tell some show share explain look further other bahá bahai faith writings teachings'.split(' '));

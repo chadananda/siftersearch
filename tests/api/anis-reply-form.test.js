@@ -1,5 +1,6 @@
 // Reply form checks (Chad 11-14, Reddit rounds 3–4): offers → pills, section heads → prose by code unless the agent chose depth, core text quoted first. Form only, never intent.
 import { describe, it, expect } from 'vitest';
+import { sourceTier } from '../../api/lib/assistant/source-tier.js';
 import { DEPTH, hasDepth, dropDepth, dropOffers, isInvite, isOfferSentence, runInHeads, deHead, liveDeHead, firstQuoted, quotedRefs, leadSource, leadAsk, offerPill, withOfferPill } from '../../api/lib/assistant/reply-form.js';
 
 const B = 'Bahá’í';
@@ -57,6 +58,43 @@ describe('run-in section heads (1jhg01p: **Sexism.** **Homophobia.** **Transphob
     expect(hasDepth(`${DEPTH}\n**Sexism.** …`)).toBe(true);
     expect(dropDepth(`${DEPTH}\n**Sexism.** text`)).toBe('**Sexism.** text');
     expect(hasDepth('**Sexism.** …')).toBe(false);
+  });
+});
+
+// 1xebxqv round 4 (Chad 11-14: "Talks by Central figures, eyewitness accounts … (Pilgrim Notes) … still higher than any other
+// authority, including administrative authorities such as ITC, NSA, LSA, ABM, CBC, NTC, RTC and UHJ"): the Will and Testament led,
+// then the House's "Issues Related to the Study…", then 'Abdu'l-Bahá and the Guardian, and Pilgrimage (Extracts) came last
+describe('quotations in rank order: talks and pilgrim notes above every institution (1xebxqv round 4)', () => {
+  const R4 = new Map([
+    ['P1', { author: '‘Abdu’l-Bahá', religion: B, title: 'The Will and Testament of ‘Abdu’l-Bahá' }],
+    ['P2', { author: 'Universal House of Justice', religion: B, title: 'Issues Related to the Study of the Bahá’í Faith', collection: 'Research Department Compilations' }],
+    ['P3', { author: '‘Abdu’l-Bahá', religion: B, title: 'Selections from the Writings of ‘Abdu’l-Bahá' }],
+    ['P4', { author: 'Shoghi Effendi', religion: B, title: 'Dawn of a New Day' }],
+    ['P5', { author: 'Shoghi Effendi', book_author: 'May Maxwell', religion: B, title: 'Pilgrimage (Extracts)', collection: 'Pilgrim Notes' }]]);
+  const reply = '‘Abdu’l-Bahá says:\n\n{{quote P1}}\n\nThe House of Justice calls it "unchallengeable" [[P2]].\n\n{{quote P2}}\n\n{{quote P3}}\n\n{{quote P4}}\n\n'
+    + 'He also records that *"no two consciences agree"* [[P5]].';
+  it('a House letter before the Writings and before a pilgrim note → one rewrite into rank order', () => {
+    const r = leadSource(reply, R4);
+    expect(r).toMatchObject({ first: 'P2', core: 'P3', firstTier: 'house', coreTier: 'writings' });
+    expect(r.order).toEqual(['P1', 'P3', 'P4', 'P5', 'P2']);   // the pilgrim note before the House letter
+    expect(leadAsk(r)).toContain('P5 (a talk or pilgrim’s note), P2 (a House of Justice letter)');
+  });
+  it('the House after the pilgrim note passes; so does a talk before a pilgrim note', () => {
+    expect(leadSource('{{quote P1}}\n\n{{quote P4}}\n\n{{quote P5}}\n\n{{quote P2}}', R4)).toBe(null);
+    const talk = new Map([['P9', { author: '‘Abdu’l-Bahá', religion: B, title: 'Paris Talks' }], ['P5', R4.get('P5')]]);
+    expect(leadSource('{{quote P5}}\n\n{{quote P9}}', talk)).toBe(null);   // talk vs pilgrim note is a half step: no rewrite
+  });
+  it('another tradition’s passage and Nabíl’s narrative are not ranked', () => {
+    const m = new Map([['P7', { author: 'Jesus', religion: 'Christianity', title: 'Matthew' }], ['P8', { author: 'Nabíl-i-A‘ẓam', religion: B, title: 'The Dawn-Breakers', document_id: 21308 }], ['P1', R4.get('P1')]]);
+    expect(leadSource('{{quote P7}}\n\n{{quote P8}}\n\n{{quote P1}}', m)).toBe(null);
+  });
+  it('every administrative body ranks below a pilgrim note, even filed under Pilgrim Notes (docs 18, 9296 from the library)', () => {
+    const nsa = { author: 'National Spiritual Assembly', religion: B, title: 'Homosexuality and Civil Rights', collection: 'Administrative' };   // doc 18
+    const itc = { author: 'International Teaching Centre', religion: B, title: 'Guidance on Pilgrim Notes and the Calamity', collection: 'Pilgrim Notes' };   // doc 9296
+    for (const p of [nsa, itc, { ...nsa, author: 'Local Spiritual Assembly of the Bahá’ís of Seattle' }, { ...itc, author: 'Continental Board of Counsellors' },
+      { ...nsa, author: 'Auxiliary Board member' }, { ...nsa, author: 'National Teaching Committee' }, { ...nsa, author: 'Regional Teaching Committee' }])
+      expect(['house', 'secondary']).toContain(sourceTier(p));
+    expect(leadSource('{{quote P6}}\n\n{{quote P5}}', new Map([['P6', itc], ['P5', R4.get('P5')]]))).toMatchObject({ first: 'P6', core: 'P5', firstTier: 'secondary' });
   });
 });
 
@@ -131,8 +169,9 @@ describe('the core text is quoted first (1xebxqv: a pilgrim note led)', () => {
   });
   it('flags a pilgrim note quoted ahead of the Writings', () => {
     const r = leadSource('A pilgrim recalls:\n\n{{quote P1}}\n\nBahá’u’lláh writes:\n\n{{quote P2}}', found);
-    expect(r).toEqual({ first: 'P1', core: 'P2', firstTier: 'reported' });
-    expect(leadAsk(r)).toMatch(/P2 quoted first/);
+    expect(r).toMatchObject({ first: 'P1', core: 'P2', firstTier: 'reported', coreTier: 'writings', order: ['P2', 'P1'] });
+    expect(leadAsk(r)).toMatch(/in this order: P2 \(the Writings\), P1 \(a talk or pilgrim’s note\)/);
+    expect(leadAsk(r)).not.toMatch(/authority/i);   // a short factual note, no lecture for the reply to echo
   });
   it('core first, a pilgrim note alone, or an unquoted citation passes', () => {
     expect(leadSource('{{quote P2}}\n\n{{quote P1}}', found)).toBe(null);
@@ -220,7 +259,7 @@ describe('agent: one rewrite for form, offers kept for the pills', () => {
         const h = ref('Issues Related'), g = ref('Gleanings');
         return say(seen.length === 1 ? `{{quote ${h}}}\n\nBahá’u’lláh wrote:\n\n{{quote ${g}}}` : `Bahá’u’lláh wrote:\n\n{{quote ${g}}}`); } });
     expect(seen).toHaveLength(2);
-    expect(seen[1].messages.at(-1).content).toMatch(/quoted first/);
+    expect(seen[1].messages.at(-1).content).toMatch(/in this order: P\d \(the Writings\), P\d \(a House of Justice letter\)/);
     expect(r.agent.form).toMatchObject({ rewritten: true, rewroteFor: 'lead', first: { tier: 'house' } });
   });
   it('a plain reply is not rewritten; a closing offer leaves the prose and is returned for the pills', async () => {
