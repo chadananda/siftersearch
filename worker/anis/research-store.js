@@ -1,11 +1,17 @@
 // Edge research cache + question log + conversations. Pure; env injected: ANIS_DB (D1), ANIS_VEC (Vectorize), AI (Workers AI).
 // Mirrors api/lib/assistant/research-cache.js + question-log.js, but sets hold a passage SNAPSHOT (text included): a hit needs no tower call.
 import { imagesForPassages, toolImages } from '../../api/lib/illustrations.js';
+import { researchVersion } from './tool-shape.js';
 export const EMBED_MODEL = '@cf/baai/bge-m3';   // 1024-d, multilingual, cosine
 // bge-m3: calibrate (brief D2) — values carried over from the tower embedding model
 export const SAME_QUESTION = 0.88;
 export const RELATED = 0.62;   // bge-m3 question↔question (11-13 calibration, 36 seeds × 3 paraphrases): paraphrases 0.26–0.94, related up to 0.87, unrelated ≤ 0.68 — no line separates same from related, so the agent judges anything ≥ this
 export const MAX_PASSAGES = 24;
+// held research is versioned (11-14 Taherzadeh: sets saved before the volume-aware search kept serving vol. 3 only): each passage a set
+// holds is stamped with the version it was found under; a set not of the current version is not served, and a new capture replaces it.
+// Curated sets are a person's decision and are served whatever their version.
+export const RESEARCH_VERSION = researchVersion();
+export const currentSet = (set, version = RESEARCH_VERSION) => set?.status === 'curated' || (!!set?.passages?.length && set.passages.every((p) => p?.v === version));
 
 export const normalizeQuestion = (q) => String(q || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[‘’ʻ]/g, "'").replace(/\s+/g, ' ').trim();
 // same value as tower questionHash (sha256 hex, first 32)
@@ -23,10 +29,10 @@ const byHash = async (env, h) => parse(await env.ANIS_DB.prepare('SELECT * FROM 
 const bump = (env, id) => env.ANIS_DB.prepare('UPDATE anis_research_sets SET hits = hits + 1 WHERE id = ?').bind(id).run();
 
 /** Exact (non-stale) qhash hit = similarity 1, else nearest vector ≥ threshold (curated beats candidate on ties) → { set, similarity } | null. */
-export async function lookup(env, question, { threshold = RELATED } = {}) {
+export async function lookup(env, question, { threshold = RELATED, version = RESEARCH_VERSION } = {}) {
   if (!normalizeQuestion(question)) return null;
   const exact = await byHash(env, await questionHash(question));
-  if (exact && exact.status !== 'stale') { await bump(env, exact.id); return { set: exact, similarity: 1 }; }
+  if (exact && exact.status !== 'stale' && currentSet(exact, version)) { await bump(env, exact.id); return { set: exact, similarity: 1 }; }
   const vec = await embed(env, question);
   if (!vec) return null;
   const matches = ((await env.ANIS_VEC.query(vec, { topK: 5, returnMetadata: 'none' }))?.matches || []).filter((m) => m.score >= threshold);
@@ -37,27 +43,29 @@ export async function lookup(env, question, { threshold = RELATED } = {}) {
   for (const m of matches) {
     const row = rows.get(String(m.id));
     if (!row) continue;
-    if (!best || m.score > best.similarity + 1e-9 || (Math.abs(m.score - best.similarity) <= 1e-9 && row.status === 'curated' && best.set.status !== 'curated')) best = { set: parse(row), similarity: m.score };
+    const set = parse(row);
+    if (!currentSet(set, version)) continue;
+    if (!best || m.score > best.similarity + 1e-9 || (Math.abs(m.score - best.similarity) <= 1e-9 && row.status === 'curated' && best.set.status !== 'curated')) best = { set, similarity: m.score };
   }
   if (best) await bump(env, best.set.id);
   return best;
 }
 
-const snap = (p) => ({ id: p.id, document_id: p.document_id ?? p.doc_id ?? null, paragraph_index: p.paragraph_index ?? null, text: p.text ?? null,
+const snap = (p, v) => ({ id: p.id, document_id: p.document_id ?? p.doc_id ?? null, paragraph_index: p.paragraph_index ?? null, text: p.text ?? null,
   title: p.title ?? null, author: p.author ?? null, source_url: p.source_url || p.url || null, religion: p.religion ?? null, cover_url: p.cover_url ?? null, year: p.year ?? null,
   ...(p.role ? { role: p.role } : {}), ...(p.note ? { note: p.note } : {}),
   // the standing fields source-tier reads (11-14: sets held no collection, so a translator's study filed under Bahá'u'lláh counted as a Writing)
-  ...Object.fromEntries(['collection', 'book_author', 'translator', 'translation', 'language'].filter((k) => p[k] != null).map((k) => [k, p[k]])) });
+  ...Object.fromEntries(['collection', 'book_author', 'translator', 'translation', 'language'].filter((k) => p[k] != null).map((k) => [k, p[k]])), v });
 
 /** Record passages as a candidate set (curated sets never overwritten, only hits grow). `question` may be a matched set's question to grow it. */
-export async function capture(env, question, passages) {
+export async function capture(env, question, passages, { version = RESEARCH_VERSION } = {}) {
   if (!normalizeQuestion(question)) return null;
   const seen = new Set();
-  const fresh = (passages || []).map(snap).filter((p) => p.id != null && !seen.has(p.id) && seen.add(p.id));
+  const fresh = (passages || []).map((p) => snap(p, version)).filter((p) => p.id != null && !seen.has(p.id) && seen.add(p.id));
   if (!fresh.length) return null;
   const hash = await questionHash(question), existing = await byHash(env, hash), now = Date.now();
   if (existing?.status === 'curated') { await bump(env, existing.id); return existing; }
-  if (existing?.status === 'candidate') for (const p of existing.passages) if (p.id != null && !seen.has(p.id) && seen.add(p.id)) fresh.push(p);
+  if (existing?.status === 'candidate' && currentSet(existing, version)) for (const p of existing.passages) if (p.id != null && !seen.has(p.id) && seen.add(p.id)) fresh.push(p);
   fresh.splice(MAX_PASSAGES);
   const row = await env.ANIS_DB.prepare(`INSERT INTO anis_research_sets (question, qhash, status, passages, hits, created_at, updated_at) VALUES (?,?,'candidate',?,0,?,?)
     ON CONFLICT(qhash) DO UPDATE SET status='candidate', passages=excluded.passages, updated_at=excluded.updated_at RETURNING *`)

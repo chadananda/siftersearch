@@ -8,6 +8,7 @@ import { formPass } from '../../api/lib/assistant/lint.js';
 import { toNative, fromNative, chunksOf } from '../../api/lib/anthropic-native.js';
 import { modelFor } from '../../api/lib/model-roles.js';
 import { thinkingParam } from '../../api/lib/model-registry.js';
+import { TOOL_SHAPE } from './tool-shape.js';
 import { lookup, capture, logQuestion, saveTurn, markStale, embed, EMBED_MODEL, SAME_QUESTION } from './research-store.js';
 import { restate, underPriceBoundary } from './restate.js';
 import { finishLinks, templateFilter } from './links.js';
@@ -74,7 +75,7 @@ const FRESH_MS = 3 * 864e5;
 // from before passages carried their roles reached the writer — holders, citing works and a study, no source card)
 // roles2 (round 5): the source passage carries its own writer and place, and the tower no longer names a study quoting the Writings
 // roles3 (round 6): roles2 was filled by the PRE-round-5 tower (Buck's study as source, no place) — a new key so the deployed tower's rows are read
-export const TOOL_SHAPE = { sourceOf: 'roles3', searchInWork: 'vol1', extractFromWork: 'vol1', findPassage: 'own1', ownSource: 'own1' };   // 11-14: volume-aware work resolution; the writer's own book over a compilation quoting him
+export { TOOL_SHAPE };   // tool-shape.js (shared with research-store.js: a shape change also retires held research sets)
 // prefer (the reader's site) changes which links a result carries → its own entry; none = the shared key, as before
 export const toolKey = async (fn, args, prefer = null) => `tool/${fn}${TOOL_SHAPE[fn] ? `@${TOOL_SHAPE[fn]}` : ''}${prefer?.length ? `@${prefer.join(',')}` : ''}/${[...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(args ?? []))))]
   .map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 40)}`;

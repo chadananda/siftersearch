@@ -422,5 +422,22 @@
     ]
    }
   }
+ },
+ "tz2": {
+  "question": "What does Taherzadeh say about the Tablet of Ahmad in The Revelation of Bahá'u'lláh?",
+  "note": "replay 11-14 on a held set saved before the volume-aware search: it claimed one volume; the dispute was left open instead of checked",
+  "absence": "The library's copy of The Revelation of Bahá'u'lláh holds only volume 3, and there Taherzadeh mentions the Tablet of Aḥmad just once, in passing, so there is no extended commentary from him to report.",
+  "dispute": "I could not find a passage that settles how the two descriptions fit together, so I leave that open."
+ },
+ "tz4": {
+  "question": "What does Taherzadeh say about the Tablet of Ahmad in The Revelation of Bahá'u'lláh?",
+  "note": "replay 11-14: claimed opening pages only while quoting vol. 2 at #551, #589, #597 and #612; named the book in italics with no card (document_search, no book_card)",
+  "absence": "Taherzadeh then quotes and comments on specific passages of the Tablet, but the library holds only the opening pages of this copyrighted volume, so those comments are not available to quote.",
+  "places": [
+   550,
+   588,
+   596,
+   611
+  ]
  }
 }

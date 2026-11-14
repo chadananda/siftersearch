@@ -44,7 +44,19 @@ export function rebuiltDrift(messages = [], final = '') {
 export const absenceAsk = (claims) => `(note from the library, not the reader) You wrote that the library has nothing on someone — ${claims.map((c) => `"${c.slice(0, 160)}"`).join('; ')} — without searching inside the histories for that name. Run fused_search with about: "history" on each such name alone (it searches inside Nabíl's The Dawn-Breakers, Balyuzi, Momen and Ẓuhúru'l-Ḥaqq with spelling variants), then write the answer again: the library has no account only of a name that search came back empty on — say so in ONE short line after the table (or in the row: "not identified in the library"), never describing the search or the spellings tried.`;
 /** The re-ask for a content absence or a narration of sources (lint.js contentAbsence; 11-14 Taherzadeh "the library does not appear to
  *  hold" vol. 1 — it holds all four; round 3 "these sources show no…", "I found no sentence…", "I have not searched…"). */
-export const contentAbsenceAsk = (claims, searched) => `(note from the library, not the reader) You wrote ${claims.map((c) => `"${c.slice(0, 160)}"`).join('; ')}. ${searched ? '' : 'No search inside the work came back empty this turn, so that is not established. Run search_in_work on the work (name its volume when it has volumes) with the words the source itself would use, and book_card on any book or volume you said the library lacks. '}Then write the answer again from what the passages say: an absence is stated only after a search inside the work came back empty, and then as ONE plain line about the text ("The Will does not say …"), never as what you found, what the sources show, what the library holds or what you did not search.`;
+export const contentAbsenceAsk = (claims, searched, deep = []) => `(note from the library, not the reader) You wrote ${claims.map((c) => `"${c.slice(0, 160)}"`).join('; ')}. ${deep.length ? `That is false: this same reply quotes ${deep.map((d) => `${d.title} at ${d.places.map((n) => `#${n}`).join(', ')}`).join(' and ')} — the library holds that text well past its opening pages; do not say it lacks it or holds only part of it. ` : ''}${searched || deep.length ? '' : 'No search inside the work came back empty this turn, so that is not established. Run search_in_work on the work (name its volume when it has volumes) with the words the source itself would use, and book_card on any book or volume you said the library lacks. '}Then write the answer again from what the passages say: an absence is stated only after a search inside the work came back empty, and then as ONE plain line about the text ("The Will does not say …"), never as what you found, what the sources show, what the library holds or what you did not search.`;
+// the reply's own quotations deep in a work (place ≥ min): an absence or "opening pages only" claim about that work is false by the reply itself
+// (tz4 11-14: "holds only the opening pages of this copyrighted volume" beside quotations at #597 and #612). → [{ title, places }]. Pure.
+export function deepQuoted(text, found, min = 100) {
+  const by = new Map();
+  for (const ref of new Set([...String(text || '').matchAll(/\[\[?(P\d+)\]\]?/g)].map((m) => m[1]))) {
+    const p = found?.get?.(ref), n = Number(p?.paragraph_index);
+    if (!p || !(n >= min) || !(Number(p.document_id) > 0)) continue;
+    const d = by.get(Number(p.document_id)) || { title: p.title, places: [] };
+    d.places.push(n + 1); by.set(Number(p.document_id), d);
+  }
+  return [...by.values()].map((d) => ({ ...d, places: d.places.sort((a, b) => a - b).slice(0, 3) }));
+}
 /** The re-ask for a dispute between sources (lint.js conflictClaims; 11-14: the letter's "Arab believer in Baghdád" and Taherzadeh's
  *  Aḥmad of Yazd are one man, who lived in Baghdád). */
 export const conflictAsk = (claims) => `(note from the library, not the reader) You wrote that sources disagree: ${claims.map((c) => `"${c.slice(0, 160)}"`).join('; ')}. Before saying so, check that both passages speak of the same thing — the same tablet (the Arabic and the Persian Tablets of Aḥmad are two tablets, for two men), the same person, the same event — and search inside the fuller source (search_in_work, its own words) for the detail that may reconcile them (where the person lived, another name). Then write the answer again: a disagreement is stated only when the passages, read in full, plainly say different things about the same thing — then quote both, briefly, without deciding; never invent a dispute, never "a different man" unless a passage says so.`;
@@ -306,6 +318,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     if ((a?.queries || []).some((q) => NOTES_Q.test(q)) && notesLooked++) return `not run: ${a.work}'s notes were already searched once for this question — they may not be in the library; answer from what you hold or the histories`;
     const r = await impl.searchInWork(a);
     if (!r) return `no work titled "${a.work}" in the library`;
+    for (const p of r.passages || []) if (Number(p.document_id) > 0) searchedIn.set(Number(p.document_id), { author: r.work?.author ?? null });   // quotedWorkCards
     if (!r.passages.length) return `nothing in ${r.work.title} for ${(a.queries || []).map((q) => `"${q}"`).join(', ')} (${r.note || r.per_query.map((q) => `${q.exact} exact / ${q.meaning} by meaning`).join('; ')}) — this is the wording, not the end: try the words the source itself would use`;
     return `${r.total} passage${r.total === 1 ? '' : 's'} in ${r.work.title}, exact words and by meaning merged${r.total > 12 ? ' (first 12 shown)' : ''}:\n\n${show(give(r.passages.slice(0, 12)))}`;
   };
@@ -399,6 +412,29 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   // credited, linked and styled, links narrowed, a template → its widget at once (event first, then the text holding its marker)
   // a work the reply cites ([[B#]]) is its answer's book: its card shows as the sentence naming it is released (Chad 11-13
   // "the answer could be a book card"), from the ref the agent wrote — the work found, its cover by doc id
+  // A BOOK SEARCHED AND QUOTED SHOWS ITS CARD (tz4 11-14: the reply quoted vol. 2 of The Revelation of Bahá'u'lláh four times, found by
+  // search_in_work, yet named it only in italics — no [[B#]], no card): a work search_in_work searched this turn that the reply quotes
+  // twice or more gets its card by code, its title and link from the quoted passage, its author from the work (a passage's own author
+  // field may be a quoted voice). Structural: refs and doc ids, never the question's wording.
+  const searchedIn = new Map();   // doc id → { author } of works search_in_work returned passages from
+  const quotedWorkCards = (core) => {
+    const n = new Map();
+    for (const ref of new Set([...String(core).matchAll(/\[\[?(P\d+)\]\]?/g)].map((m) => m[1]))) {
+      const p = found.get(ref), id = Number(p?.document_id);
+      if (searchedIn.has(id)) n.set(id, [...(n.get(id) || []), p]);
+    }
+    let added = false;
+    for (const [id, ps] of n) {
+      if (ps.length < 2 || bookCards.size >= 3 || [...bookCards.values()].some((b) => Number(b.id) === id)) continue;
+      const p = ps[0], url = String(p.source_url || p.citation_url || p.url || '').replace(/[?#].*$/, '') || null;
+      if (!url) continue;
+      const author = searchedIn.get(id).author ?? p.book_author ?? p.author ?? null;
+      const ref = addWork({ id, title: p.title, author, url, religion: p.religion ?? null });
+      bookCards.set(ref, { id, title: readableTitle(p.title) || p.title, author, url, year: null, description: null, cover_url: `https://siftersearch.com/img/covers/${id}` });
+      added = true;
+    }
+    if (added) onEvent({ type: 'books', books: [...bookCards.values()].slice(0, 3) });
+  };
   const shownCards = () => new Set([...bookCards].flatMap(([ref, b]) => [ref, `id:${b.id}`]));   // works whose card already showed (a 'books' event)
   const citedWorkCards = (core) => {
     let added = false;
@@ -495,7 +531,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     const c1 = dropSearchedNote(dropOffers(dropNarration(blockquoteCards(sourceOnly(mendTemplates(dropDepth(core0), { found, works, books: bookCards, shown: shownCards(), carded, subject: subj })), found, carded)).text, { allowEmpty: true }).text), d = dropUncheckedDisclaimer(c1);
     const core = (d.dropped ? d.text : isUncheckedDisclaimer(c1) ? '' : c1).trim();   // a released piece that is only the disclaimer (lint never empties a text)
     if (!core) return '';
-    citedWorkCards(core);
+    citedWorkCards(core); quotedWorkCards(core);
     const ret = heldNowAll();
     const t = linkQuotes(fixQuoteSpeakers(restoreElisions(renderRefs(core, { found, works }), ret, { asked: asked0 }).text, ret).text, ret).text;
     const x = expandTemplates(markQuotes(t, ret).text, { found, works, books: bookCards, shown: shownCards(), carded, subject: subj }, { start: liveWidgets.length });
@@ -547,7 +583,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
       const voids = voided ? [] : contentAbsence(final);
       if (voids.length && round < maxRounds - 1 && calls < maxCalls) {
         voided = true; gate = false; streamed = false;
-        msgs.push({ role: 'assistant', content: final }, { role: 'user', content: contentAbsenceAsk(voids, emptyInWork(steps)) });
+        msgs.push({ role: 'assistant', content: final }, { role: 'user', content: contentAbsenceAsk(voids, emptyInWork(steps), deepQuoted(final, found)) });
         continue;
       }
       // the reader corrected a row and the reply still offers both readings there → once, apply the correction where the passages support it
@@ -632,7 +668,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   const flat = deep ? { text: final, heads: [] } : deHead(final);   // no depth marker → section heads become the paragraphs' first sentences
   final = flat.text;
   const { text: offerFree, offers } = dropOffers(final);   // offers are the pills' (worker/anis withOfferPill), never the prose's
-  citedWorkCards(final);   // a short reply never streamed: the work it names still gets its card (idempotent after a stream)
+  citedWorkCards(final); quotedWorkCards(final);   // a short reply never streamed: the work it names still gets its card (idempotent after a stream)
   // code does the grounding: refs → links, unverifiable quotations out, speakers fixed, quotations linked, no preamble
   const retrieved = [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
   sourceCarded = false; skipped = false;   // the whole reply is one text again (a non-streamed or replayed reply carries its own card)
