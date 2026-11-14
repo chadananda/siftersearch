@@ -534,7 +534,7 @@ async function settleGroup(copies, { pairs, runs, out, write, sample, repo, ops,
   const todo = losers.filter((c) => !(c.state === 'duplicate' && Number(c.dup_group) === g && (!c.meta || (c.meta.dedup?.verdict === 'duplicate' && c.meta.dedup.best === best.slug))));
   const evidence = pairs.filter((p) => copies.some((c) => name(c) === p.a) && copies.some((c) => name(c) === p.b) && p.same).map(({ a, b, by, containment, coverage }) => ({ a, b, by, containment, coverage }));
   const entry = { group: g, best: name(best), basis: pick.basis, reason: pick.reason, ambiguous: pick.ambiguous, evidence, eliminate: todo.map(name),
-    keep_on_air: bestLive ? [] : others.filter(live).map(name), merged: m.merged, conflicts: m.conflicts, status: bestLive ? 'eliminate' : 'pending',
+    keep_on_air: bestLive ? [] : others.filter((c) => live(c) && !reversedOf(c)).map(name), merged: m.merged, conflicts: m.conflicts, status: bestLive ? 'eliminate' : 'pending',
     copies: copies.map((c) => ({ copy: name(c), state: c.state, live: live(c), nisqa: copyQuality(c.meta).original, out: copyQuality(c.meta).remaster })) };
   if (pick.ambiguous) out.ambiguous.push({ group: g, best: entry.best, reason: pick.reason, copies: copies.map(name) });
   // nothing new: never rewrite the meta.json of a talk the pipeline may be working on
