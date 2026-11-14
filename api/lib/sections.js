@@ -5,9 +5,10 @@
 // source files so top-level parts whose own heading was not stored ("The Dispensation of Bahá'u'lláh") appear too.
 
 // A heading as a reader would name it: page markup out ("11 -<br><br>Lawḥ-i-Maqṣúd<br>**(Tablet of Maqṣúd)" →
-// "Lawḥ-i-Maqṣúd (Tablet of Maqṣúd)"), a leading item number dropped, edge punctuation trimmed.
+// "Lawḥ-i-Maqṣúd (Tablet of Maqṣúd)"), a leading item number dropped ("7 -Lawḥ-i-Dunyá(Tablet of the World)" too: no space after the
+// dash, the parenthesis glued — round 6), edge punctuation trimmed.
 const fold = (s) => String(s || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\*\*|__|(?<!\w)[*_](?=\S)|(?<=\S)[*_](?!\w)/g, '')
-  .replace(/^[\s\\\-–—#*_]+|[\s\\\-–—#*_]+$/g, '').replace(/^\d{1,4}\s*[-–—.:)]\s+(?=\p{L})/u, '').replace(/\s+/g, ' ').trim();
+  .replace(/^[\s\\\-–—#*_]+|[\s\\\-–—#*_]+$/g, '').replace(/^\d{1,4}\s*[-–—.:)]\s*(?=\p{L})/u, '').replace(/(\p{L})\((?=\p{L})/gu, '$1 (').replace(/\s+/g, ' ').trim();
 
 /** A stored heading as a reader would name it (markup, item number and edge punctuation out). */
 export const cleanHeading = fold;

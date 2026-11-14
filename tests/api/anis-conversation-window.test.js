@@ -51,7 +51,8 @@ describe('the conversation window', () => {
     await agentAnswer({ messages: THREAD, tools: { search: async () => [] }, create: async (p) => { seen.push(p); return { choices: [{ message: { content: 'x' } }] }; } });
     const sys = seen[0].messages[0].content;
     expect(sys).toMatch(/compile, revise, send, email or tabulate/);
-    expect(sys).toMatch(/every later correction/);
+    expect(sys).toMatch(/take the LATEST table row by row, keep every row and its number \(1…N, none missing, none merged/);
+    expect(sys).toMatch(/apply only the reader's corrections and any new research/);
     expect(sys).toMatch(/never claim something was not built or is not held when it is in this conversation/);
     expect(AGENT_SYSTEM).not.toMatch(/compile, revise, send/);   // the exception rides with the follow-up note only
   });

@@ -635,3 +635,45 @@ export function circularRows(text, passages = [], question = '') {
   if (!lists.size) return [];
   return rows.filter((r) => r.refs.length && r.refs.every((x) => lists.has(x))).map((r) => r.name);
 }
+
+// A REBUILT TABLE KEEPS EVERY ROW (round 6, 11-14 Íqán thread: "email me the final table" dropped row 2 (Vaḥíd) and moved his Nayríz facts into
+// row 1). numberedRows: the LAST markdown table in a text whose first column numbers its rows (≥2 rows) → [{ n, name, text }]. Pure.
+const stripLinks = (s) => String(s || '').replace(/\]\([^)]*\)/g, ']').replace(/https?:\/\/\S+/g, '');
+const nameKey = (c) => foldL(String(c || '').replace(/\*\*|__/g, '').replace(/\([^)]*\)/g, '')).replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+export function numberedRows(text) {
+  const lines = String(text || '').split('\n'), sep = (l) => /^\s*\|[\s:|-]+\|?\s*$/.test(l || '');
+  let best = null, cur = [];
+  const close = () => { if (cur.length >= 2) best = cur; cur = []; };
+  for (const l of lines) {
+    if (!/^\s*\|/.test(l)) { close(); continue; }
+    if (sep(l)) continue;
+    const cells = l.split('|').slice(1, -1).map((c) => c.trim());
+    const n = /^\d{1,3}$/.test(cells[0] || '') ? Number(cells[0]) : null;
+    if (n != null) cur.push({ n, name: cells[1] || '', text: stripLinks(cells.slice(1).join(' ')) });
+  }
+  close();
+  return best || [];
+}
+/** source table text, rebuilt table text → null (same rows) | { missing, added, renamed, moved } — every row's number and person kept, no facts
+ *  moved between rows (≥2 words found only in another source row, new to this one). */
+export function tableDrift(sourceText, rebuiltText) {
+  const src = numberedRows(sourceText), out = numberedRows(rebuiltText);
+  if (src.length < 2 || out.length < 2) return null;
+  const S = new Map(src.map((r) => [r.n, r])), O = new Map(out.map((r) => [r.n, r]));
+  const missing = src.filter((r) => !O.has(r.n)).map((r) => ({ n: r.n, name: nameKey(r.name) }));
+  const added = out.filter((r) => !S.has(r.n)).map((r) => r.n);
+  const renamed = out.filter((r) => S.has(r.n) && nameKey(S.get(r.n).name) !== nameKey(r.name)).map((r) => ({ n: r.n, was: nameKey(S.get(r.n).name), now: nameKey(r.name) }));
+  const words = (s) => new Set(foldL(s).split(/[^\p{L}]+/u).filter((w) => w.length >= 5));
+  const W = new Map(src.map((r) => [r.n, words(r.text)])), count = new Map();
+  for (const ws of W.values()) for (const w of ws) count.set(w, (count.get(w) || 0) + 1);
+  const moved = [];
+  for (const r of out) {
+    const own = W.get(r.n) || new Set(), now = words(r.text);
+    for (const [j, ws] of W) {
+      if (j === r.n) continue;
+      const took = [...ws].filter((w) => count.get(w) === 1 && now.has(w) && !own.has(w));
+      if (took.length >= 2) moved.push({ n: r.n, from: j, words: took.slice(0, 4) });
+    }
+  }
+  return missing.length || added.length || renamed.length || moved.length ? { missing, added, renamed, moved } : null;
+}

@@ -71,7 +71,8 @@ const FRESH_MS = 3 * 864e5;
 // a tool whose answer's SHAPE changed gets a new key, so no copy stored before the change is ever served (11-14 replay: a sourceOf copy
 // from before passages carried their roles reached the writer — holders, citing works and a study, no source card)
 // roles2 (round 5): the source passage carries its own writer and place, and the tower no longer names a study quoting the Writings
-export const TOOL_SHAPE = { sourceOf: 'roles2' };
+// roles3 (round 6): roles2 was filled by the PRE-round-5 tower (Buck's study as source, no place) — a new key so the deployed tower's rows are read
+export const TOOL_SHAPE = { sourceOf: 'roles3' };
 export const toolKey = async (fn, args) => `tool/${fn}${TOOL_SHAPE[fn] ? `@${TOOL_SHAPE[fn]}` : ''}/${[...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(args ?? []))))]
   .map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 40)}`;
 

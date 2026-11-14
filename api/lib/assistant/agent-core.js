@@ -3,7 +3,7 @@
 import { toolRunner, TOOL_CHARS } from './tool-runner.js';
 import { workNotes as workNotesLookup, asPassage, SAME_QUESTION } from './tool-defs.js';
 import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
-import { circularRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer } from './lint.js';
+import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer } from './lint.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
 import { expandTemplates } from './widgets/templates.js';
@@ -28,6 +28,15 @@ const nudge = (n) => `You have run ${n} library search${n === 1 ? '' : 'es'}. Be
  *  VERBATIM, newlines kept: up to `max` messages (the widget sends 12), newest first within `budget` chars; the latest message and the
  *  last two replies always whole; an older turn past the budget keeps its head and tail at line breaks with a marked gap, and once
  *  under `minPart` chars are left the older turns are dropped. Starts on a reader's turn. Pure. */
+/** The re-ask for a rebuilt table that lost, renumbered or merged rows (lint.js tableDrift). */
+export const driftAsk = (d) => `(note from the library, not the reader) Your table does not keep the rows of the latest table in this conversation.${d.missing.length ? ` Missing: ${d.missing.map((m) => `row ${m.n} (${m.name})`).join(', ')}.` : ''}${d.renamed.length ? ` Row number now names a different person: ${d.renamed.map((r) => `row ${r.n} was ${r.was}, now ${r.now}`).join('; ')}.` : ''}${d.added.length ? ` New row numbers: ${d.added.join(', ')}.` : ''}${d.moved.length ? ` Facts moved into another person's row: ${d.moved.map((m) => `row ${m.n} took row ${m.from}'s (${m.words.join(', ')})`).join('; ')}.` : ''} Write the whole table again: take the latest table row by row, keep every row and its number (1…N), apply only the reader's corrections and any new research to the row they concern — unless the reader asked to remove a row.`;
+/** A compile/revise/email turn's table vs the latest numbered table of the conversation (≥2 rows) → tableDrift, or null. */
+export function rebuiltDrift(messages = [], final = '') {
+  const prior = [...messages].reverse().find((m) => m.role === 'assistant' && numberedRows(m.content).length >= 2);
+  if (!prior) return null;
+  const out = numberedRows(final), src = numberedRows(prior.content);
+  return out.length >= Math.max(2, Math.ceil(src.length / 2)) ? tableDrift(prior.content, final) : null;   // a one-row correction is not a rebuild
+}
 /** The re-ask for circular identification rows (lint.js circularRows). */
 export const circularAsk = (names) => `(note from the library, not the reader) These rows cite only the text being explained — the list that NAMES them — as evidence of who they were: ${names.join('; ')}. Naming is not evidence. For EACH of them, run fused_search with about: "history" on the name and its variants (with diacritics and without, and the short name alone, e.g. "Turshízí", "Khu'í") — Nabíl's narrative (The Dawn-Breakers), God Passes By, Balyuzi, Momen — then write the whole table again: every row's evidence a passage that DESCRIBES the person (a role, an event, a fate), or "not identified in the library (searched: <the names you searched>)". Never cite the text being explained as evidence of who someone was.`;
 export const CONVO_BUDGET = 60000, CONVO_MAX = 12;
@@ -317,13 +326,13 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   };
   const convo = convoWindow(messages);
   // a turn inside a conversation answers its one new point (11-12: a follow-up objection came back as a 550–700-word survey)
-  const followUp = convo.some((m) => m.role === 'assistant') ? `\n\nTHIS TURN CONTINUES A CONVERSATION. The reader has read your earlier replies: answer only the new point, in about 150–250 words — a direct answer, then the 2–3 passages that settle it. Do not repeat or re-survey what earlier replies covered; more is offered under the reply. The one exception: when the reader asks you to compile, revise, send, email or tabulate what was built earlier (\"email me the final table\", \"put it in a document\"), build it IN FULL from the earlier replies above, every row, with every later correction the reader or you made applied — no new survey, no thinner version, and never claim something was not built or is not held when it is in this conversation. Never say an earlier reply was cut off, incomplete or wrong unless a passage you hold now shows it.` : '';
+  const followUp = convo.some((m) => m.role === 'assistant') ? `\n\nTHIS TURN CONTINUES A CONVERSATION. The reader has read your earlier replies: answer only the new point, in about 150–250 words — a direct answer, then the 2–3 passages that settle it. Do not repeat or re-survey what earlier replies covered; more is offered under the reply. The one exception: when the reader asks you to compile, revise, send, email or tabulate what was built earlier (\"email me the final table\", \"put it in a document\"), build it IN FULL from the earlier replies above: take the LATEST table row by row, keep every row and its number (1…N, none missing, none merged — each person's facts stay in his own row), apply only the reader's corrections and any new research to the rows they concern — no new survey, no thinner version, and never claim something was not built or is not held when it is in this conversation. Never say an earlier reply was cut off, incomplete or wrong unless a passage you hold now shows it.` : '';
   const msgs = [{ role: 'system', content: frame ? `${AGENT_SYSTEM}${followUp}\n\nTHIS CHANNEL'S REPLY FRAME (it governs length and tone; it overrides the lengths above): ${frame}` : `${AGENT_SYSTEM}${followUp}` }, ...convo];
   // per-turn context rides in the reader's turn (the system prompt stays cached): the TRADITION line + the reader's bio, then held research
   const turnNote = [firstVisit ? FIRST_VISIT : null, reader, heldText].filter(Boolean).join('\n\n');
   if (turnNote) { const u = msgs.findLastIndex((m) => m.role === 'user'); msgs[u] = { ...msgs[u], content: `${msgs[u].content}\n\n---\n${turnNote}` }; }
   const steps = [], usage = { in: 0, out: 0 };
-  let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false, capped = false, replanned = false, circled = false;
+  let calls = 0, final = '', firstToolMs = null, nudged = false, streamed = false, capped = false, replanned = false, circled = false, drifted = false;
   // the answering round streams a sentence at a time; only sentences whose quotations are in a passage held are shown
   const asked0 = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const held0 = () => [...found.values()].map((p) => ({ ...p, source_title: p.title }));
@@ -435,6 +444,13 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
       if (circ.length && round < maxRounds - 1 && calls < maxCalls) {
         circled = true; gate = false; streamed = false;
         msgs.push({ role: 'assistant', content: final }, { role: 'user', content: circularAsk(circ) });
+        continue;
+      }
+      // a rebuilt table (compile/revise/email, round 6) keeps the latest table's rows 1…N, each its own person and facts → once, rewrite it
+      const drift = drifted ? null : rebuiltDrift(messages, final);
+      if (drift && round < maxRounds - 1 && calls < maxCalls) {
+        drifted = true; gate = false; streamed = false;
+        msgs.push({ role: 'assistant', content: final }, { role: 'user', content: driftAsk(drift) });
         continue;
       }
       // an answer that ends on a plan ("I'll check…") or is only narration is unfinished: once, the agent writes it from what it holds, with no tools

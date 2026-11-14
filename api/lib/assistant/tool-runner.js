@@ -66,12 +66,23 @@ export function sourceLine(source, original = null) {
 // 'source' is set aside, and a core passage the tool returned that holds the words (score ≥ 0.9: the quotation's own words) takes its place.
 const coreSource = (p) => !misfiled(p) && (!sourceTier(p) || ['writings', 'guardian'].includes(sourceTier(p)));
 const HOLDS = 0.9;
-export function sourceAnswer(list = []) {
+// A SOURCE CARD HOLDS THE QUOTED WORDS (round 6, 11-14): the passage shown as the source must contain the quotation — at least 90% of its
+// distinct words (accents, case, punctuation and quote marks folded; "behoveth"/"behooveth" spellings tolerated by the 10%). A passage that
+// does not is dropped and the next core holder is taken. Pure.
+const qWords = (s) => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/['’‘ʼ`]/g, '').split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+export function holdsWords(text, quotation) {
+  const want = [...new Set(qWords(String(quotation || '').replace(/\([^)]*\)\s*$/, '')))];
+  if (!want.length) return true;
+  const have = new Set(qWords(text));
+  return want.filter((w) => have.has(w)).length / want.length >= HOLDS;
+}
+export function sourceAnswer(list = [], quotation = null) {
   const ps = (list || []).filter(Boolean);
   if (!ps.some((p) => p.role)) return ps;
+  const holds = (p) => !quotation || holdsWords(p?.text, quotation);
   const named = ps.find((p) => p.role === 'source');
-  const source = named && coreSource(named) ? named
-    : named ? (((x) => x && { ...x, role: 'source' })(ps.find((p) => p !== named && ['cited_by', 'holder'].includes(p.role) && Number(p.score) >= HOLDS && sourceTier(p) && coreSource(p)))) : null;
+  const source = named && coreSource(named) && holds(named) ? named
+    : named ? (((x) => x && { ...x, role: 'source' })(ps.find((p) => p !== named && ['cited_by', 'holder'].includes(p.role) && Number(p.score) >= HOLDS && sourceTier(p) && coreSource(p) && holds(p)))) : null;
   if (!source) return ps.filter((p) => p.role === 'holder' || p.role === 'near').slice(0, 2)
     .map((p) => ({ ...p, note: 'NOT the quoted words — a near passage; say plainly that no published source holds the exact wording' }));
   const orig = ps.find((p) => p.role === 'original' && p.document_id !== source.document_id);
@@ -252,7 +263,7 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
       return show((await impl.trace(p)).map((x) => add(x)));
     },
     quotation_candidates: async ({ quotation }) => {
-      const r = show(sourceAnswer(await impl.sourceOf(quotation)).map((x) => add(x)));
+      const r = show(sourceAnswer(await impl.sourceOf(quotation), quotation).map((x) => add(x)));
       return r === '(nothing)' ? `no published source found for that wording — ${searchName} with its most distinctive phrase; if that finds nothing either, say plainly that the library holds no source for it` : r;
     },
     web_search: async ({ query }) => {
