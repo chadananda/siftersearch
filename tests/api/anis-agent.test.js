@@ -183,7 +183,7 @@ describe('source questions', async () => {
   });
   it('a source answer carries its book card by code, and the writer sees only the source and the original', async () => {
     const cards = [], seen = [];
-    const bookCard = async ({ title }) => ({ kind: 'work', doc: { id: 3 }, book: { id: 3, title, author: "Bahá'u'lláh", url: 'https://oceanlibrary.com/gleanings', cover_url: 'https://siftersearch.com/img/covers/3' } });
+    const bookCard = async ({ title }) => ({ kind: 'work', doc: { id: 3 }, book: { id: 3, title, author: "Bahá'u'lláh", url: 'https://oceanlibrary.com/gleanings', cover_url: 'https://anis.oceanlibrary.com/img/covers/3' } });
     const create = async (p) => { seen.push(p.messages.filter((m) => m.role === 'tool').map((m) => m.content).join('\n'));
       return seen.length === 1 ? { choices: [{ message: { content: '', tool_calls: [{ id: 'a', function: { name: 'quotation_candidates', arguments: JSON.stringify({ quotation: Q }) } }] } }] }
         : { choices: [{ message: { content: `{{quote P1}}\n\nFrom [Gleanings from the Writings of Bahá’u’lláh](https://oceanlibrary.com/gleanings?paraId=p117), quoting the [Lawḥ-i-Maqṣúd](https://oceanoflights.org/maqsud#p4).` } }] }; };
@@ -201,7 +201,7 @@ describe('source questions', async () => {
     const { bookCard, ...noCard } = T;
     const r = await agentAnswer({ messages: [{ role: 'user', content: `Where does "${Q}" come from?` }], tools: { ...noCard, sourceOf: async () => SA },
       onEvent: (e) => { if (e.type === 'books') cards.push(e.books); }, create: scriptedSource(`[[B1]]: "${Q}" [[P1]]`) });
-    expect(cards.at(-1)?.[0]).toMatchObject({ id: 3, url: 'https://oceanlibrary.com/gleanings', cover_url: 'https://siftersearch.com/img/covers/3' });
+    expect(cards.at(-1)?.[0]).toMatchObject({ id: 3, url: 'https://oceanlibrary.com/gleanings', cover_url: 'https://anis.oceanlibrary.com/img/covers/3' });
     expect(r.reply).toContain('(https://oceanlibrary.com/gleanings)');
   });
   // Chad 11-14 replay: research held for the question (an earlier answer: Gleanings ¶260 + ¶261, a UHJ letter) answered with NO trace —
@@ -365,7 +365,7 @@ describe('agent: a cited work shows its book card', () => {
     await agentAnswer({ messages: [{ role: 'user', content: "What is the most important Baha'i doctrinal book?" }], tools, onEvent: (e) => ev.push(e), create });
     const books = ev.filter((e) => e.type === 'books');
     expect(books).toHaveLength(1);
-    expect(books[0].books[0]).toMatchObject({ id: 1, title: 'The Kitáb-i-Íqán', cover_url: 'https://siftersearch.com/img/covers/1' });
+    expect(books[0].books[0]).toMatchObject({ id: 1, title: 'The Kitáb-i-Íqán', cover_url: 'https://anis.oceanlibrary.com/img/covers/1' });
   });
 });
 

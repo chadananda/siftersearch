@@ -6,6 +6,7 @@ import { createSentenceGate, dropUnverified, fixQuoteSpeakers, linkQuotes, markQ
 import { circularRows, tableDrift, numberedRows, dropNarration, dropSearchOffer, dropUncheckedDisclaimer, endsOnPlan, isUncheckedDisclaimer, dropDanglingLeadIn, dropCutOff, leadInAt, unholdTexts, unbackedAbsence, contentAbsence, emptyInWork, conflictClaims, danglingOpens, askedSource, unappliedCorrection, dropSearchedNote, dropRebuildPreamble, fixCounts, wantsTable, dropSourceSpeculation, dropLinkDebris, duplicateRows, noteDuplicateRows, recapitalise, pointsAbove, dropAbovePointer, unlinkSiteRoots, rebuildsTable, isRebuildMeta } from './lint.js';
 import { DEPTH, hasDepth, dropDepth, dropOffers, deHead, liveDeHead, firstQuoted, leadSource, leadAsk, reorderQuotes } from './reply-form.js';
 import { sentencesOf } from './sentences.js';
+import { ANIS_ORIGIN } from '../anis-links.js';
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
 import { expandTemplates, mendTemplates, blockquoteCards } from './widgets/templates.js';
@@ -297,7 +298,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
     if (!line && bookCards.size < 3) {
       const url = String(src.source_url || '').replace(/[?#].*$/, '') || null;
       const ref = addWork({ id: Number(src.document_id), title: src.title, author: src.author || null, url, religion: src.religion ?? null });
-      bookCards.set(ref, { id: Number(src.document_id), title: src.title, author: src.author ?? null, url, year: null, description: null, cover_url: `https://siftersearch.com/img/covers/${Number(src.document_id)}` });
+      bookCards.set(ref, { id: Number(src.document_id), title: src.title, author: src.author ?? null, url, year: null, description: null, cover_url: `${ANIS_ORIGIN}/img/covers/${Number(src.document_id)}` });
       onEvent({ type: 'books', books: [...bookCards.values()].slice(0, 3) });
       line = `[${ref}] is the book this passage is in: the reader sees its card; write nothing more about it (the From line names the work).`;
     }
@@ -430,7 +431,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
       if (!url) continue;
       const author = searchedIn.get(id).author ?? p.book_author ?? p.author ?? null;
       const ref = addWork({ id, title: p.title, author, url, religion: p.religion ?? null });
-      bookCards.set(ref, { id, title: readableTitle(p.title) || p.title, author, url, year: null, description: null, cover_url: `https://siftersearch.com/img/covers/${id}` });
+      bookCards.set(ref, { id, title: readableTitle(p.title) || p.title, author, url, year: null, description: null, cover_url: `${ANIS_ORIGIN}/img/covers/${id}` });
       added = true;
     }
     if (added) onEvent({ type: 'books', books: [...bookCards.values()].slice(0, 3) });
@@ -442,7 +443,7 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
       const w = works.get(ref);
       if (bookCards.has(ref) || [...bookCards.values()].some((b) => Number(b.id) === Number(w?.id)) || bookCards.size >= 3 || !w?.url || !(Number(w.id) > 0) || String(w.id).includes(':')) continue;
       bookCards.set(ref, { id: Number(w.id), title: readableTitle(w.title) || w.title, author: w.author ?? null, url: w.url, year: null, description: null,
-        cover_url: `https://siftersearch.com/img/covers/${Number(w.id)}` });
+        cover_url: `${ANIS_ORIGIN}/img/covers/${Number(w.id)}` });
       added = true;
     }
     if (added) onEvent({ type: 'books', books: [...bookCards.values()].slice(0, 3) });
