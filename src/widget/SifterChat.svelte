@@ -314,23 +314,28 @@
     const flushQuote = () => {
       if (quoteRun.length) { out.push('<blockquote>' + quoteRun.join('<br>') + '</blockquote>'); quoteRun = []; }
     };
+    let listRun = [];
+    const flushList = () => { if (listRun.length) { out.push('<span class="ul">' + listRun.join('') + '</span>'); listRun = []; } };
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i], table = tableAt(lines, i, inline);
       if (table) { flushQuote(); out.push(table.html); i = table.next - 1; continue; }
       const bq = line.match(/^\s*&gt;\s?(.*)$/);
-      if (bq) { quoteRun.push(inline(bq[1])); continue; }
+      if (bq) { flushList(); quoteRun.push(inline(bq[1])); continue; }
       if (quoteRun.length) {   // the quote's "— Title, place" line joins the quote's last line, no gap (Chad 11-12)
         let j = i; while (j < lines.length && !lines[j].trim()) j++;
         if (/^\s*[—–]\s/.test(lines[j] || '')) { quoteRun[quoteRun.length - 1] += ' <span class="qref">' + inline(lines[j].trim()) + '</span>'; i = j; continue; }
       }
       flushQuote();
       const li = line.match(/^\s*[-•]\s+(.*)$/);
-      if (li) { out.push('<span class="li">• ' + inline(li[1]) + '</span>'); continue; }
-      out.push(inline(line));
+      if (li) { listRun.push('<span class="li">• ' + inline(li[1]) + '</span>'); continue; }
+      if (listRun.length && !line.trim()) continue;   // a blank line between items (a "loose" list) is no gap (Chad 11-13)
+      flushList();
+      const h = line.match(/^\s*\*\*([^*\n]{1,120})\*\*:?\s*$/);   // a bold line alone is a heading: space above, tight to its text (Chad 11-03)
+      out.push(h ? '<span class="h">' + inline(h[1]) + '</span>' : inline(line));
     }
-    flushQuote();
+    flushQuote(); flushList();
     // never waste space (Chad 11-12): one blank line at most, none around a quote or a table (they carry their own margin)
-    const html = out.join('\n').replace(/\n{3,}/g, '\n\n').replace(/\n+(<blockquote|<div class="rt")/g, '$1').replace(/(<\/blockquote>|<\/div><\/div>)\n+/g, '$1').trim();
+    const html = out.join('\n').replace(/\n{3,}/g, '\n\n').replace(/\n+(<blockquote|<div class="rt"|<span class="ul"|<span class="h")/g, '$1').replace(/(<\/blockquote>|<\/div><\/div>|<span class="ul">.*?<\/span><\/span>|<span class="h">.*?<\/span>)\n+/g, '$1').trim();
     return styleQuotes(html);   // quoted words styled apart from Anís's own (Chad 11-04)
   }
   // Query-prep (perceived speed): while the user types their FIRST question, debounce
@@ -1014,7 +1019,11 @@
     .bubble :global(.rt-rows) { display: block; white-space: normal; }
   }
   .bubble :global(.qref) { font-style: normal; font-size: .86em; opacity: .85;  }
+  .bubble :global(.ul) { display: block; margin: .45em 0 .55em; }
+  .bubble :global(.h) { display: block; font-weight: 700; margin: 1em 0 .3em; }
+  .bubble :global(.h:first-child) { margin-top: 0; }
   .bubble :global(.li) { display: block; padding-left: .95em; text-indent: -0.95em; }
+  .bubble :global(.li + .li) { margin-top: .2em; }
 
   /* Streaming caret — a breathing quill of accent-to-gold light. */
   .caret {
