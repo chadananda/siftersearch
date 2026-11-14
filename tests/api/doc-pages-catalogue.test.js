@@ -4,6 +4,7 @@ import { mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { docPageSlug, docIdFromSlug, docPageUrl } from '../../api/lib/library/doc-slug.js';
+import { collaboratorUrl, docHome } from '../../api/lib/library/doc-home.js';
 import { shapeDocPages, readDocPages } from '../../api/lib/library/doc-pages.js';
 
 describe('doc slug', () => {
@@ -78,5 +79,14 @@ describe('GET /api/library/doc-pages', () => {
     const { readFileSync } = await import('fs');
     const src = readFileSync(join(import.meta.dirname, '../../api/routes/library.js'), 'utf8');
     expect(src).toMatch(/cached: \{ type: 'boolean', default: false \}/);
+  });
+});
+
+describe('docHome', () => {
+  const both = { id: 5, title: 'T', source_url: 'https://bahai-library.com/t', metadata: { bookid: 'AB_T' } };
+  it('collaborator by config order, else the /doc page; prefer puts the reader\'s site first', () => {
+    expect(collaboratorUrl(both)).toBe('https://oceanoflights.org/ab-t/');
+    expect(collaboratorUrl(both, { prefer: ['bahai-library.com'] })).toBe('https://bahai-library.com/t');
+    expect(docHome({ id: 6, title: 'Only Here' })).toBe('https://anis.oceanlibrary.com/doc/only-here-6');
   });
 });
