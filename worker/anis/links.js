@@ -3,6 +3,7 @@
 import { findSpan, siteOffset } from '../../api/lib/ocean-range.js';
 import { textFragmentUrl, dropMarkers } from '../../api/lib/ocean-links.js';
 import { anisText } from '../../api/lib/anis-links.js';
+import { unwrapMarkers } from '../../api/lib/assistant/widgets/templates.js';
 
 const OL_LINK = /https:\/\/(?:www\.)?oceanlibrary\.com\/([^/?#\s"'<>)\]]+)\/?\?paraId=([A-Za-z0-9_.-]+)(?:&selectionString=([^#\s"'<>)\]&]+))?(?:#~q=([^\s"'<>)\]]+))?/g;
 const OOL_QUOTE = /https:\/\/(?:www\.)?oceanoflights\.org\/([^?#\s"'<>)\]]+?)\/?#(?:~d=\d+)?~q=([^\s"'<>)\]]+)/g;
@@ -26,7 +27,7 @@ export function anchorsOf(passages) {
 export function finishLinks(reply, passages) {
   const anchors = anchorsOf(passages);
   let narrowed = 0, unplaced = 0;
-  let s = String(reply ?? '').replace(OL_LINK, (whole, slug, para, sel, q) => {
+  let s = unwrapMarkers(String(reply ?? '')).replace(OL_LINK, (whole, slug, para, sel, q) => {
     const a = anchors.get(`${dec(slug)}|${para}`), base = `https://oceanlibrary.com/${slug}/?paraId=${para}`;
     const quote = q ? dec(q) : null;
     const span = a && quote ? findSpan(a.text, quote) : null;
@@ -47,7 +48,7 @@ export function finishLinks(reply, passages) {
 export function templateFilter() {
   let held = '';
   return (s) => {
-    let t = (held + String(s ?? '')).replace(/\{\{[^{}\n]*\}\}/g, ''); held = '';
+    let t = unwrapMarkers(held + String(s ?? '')).replace(/\{\{[^{}\n]*\}\}/g, ''); held = '';   // a wrapped marker that reached here → its quote as typed
     const i = t.lastIndexOf('{{');
     if (i >= 0 && !t.slice(i).includes('\n')) { held = t.slice(i); t = t.slice(0, i); }
     else if (t.endsWith('{')) { held = '{'; t = t.slice(0, -1); }

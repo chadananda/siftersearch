@@ -25,18 +25,35 @@ const remember = (data, carded) => { for (const x of data.kind === 'scene' ? dat
 // else reads the text: its P/B numbers → the template on its own line (the card), when that card can be drawn; otherwise the marker goes
 // and its inside stays as typed (an ordinary blockquote). Raw text ([[P#]] not yet rendered). Pure.
 const WRAPPED = /\{\{[ \t]*([a-z_]+)[ \t]*(?::[ \t]*|(?=\n))([\s\S]*?)\}\}/g;
+// a wrapped marker's inside → { ids: the P/B numbers closing it (else the first [[P#]] of its attribution), body: the quote as typed }.
+// Any attribution form stays in the body: "— [[P7]]", "— [Title](url)", "*— Title*", "([Title](url))", a bare source line.
+const insideOf = (inner) => {
+  const tail = /((?:[\s,]+[PB]\d+|\n[ \t]*\[\[[PB]\d+\]\])+)\s*$/.exec(` ${inner}`);   // the numbers closing the marker ("P7", "P1, P4", "[[P7]]" on its own line); "— [[P7]]" is attribution
+  const body = (tail ? ` ${inner}`.slice(0, tail.index) : inner).trim();
+  const closing = tail ? [...new Set([...tail[1].matchAll(/[PB]\d+/g)].map((x) => x[0]))] : [];
+  return { body, ids: closing.length ? closing : [...body.matchAll(/\[\[([PB]\d+)\]\]/g)].map((x) => x[1]).slice(0, 1) };
+};
 export function mendTemplates(text, refs) {
   const t = String(text || '');
   if (!/\{\{[ \t]*[a-z_]+[ \t]*(?::|\n)/.test(t)) return t;
   return t.replace(WRAPPED, (m, kind, inner) => {
-    const tail = /((?:[\s,]+[PB]\d+)+)\s*$/.exec(` ${inner}`);   // bare P-numbers closing the marker; a [[P7]] attribution stays in the quote
-    const ids = tail ? [...new Set([...tail[1].matchAll(/[PB]\d+/g)].map((x) => x[0]))] : [];
-    const body = (tail ? ` ${inner}`.slice(0, tail.index) : inner).trim();
-    const fromBody = ids.length ? ids : [...body.matchAll(/\[\[([PB]\d+)\]\]/g)].map((x) => x[1]).slice(0, 1);
-    const built = WIDGETS[kind] && fromBody.length ? WIDGETS[kind].fromRefs?.(fromBody, refs, []) : null;
-    if (built && unseen(built, refs?.carded)) return `\n\n{{${kind} ${fromBody.join(' ')}}}\n\n`;
+    const { body, ids } = insideOf(inner);
+    const built = WIDGETS[kind] && ids.length ? WIDGETS[kind].fromRefs?.(ids, refs, []) : null;
+    if (built && unseen(built, refs?.carded)) return `\n\n{{${kind} ${ids.join(' ')}}}\n\n`;
     return body ? `\n\n${body}\n\n` : '';
   }).replace(/\n{3,}/g, '\n\n');
+}
+
+// THE LAST GUARD (live 11-14, edge a058f647: 8 of 21 replies showed `{{quote:\n\n> "…"\n> — [Title](url)\n\nP3}}` raw in their text
+// events): finished text (a streamed piece, the final reply) never shows a marker's braces. A wrapped marker → its inside as typed (the
+// blockquote, attribution kept); a marker split across pieces → its opener "{{quote:" and its closing "P3}}" line go. Pure, idempotent.
+export function unwrapMarkers(text) {
+  const t = String(text ?? '');
+  if (!/\{\{|\}\}/.test(t)) return t;
+  return t.replace(WRAPPED, (m, kind, inner) => { const { body } = insideOf(inner); return body ? `\n\n${body}\n\n` : ''; })
+    .replace(/\{\{[ \t]*[a-z_]+[ \t]*:[ \t]*/g, '')
+    .replace(/(^|\n)[ \t]*(?:\[{0,2}[PB]\d+\]{0,2}[ \t,]*)+\}\}[ \t]*(?=\n|$)/g, '$1')   // a split marker's closing line
+    .replace(/\n{3,}/g, '\n\n');
 }
 
 export function expandTemplates(text, refs, { start = 0 } = {}) {
