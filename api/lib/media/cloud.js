@@ -154,7 +154,15 @@ export function maxJobsFor(g) {
   if (cpu) return Math.max(6, Math.min(12, Math.floor(cpu / 2)));
   return Number(g?.memoryInGb) >= 32 ? 8 : 6;
 }
-export const listPods = (deps) => rest('GET', '/pods', null, deps);
+async function gql(query, { fetchFn = fetch } = {}) {
+  const r = await fetchRetry('https://api.runpod.io/graphql', { method: 'POST', headers: { Authorization: `Bearer ${key()}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) }, { fetchFn });
+  const j = await r.json();
+  if (j.errors || !j.data) throw new Error(`runpod graphql → ${j.errors?.map((e) => e.message).join(';') || r.status}`);
+  return j.data;
+}
+// 11-14: REST answered 429 "rate limit exceeded for the day window" for days; the reaper then saw nothing and could kill nothing. GraphQL has its own limit.
+export const listPods = (deps) => rest('GET', '/pods', null, deps)
+  .catch(() => gql('query { myself { pods { id name desiredStatus costPerHr lastStartedAt } } }', deps).then((d) => d.myself?.pods || []));
 export const getPod = (id, deps) => rest('GET', `/pods/${id}`, null, deps);
 /** REST can report RUNNING with empty networking after the pod is already up.
  * Runtime ports are authoritative; otherwise a healthy GPU bills while we wait. */
@@ -165,7 +173,8 @@ export async function getPodConnection(id,{fetchFn=fetch}={}){
   const p=j.data?.myself?.pods?.find(p=>p.id===id),port=p?.runtime?.ports?.find(x=>x.isIpPublic&&Number(x.privatePort)===22&&x.type==='tcp');
   return port?{publicIp:port.ip,portMappings:{22:port.publicPort},machine:p.machine||{}}:{};
 }
-export const terminatePod = (id, deps) => rest('DELETE', `/pods/${id}`, null, deps).catch((err) => (/404/.test(err.message) ? {} : Promise.reject(err)));
+export const terminatePod = (id, deps) => rest('DELETE', `/pods/${id}`, null, deps).catch((err) => (/404/.test(err.message) ? {}
+  : gql(`mutation { podTerminate(input: { podId: ${JSON.stringify(String(id))} }) }`, deps).then(() => ({}))));
 
 /** Did this pod ever take work? A spool pod counts jobs_assigned; an AGENT pod pulls from the edge queue (tower never assigns it), so its
  *  proof is a queue heartbeat (agent_seen: it held a lease), a gpu step tower adopted from it (step_log), or a talk it ran (done.gpu).
