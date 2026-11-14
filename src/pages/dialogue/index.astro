@@ -1,9 +1,11 @@
 ---
 // Dialog index — live listing from API (published_conversations table).
 // No prerender — content is live, no rebuild needed to add/update dialogs.
+// On anis.oceanlibrary.com (/discuss, Chad 11-14): Anís chrome + canonical there; category/tag/assessment (siftersearch only) are plain labels.
 import Layout from '../../layouts/Layout.astro';
 import LiquidBackground from '../../components/LiquidBackground.svelte';
-import NavBar from '../../components/common/NavBar.svelte';
+import SiteNav from '../../components/anis/SiteNav.astro';
+import { isAnisHost, ANIS_ORIGIN } from '../../lib/anis-host.js';
 import { smartQuotes as sq } from '../../lib/smart-quotes.js';
 import { cardUrl, cardSet } from '../../lib/imagekit.js';
 
@@ -16,6 +18,10 @@ const stripMd = (s: string) => sq(
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const res = await fetch(`${API_BASE}/api/v1/dialogs`);
+const anis = isAnisHost(Astro.url);
+if (anis && !res.ok) return new Response('Discussions temporarily unavailable', { status: 503, headers: { 'Retry-After': '60', 'Cache-Control': 'no-store' } });
+const L = anis ? 'span' : 'a';
+const only = (p) => (anis ? undefined : p);
 const { dialogs = [] } = res.ok ? await res.json() : {};
 
 // Normalize API rows — tags_json is a JSON string
@@ -62,12 +68,16 @@ const avgScore = dialogs_norm.length
   ? Math.round(dialogs_norm.reduce((s, d) => s + (d.score || 0), 0) / dialogs_norm.length)
   : 0;
 
+// on the Anís host: the list as JSON-LD (search engines read the index as a collection)
+const indexLd = anis ? { "@context": "https://schema.org", "@type": "CollectionPage", "@id": `${ANIS_ORIGIN}/discuss`, "url": `${ANIS_ORIGIN}/discuss`, "name": "Discussions with Anís",
+  "mainEntity": { "@type": "ItemList", "itemListElement": dialogs_norm.map((d, i) => ({ "@type": "ListItem", "position": i + 1, "url": `${ANIS_ORIGIN}/discuss/${d.slug}`, "name": d.title })) } } : null;
 const description = `Long-form dialogues exploring ${totalDialogs} deep questions in Bahá'í teachings, comparative theology, and philosophy. Each conversation goes ten or more rounds — questioning assumptions, examining word definitions across centuries, and weighing actual textual evidence.`;
 ---
 
-<Layout title="Dialog — Deep Conversations on Faith, Meaning, and Text" description={description}>
+<Layout title={anis ? 'Discussions with Anís — Deep Conversations on Faith, Meaning, and Text' : 'Dialog — Deep Conversations on Faith, Meaning, and Text'} description={description} canonical={anis ? `${ANIS_ORIGIN}/discuss` : undefined}>
   <LiquidBackground client:only="svelte" />
-  <NavBar currentPage="dialog" client:load />
+  {indexLd && <script type="application/ld+json" slot="head" set:html={JSON.stringify(indexLd)} />}
+  <SiteNav currentPage="dialogue" />
 
   <main class="dialog-index">
     <header class="hero">
@@ -97,7 +107,7 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
         </svg>
       </div>
       <h1>Dialogues with the Ocean</h1>
-      <p class="hero-tag">Meaningful interfaith conversations with the Ocean library. <a class="meta-link" href="/dialogue/assessment">How these are assessed →</a></p>
+      <p class="hero-tag">Meaningful interfaith conversations with the Ocean library.{!anis && <> <a class="meta-link" href="/dialogue/assessment">How these are assessed →</a></>}</p>
       <div class="hero-stats">
         <div><strong>{totalDialogs}</strong><span>conversations</span></div>
         <div><strong>{totalRounds}</strong><span>rounds of follow-up</span></div>
@@ -110,10 +120,10 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
         <h2 class="section-label">Tags</h2>
         <div class="tags">
           {tagList.map(([tag, count]) => (
-            <a class="tag-pill" href={`/dialogue/tag/${encodeURIComponent(tag)}/`} data-count={count}>
+            <L class="tag-pill" href={only(`/dialogue/tag/${encodeURIComponent(tag)}/`)} data-count={count}>
               <span class="tag-text">{tag}</span>
               <span class="tag-count">{count}</span>
-            </a>
+            </L>
           ))}
         </div>
       </section>
@@ -152,7 +162,7 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
                 </div>
               )}
               <div class="card-body">
-                <a class="card-topic" href={`/dialogue/category/${d.topic}/`}>{TOPIC_LABELS[d.topic] ?? d.topic}</a>
+                <L class="card-topic" href={only(`/dialogue/category/${d.topic}/`)}>{TOPIC_LABELS[d.topic] ?? d.topic}</L>
                 <h3><a class="card-title-link" href={`/dialogue/${d.slug}/`}>{sq(d.title)}</a></h3>
                 <p class="card-summary">{stripMd(d.description)}</p>
                 <div class="card-meta">
@@ -162,7 +172,7 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
                   <span class="rounds">{d.rounds_count} rounds</span>
                   {d.tags.slice(0, 3).map(t => (
                     multiTagSet.has(t)
-                      ? <a class="card-tag link" href={`/dialogue/tag/${encodeURIComponent(t)}/`}>{t}</a>
+                      ? <L class="card-tag link" href={only(`/dialogue/tag/${encodeURIComponent(t)}/`)}>{t}</L>
                       : <span class="card-tag">{t}</span>
                   ))}
                 </div>
@@ -194,7 +204,7 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
     margin-bottom: 3rem;
     border-radius: 24px;
     overflow: hidden;
-    background: linear-gradient(135deg, rgba(20,52,98,0.4) 0%, rgba(56,114,184,0.2) 100%);
+    background: linear-gradient(135deg, light-dark(rgba(255,255,255,0.75), rgba(20,52,98,0.4)) 0%, light-dark(rgba(56,114,184,0.1), rgba(56,114,184,0.2)) 100%);
     border: 1px solid rgba(140,180,220,0.15);
   }
 
@@ -358,7 +368,7 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
     position: relative;
     display: flex;
     flex-direction: column;
-    background: rgba(20,52,98,0.18);
+    background: light-dark(rgba(255,255,255,0.8), rgba(20,52,98,0.18));
     border: 1px solid rgba(140,180,220,0.12);
     border-radius: 16px;
     overflow: hidden;
@@ -393,7 +403,7 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
 
   .card[data-featured="true"] {
     border-color: rgba(186,160,82,0.4);
-    background: linear-gradient(135deg, rgba(186,160,82,0.08) 0%, rgba(20,52,98,0.18) 60%);
+    background: linear-gradient(135deg, rgba(186,160,82,0.08) 0%, light-dark(rgba(255,255,255,0.8), rgba(20,52,98,0.18)) 60%);
   }
 
   .card-image {

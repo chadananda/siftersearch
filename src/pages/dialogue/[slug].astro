@@ -1,9 +1,12 @@
 ---
 // Individual dialog page — live from API (published_conversations table).
 // SSR: fetches by slug at request time, no prerender, no getStaticPaths.
+// On anis.oceanlibrary.com (/discuss/<slug>, Chad 11-14) the same page renders with Anís chrome: the Anís bar + widget,
+// Anís/Ocean 2.0 JSON-LD, and the category/tag/assessment pages (siftersearch only) shown as plain labels, not links.
 import Layout from '../../layouts/Layout.astro';
 import LiquidBackground from '../../components/LiquidBackground.svelte';
-import NavBar from '../../components/common/NavBar.svelte';
+import SiteNav from '../../components/anis/SiteNav.astro';
+import { isAnisHost, ANIS_ORIGIN } from '../../lib/anis-host.js';
 import DialogScrollSpy from '../../components/dialogue/DialogScrollSpy.svelte';
 import DialogQuoteMarker from '../../components/dialogue/DialogQuoteMarker.svelte';
 import { smartQuotes as sq } from '../../lib/smart-quotes.js';
@@ -19,7 +22,11 @@ const [dialogRes, allRes] = await Promise.all([
   fetch(`${API_BASE}/api/v1/dialogs`),
 ]);
 
-if (!dialogRes.ok) return Astro.redirect('/404');
+const anis = isAnisHost(Astro.url);
+if (!dialogRes.ok) return anis || dialogRes.status === 404 ? new Response(null, { status: dialogRes.status === 404 ? 404 : 503, headers: { 'Cache-Control': 'no-store' } }) : Astro.redirect('/404');
+// a link to a siftersearch-only dialogue page (category, tag, assessment): a plain label on the Anís host
+const L = anis ? 'span' : 'a';
+const only = (p) => (anis ? undefined : p);
 const { dialog } = await dialogRes.json();
 const { dialogs: allPublished = [] } = allRes.ok ? await allRes.json() : {};
 
@@ -44,7 +51,8 @@ const related = allPublished
 const allRecent = [...allPublished].sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
 
 const linkableTags = data.tags;
-// canonical: the same discussion on the Anís host (worker/anis/discuss.js, Chad 11-14); this page stays for siftersearch readers
+// canonical: the same discussion on the Anís host (Chad 11-14), whichever host renders it
+const canonical = `${ANIS_ORIGIN}/discuss/${slug}`;
 
 // Schema.org structured data
 const articleSchema = {
@@ -56,13 +64,12 @@ const articleSchema = {
   "dateModified": data.updated_at || data.published_at,
   "author": [
     { "@type": "Person", "name": "Reader" },
-    { "@type": "SoftwareApplication", "name": "Jafar (SifterSearch)" }
+    anis ? { "@type": "SoftwareApplication", "name": "Anís — Ocean AI Research Assistant", "url": `${ANIS_ORIGIN}/` } : { "@type": "SoftwareApplication", "name": "Jafar (SifterSearch)" }
   ],
-  "publisher": {
-    "@type": "Organization",
-    "name": "SifterSearch",
-    "logo": { "@type": "ImageObject", "url": "https://siftersearch.com/logo.svg" }
-  },
+  "publisher": anis
+    ? { "@type": "Organization", "name": "Ocean 2.0", "url": "https://oceanlibrary.com/", "logo": { "@type": "ImageObject", "url": `${ANIS_ORIGIN}/anis-app/icon-512.png` } }
+    : { "@type": "Organization", "name": "SifterSearch", "logo": { "@type": "ImageObject", "url": "https://siftersearch.com/logo.svg" } },
+  "mainEntityOfPage": canonical,
   "image": data.hero_image ? heroUrl(data.hero_image) : undefined,
   "keywords": data.tags.join(', ')
 };
@@ -105,20 +112,21 @@ const TOPIC_LABELS: Record<string, string> = {
 ---
 
 <Layout
-  title={`${sq(data.title)} — Dialog`}
+  title={`${sq(data.title)} — ${anis ? 'Anís' : 'Dialog'}`}
   description={sq(data.description)}
   image={data.hero_image ? heroUrl(data.hero_image) : '/icon-512.png'}
   type="article"
-  canonical={`https://anis.oceanlibrary.com/discuss/${slug}`}
+  canonical={canonical}
+  anisPage={{ type: 'discussion', slug, title: sq(data.title) }}
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
     {faqSchema && <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />}
-    <link rel="alternate" type="application/rss+xml" title="SifterSearch Dialogs" href="/dialogue/rss.xml" />
+    {!anis && <link rel="alternate" type="application/rss+xml" title="SifterSearch Dialogs" href="/dialogue/rss.xml" />}
   </Fragment>
 
   <LiquidBackground client:only="svelte" />
-  <NavBar currentPage="dialog" client:load />
+  <SiteNav currentPage="dialogue" />
 
   <article class="dialog-page">
     <div class="dialog-hero">
@@ -154,7 +162,7 @@ const TOPIC_LABELS: Record<string, string> = {
 
     <div class="dialog-container">
       <header class="dialog-header">
-        <a href={`/dialogue/category/${data.topic}/`} class="topic-crumb">{TOPIC_LABELS[data.topic] ?? data.topic}</a>
+        <L href={only(`/dialogue/category/${data.topic}/`)} class="topic-crumb">{TOPIC_LABELS[data.topic] ?? data.topic}</L>
         <h1>{sq(data.title)}</h1>
         <p class="seed-question">
           {sq(data.question)}
@@ -178,7 +186,7 @@ const TOPIC_LABELS: Record<string, string> = {
         {linkableTags.length > 0 && (
           <div class="dialog-tags">
             {linkableTags.map(t => (
-              <a class="dialog-tag" href={`/dialogue/tag/${encodeURIComponent(t)}/`}>{t}</a>
+              <L class="dialog-tag" href={only(`/dialogue/tag/${encodeURIComponent(t)}/`)}>{t}</L>
             ))}
           </div>
         )}
@@ -240,7 +248,7 @@ const TOPIC_LABELS: Record<string, string> = {
           <section class="assessment-box" id="assessment" aria-label="Conversation assessment">
             <div class="assess-header">
               <span class="assess-label">Quality Assessment</span>
-              <a href="/dialogue/assessment" class="assess-link">How we assess →</a>
+              {!anis && <a href="/dialogue/assessment" class="assess-link">How we assess →</a>}
             </div>
             <div class="assess-scores">
               {dims.map(([key, label]) => a[key] != null && (
@@ -253,7 +261,7 @@ const TOPIC_LABELS: Record<string, string> = {
             {a.flags?.length > 0 && (
               <div class="assess-flags">
                 {a.flags.map((f: string) => (
-                  <a href="/dialogue/assessment" class="flag">{f}</a>
+                  <L href={only('/dialogue/assessment')} class="flag">{f}</L>
                 ))}
               </div>
             )}
@@ -286,30 +294,38 @@ const TOPIC_LABELS: Record<string, string> = {
             <circle cx="200" cy="40" r="4" fill="rgba(186,160,82,0.6)" />
           </svg>
         </div>
-        <p class="footer-note">
-          This conversation was held with <strong>Jafar</strong>, SifterSearch's library-grounded chat.
-          Citations are pulled from the actual interfaith corpus.
-          <a href="/">Try your own question →</a>
-        </p>
+        {anis ? (
+          <p class="footer-note">
+            This conversation was held with <strong>Anís</strong>, the Ocean AI Research Assistant of Ocean 2.0.
+            Its answers quote and link their sources in the Ocean Library.
+            <a href={`/?discuss=${slug}`}>Continue this conversation with Anís →</a>
+          </p>
+        ) : (
+          <p class="footer-note">
+            This conversation was held with <strong>Jafar</strong>, SifterSearch's library-grounded chat.
+            Citations are pulled from the actual interfaith corpus.
+            <a href="/">Try your own question →</a>
+          </p>
+        )}
 
         <nav class="footer-grid" aria-label="Site resources">
           <div class="footer-col">
             <h4>Dialog</h4>
             <a href="/dialogue/">All conversations</a>
-            <a href="/dialogue/assessment">How these are assessed</a>
-            <a href={`/dialogue/category/${data.topic}/`}>{TOPIC_LABELS[data.topic] ?? data.topic}</a>
+            {!anis && <a href="/dialogue/assessment">How these are assessed</a>}
+            {!anis && <a href={`/dialogue/category/${data.topic}/`}>{TOPIC_LABELS[data.topic] ?? data.topic}</a>}
           </div>
           <div class="footer-col">
             <h4>Library</h4>
-            <a href="/library/">Browse the library</a>
-            <a href="/">Search & chat</a>
-            <a href="/about/">About SifterSearch</a>
+            {anis ? <a href="https://oceanlibrary.com/">The Ocean Library</a> : <a href="/library/">Browse the library</a>}
+            <a href="/">{anis ? 'Ask Anís' : 'Search & chat'}</a>
+            {!anis && <a href="/about/">About SifterSearch</a>}
           </div>
           {linkableTags.length > 0 && (
             <div class="footer-col">
               <h4>Tags on this dialog</h4>
               {linkableTags.slice(0, 6).map(t => (
-                <a href={`/dialogue/tag/${encodeURIComponent(t)}/`}>{t}</a>
+                <L href={only(`/dialogue/tag/${encodeURIComponent(t)}/`)}>{t}</L>
               ))}
             </div>
           )}
@@ -356,7 +372,7 @@ const TOPIC_LABELS: Record<string, string> = {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(15,30,55,0) 0%, rgba(15,30,55,0.3) 60%, var(--surface-0) 100%);
+    background: linear-gradient(180deg, light-dark(rgba(255,255,255,0), rgba(15,30,55,0)) 0%, light-dark(rgba(255,255,255,0.3), rgba(15,30,55,0.3)) 60%, var(--surface-0) 100%);
     pointer-events: none;
   }
 
@@ -383,7 +399,7 @@ const TOPIC_LABELS: Record<string, string> = {
     max-height: calc(100vh - 6rem);
     overflow-y: auto;
     font-family: 'Libre Caslon Text', 'Caslon Fallback', Georgia, serif;
-    background: rgba(10, 22, 42, 0.55);
+    background: light-dark(rgba(255, 255, 255, 0.72), rgba(10, 22, 42, 0.55));
     border: 1px solid rgba(140, 180, 220, 0.1);
     border-radius: 12px;
     backdrop-filter: blur(10px);
@@ -487,7 +503,7 @@ const TOPIC_LABELS: Record<string, string> = {
     border: 1px solid transparent;
   }
   .related-card:hover {
-    background: rgba(20, 52, 98, 0.4);
+    background: light-dark(rgba(56, 114, 184, 0.1), rgba(20, 52, 98, 0.4));
     border-color: rgba(140, 180, 220, 0.2);
   }
   .related-card img {
@@ -543,7 +559,7 @@ const TOPIC_LABELS: Record<string, string> = {
     text-align: center;
     margin-bottom: 3rem;
     padding: 2.5rem 1.5rem;
-    background: rgba(20,52,98,0.45);
+    background: light-dark(rgba(255,255,255,0.78), rgba(20,52,98,0.45));
     border: 1px solid rgba(140,180,220,0.15);
     border-radius: 20px;
     backdrop-filter: blur(20px);
@@ -655,13 +671,13 @@ const TOPIC_LABELS: Record<string, string> = {
     font-size: 1.0625rem;
     line-height: 1.75;
     color: var(--text-primary);
-    background: rgba(10, 22, 42, 0.78);
+    background: light-dark(rgba(255, 255, 255, 0.86), rgba(10, 22, 42, 0.78));
     border: 1px solid rgba(140, 180, 220, 0.12);
     border-radius: 20px;
     padding: 2.5rem 2.25rem;
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 12px 48px light-dark(rgba(20, 52, 98, 0.12), rgba(0, 0, 0, 0.25));
   }
 
   @media (max-width: 640px) {
@@ -692,7 +708,7 @@ const TOPIC_LABELS: Record<string, string> = {
      with Jafar's prose start (4rem). */
   .dialog-body :global(h3) {
     font-size: 0.62rem;
-    color: rgba(180, 195, 215, 0.22);
+    color: light-dark(rgba(60, 80, 110, 0.35), rgba(180, 195, 215, 0.22));
     margin: 2.4rem 0 0.4rem;
     padding-left: 1.4rem;
   }
@@ -728,7 +744,7 @@ const TOPIC_LABELS: Record<string, string> = {
     margin: 0;
     max-width: 100%;
     padding: 1.1rem 1.4rem 1rem calc(1.4rem + 5px);
-    background: rgba(56, 114, 184, 0.22);
+    background: light-dark(rgba(56, 114, 184, 0.1), rgba(56, 114, 184, 0.22));
     border: 1px solid rgba(140, 180, 220, 0.3);
     border-radius: 18px;
     color: var(--text-primary);
@@ -920,7 +936,7 @@ const TOPIC_LABELS: Record<string, string> = {
   .assessment-box {
     margin: 3rem 0 0;
     padding: 1.75rem 2rem 1.5rem;
-    background: rgba(40, 30, 20, 0.55);
+    background: light-dark(rgba(250, 244, 230, 0.85), rgba(40, 30, 20, 0.55));
     border: 1px solid rgba(186, 160, 82, 0.25);
     border-radius: 16px;
     backdrop-filter: blur(10px);

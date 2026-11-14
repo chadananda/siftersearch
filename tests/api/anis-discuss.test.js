@@ -1,12 +1,13 @@
-// Published discussions on the Anís host (worker/anis/discuss.js): /discuss/<slug> + /discuss, edge-cached, continue in chat.
+// Published discussions on the Anís host: siftersearch's designed dialogue pages (src/pages/dialogue/) render at /discuss[/<slug>]
+// with Anís chrome; worker/anis/discuss.js keeps the URL helpers, the chat's Continue turns and the sitemap.
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
-import { DISCUSS_PATH, DISCUSS_API, DIALOGUE_PATH, discussSlug, discussUrl, parseRounds, fromDialog, discussResponse, discussTurns, discussSitemapUrls, when } from '../../worker/anis/discuss.js';
-import { policyFor, cacheKey } from '../../worker/edge-cache.js';
+import * as discuss from '../../worker/anis/discuss.js';
+import { policyFor, anisCacheKey } from '../../worker/edge-cache.js';
 import { sitemapXml } from '../../worker/anis-app.js';
-import { THEME_PREP } from '../../worker/anis/content-widget.js';
-// The page minus the Anís widget embed and theme prep (shared shell, tested in anis-content-widget.test.js).
-const noWidget = (h) => h.replace(THEME_PREP, '').replace(/<script>window\.anisPage=[\s\S]*?<\/script><script>[\s\S]*?<\/script>/, '');
+import { astroPath, ASTRO_SECTIONS } from '../../src/lib/anis-host.js';
+const { DISCUSS_PATH, DISCUSS_API, DIALOGUE_PATH, discussSlug, discussUrl, parseRounds, fromDialog, discussTurns, discussSitemapUrls, when } = discuss;
+const src = (f) => fs.readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8');
 
 const MD = `### How do Bahá'í texts interpret 'Seal of the Prophets'?
 
@@ -69,42 +70,31 @@ describe('Anís published discussions', () => {
     expect(fromDialog({ slug: 'x-y', body_md: 'no rounds' })).toBeNull();
     expect(when('2026-05-16 00:36:05')).toBe(Date.UTC(2026, 4, 16, 0, 36, 5));
   });
-  it('resolves a slug: a server-rendered page with canonical, OG, JSON-LD, citations kept and a Continue link', async () => {
-    const { res, tainted } = await discussResponse(DIALOG.slug, { api: API, fetchFn: tower() });
-    expect(res.status).toBe(200);
-    expect(tainted).toBe(false);
-    const html = await res.text();
-    expect(html).toMatch(/<\/html>$/);
-    expect(html).toContain(`<link rel="canonical" href="https://anis.oceanlibrary.com/discuss/${DIALOG.slug}">`);
-    expect(html).toContain('<meta property="og:title"');
-    expect(html).toContain('"@type":"DiscussionForumPosting"');
-    expect(html).toContain('<h1>How Bahá&#39;í texts read &#39;Seal of the Prophets&#39;</h1>');
-    expect(html).toContain('href="https://oceanlibrary.com/kitab-i-iqan_bahaullah#p172"');
-    expect(html).toContain(`href="/?discuss=${DIALOG.slug}">Continue this conversation with Anís</a>`);
-    expect(html).toContain('Comparative religion');
-    expect(noWidget(html)).not.toMatch(/siftersearch|jafar/i);
-    expect(noWidget(html)).not.toMatch(/<script(?! type="application\/ld\+json")/);
+  it('routes /discuss[/<slug>] to the designed dialogue pages (assessment stays on siftersearch)', () => {
+    expect(ASTRO_SECTIONS).toContain('discuss');
+    expect(astroPath('/discuss')).toBe('/dialogue');
+    expect(astroPath(`/discuss/${DIALOG.slug}`)).toBe(`/dialogue/${DIALOG.slug}`);
+    expect(astroPath('/discuss/assessment')).toBeNull();
+    expect(astroPath('/discuss/a/b')).toBeNull();
   });
-  it('404s an unknown slug (noindex, not cacheable) and taints when tower fails', async () => {
-    const miss = await discussResponse('no-such-discussion', { api: API, fetchFn: tower() });
-    expect(miss.res.status).toBe(404);
-    const t = await miss.res.text();
-    expect(t).toContain('noindex');
-    expect(t).not.toContain('rel="canonical"');
-    const down = await discussResponse(DIALOG.slug, { api: API, fetchFn: tower({ [`/api/v1/dialogs/${DIALOG.slug}`]: () => new Response('x', { status: 502 }) }) });
-    expect(down.res.status).toBe(503);
-    expect(down.tainted).toBe(true);
-    const net = await discussResponse(null, { api: API, fetchFn: async () => { throw new Error('tunnel'); } });
-    expect(net.res.status).toBe(503);
+  it('the generic renderer is gone: discuss.js exports helpers only', () => {
+    expect(Object.keys(discuss).sort()).toEqual(['DIALOGUE_PATH', 'DISCUSS_API', 'DISCUSS_PATH', 'discussSitemapUrls', 'discussSlug', 'discussTurns', 'discussUrl', 'fromDialog', 'parseRounds', 'turnsOf', 'when']);
+    expect(src('worker/index.js')).not.toMatch(/discussResponse|discussPage/);
   });
-  it('the index lists every discussion newest first, with summary and date', async () => {
-    const { res } = await discussResponse(undefined, { api: API, fetchFn: tower() });
-    expect(res.status).toBe(200);
-    const html = await res.text();
-    expect(html).toContain('<link rel="canonical" href="https://anis.oceanlibrary.com/discuss">');
-    expect(html.indexOf(`/discuss/${DIALOG.slug}`)).toBeLessThan(html.indexOf('/discuss/older-one-here'));
-    expect(html).toContain('<time datetime="2026-05-16">16 May 2026</time>');
-    expect(html).toContain('"@type":"CollectionPage"');
+  it('the designed pages carry the Anís chrome: SiteNav, Anís canonical, the widget (discussion context), Anís JSON-LD', () => {
+    for (const f of ['src/pages/dialogue/index.astro', 'src/pages/dialogue/[slug].astro']) {
+      expect(src(f), f).toMatch(/<SiteNav currentPage="dialogue"/);
+      expect(src(f), f).not.toMatch(/<NavBar\b/);
+    }
+    const page = src('src/pages/dialogue/[slug].astro');
+    expect(page).toContain("anisPage={{ type: 'discussion', slug, title: sq(data.title) }}");
+    expect(page).toContain('const canonical = `${ANIS_ORIGIN}/discuss/${slug}`;');
+    expect(page).toMatch(/publisher": anis\s*\? \{ "@type": "Organization", "name": "Ocean 2.0"/);
+    expect(page).toContain('Continue this conversation with Anís');
+    expect(page).toMatch(/\{!anis && <link rel="alternate" type="application\/rss\+xml"/);
+    // category/tag/assessment pages exist only on siftersearch: plain labels on the Anís host
+    expect(page).not.toMatch(/(?<!!anis && )<a [^>]*href=\{`\/dialogue\/(tag|category)\//);
+    expect(src('src/pages/dialogue/index.astro')).not.toMatch(/(?<!!anis && )<a [^>]*href=\{`\/dialogue\/(tag|category)\//);
   });
   it('continue: the discussion as chat turns (the widget fromShared shape)', async () => {
     const r = await discussTurns(DIALOG.slug, { api: API, fetchFn: tower() });
@@ -120,21 +110,17 @@ describe('Anís published discussions', () => {
     expect(xml).toContain(`<loc>https://anis.oceanlibrary.com/discuss/${DIALOG.slug}</loc><lastmod>2026-05-16</lastmod>`);
     expect(await discussSitemapUrls({ api: API, fetchFn: async () => { throw new Error('x'); } })).toEqual([]);
   });
-  it('edge cache: the pages are cached HTML keyed by path', () => {
+  it('edge cache: the pages are cached HTML under the Anís key and warmed', () => {
     for (const p of ['/discuss', `/discuss/${DIALOG.slug}`]) {
       const u = new URL('https://anis.oceanlibrary.com' + p);
       expect(policyFor(u, 'GET', new Headers())).toMatchObject({ mode: 'cache', kind: 'html', l2: true });
-      expect(cacheKey(u, 'html', '1.0.0')).toContain(p);
+      expect(anisCacheKey(u, 'html', '1.0.0')).toContain(`/@anis${p}`);
     }
+    expect(src('worker/index.js')).toMatch(/WARM_ANIS = \[[^\]]*'\/discuss'/);
   });
-  it('the site Worker routes the Anís host to the discussions before the app; siftersearch.com/discuss 301s there', () => {
-    const w = fs.readFileSync(new URL('../../worker/index.js', import.meta.url), 'utf8');
-    const host = w.indexOf('if (url.hostname === SHORT_HOST)');
-    const disc = w.indexOf('DISCUSS_PATH.exec(url.pathname)');
-    expect(disc).toBeGreaterThan(host);
-    expect(disc).toBeLessThan(w.indexOf('await anisAppRoute(url, env)'));
-    expect(w).toContain("serveCached({ key: cacheKey(url, policy.kind, BUILD_VERSION), policy, env, ctx, produce })");
-    expect(w.indexOf('Response.redirect(`https://${SHORT_HOST}${url.pathname}${url.search}`, 301)')).toBeLessThan(w.indexOf('policyFor(url, request.method, policyHeaders(request, test));\n        const st'));
+  it('siftersearch.com/discuss 301s to the Anís host', () => {
+    const w = src('worker/index.js');
+    expect(w).toContain('if (DISCUSS_PATH.test(url.pathname) || DOC_PATH.test(url.pathname)) return Response.redirect(`https://${SHORT_HOST}${url.pathname}${url.search}`, 301)');
   });
   it('siftersearch.com/dialogue[/<slug>] 301s to the Anís discussion (assessment, tags, categories, rss stay)', () => {
     expect(DIALOGUE_PATH.exec('/dialogue/what-happened-badasht')?.[1]).toBe('what-happened-badasht');
@@ -154,6 +140,7 @@ describe('Anís published discussions', () => {
   });
   it('siftersearch.com/dialogue/<slug> names the Anís page as canonical', () => {
     const a = fs.readFileSync(new URL('../../src/pages/dialogue/[slug].astro', import.meta.url), 'utf8');
-    expect(a).toContain('canonical={`https://anis.oceanlibrary.com/discuss/${slug}`}');
+    expect(a).toContain('const canonical = `${ANIS_ORIGIN}/discuss/${slug}`;');
+    expect(a).toContain('  canonical={canonical}');
   });
 });

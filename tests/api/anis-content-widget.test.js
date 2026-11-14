@@ -108,13 +108,10 @@ describe('SifterChat wiring', () => {
 
 describe('every content page carries the widget', async () => {
   const { discussionPage, notFoundPage, TOP } = await import('../../worker/anis/share.js');
-  const { discussPage, discussIndexPage, fromDialog } = await import('../../worker/anis/discuss.js');
-  it('a shared discussion (/d/) and a published one (/discuss/) pass their context', () => {
+  it('a shared discussion (/d/) passes its context (published ones: the dialogue pages, anis-discuss.test.js)', () => {
     const d = discussionPage({ slug: 'why-pray-ab12cd34', title: 'Why pray?', turns: [{ role: 'user', content: 'Why pray?' }, { role: 'assistant', content: 'Because…' }], published_at: Date.now() });
     expect(d).toContain('window.anisPage={"type":"discussion","slug":"why-pray-ab12cd34","title":"Why pray?"}');
-    const disc = fromDialog({ slug: 'on-justice', title: 'On justice', body_md: '### On justice\n<div class="user-turn">What is justice?</div>\n<div class="jafar-turn">Justice is…</div>' });
-    expect(discussPage(disc)).toContain('window.anisPage={"type":"discussion","slug":"on-justice","title":"On justice"}');
-    for (const h of [d, discussPage(disc), discussIndexPage([]), notFoundPage()]) {
+    for (const h of [d, notFoundPage()]) {
       expect(h).toContain("s.src='/widget.js'");
       expect(h.indexOf('/widget.js')).toBeGreaterThan(h.indexOf('</main>'));   // after the page content
       expect(h).toContain("localStorage.getItem('anis-theme')");   // the stored theme before paint
