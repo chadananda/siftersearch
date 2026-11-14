@@ -132,6 +132,14 @@
     const abs = /^https?:/.test(u) ? u : `${api.replace(/\/$/, '')}${u.startsWith('/') ? '' : '/'}${u}`;
     return coverAt(abs, w);   // the image service's own size parameter (a Star of the West scan on bahai-education.org/ix takes w=, not tr=)
   }
+  // a speaker portrait cropped square on the face (the image service's fo-face), for the talk card
+  function faceSrc(u, w) {
+    const abs = /^https?:/.test(u) ? u : `${api.replace(/\/$/, '')}${u.startsWith('/') ? '' : '/'}${u}`;
+    return `${abs}${abs.includes('?') ? '&' : '?'}tr=w-${w},h-${w},fo-face,q-80,e-sharpen`;
+  }
+  const noCover = (e) => e.currentTarget.closest('a')?.classList.add('nocover');   // a 404 cover → the drawn one
+  const initial = (t) => (String(t || '').replace(/^(?:the|a|an)\s+/i, '').match(/\p{L}/u)?.[0] || '·').toUpperCase();
+  const mins = (s) => (s ? `${Math.max(1, Math.round(s / 60))} min` : null);
   // a passage card shows the quote: its quoted blocks leave the text
   const withoutQuote = (text) => String(text || '').replace(/^(?:>.*(?:\n|$))+/gm, '').replace(/\n{3,}/g, '\n\n').trim();
   // The card shows the description; drop it from the reply text when the reply opens with it.
@@ -470,12 +478,12 @@
   <figure class="qcard">
     {#if card.cover_url}
       <a class="qcard-cover" href={card.url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
-        <img src={coverSrc(card.cover_url, 96)} srcset={[48, 96, 144].map((w) => `${coverSrc(card.cover_url, w)} ${w}w`).join(', ')} sizes="44px" alt="" loading="lazy" decoding="async" />
+        <img src={coverSrc(card.cover_url, 96)} srcset={[48, 96, 144].map((w) => `${coverSrc(card.cover_url, w)} ${w}w`).join(', ')} sizes="44px" alt="" loading="lazy" decoding="async" onerror={noCover} />
       </a>
     {/if}
     <div class="qcard-body">
       <div class="qcard-text">{@html body}</div>
-      <p class="qcard-cite">— <a href={card.url} target="_blank" rel="noopener">{#if card.author}{card.author}, {/if}<em>{card.title}</em>{#if card.place}, {card.place}{/if}</a></p>
+      <p class="qcard-cite">— <a href={card.url} target="_blank" rel="noopener">{#if card.author}{`${card.author}, `}{/if}<em>{card.title}</em>{#if card.place}, {card.place}{/if}</a></p>
     </div>
   </figure>
 {/snippet}
@@ -484,7 +492,7 @@
     <header class="scene-head">
       {#if s.cover_url}
         <a class="qcard-cover" href={s.passages[0].url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
-          <img src={coverSrc(s.cover_url, 96)} srcset={[48, 96, 144].map((w) => `${coverSrc(s.cover_url, w)} ${w}w`).join(', ')} sizes="44px" alt="" loading="lazy" decoding="async" />
+          <img src={coverSrc(s.cover_url, 96)} srcset={[48, 96, 144].map((w) => `${coverSrc(s.cover_url, w)} ${w}w`).join(', ')} sizes="44px" alt="" loading="lazy" decoding="async" onerror={noCover} />
         </a>
       {/if}
       <div><h4 class="scene-title">{s.title}</h4>{#if s.line}<p class="scene-line">{s.line}</p>{/if}</div>
@@ -492,35 +500,38 @@
     {#each s.passages as p}
       <figure class="scene-pass">
         <div class="qcard-text">{@html renderRich(p.text)}</div>
-        <p class="qcard-cite">— <a href={p.url} target="_blank" rel="noopener">{#if p.author}{p.author}, {/if}<em>{p.title}</em>{#if p.place}, {p.place}{/if}</a></p>
+        <p class="qcard-cite">— <a href={p.url} target="_blank" rel="noopener">{#if p.author}{`${p.author}, `}{/if}<em>{p.title}</em>{#if p.place}, {p.place}{/if}</a></p>
       </figure>
     {/each}
   </section>
 {/snippet}
 {#snippet talkCard(t)}
-  <div class="book talk">
-    {#if t.thumb_url}
-      <a class="book-cover" href={t.url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
-        <img src={coverSrc(t.thumb_url, 240)} srcset={[160, 240, 320, 480].map((w) => `${coverSrc(t.thumb_url, w)} ${w}w`).join(', ')}
-          sizes="(min-width: 480px) 112px, 88px" alt="{t.speaker || 'Speaker'}" loading="lazy" decoding="async" />
-      </a>
-    {/if}
-    <div class="book-meta">
-      <a class="book-read" href={t.url} target="_blank" rel="noopener" title="Opens in a new tab">Open talk<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11C5 7 7.5 5 11.5 5M9 2.5 11.5 5 9 7.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-      <a class="book-title" href={t.url} target="_blank" rel="noopener">{t.title}</a>
-      <div class="book-by">{[t.speaker, t.year, t.duration_s ? `${Math.max(1, Math.round(t.duration_s / 60))} min` : null].filter(Boolean).join(' · ')}</div>
-      {#if t.audio_url}<audio class="talk-audio" controls preload="none" src={t.audio_url}></audio>{/if}
+  <article class="talk">
+    <a class="talk-photo" href={t.url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+      {#if t.portrait_url || t.thumb_url}
+        <img src={faceSrc(t.portrait_url || t.thumb_url, 192)} srcset={[96, 144, 192, 288].map((w) => `${faceSrc(t.portrait_url || t.thumb_url, w)} ${w}w`).join(', ')}
+          sizes="(min-width: 480px) 96px, 76px" alt="" loading="lazy" decoding="async" />
+      {:else}<span class="talk-photo-i">{initial(t.speaker)}</span>{/if}
+    </a>
+    <div class="talk-body">
+      <div class="talk-eyebrow"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5a2.5 2.5 0 0 0-2.5 2.5v4a2.5 2.5 0 0 0 5 0V4A2.5 2.5 0 0 0 8 1.5ZM3.5 7.5a4.5 4.5 0 0 0 9 0M8 12v2.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Talk</div>
+      <a class="talk-title" href={t.url} target="_blank" rel="noopener">{t.title}</a>
+      {#if t.speaker}<div class="talk-speaker">{t.speaker}</div>{/if}
+      <div class="talk-meta">
+        {#each [t.year, mins(t.duration_s)].filter(Boolean) as x}<span class="talk-chip">{x}</span>{/each}
+        <a class="talk-open" href={t.url} target="_blank" rel="noopener" title="Opens in a new tab">Open talk<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11C5 7 7.5 5 11.5 5M9 2.5 11.5 5 9 7.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr">(opens in a new tab)</span></a>
+      </div>
     </div>
-  </div>
+    {#if t.audio_url}<audio class="talk-audio" controls preload="none" src={t.audio_url} aria-label="Listen: {t.title}"></audio>{/if}
+  </article>
 {/snippet}
 {#snippet bookCard(b)}
   <div class="book">
-    {#if b.cover_url}
-      <a class="book-cover" href={b.url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
-        <img src={coverSrc(b.cover_url, 240)} srcset={[160, 240, 320, 480].map((w) => `${coverSrc(b.cover_url, w)} ${w}w`).join(', ')}
-          sizes="(min-width: 480px) 112px, 88px" alt="Cover of {b.title}" loading="lazy" decoding="async" />
-      </a>
-    {/if}
+    <a class="book-cover" class:nocover={!b.cover_url} href={b.url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+      {#if b.cover_url}<img src={coverSrc(b.cover_url, 240)} srcset={[160, 240, 320, 480].map((w) => `${coverSrc(b.cover_url, w)} ${w}w`).join(', ')}
+        sizes="(min-width: 480px) 112px, 88px" alt="Cover of {b.title}" loading="lazy" decoding="async" onerror={noCover} />{/if}
+      <span class="book-blank"><span class="book-blank-i">{initial(b.title)}</span><span class="book-blank-t">{b.title}</span></span>
+    </a>
     <div class="book-meta">
       {#if b.url}<a class="book-read" href={b.url} target="_blank" rel="noopener" title="Opens in a new tab">Read<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11C5 7 7.5 5 11.5 5M9 2.5 11.5 5 9 7.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr">(opens in a new tab)</span></a>{/if}
       <a class="book-title" href={b.url} target="_blank" rel="noopener">{b.title}</a>
@@ -621,12 +632,12 @@
                           <figure class="qcard">
                             {#if pc.cover_url}
                               <a class="qcard-cover" href={pc.url} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
-                                <img src={coverSrc(pc.cover_url, 96)} srcset={[48, 96, 144].map((w) => `${coverSrc(pc.cover_url, w)} ${w}w`).join(', ')} sizes="44px" alt="" loading="lazy" decoding="async" />
+                                <img src={coverSrc(pc.cover_url, 96)} srcset={[48, 96, 144].map((w) => `${coverSrc(pc.cover_url, w)} ${w}w`).join(', ')} sizes="44px" alt="" loading="lazy" decoding="async" onerror={noCover} />
                               </a>
                             {/if}
                             <div class="qcard-body">
                               <div class="qcard-text">{@html renderRich(`“${pc.excerpt}”`)}</div>
-                              <p class="qcard-cite">— {#if pc.url}<a href={pc.url} target="_blank" rel="noopener">{#if pc.author}{pc.author}, {/if}<em>{pc.title}</em>{#if pc.place}, {pc.place}{/if}</a>{:else}{#if pc.author}{pc.author}, {/if}<em>{pc.title}</em>{#if pc.place}, {pc.place}{/if}{/if}</p>
+                              <p class="qcard-cite">— {#if pc.url}<a href={pc.url} target="_blank" rel="noopener">{#if pc.author}{`${pc.author}, `}{/if}<em>{pc.title}</em>{#if pc.place}, {pc.place}{/if}</a>{:else}{#if pc.author}{`${pc.author}, `}{/if}<em>{pc.title}</em>{#if pc.place}, {pc.place}{/if}{/if}</p>
                             </div>
                           </figure>
                         {/each}
@@ -836,9 +847,36 @@
   }
   .avatar svg { width: 100%; height: 100%; display: block; }
   .bubblewrap { max-width: 84%; min-width: 0; }
-  .book { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 8px; padding: 12px; background: #fffdf8; color: #2a2620;
+  .book { display: flex; gap: 14px; align-items: flex-start; clear: both; margin: 12px 0 8px; padding: 12px; background: #fffdf8; color: #2a2620;
     border: 1px solid #e9e2d2; border-left: 3px solid var(--gold); border-radius: 12px; }
   .book-cover { flex: 0 0 auto; display: block; line-height: 0; }
+  /* no cover (none, or a 404): a drawn one — deep ink, gold rule, the title's initial (Chad 11-13) */
+  .book-blank { display: none; width: 88px; aspect-ratio: 2 / 3; box-sizing: border-box; padding: 10px 8px; border-radius: 4px; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    background: linear-gradient(160deg, #23324a, #121b2a); color: #e8d9b5; box-shadow: 0 2px 8px rgba(60, 40, 10, .18), inset 0 0 0 3px #121b2a, inset 0 0 0 4px color-mix(in srgb, var(--gold) 70%, transparent); line-height: 1.15; text-align: center; }
+  .book-blank-i { font-family: var(--serif); font-size: 30px; color: var(--gold); }
+  .book-blank-t { font-family: var(--serif); font-style: italic; font-size: 10px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .book-cover.nocover img { display: none; }
+  .book-cover.nocover .book-blank { display: flex; }
+  .qcard-cover.nocover { display: none; }
+  /* talk card: a face-centred portrait, the title as the headline, chips, and the player across the foot (Chad 11-13) */
+  .talk { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; clear: both; margin: 12px 0 8px; padding: 14px; border-radius: 14px; color: #2a2620;
+    background: linear-gradient(135deg, #fffdf8, color-mix(in srgb, var(--gold) 9%, #fffdf8)); border: 1px solid #e9e2d2; box-shadow: 0 1px 2px rgba(60, 40, 10, .06), 0 6px 18px -8px rgba(60, 40, 10, .18); }
+  .talk-photo { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; overflow: hidden; line-height: 0; background: #23324a;
+    box-shadow: 0 0 0 2px #fffdf8, 0 0 0 3.5px color-mix(in srgb, var(--gold) 75%, transparent), 0 4px 12px rgba(60, 40, 10, .22); }
+  .talk-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .talk-photo-i { font-family: var(--serif); font-size: 32px; color: var(--gold); line-height: 1; }
+  .talk-body { min-width: 0; align-self: center; }
+  .talk-eyebrow { display: flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: color-mix(in srgb, var(--gold) 70%, #5a4a2a); }
+  .talk-eyebrow svg { width: 12px; height: 12px; }
+  .talk-title { display: block; margin-top: 3px; font-family: var(--serif); font-size: 1.16em; font-weight: 600; line-height: 1.22; color: #22201b; text-decoration: none; text-wrap: balance; }
+  .talk-title:hover { color: var(--accent-deep); }
+  .talk-speaker { margin-top: 3px; font-size: .9em; color: #4d463a; }
+  .talk-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+  .talk-chip { padding: 2px 9px; border-radius: 999px; font-size: .76em; color: #5d5446; background: color-mix(in srgb, var(--gold) 13%, transparent); border: 1px solid color-mix(in srgb, var(--gold) 28%, transparent); }
+  .talk-open { margin-left: auto; padding: 4px 12px; border-radius: 999px; font-size: .8em; text-decoration: none; color: #fff; background: var(--accent); white-space: nowrap; }
+  .talk-open:hover { background: var(--accent-deep); }
+  .talk-open .ext { width: 12px; height: 12px; margin-left: 4px; vertical-align: -1px; }
+  .talk .talk-audio { grid-column: 1 / -1; max-width: none; margin-top: 8px; }
   .book-cover img { width: 88px; height: auto; border-radius: 4px; box-shadow: 0 2px 8px rgba(60, 40, 10, .18); }
   .book-meta { min-width: 0; flex: 1 1 auto; }
   .book-title, .book-by { display: block; }
@@ -854,7 +892,7 @@
   .book-read { float: right; margin: 0 0 6px 10px; padding: 4px 12px; border-radius: 999px; font-size: .82em; line-height: 1.4;
     text-decoration: none; color: #fff; background: var(--accent); }
   .book-read:hover { background: var(--accent-deep); }
-  @media (min-width: 480px) { .book-cover img { width: 112px; } }
+  @media (min-width: 480px) { .book-cover img, .book-blank { width: 112px; } .talk-photo { width: 96px; height: 96px; } }
   /* quote card: a quoted passage with its book's tiny cover and the linked citation (Chad 11-10) */
   .qcard { display: flex; gap: 10px; align-items: flex-start; margin: .55em 0; padding: 10px; border: 1px solid #e7dfcf; border-left: 2.5px solid var(--gold);
     border-radius: 0 8px 8px 0; background: color-mix(in srgb, var(--gold) 5%, transparent); }
@@ -993,6 +1031,12 @@
     .book-title { color: #f1ede3; }
     .book-by { color: #a59d8c; }
     .book-desc { color: #d3cec2; }
+    .talk { background: linear-gradient(135deg, #1b212a, #1f242b); border-color: #2b3442; color: #e9e6dd; box-shadow: none; }
+    .talk-photo { box-shadow: 0 0 0 2px #1b212a, 0 0 0 3.5px color-mix(in srgb, var(--gold) 75%, transparent); }
+    .talk-title { color: #f1ede3; }
+    .talk-speaker { color: #c9c2b3; }
+    .talk-chip { color: #cfc6b4; }
+    .talk .talk-audio { color-scheme: dark; }
     .qcard { border-color: #2b3442; border-left-color: var(--gold); }
     .qcard .qcard-cite { color: #a59d8c; }
     .qcard .qcard-cite em { color: #f1ede3; }

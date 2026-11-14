@@ -3,12 +3,13 @@
 // The title and line are the writer's; the words are the passages' own. Pure.
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
+const coverOf = (id) => (Number(id) > 0 ? `https://siftersearch.com/img/covers/${Number(id)}` : null);   // the cover by doc id (no cover → 404 → the card's drawn cover)
 export function fromRefs(refs, { found }, [title, line] = []) {
   const passages = refs.map((r) => found?.get(r)).filter((p) => p?.text && p.source_url)
     .map((p) => ({ text: String(p.text).trim(), url: p.source_url, title: p.title ?? null, author: p.author ?? null, place: p.place ?? null }));
   if (!title?.trim() || !passages.length) return null;
   const lead = refs.map((r) => found?.get(r)).find((p) => p?.cover_url);
-  return { kind: 'scene', title: title.trim(), line: line?.trim() || null, cover_url: lead?.cover_url ?? null, passages };
+  return { kind: 'scene', title: title.trim(), line: line?.trim() || null, cover_url: lead?.cover_url ?? coverOf(found?.get(refs[0])?.document_id), passages };
 }
 const by = (p) => `${p.author ? `${p.author}, ` : ''}[*${p.title || 'source'}*](${p.url})${p.place ? `, ${p.place}` : ''}`;
 export const toMarkdown = (d) => [`**${d.title}**${d.line ? ` — ${d.line}` : ''}`,

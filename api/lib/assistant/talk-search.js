@@ -25,7 +25,7 @@ export function rankTalks(rows, { speaker, topic, title }) {
 let cached = { at: 0, rows: null };
 const defaults = {
   rows: async () => { if (cached.rows && Date.now() - cached.at < 60000) return cached.rows; cached = { at: Date.now(), rows: await (await import('../repos/media-repo.js')).publishedTalkRows() }; return cached.rows; },
-  sketch: async (key) => { if (!key) return null; const m = await import('../repos/media-repo.js'); return (await import('../media/sketch.js')).speakerSketchOrStatic(await m.getSpeaker(key))?.square ?? null; },
+  sketch: async (key) => { if (!key) return null; const m = await import('../repos/media-repo.js'); return (await import('../media/sketch.js')).speakerSketchOrStatic(await m.getSpeaker(key)) ?? null; },
   // the transcripts, by keyword, when no title says it → the talks' doc ids
   topicDocs: async (topic) => { const q = await import('../search/qdrant-layers.js'), m = await import('../repos/media-repo.js');
     const r = await q.searchKeywordQdrant(String(topic), { limit: 40, filters: { collection: 'Media' }, timeoutMs: 6000 }).catch(() => ({ hits: [] }));
@@ -47,7 +47,7 @@ export async function talkSearch(a = {}, deps = {}) {
   const talks = await Promise.all(top.map(async (r) => {
     const sk = await d.sketch(r.speaker_key).catch(() => null), tile = r.thumb && /\.svg$/.test(r.thumb) ? `${SITE}/api/media/${r.slug}/file/${r.thumb}` : null;
     return { doc_id: r.doc_id, slug: r.slug, title: r.title, speaker: r.speaker, year: r.year ?? null, date: r.date ?? null, duration_s: r.duration_s ?? null, playback: r.playback,
-      url: `${SITE}/media/${r.slug}`, thumb_url: sk || tile, audio_url: r.playback === 'full' ? `${SITE}/api/media/${r.slug}/file/web/${r.slug}.m4a` : null, matched: r.matched };
+      url: `${SITE}/media/${r.slug}`, thumb_url: (typeof sk === 'string' ? sk : sk?.square) || tile, portrait_url: (typeof sk === 'string' ? null : sk?.url) ?? null, audio_url: r.playback === 'full' ? `${SITE}/api/media/${r.slug}/file/web/${r.slug}.m4a` : null, matched: r.matched };
   }));
   return { talks };
 }
