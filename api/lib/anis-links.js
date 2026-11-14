@@ -16,7 +16,7 @@ export const isOurs = (u) => { const h = hostOf(u); return isOwnHost(h) || h ===
 /**
  * The reader's site → the hosts linkFor ranks first (`prefer`, Chad 11-14: one fixed order, the site the reader is on first when it
  * holds the text). The deployment's own home hosts win; else the embedding page's host, when it is a configured collaborator (the
- * Anís host counts as Ocean Library, its parent). → [host] | null.
+ * Anís app itself is none: the plain order). → [host] | null.
  */
 export function preferFor({ home = null, site = null } = {}) {
   const own = (Array.isArray(home) ? home : home?.hosts || []).map((h) => String(h).toLowerCase().replace(/^www\./, '')).filter(Boolean);

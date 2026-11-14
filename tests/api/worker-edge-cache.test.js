@@ -24,6 +24,7 @@ describe('policyFor', () => {
     expect(pol('/sitemap-biography.xml')).toMatchObject({ mode: 'cache', kind: 'xml' });
     // the reader (SSR first view + load-more) and its tablet box; a signed-in editor (Authorization) bypasses
     expect(pol('/api/library/by-path/bahai/bahaullah/bahaullah_the-kitab-i-iqan?limit=40')).toMatchObject({ mode: 'cache', fresh: 300, l2: false });
+    expect(pol('/api/library/resolve-paths?p=/library/bahai/bahai-books/william-sears_release-the-sun')).toMatchObject({ mode: 'cache', fresh: 3600, l2: false });
     expect(pol('/api/documents/20810/about')).toMatchObject({ mode: 'cache', fresh: 300 });
     expect(pol('/api/library/by-path/a/b/c', 'GET', { authorization: 'Bearer x' }).mode).toBe('bypass');
   });

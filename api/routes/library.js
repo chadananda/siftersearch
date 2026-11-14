@@ -22,6 +22,7 @@ import { getIndexingProgress, getCachedContentCounts } from '../services/progres
 import { readLibraryStats, religionCollectionCounts } from '../lib/library/library-stats.js';
 import { readLibrarySitemap } from '../lib/library/library-sitemap.js';
 import { readDocPages } from '../lib/library/doc-pages.js';
+import { resolveLibraryPaths } from '../lib/library/path-docs.js';
 import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { previewWindow, PREVIEW_PARAGRAPHS, PREVIEW_MESSAGE, canReadFull } from '../lib/rights/preview.js';
@@ -1692,6 +1693,15 @@ Return ONLY the description text, no quotes or formatting.`;
         return { title: h.title, book: h.book_title, doc_id: h.doc_id, kind: h.kind, date: h.y ? [h.y, h.m, h.d].filter(Boolean).map((n) => String(n).padStart(2, '0')).join('-') : null,
           paragraphs: [h.start, h.end], score: Math.round(h.score), url: link.url, site: link.site, reader_url: `${reader}#p${h.start}-${h.end}` };
       }) };
+  });
+
+  // Reader paths → their documents, so the Anís host can route siftersearch reader links (bio sources, talk quotes) to a
+  // collaborator or its /doc page (Chad 11-14). ?p=/library/<religion>/<collection>/<slug> (repeatable; full URLs and #p anchors ok).
+  fastify.get('/resolve-paths', {
+    schema: { querystring: { type: 'object', properties: { p: { type: 'array', items: { type: 'string', maxLength: 600 }, maxItems: 100 } }, required: ['p'] } }
+  }, async (request, reply) => {
+    reply.header('Cache-Control', 'public, max-age=3600');
+    return { docs: await resolveLibraryPaths(request.query.p) };
   });
 
   fastify.get('/by-path/:religion/:collection/:slug', {
