@@ -95,12 +95,13 @@ describe('researcher: the authoritative tier first', () => {
     expect(heads[2]).toMatch(/Paris Talks .* REPORTED SPEECH/);
     expect(heads.at(-1)).toMatch(/SECONDARY/);
   });
-  it('no extra pass when the Writings are already there, or for another tradition', async () => {
+  it('no extra Writings when enough of them already lead (the pass starts beside the search, its passages unused), or for another tradition', async () => {
     let n = 0;
-    const w = async () => { n++; return [TABLET]; };
-    await toolRunner({ search: async () => [SWAB, ESSLEMONT], writings: w }).run.combined_search({ query: 'x', tradition: B });
+    const w = async () => { n++; return [{ ...TABLET, id: 99, title: 'Extra Tablet' }]; };
+    const out = await toolRunner({ search: async () => [SWAB, TABLET, GUARDIAN, ESSLEMONT], writings: w }).run.combined_search({ query: 'x', tradition: B });
+    expect(out).not.toMatch(/Extra Tablet/);
     await toolRunner({ search: async () => [BIBLE], writings: w }).run.combined_search({ query: 'x', tradition: 'Christianity' });
-    expect(n).toBe(0);
+    expect(n).toBe(1);   // the Bahá'í-scoped one only (started early for speed, 11-12)
   });
   it('the first round must call the library; a brief with no passages is not research (mail-1403: steps [])', async () => {
     const seen = [];

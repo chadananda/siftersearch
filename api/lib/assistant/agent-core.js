@@ -7,6 +7,7 @@ import { dropSearchOffer, dropUncheckedDisclaimer, isUncheckedDisclaimer } from 
 import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 import { callScope, cachedImpl } from './tool-cache.js';
 import { expandTemplates } from './widgets/templates.js';
+import { byTier } from './source-tier.js';
 
 const clip = (t, n) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? `${s.slice(0, n)}…` : s; };
 // the library copy's edition, from its catalogue record: "who translated this edition" is answered from this line, never from other editions' bibliographies
@@ -65,6 +66,7 @@ WRITING:
 - A TABLET OR WORK written in Arabic or Persian (or another original language) that the reader asks about: never hide it because it is not in English. Say plainly that the library holds it in its original (name the language) and link that original — call original_lookup or document_search so you hold its own passage or book, and cite it ([[P#]] / [[B#]]: its link opens it on Ocean of Lights). Close with one line offering to read and discuss it with the reader and to prepare a side-by-side document of the original beside the English. With no English translation in the library, say so and still offer to discuss the original. Original-language lines are QUOTED only when the reader asks for the original, or in {{side_by_side}}; the original is always named and linked.
 - The reader asks for the side-by-side document: call side_by_side_document on a passage of that work and give its [[B#]] in one sentence.
 - Quotation marks only around words copied exactly from a passage. Credit a quotation to the passage's writer (a letter written on behalf of Shoghi Effendi is not his own words; an editor's introduction is not the author's).
+- CORE TEXTS FIRST. Answer from the written texts of Bahá'u'lláh, the Báb and 'Abdu'l-Bahá and from Shoghi Effendi — in English and in the Persian and Arabic originals (originals_search; quote an original with its existing translation, never a new one) — and let them lead and carry the argument. A recorded talk of 'Abdu'l-Bahá may stand beside a written text when it adds something, named as spoken; a pilgrim's recollection after that; a scholar's book only for a point no Writing addresses, named as that writer's view. Quote 'Abdu'l-Bahá from His own text, never through a scholar who quotes Him. When your passages lead with a talk or a study, search the Writings on that point before writing.
 - Prefer, in order: the Writings of Bahá'u'lláh, the Báb and 'Abdu'l-Bahá; Shoghi Effendi; then compilations; "Uncompiled Published Letters" (or "Uncompiled Letters") only when nothing else holds the words. A recollection of a Central Figure's spoken words (pilgrim notes, a visitor's article) only when no Writing says it, and named as a recollection in a few words. Doctrine rests on the Writings and Shoghi Effendi; the Universal House of Justice speaks with authority on law and administration.
 - Readings in the community's sense: "the House" = the Universal House of Justice, "the Master" = 'Abdu'l-Bahá, "the Guardian" = Shoghi Effendi, "the Blessed Beauty" = Bahá'u'lláh, "the Most Holy Book" = the Kitáb-i-Aqdas, "the Nine Year Plan" = 2022–2031.
 - When the library does not hold what was asked (after the searches above), say so in one sentence, start with ${NOT_FOUND}, and give what it does hold that helps, with refs. Never fill a gap from memory.
@@ -153,7 +155,8 @@ export async function agentAnswer({ messages, create, tools: raw, onEvent = () =
   // the strategy tools (agent-strategies.js): their data → refs here; passages they gave are remembered for the cards
   const bookCards = new Map(), fromStrategy = new Set();
   const give = (ps) => ps.map((x) => { const r = add(asPassage(x)); if (r) fromStrategy.add(r); return r; }).filter(Boolean);
-  const heldRefs = new Set(), giveHeld = (ps) => { const refs = give(ps); for (const r of refs) heldRefs.add(r); return refs; };
+  // held research reaches the agent in tier order too (core first, Chad 11-14): it was captured in search order, a study first
+  const heldRefs = new Set(), giveHeld = (ps) => { const refs = give(byTier(ps || [])); for (const r of refs) heldRefs.add(r); return refs; };
   if (impl.bookCard) run.book_card = async (a) => {
     const r = await impl.bookCard(a);
     if (!r) return `no work or section like "${a.title}" in the library — try document_search with another spelling, or fused_search for passages that name it`;

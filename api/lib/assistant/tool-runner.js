@@ -1,7 +1,7 @@
 // The library tools behind refs (P# passages, W# web answers, B# works): toolRunner, show/fit/clip helpers. PURE — bundles for a Worker (agent-core.js).
 // Server-only defaults (rights, title finder, link maps) come in as opts.fallback; researcher.js wraps this with them. Deps: source-tier, head-of, forensics, tool-cache
 import { headOf } from '../text/head-of.js';
-import { byTier, hasAuthoritative, tierLabel } from './source-tier.js';
+import { byTier, coreFirst, isWrittenCore, needsWritings, tierLabel } from './source-tier.js';
 import { copyClass, COPY_CLASSES } from '../audit/forensics.js';
 import { canonicalTradition } from './tradition-name.js';
 import { translationLabel } from './tool-defs.js';
@@ -125,7 +125,7 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
       if (o && !o.note) o.note = tref ? (pick && pick.t === t && !pick.rendering
         ? `ORIGINAL — no translation of this work is linked; its English appears in ${tref}, a ${pick.cls.replace(/-/g, ' ')} copy: quote that verbatim beside this original line and name it as that copy, not as the translation`
         : `ORIGINAL — its linked translation is ${tref}: quote that verbatim beside this original line`)
-        : `ORIGINAL — no linked translation: render the key line yourself, marked "provisional translation by Anís", with the original line beside it, linked to this tablet`;
+        : `ORIGINAL — no linked translation: quote the key original line, linked to this tablet, and beside it give its sense in English, marked "provisional translation by Anís — not an authorized translation"; still a Writing, above any scholar's book`;
       return [ref, tref];
     }).flat();
   };
@@ -135,7 +135,10 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
     // a Bahá'í-scoped search starts the Writings pass beside it (11-12: run after it, the two searches took 2.5–4.8 s); used only when needed
     const wEarly = impl.writings && /bah/i.test(String(tradition || '')) ? impl.writings(query).catch(() => []) : null;
     let hits = (await impl.search(query, tradition)).slice(0, 8);
-    if (impl.writings && hits.length !== 0 && bahaiSearch(tradition, hits) && !hasAuthoritative(hits)) {
+    // CORE FIRST (Chad 11-14, "Who is the Evil One": a scholar's study led, 'Abdu'l-Bahá quoted through it, then pilgrim notes,
+    // the Writings fourth): the Writings are searched on the same point whenever the hits hold too few written core passages
+    // or a talk, recollection or study ranks ahead of them (source-tier.js needsWritings) — not only when none is there
+    if (impl.writings && hits.length !== 0 && bahaiSearch(tradition, hits) && needsWritings(hits)) {
       const extra = await (wEarly || impl.writings(query)).catch(() => []);
       const seen = new Set(hits.map((p) => p.id).filter((x) => x != null));
       hits = [...(extra || []).filter((p) => p.id == null || !seen.has(p.id)).slice(0, 4), ...hits];
@@ -148,9 +151,16 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
     const o0 = Date.now();
     if (impl.ownSource) hits = (await impl.ownSource(hits).catch(() => null)) || hits;
     if (impl.ownSource) part('own_source', Date.now() - o0);
+    // written core (English Writings, Shoghi Effendi) → the Persian/Arabic originals with their translations → compilations,
+    // talks, recollections, the House → commentary last, and left out when the written core is enough (source-tier.js coreFirst)
+    const { kept, left } = coreFirst(byTier(hits), orig.length);
+    hits = kept;
     searched.push({ query, docs: hits.map((p) => p.document_id).filter((x) => x != null) });
-    const refs = hits.map((p) => add(p));
-    return show([...refs, ...(await showOriginals(orig))]);
+    const core = hits.filter(isWrittenCore).map((p) => add(p));
+    const origRefs = await showOriginals(orig);
+    const rest = hits.filter((p) => !isWrittenCore(p)).map((p) => add(p));
+    const out = show([...core, ...origRefs, ...rest]);
+    return left ? `${out}\n\n(${left} passage${left > 1 ? 's' : ''} of commentary left out: the Writings above answer this — search a scholar by name only for a point they do not address)` : out;
   };
   // originals_search: the original-language pass alone, as many as it finds (the researcher's own Persian/Arabic or English words)
   const searchOriginals = async ({ query, tradition }) => {

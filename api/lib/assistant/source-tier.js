@@ -75,7 +75,10 @@ export function tierGap(p = {}) {
 }
 
 export const TIER_ORDER = ['writings', 'guardian', 'compilation', 'reported', 'house', 'secondary'];
-const rankOf = (p) => { const t = sourceTier(p); const i = TIER_ORDER.indexOf(t); return i < 0 ? TIER_ORDER.length : i; };
+// within reported speech, a Central Figure's recorded talk before a pilgrim's recollection (Chad 11-14: "it's OK to use talks
+// but better to use written texts"; pilgrim notes after talks, scholarship last)
+const isPilgrim = (p) => docType({ title: p.title ?? p.source_title, collection: p.collection, author: p.author ?? p.source_author }) === 'pilgrim-notes' || /pilgrim notes/i.test(String(p.collection || ''));
+const rankOf = (p) => { const t = sourceTier(p); const i = TIER_ORDER.indexOf(t); return i < 0 ? TIER_ORDER.length : i + (t === 'reported' && isPilgrim(p) ? 0.5 : 0); };
 
 // Within one tier, the authorized or published translation before an individual's (feedback citation source order; round 5: a
 // compilation on justice led with Juan Cole's translation of the Manakji tablet). From metadata only: the 'Tablet Translations'
@@ -95,16 +98,36 @@ export const translationRank = (p = {}) => {
 export const byTier = (ps = []) => ps.map((p, i) => [p, i]).sort((a, b) => rankOf(a[0]) - rankOf(b[0]) || translationRank(a[0]) - translationRank(b[0]) || a[1] - b[1]).map(([p]) => p);
 
 /** Is any passage from the authoritative written tier (the Writings or Shoghi Effendi)? */
-export const hasAuthoritative = (ps = []) => ps.some((p) => ['writings', 'guardian'].includes(sourceTier(p)));
+export const isWrittenCore = (p) => ['writings', 'guardian'].includes(sourceTier(p));
+export const hasAuthoritative = (ps = []) => ps.some(isWrittenCore);
+
+/** CORE TEXTS FIRST (Chad 11-14: "answer the questions from core texts when possible, not stray into Julio Savi. Books by
+ *  scholars should only be used if necessary"; "thousands of written texts in English and Arabic and Farsi … all higher
+ *  authority than books by scholars"). This many written core passages (English Writings, Shoghi Effendi, and the Persian/
+ *  Arabic originals) are enough to answer from: commentary is then left out of what reaches the writer. */
+export const CORE_ENOUGH = 3;
+/** Does a Bahá'í search need the Writings searched on the same point? Too few written core passages, or a talk, a
+ *  recollection or commentary ranked ahead of the first written one. Pure. */
+export const needsWritings = (ps = []) => {
+  const tiered = ps.filter((p) => sourceTier(p));
+  return tiered.filter(isWrittenCore).length < CORE_ENOUGH || (tiered.length > 0 && !isWrittenCore(tiered[0]));
+};
+/** → { kept, left }: commentary ('secondary') left out when the written core (plus `originals`, the Persian/Arabic Writings
+ *  shown beside) reaches CORE_ENOUGH; talks and recollections always kept (a preference, never an exclusion). Pure. */
+export const coreFirst = (ps = [], originals = 0) => {
+  if (ps.filter(isWrittenCore).length + originals < CORE_ENOUGH) return { kept: ps, left: 0 };
+  const kept = ps.filter((p) => sourceTier(p) !== 'secondary');
+  return { kept, left: ps.length - kept.length };
+};
 
 /** The label a passage head carries (researcher and writer). */
 export const TIER_LABEL = {
   writings: 'WRITINGS (a written text of the Báb, Bahá’u’lláh or ‘Abdu’l-Bahá — authoritative)',
   guardian: 'SHOGHI EFFENDI (authoritative interpretation)',
   compilation: 'COMPILATION OF THE WRITINGS (this passage’s writer is not attributed — cite the compilation by name; do not attribute it to a Central Figure unless another passage confirms who wrote it)',
-  reported: 'REPORTED SPEECH (a talk or a pilgrim’s recollection, not a written text — say so when you cite it: "in a talk recorded in…")',
+  reported: 'REPORTED SPEECH (a talk or a pilgrim’s recollection, not a written text — a written text on the same point leads the argument; use this beside it when it adds something, named as spoken: "in a talk recorded in…")',
   house: 'UNIVERSAL HOUSE OF JUSTICE (law and administration — no doctrinal or interpretive authority)',
-  secondary: 'SECONDARY (commentary — a signpost to the Writings, never their support)',
+  secondary: 'SECONDARY (commentary — a signpost to the Writings, never their support: use it only for a point no Writing here addresses, and say it is that writer’s view; never quote a Central Figure through it)',
 };
 export const tierLabel = (p) => {
   const t = sourceTier(p); if (!t) return null;
