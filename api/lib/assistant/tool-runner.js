@@ -7,7 +7,7 @@ import { canonicalTradition } from './tradition-name.js';
 import { translationLabel } from './tool-defs.js';
 import { part } from './tool-cache.js';
 import { HISTORY_NAMES, sweepHistory } from './history-sweep.js';
-import { isSiteRoot, cleanUrl, otherBook } from './widgets/card-text.js';
+import { isSiteRoot, cleanUrl, otherBook, shownText } from './widgets/card-text.js';
 import { imagesForPassages, imagesNote } from '../illustrations.js';
 
 export const PASSAGE_CHARS = 4000;   // = prompt.js PASSAGE_CHARS (a passage's shown length)
@@ -121,7 +121,7 @@ export function toolRunner(impl, { search: searchName = 'combined_search', fallb
     // each head says the passage's standing (source-tier.js: Writings, Shoghi Effendi, reported speech, the House, commentary)
     const heads = ps.map(([r, p]) => { const tier = tierLabel(p);
       return `[${r}] ${p.title || '?'} — ${p.author || '?'}${p.language && p.language !== 'en' ? ` (${p.language})` : ''}${tier ? ` · ${tier}` : ''}${p.translation ? ` · EXISTING TRANSLATION: ${p.translation}` : ''}${p.note ? ` · ${p.note}` : ''}${p.implied_by?.question ? ` · Implied: ${p.implied_by.question}${p.implied_by.premise ? ` — answered by implication: ${p.implied_by.premise}` : ''}${p.implied_by.implies ? ` (bears on: ${p.implied_by.implies})` : ''}` : ''}`; });
-    const texts = ps.map(([, p]) => String(p.text || '').replace(/\s+/g, ' ').trim());
+    const texts = ps.map(([, p]) => shownText(p.text || '', p.document_id ?? p.doc_id).replace(/\s+/g, ' ').trim());   // doc 366: no printed ¶ number (card-text.js)
     // + "\n", the " …" a cut adds, and the "\n\n" between passages
     const caps = fitLengths(texts.map((t, i) => Math.min(t.length, ps[i][1].translation ? Math.max(n, 4000) : n)), SHOW_CHARS - heads.reduce((a, h) => a + h.length + 5, 0));
     return ps.map((_, i) => `${heads[i]}\n${headOf(texts[i], caps[i])}`).join('\n\n') + imagesNote(imagesForPassages(ps.map(([, p]) => p)));

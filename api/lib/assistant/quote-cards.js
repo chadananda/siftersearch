@@ -6,6 +6,7 @@ import { quoteBlocks, foldQuote } from '../quote-blocks.js';
 import { ANIS_ORIGIN as SITE } from '../anis-links.js';   // Anís output: the Anís host (Chad 11-14), never siftersearch.com
 import { sowCoverUrl } from '../sow-links.js';
 import { imagesFor, cardImage } from '../illustrations.js';
+import { shownText } from './widgets/card-text.js';
 
 const abs = (u) => (u ? (/^https?:/.test(u) ? u : `${SITE}${u}`) : null);
 const coverOf = (d) => abs(d.cover_url) ?? sowCoverUrl(d);   // a Star of the West issue: its page 1 scan, in place
@@ -86,7 +87,7 @@ export async function refCards({ reply, passages = [], books = [] }, { docs = de
     const { p, s } = open[0];
     const d = (await docs([s.doc]).catch(() => []))[0] || {};
     passage = { work_id: s.doc, title: d.title || s.title, author: d.author || s.author, cover_url: coverOf(d) ?? sowCoverUrl({ title: s.title }), url: s.url, place: s.place,
-      excerpt: p.excerpt || String(s.text).replace(/⁅\/?[sp]\d+⁆/g, '').replace(/\s+/g, ' ').trim(), phrase: null, image: imageOf(s) };
+      excerpt: p.excerpt || shownText(s.text, s.doc).replace(/⁅\/?[sp]\d+⁆/g, '').replace(/\s+/g, ' ').trim(), phrase: null, image: imageOf(s) };
     carded.add(s.doc);
   }
   return { passage, books: books.filter((b) => !carded.has(Number(b.id))) };

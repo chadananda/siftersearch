@@ -44,7 +44,7 @@ export function groupCopies(cands) {
   const groups = [];
   for (const c of cands) { const g = groups.find((m) => m.some((x) => copies(x, c))); if (g) g.push(c); else groups.push([c]); }
   return groups.map((members, i) => {
-    const lead = members.find((m) => m.kind === 'work') || members[0];
+    const lead = members.find((m) => m.kind === 'work' && !/^media$/i.test(String(m.doc.collection || '').trim())) || members.find((m) => m.kind === 'work') || members[0];   // the library's text before a talk
     const label = members.length === 1 ? labelOf(lead)
       : `${q(lead.kind === 'section' ? lead.sec.title : lead.doc.title)} — one text, ${members.length} copies or translations in the library: ${members.map(labelOf).join('; ')}`;
     return { ...lead, members, key: `c${i + 1}`, label };

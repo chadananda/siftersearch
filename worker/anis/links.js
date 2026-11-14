@@ -2,7 +2,7 @@
 // research). Research passages already carry whole-paragraph range links; a quote marker (#~q=) narrows its link to the quoted words.
 import { findSpan, siteOffset } from '../../api/lib/ocean-range.js';
 import { textFragmentUrl, dropMarkers } from '../../api/lib/ocean-links.js';
-import { anisText } from '../../api/lib/anis-links.js';
+import { anisText, anchorLinks } from '../../api/lib/anis-links.js';
 import { unwrapMarkers } from '../../api/lib/assistant/widgets/templates.js';
 
 const OL_LINK = /https:\/\/(?:www\.)?oceanlibrary\.com\/([^/?#\s"'<>)\]]+)\/?\?paraId=([A-Za-z0-9_.-]+)(?:&selectionString=([^#\s"'<>)\]&]+))?(?:#~q=([^\s"'<>)\]]+))?/g;
@@ -40,7 +40,8 @@ export function finishLinks(reply, passages) {
   // our own reader links → the passage's Anís page (its held passage names the document), else unlinked (lib/anis-links.js)
   const byUrl = new Map();
   for (const p of passages || []) for (const k of ['source_url', 'url', 'citation_url', 'reader_url']) if (p?.[k]) byUrl.set(String(p[k]).replace(/#.*$/, ''), p);
-  return { text: anisText(dropMarkers(s), { docOf: (u) => byUrl.get(u.replace(/#.*$/, '')) || null }), narrowed, unplaced };
+  // a /doc link anchored by a citation number (#1739, the file's para_N) → the row's anchor (#p1716): lib/anis-links.js anchorLinks
+  return { text: anchorLinks(anisText(dropMarkers(s), { docOf: (u) => byUrl.get(u.replace(/#.*$/, '')) || null }), passages), narrowed, unplaced };
 }
 
 /** A streamed-text filter: inline templates ({{quote P3}}, widgets/templates.js) never show while the reply streams — a template is

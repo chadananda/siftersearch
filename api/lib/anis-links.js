@@ -2,7 +2,7 @@
 // Anís output. anisUrl maps one of our addresses to its Anís page (null = no public page: the caller unlinks); anisText every address in
 // a reply/HTML; anisDeep every string in an event or tool result. Pure, edge-safe. Deps: config/link-sites.json, library/doc-slug.js.
 import CFG from '../../config/link-sites.json' with { type: 'json' };
-import { docPageSlug } from './library/doc-slug.js';
+import { docPageSlug, docIdFromSlug } from './library/doc-slug.js';
 
 export const LINK_SITES = CFG.sites;
 export const ANIS_ORIGIN = CFG.anis.origin;
@@ -32,7 +32,9 @@ const idOf = (doc) => Number(doc?.document_id ?? doc?.doc_id ?? doc?.id) || null
 export function docPage(doc, paragraphIndex = null) {
   const id = idOf(doc);
   if (!id) return null;
-  const slug = docPageSlug({ id, title: doc.title ?? doc.source_title ?? '', author: doc.author ?? doc.source_author ?? null }) || String(id);
+  // the WORK's author names the page: a passage's own `author` is its paragraph's writer (doc 430 ¶594: a quoted Ḥájí, not Taherzadeh)
+  const author = doc.book_author ?? doc.doc_author ?? doc.document_author ?? doc.document?.author ?? doc.author ?? doc.source_author ?? null;
+  const slug = docPageSlug({ id, title: doc.title ?? doc.source_title ?? '', author }) || String(id);
   return `${ANIS_ORIGIN}/doc/${slug}${paragraphIndex != null ? `#p${paragraphIndex}` : ''}`;
 }
 
@@ -92,3 +94,41 @@ export function anisDeep(v, doc = null) {
   }
   return v;
 }
+
+// A citation's "#n" is the library FILE's paragraph number (para_N, paragraphs-repo para_no); the /doc page anchors by the row's
+// paragraph_index. They drift wherever the file has blocks the rows lack (doc 431: 3,276 blocks, 3,254 rows → #1739 is #p1716).
+/** A held passage's citation number: its para_no, else the "#n" its place ends with when no locator names the paragraph. */
+const paraNoOf = (p) => {
+  if (Number.isInteger(p?.para_no)) return p.para_no;
+  const m = !p?.locator && /(?:^|,\s)#(\d+)$/.exec(String(p?.place || ''));
+  return m ? Number(m[1]) : null;
+};
+/** Held passages → Map docId → { idx: Set(paragraph_index), no: Map(para_no → paragraph_index) }. Pure. */
+export function anchorMap(passages) {
+  const m = new Map();
+  for (const p of passages || []) {
+    const id = idOf(p), idx = Number.isInteger(p?.paragraph_index) ? p.paragraph_index : null;
+    if (!id || idx == null) continue;
+    if (!m.has(id)) m.set(id, { idx: new Set(), no: new Map() });
+    const e = m.get(id), n = paraNoOf(p);
+    e.idx.add(idx);
+    if (n != null) e.no.set(n, idx);
+  }
+  return m;
+}
+/** "#p1739" | "#1739" on doc id → the anchor of the held row it names ("#p1716"); a real paragraph_index, or a number no held
+ *  passage maps, stays as it is (never an assumed offset). Pure. */
+export function fixAnchor(hash, id, anchors) {
+  const m = /^#p?(\d+)$/.exec(String(hash || '')), e = m && anchors?.get(Number(id));
+  if (!e) return hash;
+  const n = Number(m[1]);
+  if (hash.startsWith('#p') && e.idx.has(n)) return hash;
+  return e.no.has(n) ? `#p${e.no.get(n)}` : hash;
+}
+const ANIS_DOC = new RegExp(`${ANIS_ORIGIN.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/doc/([a-z0-9-]+)(#p?\\d+)`, 'g');
+/** Every Anís /doc link in a reply anchored at the row its citation number names (anchorMap of the turn's held passages). Pure. */
+export const anchorLinks = (text, passages) => {
+  const anchors = anchorMap(passages);
+  if (!anchors.size) return String(text ?? '');
+  return String(text ?? '').replace(ANIS_DOC, (all, slug, hash) => `${ANIS_ORIGIN}/doc/${slug}${fixAnchor(hash, docIdFromSlug(slug), anchors)}`);
+};

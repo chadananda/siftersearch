@@ -11,6 +11,14 @@ export const cleanCardText = (text) => String(text ?? '')
   .replace(/(?<=[\p{L}.,;:!?’”"')])\^\d{1,4}\b/gu, '')
   .replace(/[ \t]{2,}/g, ' ').replace(/ +([,.;:!?])/g, '$1').trim();
 
+// Docs whose stored paragraphs open with their printed paragraph number ("12.3 The …": doc 366, the House's Messages). The number is
+// dropped on DISPLAY and QUOTATION only — the stored text is unchanged, and what is left is a suffix of it, so a quote still matches
+// the stored text. TEMPORARY: dewey's text fix (the number moved out of the text) makes this list unnecessary; never add a doc by guess.
+export const NUMBERED_TEXT_DOCS = [366];
+/** A passage's text as shown/quoted: a NUMBERED_TEXT_DOCS paragraph without its leading "n.n "; every other doc's text untouched. */
+export const shownText = (text, docId) => (NUMBERED_TEXT_DOCS.includes(Number(docId))
+  ? String(text ?? '').replace(/^(\s*(?:⁅[sp]\d+⁆)*)\s*\d+\.\d+\s+/, '$1') : String(text ?? ''));
+
 const BARE_ADDRESS = /^\s*(?:https?:\/\/|www\.)\S+\s*$/im;   // "www.oceanoflights.org" as a line: a PDF page's running header/footer
 /** A passage that is a PDF page dump, not a paragraph. */
 export const isPdfDump = (text) => {

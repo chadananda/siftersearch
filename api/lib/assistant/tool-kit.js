@@ -40,6 +40,7 @@ export const PASSAGE = { $id: 'AnisPassage', type: 'object', additionalPropertie
   translation: { ...nul('string'), description: 'What kind of translation this is (authorized / published / provisional)' },
   role: { ...nul('string'), description: 'quotation_candidates: source | original | possible_original | cited_by | candidate (unjudged near match; judge.holds turns it into source, holder or near)' },
   place: { ...nul('string'), description: 'Where in the work the citation points, from locator/subdocument/para_no (refs/place.js): "#117.2", "Tablet of Ahmad, #4"' }, subdocument: nul('string'),
+  para_no: { ...nul('integer'), description: 'The library file’s paragraph number (para_N) a "#n" place cites; links anchor at paragraph_index' },
   locator: { ...nul('string'), description: 'Where in the work to cite it: traditional number (Gleanings #117.2, Hidden Words Arabic #5, Íqán #12) or the section heading' } } };
 export const WORK = { $id: 'AnisWork', type: 'object', additionalProperties: true, required: ['id', 'title'], properties: {
   id: { type: 'integer' }, title: { type: 'string' }, author: nul('string'), religion: nul('string'), collection: nul('string'),
@@ -86,7 +87,7 @@ export const toPassage = (p) => {
     ...(o ? { original: { text: o.text ?? null, language: o.language ?? null, translit: o.translit ?? o.transliteration ?? null } } : {}),
     ...(p.score != null ? { score: p.score } : {}), ...(p.link?.site || p.link_site ? { link_site: p.link_site || p.link.site } : {}), ...(p.role ? { role: p.role } : {}),
     ...(p.locator ? { locator: p.locator } : {}), ...(p.subdocument ? { subdocument: p.subdocument } : {}),
-    ...(place ? { place } : {}), ...(p.found_by ? { found_by: p.found_by } : {}), ...(p.tier ? { tier: p.tier } : {}), ...(p.side ? { side: p.side } : {}) };   // where in the work to cite it: 'CXVII', 'Arabic 5', a section heading (#156)
+    ...(place ? { place } : {}), ...(Number.isInteger(p.para_no) ? { para_no: p.para_no } : {}), ...(p.found_by ? { found_by: p.found_by } : {}), ...(p.tier ? { tier: p.tier } : {}), ...(p.side ? { side: p.side } : {}) };   // where in the work to cite it: 'CXVII', 'Arabic 5', a section heading (#156)
 };
 
 const RANK = ['scripture', 'guardian', 'interpretation', 'guidance', 'compilation', 'law', 'prayer', 'history', 'reported', 'scholarship', 'other'];

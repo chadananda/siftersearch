@@ -206,7 +206,7 @@ export async function bookCandidates(message, { limit = 12, retrievers = RETRIEV
   const seenT = new Set(), seenB = new Set(), works = [], secs = [];
   for (const c of ranked) {
     if (c.kind === 'work') {
-      const k = fold(c.doc.title);
+      const k = `${fold(c.doc.title)}${isMedia(c) ? '|talk' : ''}`;   // a talk sharing a work's title is its own candidate, never the work's stand-in
       if ((c.doc.paragraph_count ?? 0) < MIN_PARAS || seenT.has(k) || works.length >= WORKS) continue;
       seenT.add(k); works.push(c);
     } else {
@@ -216,6 +216,22 @@ export async function bookCandidates(message, { limit = 12, retrievers = RETRIEV
     }
   }
   // interleave by score so a strong section ("The Dispensation of Bahá’u’lláh") is not pushed below eight weak works
-  const cands = [...works, ...secs].sort((a, b) => b.rrf - a.rrf).slice(0, limit);
+  const cands = libraryFirst([...works, ...secs].sort((a, b) => b.rrf - a.rrf)).slice(0, limit);
   return { cands, ms: Date.now() - t0 };
+}
+
+const isMedia = (c) => c.kind === 'work' && /^media$/i.test(String(c.doc.collection || '').trim());   // a recorded talk's transcript
+// a title without its volume number or parenthetical: "The Revelation of Bahá’u’lláh, Volume 2" and a talk titled "The Revelation of Bahá’u’lláh" tie
+export const tieTitle = (c) => fold(String(c.kind === 'section' ? c.sec.title : c.doc.title).replace(/\([^)]*\)/g, ' '))
+  .replace(/\s(?:vol(?:ume)?|part|book)\s(?:\d+|[ivx]+)$/, '').replace(/\s\d+$/, '').trim();
+/**
+ * ORDER, never a filter (11-14: doc 2209613, a Taherzadeh TALK titled "The Revelation of Bahá’u’lláh", led the four volumes): among
+ * works whose titles tie, the library's texts come before a talk transcript (collection Media), in the slot the first of them held;
+ * every candidate stays. Pure.
+ */
+export function libraryFirst(cands) {
+  const first = new Map();
+  cands.forEach((c, i) => { const k = tieTitle(c); if (!first.has(k)) first.set(k, i); });
+  return cands.map((c, i) => ({ c, i, g: first.get(tieTitle(c)) }))
+    .sort((a, b) => a.g - b.g || isMedia(a.c) - isMedia(b.c) || a.i - b.i).map((x) => x.c);
 }
