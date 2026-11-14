@@ -1,6 +1,6 @@
 // The widget on an Anís content page (Chad 11-14): the page it sits on (window.anisPage, set by worker/anis/content-widget.js),
-// the "Ask about this …" first suggestion, the way back to full mode (/?t=<thread>) and the remembered open/closed state. Pure
-// except the storage helpers, which take the storage (try/catch: private mode).
+// the "Ask about this …" first suggestion, the way back to full mode (/?t=<thread>; Anís host only) or maximize-in-place (any
+// other host), and the remembered open/closed + maximized state. Pure except the storage helpers (try/catch: private mode).
 
 export const ANIS_HOST = 'anis.oceanlibrary.com';
 export const KINDS = ['discussion', 'text', 'person', 'talk'];
@@ -25,13 +25,23 @@ export function askQuestion(ctx) {
   return `Tell me about "${t}": what it is and what it teaches.`;
 }
 
-/** The full app with this thread open. On the Anís host (or a local preview) the threads are shared, so the thread goes along;
- * an embed on another site cannot hand its threads over, so it opens the app itself. */
+/** The Anís host itself (or a local preview): its threads live in the same storage as the full app's. */
+export const ownHost = (host) => host === ANIS_HOST || /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(String(host || ''));
+
+/** What the header's expand control does. On the Anís host: a link to the full app with this thread (same storage, so the
+ * thread goes along). Anywhere else the threads live in the host site's storage and cannot follow a link, so the panel
+ * maximizes in place — it never navigates, and never opens a different conversation (Chad 11-14). */
+export const expandMode = (host) => (ownHost(host) ? 'link' : 'maximize');
+
+/** The full app with this thread open — '' off the Anís host (no link: it could not carry the conversation). */
 export function fullModeHref(host, threadId) {
-  const own = host === ANIS_HOST || /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(String(host || ''));
-  const t = THREAD_ID.test(String(threadId || '')) ? `?t=${encodeURIComponent(threadId)}` : '';
-  return own ? `/${t}` : `https://${ANIS_HOST}/`;
+  if (!ownHost(host)) return '';
+  return THREAD_ID.test(String(threadId || '')) ? `/?t=${encodeURIComponent(threadId)}` : '/';
 }
+
+/** ?t=<thread> on load: 'open' it when this device holds it, else 'new' (a clean conversation — never the previous active
+ * thread shown as though it were the requested one); 'none' when no thread was named. */
+export const urlThreadAction = (t, known) => (!t ? 'none' : known ? 'open' : 'new');
 
 /** The app's ?t=<thread> → the thread id, or '' when absent or malformed. */
 export function threadParam(search) {
@@ -49,3 +59,8 @@ export function loadOpen(storage, token) { try { return storage.getItem(openKey(
 export function saveOpen(storage, token, open) { try { storage.setItem(openKey(token), open ? '1' : '0'); } catch { /* private mode */ } }
 /** Open on load only when the reader left it open, on a wide screen (on a phone the sheet would cover the page they came to read). */
 export const startOpen = ({ remembered, wide }) => !!remembered && !!wide;
+
+// remembered maximized/floating, per reader (embeds off the Anís host); applies whenever the panel is open
+export const maxKey = (token) => `anis-widget-max:${token}`;
+export function loadMax(storage, token) { try { return storage.getItem(maxKey(token)) === '1'; } catch { return false; } }
+export function saveMax(storage, token, max) { try { storage.setItem(maxKey(token), max ? '1' : '0'); } catch { /* private mode */ } }

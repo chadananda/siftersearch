@@ -25,7 +25,7 @@
   import { BUILD, tagFor } from './version.js';
   import { loadTheme, saveTheme, nextTheme, isDark, bioRows } from './prefs.js';
   import { loadConfig, saveConfig, bootConfig } from './boot.js';
-  import { pageContext, askLabel, askQuestion, fullModeHref, threadParam, askParam, loadOpen, saveOpen, startOpen } from './page-context.js';
+  import { pageContext, askLabel, askQuestion, fullModeHref, expandMode, urlThreadAction, threadParam, askParam, loadOpen, saveOpen, startOpen, loadMax, saveMax } from './page-context.js';
   import { plainReply, replyHtml, replySources, referenceList, questionIndex, roundOf, answerTurns, rewind, shareTurns, fromShared } from './reply-actions.js';
   import { openStore, loadMessages, saveMessages, saveIndex, upsertThread, removeThread, pruneThreads, dropThreadData, groupThreads,
     filterThreads, messagesText, threadTitle, firstQuestion, newThreadId, activeKey, addShare, dropShares, isFirstVisit, markSeen } from './threads.js';
@@ -67,6 +67,7 @@
     x: ['M6 6l12 12', 'M18 6 6 18'],
     link: ['M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7', 'M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7'],
     expand: ['M15 3h6v6', 'M9 21H3v-6', 'M21 3l-7 7', 'M3 21l7-7'],
+    collapse: ['M4 14h6v6', 'M20 10h-6V4', 'M14 10l7-7', 'M3 21l7-7'],
     open: ['M15 3h6v6', 'M10 14 21 3', 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'],
     unshare: ['M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7', 'M12 15V9', 'm3 3 18 18'],
     user: ['M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2', 'M12 3a4 4 0 1 0 0 8a4 4 0 1 0 0-8z'],
@@ -443,11 +444,12 @@
     const t = threadParam(location.search), q = askParam(location.search);
     if (!t && !q) return;
     try { const u = new URL(location.href); u.searchParams.delete('t'); u.searchParams.delete('ask'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } catch { /* ok */ }
-    if (t && (threads.some((x) => x.id === t) || loadMessages(LS(), token, t).length)) {
+    const act = urlThreadAction(t, threads.some((x) => x.id === t) || loadMessages(LS(), token, t).length > 0);
+    if (act === 'open') {
       setActive(t); messages = loadMessages(LS(), token, t);
       if (!messages.some((m) => m.role === 'user')) messages = greet();
       scroll(true);
-    }
+    } else if (act === 'new') { newConversation(); if (!q) toast('That conversation isn’t on this device'); }   // never the previous thread passed off as the asked-for one
     if (q) askHere(q);
   }
   // "Ask about this …" / a page's "Ask Anís about …": in place; a thread already under way keeps its subject, so a new one starts
@@ -465,6 +467,18 @@
     askHere(q);
   }
   const fullHref = $derived(typeof location !== 'undefined' ? fullModeHref(location.host, activeId) : '/');
+  // off the Anís host the expand control maximizes in place (same panel, same conversation, no navigation), remembered per
+  // reader; Esc or the same button restores the floating panel; the host page doesn't scroll behind it (page-context.js)
+  const expandHow = typeof location !== 'undefined' ? expandMode(location.host) : 'link';
+  let maxed = $state(!fullscreen && expandHow === 'maximize' && loadMax(LS(), token));
+  const isMax = $derived(open && maxed && !isFull);
+  function toggleMax() { maxed = !maxed; saveMax(LS(), token, maxed); scroll(); }
+  $effect(() => {
+    if (!isMax) return;
+    const de = document.documentElement, prev = de.style.overflow;
+    de.style.overflow = 'hidden';
+    return () => { de.style.overflow = prev; };
+  });
   function voteMsg(mi, v) {
     const m = messages[mi], vote = m.vote === v ? 0 : v, qi = questionIndex(messages, mi);
     m.vote = vote; messages = [...messages]; persist();
@@ -866,7 +880,7 @@
   // can't see inside the shadow root and would act on keys typed here). Escape closes the panel here, since it no longer bubbles.
   function isolateKey(e) {
     if (shortcut(e)) { e.stopPropagation(); return; }
-    if (e.key === 'Escape') { if (sampleOpen) sampleOpen = false; else if (!isFull) open = false; }
+    if (e.key === 'Escape') { if (sampleOpen) sampleOpen = false; else if (isMax) toggleMax(); else if (!isFull) open = false; }
     trapTab(e);
     e.stopPropagation();
   }
@@ -946,7 +960,7 @@
     return () => window.removeEventListener('pointerdown', away, true);
   });
   $effect(() => {
-    const esc = (e) => { if (open && shortcut(e)) return; if (e.key !== 'Escape') return; if (sampleOpen) sampleOpen = false; else if (open && !isFull) open = false; };
+    const esc = (e) => { if (open && shortcut(e)) return; if (e.key !== 'Escape') return; if (sampleOpen) sampleOpen = false; else if (isMax) toggleMax(); else if (open && !isFull) open = false; };
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
   });
@@ -1084,7 +1098,7 @@
 {/snippet}
 
 {#if cfg && !denied}
-  <div class="root {cfg.position === 'bottom-left' ? 'left' : 'right'}" class:calm class:dark class:full={!!fullscreen && fullscreen !== '0'} style="--accent:{cfg.accent}">
+  <div class="root {cfg.position === 'bottom-left' ? 'left' : 'right'}" class:calm class:dark class:full={!!fullscreen && fullscreen !== '0'} class:max={isMax} style="--accent:{cfg.accent}">
     {#if open}
       <section class="panel" class:railed={isFull && railOpen} aria-label="{cfg.name} chat" onkeydown={isolateKey} onkeyup={isolate} onkeypress={isolate} use:contain>
         {#if isFull}
@@ -1163,8 +1177,10 @@
               </div>
             {/if}
             {/if}
-            {#if !isFull}<!-- back to full mode with this conversation open (Chad 11-14); a real link: a new tab works too -->
+            {#if !isFull && expandHow === 'link'}<!-- Anís host: back to full mode with this conversation open (Chad 11-14); a real link: a new tab works too -->
             <a class="icon expand" href={fullHref} title="Open full Anís" aria-label="Open full Anís">{@render ic('expand')}</a>
+            {:else if !isFull}<!-- any other site: maximize in place; the threads live in this site's storage and can't follow a link (Chad 11-14) -->
+            <button type="button" class="icon expand" onclick={toggleMax} aria-pressed={isMax} aria-label={isMax ? 'Restore chat size' : 'Maximize chat'} title={isMax ? 'Restore (Esc)' : 'Maximize'}>{@render ic(isMax ? 'collapse' : 'expand')}</button>
             {/if}
             {#if !isFull}<!-- full screen is the app itself: nothing to minimise to (Chad 11-14) -->
             <button class="icon close" aria-label="Close chat" onclick={togglePanel}>
@@ -2177,12 +2193,17 @@
      the rounded corners and the home bar */
   .root.full .panel, .panel { padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0); }
 
+  /* ── maximized in place (an embed off the Anís host): the same panel fills the window, the reading column centred ── */
+  .root.max .panel { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; border-radius: 0; animation: none; }
+  @media (min-width: 900px) { .root.max .body > *, .root.max footer { width: 100%; max-width: 960px; margin-inline: auto; } }
+
   /* ── Small screens: the panel becomes a full sheet. ── */
   @media (max-width: 640px) {
     .root.right, .root.left { right: 12px; left: auto; bottom: 12px; }
     .panel {
       position: fixed; inset: 0; width: 100vw; height: 100dvh; border-radius: 0;
     }
+    button.icon.expand { display: none; }   /* already the whole screen: nothing to maximize */
   }
 
   @media (prefers-reduced-motion: reduce) {

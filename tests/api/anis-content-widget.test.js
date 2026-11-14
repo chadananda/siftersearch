@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { widgetEmbed, askLink, pageOf, THEME_PREP, themeVars, BACK_LINK, WIDGET_TOKEN } from '../../worker/anis/content-widget.js';
-import { pageContext, askLabel, askQuestion, fullModeHref, threadParam, askParam, loadOpen, saveOpen, startOpen, openKey } from '../../src/widget/page-context.js';
+import { pageContext, askLabel, askQuestion, fullModeHref, expandMode, urlThreadAction, threadParam, askParam, loadOpen, saveOpen, startOpen, openKey, loadMax, saveMax, maxKey } from '../../src/widget/page-context.js';
 
 const mem = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) }; };
 const svelte = fs.readFileSync(new URL('../../src/widget/SifterChat.svelte', import.meta.url), 'utf8');
@@ -69,8 +69,32 @@ describe('widget page context', () => {
     const id = '3f2a8c1e-9b7d-4e2a-8f00-1c2d3e4f5a6b';
     expect(fullModeHref('anis.oceanlibrary.com', id)).toBe(`/?t=${id}`);
     expect(fullModeHref('localhost:4321', id)).toBe(`/?t=${id}`);
-    expect(fullModeHref('example.org', id)).toBe('https://anis.oceanlibrary.com/');
     expect(fullModeHref('anis.oceanlibrary.com', 'bad id!')).toBe('/');
+  });
+  it('off the Anís host there is no link to the full app: it could not carry the conversation (Chad 11-14)', () => {
+    const id = '3f2a8c1e-9b7d-4e2a-8f00-1c2d3e4f5a6b';
+    for (const h of ['example.org', 'longbeachbahai.chadananda.workers.dev', 'anis.oceanlibrary.com.evil.io']) {
+      expect(fullModeHref(h, id)).toBe('');
+      expect(expandMode(h)).toBe('maximize');
+    }
+    expect(expandMode('anis.oceanlibrary.com')).toBe('link');
+    expect(expandMode('localhost:4321')).toBe('link');
+  });
+  it('an unknown ?t= starts a clean conversation, never keeps another thread showing', () => {
+    expect(urlThreadAction('t1abc23xyz', true)).toBe('open');
+    expect(urlThreadAction('t1abc23xyz', false)).toBe('new');
+    expect(urlThreadAction('', false)).toBe('none');
+  });
+  it('remembers maximized per reader', () => {
+    const s = mem();
+    expect(loadMax(s, 'tok')).toBe(false);
+    saveMax(s, 'tok', true);
+    expect(s.getItem(maxKey('tok'))).toBe('1');
+    expect(loadMax(s, 'tok')).toBe(true);
+    expect(loadMax(s, 'other')).toBe(false);
+    saveMax(s, 'tok', false);
+    expect(loadMax(s, 'tok')).toBe(false);
+    expect(loadMax({ getItem() { throw new Error('private'); } }, 'tok')).toBe(false);
   });
   it('the app reads ?t= and ?ask=', () => {
     expect(threadParam('?t=t1abc23xyz')).toBe('t1abc23xyz');
@@ -91,9 +115,24 @@ describe('widget page context', () => {
 });
 
 describe('SifterChat wiring', () => {
-  it('floating header has the "Open full Anís" link with the thread', () => {
-    expect(svelte).toMatch(/<a class="icon expand" href=\{fullHref\}[^>]*aria-label="Open full Anís"/);
+  it('floating header: the "Open full Anís" link only on the Anís host', () => {
+    expect(svelte).toMatch(/\{#if !isFull && expandHow === 'link'\}[^\n]*\n\s*<a class="icon expand" href=\{fullHref\}[^>]*aria-label="Open full Anís"/);
     expect(svelte).toContain('fullModeHref(location.host, activeId)');
+  });
+  it('elsewhere the expand control is a button that maximizes in place (no href), restored by the button or Esc', () => {
+    const btn = svelte.match(/<button type="button" class="icon expand"[^>]*>/)?.[0] || '';
+    expect(btn).toContain('onclick={toggleMax}');
+    expect(btn).toContain('aria-pressed={isMax}');
+    expect(btn).not.toContain('href');
+    expect(svelte).toContain("ic(isMax ? 'collapse' : 'expand')");
+    expect(svelte).toContain('class:max={isMax}');
+    // Esc restores before it closes, both inside the panel and on the window
+    expect((svelte.match(/else if \(isMax\) toggleMax\(\); else if \((open && )?!isFull\) open = false;/g) || []).length).toBe(2);
+    expect(svelte).toMatch(/\.root\.max \.panel \{ position: fixed; inset: 0;/);
+    expect(svelte).toContain("de.style.overflow = 'hidden'");   // the host page is locked behind it
+  });
+  it('an unknown ?t= opens a new conversation', () => {
+    expect(svelte).toMatch(/else if \(act === 'new'\) \{ newConversation\(\);/);
   });
   it('the app opens the thread named by ?t= and asks ?ask=', () => {
     expect(svelte).toContain('threadParam(location.search)');
