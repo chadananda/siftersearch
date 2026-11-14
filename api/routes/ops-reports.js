@@ -58,6 +58,8 @@ export default async function opsReportRoutes(fastify) {
   fastify.get('/ops/dewey-allow', { preHandler: requireInternal }, async () => ({ allowlist: await (await import('../lib/repos/contributors-repo.js')).list() }));
   fastify.post('/ops/dewey-allow', { preHandler: requireInternal }, async (req) => (await import('../lib/repos/contributors-repo.js')).allow(req.body?.email, req.body?.note || null));
   fastify.post('/ops/dewey-allow/remove', { preHandler: requireInternal }, async (req) => (await import('../lib/repos/contributors-repo.js')).disallow(req.body?.email, !!req.body?.revoke));
+  // Dewey's wanted list (ops.mjs-free: POST { identified: { title, author?, kind?, … } }) — a work we need a copy of; research queued, nothing fetched
+  fastify.post('/ops/dewey-wanted', { preHandler: requireInternal }, async (req) => (await import('../lib/dewey/wanted.js')).addWanted(req.body?.identified, req.user?.email || 'internal'));
   // Index coverage (planning/index-coverage-plan.md): every layer by tradition × scope, or one document — ledger reads only
   fastify.get('/ops/coverage', { preHandler: requireInternal }, async () => (await import('../lib/repos/coverage-repo.js')).coverageSummary());
   fastify.get('/ops/coverage/:docId', { preHandler: requireInternal }, async (req) => ({ doc_id: Number(req.params.docId),

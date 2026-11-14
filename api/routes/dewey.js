@@ -29,6 +29,7 @@ import { coverageForDocs } from '../lib/repos/coverage-repo.js';
 import { stagesOf, ocrOf, loadingList, searchable } from '../lib/import-board.js';
 import { createItem, getItem, listItems, findOpenByTitle, updateItem, intakeActivity, appendMessage, threadOf } from '../lib/repos/dewey-repo.js';
 import { enqueue } from '../lib/repos/ops-report-repo.js';
+import { addWanted } from '../lib/dewey/wanted.js';
 import { archiveOriginal, inArchive } from '../lib/dewey/intake.js';
 import { reviewOf, resolveItem, declineItem } from '../lib/dewey/review.js';
 import { deweyTurn } from '../lib/dewey/agent.js';
@@ -141,14 +142,8 @@ export default async function deweyRoutes(fastify) {
 
   // WANTED (Chad 10-17): a book not in the library goes on Dewey's list and is researched at once
   fastify.post('/items', { schema: S.createItemSchema, preHandler: requireDewey }, async (request) => {
-    const id = request.body?.identified || {};
-    if (!id.title) throw Object.assign(new Error('a wanted item needs a title'), { statusCode: 400 });
-    const existing = await findOpenByTitle(id.title);
-    if (existing) return { item: existing, existing: true };
     const by = request.user?.viaKey ? `${request.user.email} (key ${request.user.viaKey})` : request.user?.email || null;
-    const item = await createItem({ title: id.title, author: id.author || null, kind: id.kind || null, identified: id, by });
-    await enqueue('dewey-research', { id: item.id }, request.user?.email || 'dewey');
-    return { item };
+    return addWanted(request.body?.identified, by);
   });
   fastify.get('/items', { schema: S.listItemsSchema, preHandler: requireDewey }, async (request) => ({ items: await listItems({ state: request.query?.state || null, limit: Math.min(Number(request.query?.limit) || 100, 1000) }) }));
 
