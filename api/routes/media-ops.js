@@ -55,12 +55,15 @@ export default async function mediaOps(fastify) {
   });
   // the typed pod plan (Chad 10-31): R_prep / R_finish / R_pod (measured or prior), supportable, target, binding, the R2 buffer over time, refusals, $/audio-h
   fastify.get('/ops/media/pod-plan', guard, async () => {
-    const C = await import('../lib/media/cloud.js'), st = await C.loadState();
-    const live = Object.values(st.pods || {}).filter((p) => !p.terminated);
+    const C = await import('../lib/media/cloud.js'), LP = await import('../lib/media/live-pods.js'), st = await C.loadState();
+    const beat = Number(await (await import('fs/promises')).readFile(`${C.STATE_FILE}.beat`, 'utf8').catch(() => 0));
+    if (beat > (st.updated || 0)) st.updated = beat;
+    const view = LP.livePodsView(await LP.livePods(), st, Date.now());   // RunPod's live list (same as /media and system-checks)
     const doneH = (st.done || []).reduce((a, d) => a + (st.items?.[d.id]?.duration_s || 0), 0) / 3600;
     const spent = C.spendOf(st, Date.now());
     return { plan: st.pod_plan || null, buffer_log: (st.buffer_log || []).slice(-30), rental_refusals: (st.rental_refusals || []).slice(-10), last_error: st.last_error || null,
-      pods: live.map((p) => ({ id: p.id, name: p.name, status: p.status, cost_per_hr: p.costPerHr, leased: st.q_last?.leased?.[`pod-${p.name}`] || 0, gpu: p.gauge?.gpu ?? null, created: p.created })),
+      pods_source: view.source, pods_as_of: view.as_of, pods_unknown_since: view.unknown_since, lane_age_s: view.lane_age_s,
+      pods: view.pods.map((p) => ({ id: p.id, name: p.name, status: p.status, cost_per_hr: p.cost_per_hr, leased: p.lease, idle_min: p.idle_min, gpu: p.gauge?.gpu ?? null, created: p.created })),
       spent_usd: spent, usd_per_audio_hour: doneH ? Math.round((spent / doneH) * 100) / 100 : null };
   });
   // the lane's health (Chad 10-31): each loop section's beat judged by its own cadence + the progress checks, computed NOW from the state

@@ -9,6 +9,16 @@ export function podChecks(g, { minEfficiency = 0.7, capWarn = 0.8, idleMin = 10 
   out.push({ name: 'Cloud lane beat', ok: !stale, detail: stale ? `${g.queue} talks queued and the lane's last beat was ${Math.round((g.lane_updated_s || 0) / 60)} min ago` : g.rentals_paused ? `paused by operator: ${g.rentals_paused}` : g.money_stopped ? `paused by the money rule: ${g.money_stopped}` : 'ok' });
   out.push({ name: 'GPU rental breaker', ok: !g.breaker_until, detail: g.breaker_until ? `no pods rented until ${new Date(g.breaker_until).toISOString().slice(11, 16)}Z: ${g.breaker_reason} · $${g.wasted_usd} wasted on pods that never worked` : `$${g.wasted_usd || 0} wasted on pods that never worked`, });
   const laneDown = !g.running || (g.lane_updated_s ?? Infinity) > 600;
+  // pods_source (live-pods.js): pods come from RunPod's own list, never a frozen file (Chad 11-14). 'unknown' = RunPod could not be asked → a warning, never [ACTION].
+  if (g.pods_source === 'unknown') {
+    const since = new Date(g.pods_unknown_since || Date.now()).toISOString().slice(0, 16).replace('T', ' ');
+    out.push({ name: 'GPU pods', ok: false, level: 'warn', detail: `pod state unknown since ${since}Z: RunPod could not be checked` });
+    return out;
+  }
+  if (g.pods_source === 'runpod' && !g.lane_fresh) {
+    out.push({ name: 'GPU pods without a lane', ok: !live.length, detail: live.length ? `media service stopped, pod state unknown → checked RunPod: ${live.length} pod(s) (${live.map((p) => p.name).join(', ')}) billing` : 'media service stopped, pod state unknown → checked RunPod: 0 pods' });
+    return out;
+  }
   out.push({ name: 'GPU pods without a lane', ok: !(live.length && laneDown),
     detail: live.length && laneDown ? `${live.length} pod(s) billing (${live.map((p) => p.name).join(', ')}) while the cloud lane is ${g.running ? `silent ${Math.round((g.lane_updated_s || 0) / 60)} min` : 'not running'}` : 'ok' });
   const idle = live.filter((p) => p.idle_min > idleMin);

@@ -97,8 +97,14 @@ export function healthView(h, now = Date.now()) {
 /** paused: the operator's media pause (cloud.js rentalPauseReason). The lane state is then frozen at its last tick (11-09: the page still
  *  showed pod 525 "Podpanda" hours after RunPod deleted it, and Aorus "2 at work" with nothing running), so every machine shows paused and
  *  no pod card is drawn from the frozen ledger (a pod billing while paused is system-checks' job: it asks RunPod). */
-export function workerCards(st = {}, now = Date.now(), { paused = null } = {}) {
-  if (paused) return MACHINES.map((m) => ({ ...m, status: 'paused', jobs: 0, speed: null, speed_by_type: null, gauges: null, health: null }));
+export function workerCards(st = {}, now = Date.now(), { paused = null, view = null } = {}) {
+  // view = livePodsView() (live-pods.js): RunPod's list is the only source of pod cards (11-14: the frozen ledger listed pod 525 for 6 days);
+  // machines may show paused while a pod still bills. No view → no pod cards when paused, else the ledger (legacy callers).
+  const podCards = (cards, pods) => {
+    if (view?.source === 'unknown') cards.push({ key: 'pods', name: 'Cloud pods', role: 'Cloud remaster', specs: [], status: `pod state unknown since ${new Date(view.unknown_since || view.as_of).toISOString().slice(11, 16)}Z`, jobs: 0, speed: null, speed_by_type: null, gauges: null, health: null });
+    return cards;
+  };
+  if (paused) return podCards(MACHINES.map((m) => ({ ...m, status: 'paused', jobs: 0, speed: null, speed_by_type: null, gauges: null, health: null })), null).concat(view ? livePodCards(view, st, now) : []);
   const sp = speeds(st.done, now, Object.fromEntries(Object.values(st.pods || {}).filter((p) => p.created).map((p) => [p.name, p.created])), st.step_log);
   const homeJobs = {};
   for (const h of Object.keys(st.home || {})) homeJobs[base(h)] = (homeJobs[base(h)] || 0) + 1;
@@ -114,6 +120,7 @@ export function workerCards(st = {}, now = Date.now(), { paused = null } = {}) {
     const status = hv && !hv.health.ok ? 'unreachable' : jobs ? 'working' : down ? 'resting' : 'idle';
     return { ...m, status, jobs, speed: sp[m.key] ?? null, speed_by_type: sp.byType[m.key] || null, gauges: hv?.gauges || null, health: hv?.health || null };
   });
+  if (view) { podCards(cards); return cards.concat(livePodCards(view, st, now)); }
   for (const p of Object.values(st.pods || {})) {
     if (p.terminated) continue;
     const w = p.worker || {}, hv = healthView(st.machine_health?.[p.name], now);
@@ -126,4 +133,16 @@ export function workerCards(st = {}, now = Date.now(), { paused = null } = {}) {
       gauges: hv ? hv.gauges : p.gauge && now - p.gauge.at < GAUGE_FRESH_MS ? { cpu: p.gauge.cpu, gpu: p.gauge.gpu } : null, health: hv?.health || null });
   }
   return cards;
+}
+
+// a pod RunPod reports: lane fields (lease, worker, speed) only when the lane is fresh; otherwise it is shown as billing with an unknown lease
+function livePodCards(view, st, now) {
+  const sp = speeds(st.done, now, Object.fromEntries(view.pods.filter((p) => p.created).map((p) => [p.name, p.created])), st.step_log);
+  return view.pods.map((p) => {
+    const w = p.worker || {}, hv = view.lane_fresh ? healthView(st.machine_health?.[p.name], now) : null, jobs = p.lease ?? 0, vram = w.vram_total_gb ? ` · ${Math.round(w.vram_total_gb)} GB` : '';
+    return { key: p.name, name: podName(p.name), role: 'Cloud remaster',
+      specs: [['GPU', p.gpu ? `${String(p.gpu).replace(/^NVIDIA (GeForce )?/, '')}${vram}` : vram ? `NVIDIA${vram}` : 'assigning…'], ['RAM', w.ram_avail_gb ? `${Math.round(w.ram_avail_gb)} GB free` : '—']],
+      status: p.lease == null ? 'unknown' : p.status !== 'ready' ? 'starting' : hv && !hv.health.ok ? 'unreachable' : jobs ? 'working' : 'idle', jobs, speed: view.lane_fresh ? sp[p.name] ?? null : null, speed_by_type: view.lane_fresh ? sp.byType[p.name] || null : null,
+      gauges: hv ? hv.gauges : p.gauge && now - p.gauge.at < GAUGE_FRESH_MS ? { cpu: p.gauge.cpu, gpu: p.gauge.gpu } : null, health: hv?.health || null, as_of: view.as_of };
+  });
 }
